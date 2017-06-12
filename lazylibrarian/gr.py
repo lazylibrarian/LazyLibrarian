@@ -142,19 +142,23 @@ class GoodReads:
                         resultcount += 1
 
                     loopCount += 1
-                    URL = set_url + '&page=' + str(loopCount)
-                    resultxml = None
-                    try:
-                        rootxml, in_cache = get_xml_request(URL)
-                        if rootxml is None:
-                            logger.debug('Error requesting page %s of results' % loopCount)
-                        else:
-                            resultxml = rootxml.getiterator('work')
-                            if not in_cache:
-                                api_hits += 1
-                    except Exception as e:
+                    if lazylibrarian.CONFIG['MAX_PAGES'] > 0 and loopCount > lazylibrarian.CONFIG['MAX_PAGES']:
                         resultxml = None
-                        logger.error("Error finding page %s of results: %s" % (loopCount, str(e)))
+                        logger.warn('Maximum results page search reached, still more results available')
+                    else:
+                        URL = set_url + '&page=' + str(loopCount)
+                        resultxml = None
+                        try:
+                            rootxml, in_cache = get_xml_request(URL)
+                            if rootxml is None:
+                                logger.debug('Error requesting page %s of results' % loopCount)
+                            else:
+                                resultxml = rootxml.getiterator('work')
+                                if not in_cache:
+                                    api_hits += 1
+                        except Exception as e:
+                            resultxml = None
+                            logger.error("Error finding page %s of results: %s" % (loopCount, str(e)))
 
                     if resultxml:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
@@ -179,7 +183,7 @@ class GoodReads:
 
     def find_author_id(self, refresh=False):
         author = self.name
-        author = formatAuthorName(author)
+        author = formatAuthorName(unaccented(author))
         URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
@@ -637,20 +641,24 @@ class GoodReads:
                                 book_ignore_count += 1
 
                     loopCount += 1
-                    URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
-                          urllib.urlencode(self.params) + '&page=' + str(loopCount)
-                    resultxml = None
-                    try:
-                        rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
-                        if rootxml is None:
-                            logger.debug('Error requesting next page of results')
-                        else:
-                            resultxml = rootxml.getiterator('book')
-                            if not in_cache:
-                                api_hits += 1
-                    except Exception as e:
+                    if lazylibrarian.CONFIG['MAX_PAGES'] > 0 and loopCount > lazylibrarian.CONFIG['MAX_PAGES']:
                         resultxml = None
-                        logger.error("Error finding next page of results: %s" % str(e))
+                        logger.warn('Maximum books page search reached, still more results available')
+                    else:
+                        URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
+                              urllib.urlencode(self.params) + '&page=' + str(loopCount)
+                        resultxml = None
+                        try:
+                            rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
+                            if rootxml is None:
+                                logger.debug('Error requesting next page of results')
+                            else:
+                                resultxml = rootxml.getiterator('book')
+                                if not in_cache:
+                                    api_hits += 1
+                        except Exception as e:
+                            resultxml = None
+                            logger.error("Error finding next page of results: %s" % str(e))
 
                     if resultxml:
                         if all(False for _ in resultxml):  # returns True if iterator is empty

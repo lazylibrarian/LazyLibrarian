@@ -157,6 +157,7 @@ def find_book_in_db(myDB, author, book):
         author = author.decode(lazylibrarian.SYS_ENCODING)
     if isinstance(book, str):
         book = book.decode(lazylibrarian.SYS_ENCODING)
+    logger.debug('Searching database for [%s] by [%s]' % (book, author))
 
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
     cmd += 'and AuthorName="%s" COLLATE NOCASE and BookName="%s" COLLATE NOCASE' % \
@@ -189,6 +190,8 @@ def find_book_in_db(myDB, author, book):
         book_partname, book_sub = split_title(author, book_lower)
         if book_partname == book_lower:
             book_partname = ''
+
+        logger.debug('Found %s book%s by [%s] in database' % (len(books), plural(len(books)), author))
 
         for a_book in books:
             # tidy up everything to raise fuzziness scores
@@ -234,9 +237,8 @@ def find_book_in_db(myDB, author, book):
                     match2 = partial_name.lower().find(book_lower)
 
                 if match1 < match2:
-                    logger.debug(
-                        "Fuzz left change, prefer [%s] over [%s] for [%s]" %
-                        (a_book['BookName'], partial_name, book))
+                    logger.debug("Fuzz left change, prefer [%s] over [%s] for [%s]" %
+                                (a_book['BookName'], partial_name, book))
                     best_partial = partial
                     partial_name = a_book['BookName']
                     partial_id = a_book['BookID']
@@ -258,8 +260,6 @@ def find_book_in_db(myDB, author, book):
             logger.debug(
                 'Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s], partname [%d,%s]' %
                 (author, book, best_ratio, ratio_name, best_partial, partial_name, best_partname, partname_name))
-        else:
-            logger.debug('No books found in database for %s' % author)
         return 0
 
 
@@ -536,8 +536,17 @@ def LibraryScan(startdir=None, library='eBook'):
                                 else:
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
-                            author, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
+                            if isinstance(author, str):
+                                author = author.decode(lazylibrarian.SYS_ENCODING)
 
+                            newauthor, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
+                            if not new:
+                                if len(newauthor):
+                                    if isinstance(newauthor, str):
+                                        newauthor = newauthor.decode(lazylibrarian.SYS_ENCODING)
+                                    if newauthor != author:
+                                        logger.debug("Preferred authorname changed from [%s] to [%s]" % (author, newauthor))
+                                        author = newauthor
                             if author:
                                 # author exists, check if this book by this author is in our database
                                 # metadata might have quotes in book name
@@ -661,9 +670,9 @@ def LibraryScan(startdir=None, library='eBook'):
 
                                 # see if it's there now...
                                 if bookid:
-                                    cmd = 'SELECT books.Status, AudioStatus, BookFile, AudioFile, AuthorName, BookName '
-                                    cmd += 'from books,authors where books.AuthorID = authors.AuthorID '
-                                    cmd += 'and BookID="%s"' % bookid
+                                    cmd = 'SELECT books.Status, AudioStatus, BookFile, AudioFile, AuthorName, BookName'
+                                    cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
+                                    cmd += ' and BookID="%s"' % bookid
                                     check_status = myDB.match(cmd)
 
                                     if not check_status:
