@@ -2052,6 +2052,21 @@ class WebInterface(object):
             return "Pushover notification failed"
 
     @cherrypy.expose
+    def testProwl(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'apikey' in kwargs:
+            lazylibrarian.CONFIG['PROWL_APIKEY'] = kwargs['apikey']
+        if 'priority' in kwargs:
+            lazylibrarian.CONFIG['PROWL_PRIORITY'] = check_int(kwargs['priority'], 0)
+
+        result = notifiers.prowl_notifier.test_notify()
+        if result:
+            lazylibrarian.config_write()
+            return "Test Prowl notice sent successfully"
+        else:
+            return "Test Prowl notice failed"
+
+    @cherrypy.expose
     def testNMA(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         if 'apikey' in kwargs:
