@@ -52,13 +52,13 @@ class ProwlNotifier:
         request_status = response.status
         
         if request_status == 200:
-                logger.info(module + ' Prowl notifications sent.')
+                logger.info(' Prowl notifications sent.')
                 return True
         elif request_status == 401:
-                logger.info(module + ' Prowl auth failed: %s' % response.reason)
+                logger.info(' Prowl auth failed: %s' % response.reason)
                 return False
         else:
-                logger.info(module + ' Prowl notification failed.')
+                logger.info(' Prowl notification failed.')
                 return False
 
         except Exception as e:
