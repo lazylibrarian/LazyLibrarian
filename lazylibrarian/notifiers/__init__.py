@@ -19,6 +19,7 @@
 import androidpn
 import boxcar
 import email_notify
+import prowl
 import nma
 import pushbullet
 import pushover
@@ -33,6 +34,7 @@ boxcar_notifier = boxcar.BoxcarNotifier()
 pushbullet_notifier = pushbullet.PushbulletNotifier()
 pushover_notifier = pushover.PushoverNotifier()
 androidpn_notifier = androidpn.AndroidPNNotifier()
+prowl_notifier = prowl.Prowl_Notifier()
 nma_notifier = nma.NMA_Notifier()
 slack_notifier = slack.SlackNotifier()
 email_notifier = email_notify.EmailNotifier()
@@ -45,6 +47,7 @@ notifiers = [
     pushbullet_notifier,
     pushover_notifier,
     androidpn_notifier,
+    prowl_notifier,
     nma_notifier,
     slack_notifier,
     email_notifier

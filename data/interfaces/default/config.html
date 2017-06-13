@@ -1339,6 +1339,73 @@
             </fieldset>
             <fieldset>
               <BR>
+              <h3>Prowl</h3>
+              <div class="checkbox row">
+                <%
+                    if lazylibrarian.CONFIG['USE_PROWL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_prowl" id="prowl" value="1" ${checked} /><label>Enable Prowl</label>
+              </div>
+              <div id="prowloptions">
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['PROWL_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="prowl_onsnatch" name="prowl_onsnatch" value="1" ${checked} /><label>Notify on snatch?</label>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['PROWL_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="prowl_ondownload" name="prowl_ondownload" value="1" ${checked} /><label>Notify on download?</label>
+                </div>
+                <div class="row">
+                  <label>Prowl API Key</label>
+                  <input type="text" id="prowl_apikey" name="prowl_apikey" value="${lazylibrarian.CONFIG['PROWL_APIKEY']}" size="26">
+                  <br>
+                  <small>Separate multiple api keys with commas</small>
+                </div>
+                <div class="row">
+                  <label>Priority</label>
+                  <select id="prowl_priority" name="prowl_priority">
+                    %for x in [-2,-1,0,1,2]:
+                    <%
+                                            if lazylibrarian.CONFIG['PROWL_PRIORITY'] == x:
+                                                prowl_priority_selected = 'selected'
+                                            else:
+                                                prowl_priority_selected = ''
+
+                                            if x == -2:
+                                                prowl_priority_value = 'Very Low'
+                                            elif x == -1:
+                                                prowl_priority_value = 'Moderate'
+                                            elif x == 0:
+                                                prowl_priority_value = 'Normal'
+                                            elif x == 1:
+                                                prowl_priority_value = 'High'
+                                            else:
+                                                prowl_priority_value = 'Emergency'
+                                        %>
+                    <option value=${x} ${prowl_priority_selected}>${prowl_priority_value}</option>
+                    %endfor
+                  </select>
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Prowl" id="testProwl">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
               <h3>NotifyMyAndroid</h3>
               <div class="checkbox row">
                 <%
@@ -2336,6 +2403,13 @@
             var priority = $.trim($("#pushover_priority").val());
             var device = $.trim($("#pushover_device").val());
             $.get("testPushover", {'apitoken': apitoken, 'keys': keys, 'priority': priority, 'device': device},
+                function (data) { alert(data); });
+        });
+
+        $('#testProwl').click(function () {
+            var apikey = $.trim($("#prowl_apikey").val());
+            var priority = $.trim($("#prowl_priority").val());
+            $.get("testProwl", {'apikey': apikey, 'priority': priority},
                 function (data) { alert(data); });
         });
 
