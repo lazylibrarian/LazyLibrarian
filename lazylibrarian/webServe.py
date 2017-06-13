@@ -78,7 +78,13 @@ class WebInterface(object):
     @cherrypy.expose
     def home(self):
         myDB = database.DBConnection()
-        authors = myDB.select('SELECT * from authors where Status != "Ignored" order by AuthorName COLLATE NOCASE')
+        cmd = 'SELECT * from authors '
+        if lazylibrarian.IGNORED_AUTHORS:
+            cmd += 'where Status == "Ignored" '
+        else:
+            cmd += 'where Status != "Ignored" '
+        cmd += 'order by AuthorName COLLATE NOCASE'
+        authors = myDB.select(cmd)
         return serve_template(templatename="index.html", title="Authors", authors=authors)
 
     @staticmethod
@@ -590,6 +596,16 @@ class WebInterface(object):
     def addAuthorID(self, AuthorID):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=['', False, AuthorID]).start()
         raise cherrypy.HTTPRedirect("home")
+
+    @cherrypy.expose
+    def toggleAuth(self):
+        self.label_thread()
+        if lazylibrarian.IGNORED_AUTHORS:  # show ignored ones, or active ones
+            lazylibrarian.IGNORED_AUTHORS = False
+        else:
+            lazylibrarian.IGNORED_AUTHORS = True
+        raise cherrypy.HTTPRedirect("home")
+
 
     # BOOKS #############################################################
 
