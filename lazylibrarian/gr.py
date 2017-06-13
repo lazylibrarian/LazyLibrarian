@@ -47,8 +47,13 @@ class GoodReads:
         try:
             resultlist = []
             api_hits = 0
-            # we don't use the title/author separator in goodreads
-            searchterm = searchterm.replace(' <ll> ', '')
+
+            if ' <ll> ' in searchterm:  # special token separates title from author
+                searchtitle, searchauthorname = searchterm.split(' <ll> ')
+            else:
+                searchtitle = ''
+                searchauthorname = ''
+            searchterm = searchterm.replace(' <ll> ', ' ')
 
             url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
             set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
@@ -106,8 +111,21 @@ class GoodReads:
                         else:
                             bookTitle = author.find('./best_book/title').text
 
-                        author_fuzz = fuzz.ratio(authorNameResult, searchterm)
-                        book_fuzz = fuzz.ratio(bookTitle, searchterm)
+                        if searchauthorname:
+                            author_fuzz = fuzz.ratio(authorNameResult, searchauthorname)
+                        else:
+                            author_fuzz = fuzz.ratio(authorNameResult, searchterm)
+                        if searchtitle:
+                            book_fuzz = fuzz.token_set_ratio(bookTitle, searchtitle)
+                            # lose a point for each extra word in the fuzzy matches so we get the closest match
+                            words = len(getList(bookTitle))
+                            words -= len(getList(searchtitle))
+                            book_fuzz -= abs(words)
+                        else:
+                            book_fuzz = fuzz.token_set_ratio(bookTitle, searchterm)
+                            words = len(getList(bookTitle))
+                            words -= len(getList(searchterm))
+                            book_fuzz -= abs(words)
                         isbn_fuzz = 0
                         if is_valid_isbn(searchterm):
                             isbn_fuzz = 100

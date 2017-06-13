@@ -6,6 +6,11 @@
     <div id="subhead_container">
         <div id="subhead_menu">
             <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
+            %if lazylibrarian.IGNORED_AUTHORS == True:
+              <a href="toggleAuth" class="button btn btn-sm btn-primary">Show Active Authors</a>
+            %else:
+              <a href="toggleAuth" class="button btn btn-sm btn-primary">Show Ignored Authors</a>
+            %endif
         </div>
     </div>
 </%def>

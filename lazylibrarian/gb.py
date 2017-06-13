@@ -75,7 +75,7 @@ class GoogleBooks:
                 title = ''
                 authorname = ''
 
-            fullterm = searchterm.replace(' <ll> ', '')
+            fullterm = searchterm.replace(' <ll> ', ' ')
             logger.debug('Now searching Google Books API with searchterm: %s' % fullterm)
 
             for api_value in api_strings:

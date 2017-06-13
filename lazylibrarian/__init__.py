@@ -64,6 +64,7 @@ LOGFULL = True
 # These are transient globals
 UPDATE_MSG = ''
 AUTHORUPDATE_MSG = 0
+IGNORED_AUTHORS = 0
 CURRENT_TAB = '1'
 CACHE_HIT = 0
 CACHE_MISS = 0

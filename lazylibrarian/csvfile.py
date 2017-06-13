@@ -177,7 +177,7 @@ def import_CSV(search_dir=None):
                     logger.debug(u"CSV: Author %s found in database" % authorname)
                 else:
                     logger.debug(u"CSV: Author %s not found" % authorname)
-                    newauthor, authorid, new = addAuthorNameToDB(author=authorname, addbooks=True)
+                    newauthor, authorid, new = addAuthorNameToDB(author=authorname, addbooks=False)
                     if len(newauthor) and newauthor != authorname:
                         logger.debug("Preferred authorname changed from [%s] to [%s]" % (authorname, newauthor))
                         authorname = newauthor
