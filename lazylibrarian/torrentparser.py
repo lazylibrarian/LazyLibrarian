@@ -43,8 +43,17 @@ def TPB(book=None):
 
     providerurl = url_fix(host + "/s/?q=" + book['searchterm'])
 
+    cat = 0  # 601=ebooks, 102=audiobooks, 0=all, no mag category
+    if 'library' in book:
+        if book['library'] == 'AudioBook':
+            cat = 102
+        elif book['library'] == 'eBook':
+            cat = 601
+        elif book['library'] == 'magazine':
+            cat = 0
+
     params = {
-        "category": "601",
+        "category": cat,
         "page": "0",
         "orderby": "99"
     }

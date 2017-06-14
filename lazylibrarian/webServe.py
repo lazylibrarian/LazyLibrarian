@@ -434,7 +434,7 @@ class WebInterface(object):
     # AUTHOR ############################################################
 
     @cherrypy.expose
-    def authorPage(self, AuthorID, BookLang=None, Library='eBook', Ignored=False):
+    def authorPage(self, AuthorID, BookLang=None, library='eBook', Ignored=False):
         myDB = database.DBConnection()
         if Ignored:
             languages = myDB.select(
@@ -456,7 +456,7 @@ class WebInterface(object):
         authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
-            author=author, languages=languages, booklang=BookLang, types=types, library=Library, ignored=Ignored,
+            author=author, languages=languages, booklang=BookLang, types=types, library=library, ignored=Ignored,
             showseries=lazylibrarian.SHOW_SERIES)
 
     @cherrypy.expose
@@ -550,13 +550,18 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
-    def libraryScanAuthor(self, AuthorID, library):
+    def libraryScanAuthor(self, AuthorID, **kwargs):
         self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
+
+            library = 'eBook'
+            if 'library' in kwargs:
+                library = kwargs['library']
+
             if library == 'AudioBook':
                 authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
             else:  # if library == 'eBook':
@@ -582,7 +587,7 @@ class WebInterface(object):
             else:
                 # maybe we don't have any of their books
                 logger.warn(u'Unable to find author directory: %s' % authordir)
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
             logger.debug('ScanAuthor Invalid authorid [%s]' % AuthorID)
             raise cherrypy.HTTPRedirect("home")
@@ -681,15 +686,17 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus from books,authors'
-        cmd += ' where books.AuthorID = authors.AuthorID'
+        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
+        cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
 
+        status_type = 'books.status'
         if kwargs['source'] == "Manage":
             cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
             cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
+            status_type = 'audiostatus'
         elif kwargs['source'] == "Author":
             library = 'eBook'
             if 'library' in kwargs:
@@ -734,10 +741,16 @@ class WebInterface(object):
                 sortcolumn -= 1
             elif sortcolumn == 4:  # series
                 sortcolumn = 12
-            elif sortcolumn == 7:  # added
-                sortcolumn = 13
             elif sortcolumn == 8:  # status
-                sortcolumn = 5
+                if status_type == 'audiostatus':
+                    sortcolumn = 14
+                else:
+                    sortcolumn = 5
+            elif sortcolumn == 7:  # added
+                if status_type == 'audiostatus':
+                    sortcolumn = 15
+                else:
+                    sortcolumn = 13
             else:  # rating, date
                 sortcolumn -= 2
 
@@ -775,8 +788,12 @@ class WebInterface(object):
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
                 # Need to pass bookid and status twice as datatables modifies first one
-                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                          row[6], row[13], row[5], row[14]])
+                if status_type == 'audiostatus':
+                    d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
+                              row[6], row[15], row[14]])
+                else:
+                    d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
+                              row[6], row[13], row[5]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -1201,7 +1218,7 @@ class WebInterface(object):
                 threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&Library=%s" % (AuthorID, library))
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         elif redirect in ["books", "audio"]:
             raise cherrypy.HTTPRedirect(redirect)
         elif redirect == "members":
@@ -1727,7 +1744,10 @@ class WebInterface(object):
     # IMPORT/EXPORT #####################################################
 
     @cherrypy.expose
-    def libraryScan(self, library):
+    def libraryScan(self, **kwargs):
+        library = 'eBook'
+        if 'library' in kwargs:
+            library = kwargs['library']
         threadname = "%s_SCAN" % library.upper()
         if threadname not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
@@ -2180,14 +2200,17 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose
-    def manage(self, whichStatus=None, Library=None):
+    def manage(self, whichStatus=None, **kwargs):
+        library = 'eBook'
+        if 'library' in kwargs:
+            library = kwargs['library']
         if whichStatus is None:
             whichStatus = "Wanted"
         types = ['eBook']
         if lazylibrarian.SHOW_AUDIO:
             types.append('AudioBook')
         return serve_template(templatename="managebooks.html", title="Manage Books",
-                              books=[], types=types, library=Library, whichStatus=whichStatus)
+                              books=[], types=types, library=library, whichStatus=whichStatus)
 
     @cherrypy.expose
     def testDeluge(self, **kwargs):

@@ -118,7 +118,7 @@
                     if (str === "null"){ str = ""}
                     return str ;} },
                 { targets: [8], 'render': function(data, type, row) {
-                    var btn = row[12]
+                    var btn = row[11]
                     if ( btn == 'Open' ) {
                         btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
                                 '&source=audio" target="_self"><i class="fa fa-book"></i>Open</a>'}
@@ -129,7 +129,7 @@
                     else if ( btn == 'Have' ) {
                         btn = '<a class="button btn btn-xs btn-info">Have</a>'}
                     else {
-                        btn = '<a class="button btn btn-xs btn-default grey">' + row[12] + '</a>'}
+                        btn = '<a class="button btn btn-xs btn-default grey">' + row[11] + '</a>'}
                     return btn;} }
                 ],
             "oLanguage": {

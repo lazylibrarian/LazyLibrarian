@@ -179,17 +179,17 @@
         $('#chooselanguage').change(function(){
             new_settings = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + $(this).val()
             if (typeof $("#chooselib").val() != 'undefined') {
-            new_settings += '&Library=' + $("#chooselib").val() }
+            new_settings += '&library=' + $("#chooselib").val() }
             window.location = new_settings
         })
         $('#chooselib').change(function(){
-            new_settings = 'authorPage?AuthorID=${author['AuthorID']}&Library=' + $(this).val()
+            new_settings = 'authorPage?AuthorID=${author['AuthorID']}&library=' + $(this).val()
             if (typeof $("#chooselanguage").val() != 'undefined') {
             new_settings += '&BookLang=' + $("#chooselanguage").val() }
             window.location = new_settings
         })
         $('#chooselanguage').val(getUrlVars()['BookLang']);
-        $('#chooselib').val(getUrlVars()['Library']);
+        $('#chooselib').val(getUrlVars()['library']);
         if ($("#chooselib").val() != 'AudioBook') {
             $('#chooselib').val('eBook')
         }
