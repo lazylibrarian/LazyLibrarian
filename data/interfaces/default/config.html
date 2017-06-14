@@ -2235,6 +2235,26 @@
                     }
             });
 
+            if ($("#prowl").is(":checked"))
+                    {
+                            $("#prowloptions").show();
+                    }
+            else
+                    {
+                            $("#prowloptions").hide();
+                    }
+
+            $("#prowl").click(function(){
+                    if ($("#prowl").is(":checked"))
+                    {
+                            $("#prowloptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#prowloptions").slideUp();
+                    }
+            });
+
         $('#generateAPI').click(function () {
             $.get("generateAPI",
                 function (data) { });

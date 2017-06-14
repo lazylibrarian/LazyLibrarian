@@ -2823,6 +2823,26 @@
                     }
             });
 
+            $("#use_prowl").click(function(){
+                    if ($("#use_prowl").is(":checked"))
+                    {
+                            $("#prowloptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#prowloptions").slideUp();
+                    }
+            });
+
+            if ($("#use_prowl").is(":checked"))
+                    {
+                            $("#prowloptions").show();
+                    }
+            else
+                    {
+                            $("#prowloptions").hide();
+                    }
+
         if ($("#use_slack").is(":checked"))
                 {
                         $("#slackoptions").show();
