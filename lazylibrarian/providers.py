@@ -245,7 +245,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
             logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
             if prov == 'KAT':
                 results, error = KAT(book)
-            if prov == 'WWT':
+            elif prov == 'WWT':
                 results, error = WWT(book)
             elif prov == 'TPB':
                 results, error = TPB(book)

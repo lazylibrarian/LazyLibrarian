@@ -67,7 +67,7 @@ class GoodReads:
                 except Exception as e:
                     logger.error("Error finding gr results: %s" % str(e))
                     return
-                if not len(rootxml):
+                if rootxml is None or not len(rootxml):
                     logger.debug("Error requesting results")
                     return
 
@@ -160,7 +160,7 @@ class GoodReads:
                         resultcount += 1
 
                     loopCount += 1
-                    if lazylibrarian.CONFIG['MAX_PAGES'] > 0 and loopCount > lazylibrarian.CONFIG['MAX_PAGES']:
+                    if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < loopCount:
                         resultxml = None
                         logger.warn('Maximum results page search reached, still more results available')
                     else:
@@ -659,7 +659,7 @@ class GoodReads:
                                 book_ignore_count += 1
 
                     loopCount += 1
-                    if lazylibrarian.CONFIG['MAX_PAGES'] > 0 and loopCount > lazylibrarian.CONFIG['MAX_PAGES']:
+                    if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < loopCount:
                         resultxml = None
                         logger.warn('Maximum books page search reached, still more results available')
                     else:

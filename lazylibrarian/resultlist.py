@@ -118,8 +118,11 @@ def findBestResult(resultlist, book, searchtype, source):
                     logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))
 
             if not rejected:
+                author_words = getList(author.lower())
+                title_words = getList(title.lower())
+                result_words = getList(resultTitle.lower())
                 for word in reject_list:
-                    if word in resultTitle.lower() and word not in author.lower() and word not in title.lower():
+                    if word in result_words and word not in author_words and word not in title_words:
                         rejected = True
                         logger.debug("Rejecting %s, contains %s" % (resultTitle, word))
                         break
