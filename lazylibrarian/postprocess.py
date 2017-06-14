@@ -893,7 +893,7 @@ def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
     newValueDict = {"Status": "Open", "BookFile": dest_file}
     myDB.upsert("books", newValueDict, controlValueDict)
 
-    match = myDB.match('SELECT AuthorID FROM authors WHERE BookID="%s"' % bookid)
+    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
     if match:
         update_totals(match['AuthorID'])
 
