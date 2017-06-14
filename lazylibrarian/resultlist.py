@@ -89,6 +89,7 @@ def findBestResult(resultlist, book, searchtype, source):
         else:  # rss returns torrents
             prefix = 'tor_'
 
+        logger.debug('Searching %s %s results for best %s match' % (len(resultlist), source, auxinfo))
         matches = []
         for res in resultlist:
             resultTitle = unaccented_str(replace_all(res[prefix + 'title'], dictrepl)).strip()
