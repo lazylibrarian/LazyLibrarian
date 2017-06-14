@@ -686,15 +686,17 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus from books,authors'
-        cmd += ' where books.AuthorID = authors.AuthorID'
+        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
+        cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
 
+        status_type = 'books.status'
         if kwargs['source'] == "Manage":
             cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
             cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
+            status_type = 'audiostatus'
         elif kwargs['source'] == "Author":
             library = 'eBook'
             if 'library' in kwargs:
@@ -739,10 +741,16 @@ class WebInterface(object):
                 sortcolumn -= 1
             elif sortcolumn == 4:  # series
                 sortcolumn = 12
-            elif sortcolumn == 7:  # added
-                sortcolumn = 13
             elif sortcolumn == 8:  # status
-                sortcolumn = 5
+                if status_type == 'audiostatus':
+                    sortcolumn = 14
+                else:
+                    sortcolumn = 5
+            elif sortcolumn == 7:  # added
+                if status_type == 'audiostatus':
+                    sortcolumn = 15
+                else:
+                    sortcolumn = 13
             else:  # rating, date
                 sortcolumn -= 2
 
@@ -780,8 +788,12 @@ class WebInterface(object):
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
 
                 # Need to pass bookid and status twice as datatables modifies first one
-                d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                          row[6], row[13], row[5], row[14]])
+                if status_type == 'audiostatus':
+                    d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
+                              row[6], row[15], row[14]])
+                else:
+                    d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
+                              row[6], row[13], row[5]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
