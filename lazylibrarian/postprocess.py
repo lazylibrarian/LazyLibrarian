@@ -673,6 +673,7 @@ def delete_task(Source, DownloadID, remove_data):
             logger.warn("Download %s has not been processed from blackhole" % DownloadID)
         elif Source == "SABNZBD":
             sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
+            sabnzbd.SABnzbd(DownloadID, 'delhistory', remove_data)
         elif Source == "NZBGET":
             nzbget.deleteNZB(DownloadID, remove_data)
         elif Source == "UTORRENT":
