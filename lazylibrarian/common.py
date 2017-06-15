@@ -103,9 +103,12 @@ def book_file(search_dir=None, booktype=None):
     if isinstance(search_dir, str):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if search_dir and os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
-            if is_valid_booktype(fname, booktype=booktype):
-                return os.path.join(search_dir, fname)
+        try:
+            for fname in os.listdir(search_dir):
+                if is_valid_booktype(fname, booktype=booktype):
+                    return os.path.join(search_dir, fname)
+        except Exception as e:
+            logger.warn('Listdir error [%s]: %s' % (search_dir, str(e)))
     return ""
 
 
