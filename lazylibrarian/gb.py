@@ -227,13 +227,13 @@ class GoogleBooks:
                                 author_fuzz = fuzz.ratio(Author, fullterm)
 
                             if title:
-                                book_fuzz = fuzz.ratio(bookname, title)
+                                book_fuzz = fuzz.token_set_ratio(bookname, title)
                                 # lose a point for each extra word in the fuzzy matches so we get the closest match
                                 words = len(getList(bookname))
                                 words -= len(getList(title))
                                 book_fuzz -= abs(words)
                             else:
-                                book_fuzz = fuzz.ratio(bookname, fullterm)
+                                book_fuzz = fuzz.token_set_ratio(bookname, fullterm)
 
                             isbn_fuzz = 0
                             if is_valid_isbn(fullterm):

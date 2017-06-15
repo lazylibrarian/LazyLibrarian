@@ -97,8 +97,8 @@ def searchItem(item=None, bookid=None):
             if not size:
                 size = '1000'
 
-            # calculate match percentage
-            score = fuzz.token_set_ratio(searchterm, title)
+            # calculate match percentage - torrents might have words_with_underscore_separator
+            score = fuzz.token_set_ratio(searchterm, title.replace('_', ' '))
             # lose a point for each extra word in the title so we get the closest match
             words = len(getList(searchterm))
             words -= len(getList(title))

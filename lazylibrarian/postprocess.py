@@ -304,7 +304,8 @@ def processDir(reset=False):
                         # so we try to do a "best match" on the name, there might be a better way...
 
                         matchname = fname
-                        matchname = matchname.split(' LL.(')[0]
+                        # torrents might have words_separated_by_underscores
+                        matchname = matchname.split(' LL.(')[0].replace('_', ' ')
                         matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                         if int(lazylibrarian.LOGLEVEL) > 2:
@@ -672,6 +673,7 @@ def delete_task(Source, DownloadID, remove_data):
             logger.warn("Download %s has not been processed from blackhole" % DownloadID)
         elif Source == "SABNZBD":
             sabnzbd.SABnzbd(DownloadID, 'delete', remove_data)
+            sabnzbd.SABnzbd(DownloadID, 'delhistory', remove_data)
         elif Source == "NZBGET":
             nzbget.deleteNZB(DownloadID, remove_data)
         elif Source == "UTORRENT":

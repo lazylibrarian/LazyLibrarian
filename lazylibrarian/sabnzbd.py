@@ -88,6 +88,20 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         if remove_data:
             params['del_files'] = 1
         title = 'LL(Delete) ' + title
+    elif nzburl == 'delhistory':
+        params['mode'] = 'history'
+        params['output'] = 'json'
+        params['name'] = 'delete'
+        params['value'] = title
+        if lazylibrarian.CONFIG['SAB_USER']:
+            params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
+        if lazylibrarian.CONFIG['SAB_PASS']:
+            params['ma_password'] = lazylibrarian.CONFIG['SAB_PASS']
+        if lazylibrarian.CONFIG['SAB_API']:
+            params['apikey'] = lazylibrarian.CONFIG['SAB_API']
+        if remove_data:
+            params['del_files'] = 1
+        title = 'LL(DelHistory) ' + title
     else:
         params['mode'] = 'addurl'
         params['output'] = 'json'
@@ -146,7 +160,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     logger.debug("Result text from SAB: " + str(result))
     if title:
         title = unaccented_str(title)
-        if title.startswith('LL(Test) ') or title.startswith('LL(Delete) '):
+        if title.startswith('LL('):
             return result
     if result['status'] is True:
         logger.info("%s sent to SAB successfully." % title)
