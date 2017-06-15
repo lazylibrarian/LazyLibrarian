@@ -184,7 +184,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                 ourfile = "failed rename"
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Checking %s for %s" % (ourfile, fname))
-        if ourfile.startswith(fname):
+        if ourfile.startswith(fname) or is_valid_booktype(ourfile, booktype="audiobook"):
             if is_valid_booktype(ourfile, booktype="book") \
                     or is_valid_booktype(ourfile, booktype="audiobook") \
                     or is_valid_booktype(ourfile, booktype="mag") \
@@ -197,7 +197,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                         shutil.move(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
                 except Exception as why:
-                    logger.debug("Failed to copy/move file %s to %s, %s" % (ourfile, targetdir, str(why)))
+                    logger.debug("Failed to copy/move file %s to [%s], %s" % (ourfile, targetdir, str(why)))
 
 
 def cron_processDir():
@@ -337,13 +337,15 @@ def processDir(reset=False):
                                         logger.debug("Skipping %s, found a .bts file" % download_dir)
                                     else:
                                         fname = os.path.splitext(fname)[0]
+                                        while fname[-1] in '. ':
+                                            fname = fname[:-1]
                                         targetdir = os.path.join(download_dir, fname)
                                         try:
                                             os.makedirs(targetdir)
                                             setperm(targetdir)
                                         except OSError as why:
                                             if not os.path.isdir(targetdir):
-                                                logger.debug('Failed to create directory %s, %s' %
+                                                logger.debug('Failed to create directory [%s], %s' %
                                                              (targetdir, why.strerror))
                                         if os.path.isdir(targetdir):
                                             if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
@@ -354,7 +356,7 @@ def processDir(reset=False):
                                             pp_path = targetdir
 
                             if os.path.isdir(pp_path):
-                                logger.debug('Found folder (%s%%) %s for %s %s' %
+                                logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                              (match, pp_path, book_type, matchtitle))
                                 skipped = False
                                 if book_type == 'eBook' and not book_file(pp_path, 'ebook'):
