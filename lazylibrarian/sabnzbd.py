@@ -160,7 +160,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     logger.debug("Result text from SAB: " + str(result))
     if title:
         title = unaccented_str(title)
-        if title.startswith('LL(Test) ') or title.startswith('LL(Delete) '):
+        if title.startswith('LL('):
             return result
     if result['status'] is True:
         logger.info("%s sent to SAB successfully." % title)
