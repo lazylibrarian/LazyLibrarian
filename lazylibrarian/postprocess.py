@@ -304,7 +304,8 @@ def processDir(reset=False):
                         # so we try to do a "best match" on the name, there might be a better way...
 
                         matchname = fname
-                        matchname = matchname.split(' LL.(')[0]
+                        # torrents might have words_separated_by_underscores
+                        matchname = matchname.split(' LL.(')[0].replace('_', ' ')
                         matchtitle = matchtitle.split(' LL.(')[0]
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                         if int(lazylibrarian.LOGLEVEL) > 2:

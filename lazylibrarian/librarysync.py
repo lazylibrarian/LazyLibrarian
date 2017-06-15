@@ -198,9 +198,12 @@ def find_book_in_db(myDB, author, book):
             # still need to lowercase for matching against partial_name later on
             a_book_lower = unaccented(a_book['BookName'].lower())
             #
-            ratio = fuzz.ratio(book_lower, a_book_lower)
+            # token sort ratio allows "Lord Of The Rings, The"   to match  "The Lord Of The Rings"
+            ratio = fuzz.token_sort_ratio(book_lower, a_book_lower)
+            # partial ratio allows "Lord Of The Rings"   to match  "The Lord Of The Rings"
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
             if book_partname:
+                # partname allows "Lord Of The Rings (illustrated edition)"   to match  "The Lord Of The Rings"
                 partname = fuzz.partial_ratio(book_partname, a_book_lower)
 
             # lose a point for each extra word in the fuzzy matches so we get the closest match
