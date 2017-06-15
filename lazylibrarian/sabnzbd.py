@@ -45,8 +45,8 @@ def checkLink():
 
 def SABnzbd(title=None, nzburl=None, remove_data=False):
 
-    if nzburl == 'delete' and title == 'unknown':
-        logger.debug('Delete function unavailable in this version of sabnzbd, no nzo_ids')
+    if (nzburl == 'delete' or nzburl == 'delhistory') and title == 'unknown':
+        logger.debug('Delete functions unavailable in this version of sabnzbd, no nzo_ids')
         return False
 
     hostname = lazylibrarian.CONFIG['SAB_HOST']
@@ -72,7 +72,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         params['output'] = 'json'
         if lazylibrarian.CONFIG['SAB_API']:
             params['apikey'] = lazylibrarian.CONFIG['SAB_API']
-        title = 'LL(Test) ' + nzburl
+        title = 'LL.(%s)' % nzburl
     elif nzburl == 'delete':
         # only deletes tasks if still in the queue, ie NOT completed tasks
         params['mode'] = 'queue'
@@ -87,7 +87,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
             params['apikey'] = lazylibrarian.CONFIG['SAB_API']
         if remove_data:
             params['del_files'] = 1
-        title = 'LL(Delete) ' + title
+        title = 'LL.(Delete) ' + title
     elif nzburl == 'delhistory':
         params['mode'] = 'history'
         params['output'] = 'json'
@@ -101,7 +101,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
             params['apikey'] = lazylibrarian.CONFIG['SAB_API']
         if remove_data:
             params['del_files'] = 1
-        title = 'LL(DelHistory) ' + title
+        title = 'LL.(DelHistory) ' + title
     else:
         params['mode'] = 'addurl'
         params['output'] = 'json'
@@ -160,7 +160,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     logger.debug("Result text from SAB: " + str(result))
     if title:
         title = unaccented_str(title)
-        if title.startswith('LL('):
+        if title.startswith('LL.('):
             return result
     if result['status'] is True:
         logger.info("%s sent to SAB successfully." % title)

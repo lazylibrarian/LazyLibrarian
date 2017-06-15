@@ -521,15 +521,15 @@ def processDir(reset=False):
                         if lazylibrarian.CONFIG['KEEP_SEEDING']:
                             logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
                             to_delete = False
+                    if to_delete:
+                        # ask downloader to delete the torrent, but not the files
+                        # we may delete them later, depending on other settings
+                        if book['DownloadID'] != "unknown":
+                            logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
+                            delete_task(book['Source'], book['DownloadID'], False)
                         else:
-                            # ask downloader to delete the torrent, but not the files
-                            # we may delete them later, depending on other settings
-                            if book['DownloadID'] != "unknown":
-                                logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
-                                delete_task(book['Source'], book['DownloadID'], False)
-                            else:
-                                logger.warn("Unable to remove %s from %s, no DownloadID" %
-                                            (book['NZBtitle'], book['Source'].lower()))
+                            logger.warn("Unable to remove %s from %s, no DownloadID" %
+                                        (book['NZBtitle'], book['Source'].lower()))
 
                     if to_delete:
                         # only delete the files if not in download root dir and if DESTINATION_COPY not set
