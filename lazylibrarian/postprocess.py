@@ -464,29 +464,9 @@ def processDir(reset=False):
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    if bookname:
-                        # it's a book (ebook or audiobook), if None it's a magazine
-                        controlValueDict = {"BookID": book['BookID']}
-                        if book_type == 'AudioBook':
-                            newValueDict = {"AudioFile": dest_file, "AudioStatus": "Open", "AudioLibrary": now()}
-                            myDB.upsert("books", newValueDict, controlValueDict)
-                            # update authors book counts
-                            match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % book['BookID'])
-                            if match:
-                                update_totals(match['AuthorID'])
-                        else:
-                            newValueDict = {"BookFile": dest_file, "BookLibrary": now()}
-                            myDB.upsert("books", newValueDict, controlValueDict)
-                            if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
-                                logger.debug('Calibre should have created the extras for us')
-                            else:
-                                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-                                cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % book['BookID']
-                                cmd += ' and books.AuthorID = authors.AuthorID'
-                                data = myDB.match(cmd)
-                                processExtras(myDB, dest_path, global_name, data)
-                    else:
-                        # update mags
+                    if bookname:  # it's ebook or audiobook
+                        processExtras(dest_file, global_name, book['BookID'], book_type)
+                    else:  # update mags
                         if mostrecentissue:
                             if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
                                 older = (int(mostrecentissue) > int(book['AuxInfo']))  # issuenumber
@@ -789,38 +769,21 @@ def import_book(pp_path=None, bookID=None):
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    if book_type == 'AudioBook':
-                        newValueDict = {"AudioStatus": "Open", "AudioFile": dest_file, "AudioLibrary": now()}
-                        myDB.upsert("books", newValueDict, controlValueDict)
-                        # update authors book counts
-                        match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookID)
-                        if match:
-                            update_totals(match['AuthorID'])
-                    else:
-                        newValueDict = {"BookLibrary": now()}  # say when we added it
-                        myDB.upsert("books", newValueDict, controlValueDict)
-                        if bookname:
-                            if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
-                                logger.debug('Calibre should have created the extras')
-                            else:
-                                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-                                cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookID
-                                cmd += ' and books.AuthorID = authors.AuthorID'
-                                data = myDB.match(cmd)
-                                processExtras(myDB, dest_path, global_name, data)
+                if bookname:
+                    processExtras(dest_file, global_name, bookID, book_type)
 
-                    if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
-                        if os.path.isdir(pp_path):
-                            # calibre might have already deleted it?
-                            try:
-                                shutil.rmtree(pp_path)
-                            except Exception as why:
-                                logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
+                    if os.path.isdir(pp_path):
+                        # calibre might have already deleted it?
+                        try:
+                            shutil.rmtree(pp_path)
+                        except Exception as why:
+                            logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                else:
+                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                        logger.debug("Not removing original files as Keep Files is set")
                     else:
-                        if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                            logger.debug("Not removing original files as Keep Files is set")
-                        else:
-                            logger.debug("Not removing original files as in download root")
+                        logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
                 custom_notify_download(bookID)
@@ -860,46 +823,54 @@ def import_book(pp_path=None, bookID=None):
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
 
 
-def processExtras(myDB=None, dest_path=None, global_name=None, data=None):
-    # given book data, handle calibre autoadd, book image, opf,
-    # and update author and book counts
-    if not data:
-        logger.error('processExtras: No data supplied')
+def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBook"):
+    # given bookid, handle author count, calibre autoadd, book image, opf
 
-    authorname = data['AuthorName']
-    bookid = data['BookID']
-    bookname = data['BookName']
-    bookdesc = data['BookDesc']
-    bookisbn = data['BookIsbn']
-    bookimg = data['BookImg']
-    bookdate = data['BookDate']
-    booklang = data['BookLang']
-    bookpub = data['BookPub']
+    if not bookid:
+        logger.error('processExtras: No bookid supplied')
+        return
 
+    myDB = database.DBConnection()
+
+    # update authors book counts
+    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
+    if match:
+        update_totals(match['AuthorID'])
+
+    controlValueDict = {"BookID": bookid}
+    if book_type == 'AudioBook':
+        newValueDict = {"AudioFile": dest_file, "AudioStatus": "Open", "AudioLibrary": now()}
+        myDB.upsert("books", newValueDict, controlValueDict)
+    else:
+        newValueDict = {"Status": "Open", "BookFile": dest_file, "BookLibrary": now()}
+        myDB.upsert("books", newValueDict, controlValueDict)
+
+    if book_type != 'eBook':  # only do autoadd/img/opf for ebooks
+        return
+
+    if len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
+        logger.debug('Calibre should have created the extras for us')
+        return
+
+    dest_path = os.path.dirname(dest_file)
     # If you use auto add by Calibre you need the book in a single directory, not nested
     # So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
     if lazylibrarian.CONFIG['IMP_AUTOADD']:
         processAutoAdd(dest_path)
 
+    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+    cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookid
+    cmd += ' and books.AuthorID = authors.AuthorID'
+    data = myDB.match(cmd)
+    if not data:
+        logger.error('processExtras: No data found for bookid %s' % bookid)
+        return
+
     # try image
-    processIMG(dest_path, bookimg, global_name)
+    processIMG(dest_path, data['BookImg'], global_name)
 
     # try metadata
-    processOPF(dest_path, authorname, bookname, bookisbn, bookid, bookpub, bookdate, bookdesc, booklang, global_name)
-
-    # update books
-    # dest_path is where we put the book after processing, but we don't have the full filename
-    # we don't keep the extension, so look for any "book" in that directory
-    dest_file = book_file(dest_path, booktype='book')
-    if isinstance(dest_file, str):
-        dest_file = dest_file.decode(lazylibrarian.SYS_ENCODING)
-    controlValueDict = {"BookID": bookid}
-    newValueDict = {"Status": "Open", "BookFile": dest_file}
-    myDB.upsert("books", newValueDict, controlValueDict)
-
-    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
-    if match:
-        update_totals(match['AuthorID'])
+    processOPF(dest_path, data, global_name)
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
@@ -1185,8 +1156,22 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, errmsg))
 
 
-def processOPF(dest_path=None, authorname=None, bookname=None, bookisbn=None, bookid=None,
-               bookpub=None, bookdate=None, bookdesc=None, booklang=None, global_name=None):
+def processOPF(dest_path=None, data=None, global_name=None):
+
+    if not data:
+        logger.error('processOPF: No data found for %s' % global_name)
+        return
+
+    authorname = data['AuthorName']
+    bookid = data['BookID']
+    bookname = data['BookName']
+    bookdesc = data['BookDesc']
+    bookisbn = data['BookIsbn']
+    bookimg = data['BookImg']
+    bookdate = data['BookDate']
+    booklang = data['BookLang']
+    bookpub = data['BookPub']
+
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n\
