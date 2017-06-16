@@ -695,7 +695,7 @@ def import_book(pp_path=None, bookID=None):
     try:
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
-        #
+        # eg from a manual search
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("import_book %s" % pp_path)
         if book_file(pp_path, "audiobook"):

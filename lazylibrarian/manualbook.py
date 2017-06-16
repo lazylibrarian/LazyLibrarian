@@ -104,7 +104,8 @@ def searchItem(item=None, bookid=None):
             words -= len(getList(title))
             score -= abs(words)
             if score >= 40:  # ignore wildly wrong results?
-                url = url.split('?')[0]
+                if not url.startswith('magnet'):
+                    url = url.split('?')[0]
                 result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
                           'url': urllib.quote_plus(url), 'mode': mode}
 
