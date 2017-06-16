@@ -630,16 +630,30 @@ class WebInterface(object):
         return "Searching %s providers, please wait..." % count
 
     @cherrypy.expose
-    def snatchBook(self, bookid=None, mode=None, provider=None, url=None):
+    def snatchBook(self, bookid=None, mode=None, provider=None, url=None, size=None):
         self.label_thread()
         logger.debug("snatch bookid %s mode=%s from %s url=[%s]" % (bookid, mode, provider, url))
         myDB = database.DBConnection()
         bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID="%s"' % bookid)
         if bookdata:
+            controlValueDict = {"NZBurl": url}
+            newValueDict = {
+                "NZBprov": provider,
+                "BookID": bookid,
+                "NZBdate": now(),  # when we asked for it
+                "NZBsize": size,
+                "NZBtitle": bookdata["BookName"],
+                "NZBmode": mode,
+                "AuxInfo": 'eBook',
+                "Status": "Skipped"
+                }
+            myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
             url = urllib.unquote_plus(url)
             url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
+            if provider == 'libgen':  # for libgen we use direct download links
+                snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], 'eBook')
             if mode in ["torznab", "torrent", "magnet"]:
                 snatch = TORDownloadMethod(bookid, bookname, url, 'eBook')
             else:

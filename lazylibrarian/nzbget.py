@@ -40,8 +40,11 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        return sendNZB('', 'GroupFinalDelete', nzbID)
-    return sendNZB('', 'GroupDelete', nzbID)
+        sendNZB('', 'GroupFinalDelete', nzbID)
+        return sendNZB('', 'HistoryFinalDelete', nzbID)
+    else:
+        sendNZB('', 'GroupDelete', nzbID)
+        return sendNZB('', 'HistoryDelete', nzbID)
 
 
 def sendNZB(nzb, cmd=None, nzbID=None):

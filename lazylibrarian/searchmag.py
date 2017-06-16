@@ -415,6 +415,9 @@ def search_magazines(mags=None, reset=False):
                                     })
                                     logger.debug('This issue of %s is new, downloading' % nzbtitle_formatted)
                                     issues.append(issue)
+                                    logger.debug('Magazine request number %s' % len(issues))
+                                    if lazylibrarian.LOGLEVEL > 2:
+                                        logger.debug(str(issues))
                                     insert_table = "wanted"
                                     insert_status = "Wanted"
                                     nzbdate = now()  # when we asked for it
