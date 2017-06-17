@@ -113,7 +113,7 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                'WALL_COLUMNS', 'MAX_PAGES']
+                 'WALL_COLUMNS', 'MAX_PAGES']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
 CONFIG_DEFINITIONS = {
@@ -256,9 +256,9 @@ CONFIG_DEFINITIONS = {
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
     'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
-     #'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
-     #'EXTRA': ('bool', 'EXTRA', 0),
-     #'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
+    # 'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
+    # 'EXTRA': ('bool', 'EXTRA', 0),
+    # 'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
     'TDL_DLPRIORITY': ('int', 'TDL', 0),
@@ -728,7 +728,7 @@ def config_write():
             if key == 'LOGLEVEL':
                 LOGLEVEL = check_int(value, 2)
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
-                       'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
+                         'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
                 value = value.encode(SYS_ENCODING).lower()
@@ -1250,4 +1250,5 @@ def shutdown(restart=False, update=False):
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
     logmsg('info', 'LazyLibrarian is exiting')
+    # noinspection PyProtectedMember
     os._exit(0)

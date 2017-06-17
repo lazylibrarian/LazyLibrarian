@@ -239,7 +239,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             myDB.upsert("authors", newValueDict, controlValueDict)
 
         if addbooks:
-            audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
+            # audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
             if new_author:
                 bookstatus = lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
             else:
