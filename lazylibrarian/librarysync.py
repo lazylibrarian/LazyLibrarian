@@ -200,11 +200,17 @@ def find_book_in_db(myDB, author, book):
             #
             # token sort ratio allows "Lord Of The Rings, The"   to match  "The Lord Of The Rings"
             ratio = fuzz.token_sort_ratio(book_lower, a_book_lower)
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.debug("Ratio %s [%s][%s]" % (ratio, book_lower, a_book_lower))
             # partial ratio allows "Lord Of The Rings"   to match  "The Lord Of The Rings"
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.debug("PartialRatio %s [%s][%s]" % (partial, book_lower, a_book_lower))
             if book_partname:
                 # partname allows "Lord Of The Rings (illustrated edition)"   to match  "The Lord Of The Rings"
                 partname = fuzz.partial_ratio(book_partname, a_book_lower)
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.debug("PartName %s [%s][%s]" % (partial, book_partname, a_book_lower))
 
             # lose a point for each extra word in the fuzzy matches so we get the closest match
             words = len(getList(book_lower))
@@ -225,26 +231,26 @@ def find_book_in_db(myDB, author, book):
                 partname_name = a_book['BookName']
                 partname_id = a_book['BookID']
 
-            if partial == best_partial:
+            #if partial == best_partial:
                 # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
                 # this eliminates most false matches against omnibuses when we want a single book
                 # find the position of the shortest string in the longest
-                if len(getList(book_lower)) >= len(getList(a_book_lower)):
-                    match1 = book_lower.find(a_book_lower)
-                else:
-                    match1 = a_book_lower.find(book_lower)
+                #if len(getList(book_lower)) >= len(getList(a_book_lower)):
+                #    match1 = book_lower.find(a_book_lower)
+                #else:
+                #    match1 = a_book_lower.find(book_lower)
 
-                if len(getList(book_lower)) >= len(getList(partial_name.lower())):
-                    match2 = book_lower.find(partial_name.lower())
-                else:
-                    match2 = partial_name.lower().find(book_lower)
+                #if len(getList(book_lower)) >= len(getList(partial_name.lower())):
+                #    match2 = book_lower.find(partial_name.lower())
+                #else:
+                #    match2 = partial_name.lower().find(book_lower)
 
-                if match1 < match2:
-                    logger.debug("Fuzz left change, prefer [%s] over [%s] for [%s]" %
-                                (a_book['BookName'], partial_name, book))
-                    best_partial = partial
-                    partial_name = a_book['BookName']
-                    partial_id = a_book['BookID']
+                #if match1 < match2:
+                #    logger.debug("Fuzz left change, prefer [%s] over [%s] for [%s]" %
+                #                (a_book['BookName'], partial_name, book))
+                #    best_partial = partial
+                #    partial_name = a_book['BookName']
+                #    partial_id = a_book['BookID']
 
         if best_ratio > 90:
             logger.debug(
