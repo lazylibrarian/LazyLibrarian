@@ -210,13 +210,15 @@ def find_book_in_db(myDB, author, book):
                 # partname allows "Lord Of The Rings (illustrated edition)"   to match  "The Lord Of The Rings"
                 partname = fuzz.partial_ratio(book_partname, a_book_lower)
                 if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.debug("PartName %s [%s][%s]" % (partial, book_partname, a_book_lower))
+                    logger.debug("PartName %s [%s][%s]" % (partname, book_partname, a_book_lower))
 
             # lose a point for each extra word in the fuzzy matches so we get the closest match
+            # this should also stop us matching single books against omnibus editions
             words = len(getList(book_lower))
             words -= len(getList(a_book_lower))
             ratio -= abs(words)
             partial -= abs(words)
+            partname -= abs(words)
 
             if ratio > best_ratio:
                 best_ratio = ratio
@@ -253,16 +255,13 @@ def find_book_in_db(myDB, author, book):
                 #    partial_id = a_book['BookID']
 
         if best_ratio > 90:
-            logger.debug(
-                "Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
+            logger.debug("Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
             return ratio_id
         if best_partial > 85:
-            logger.debug(
-                "Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
+            logger.debug("Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
             return partial_id
         if best_partname > 95:
-            logger.debug(
-                "Fuzz match partname [%d] [%s] [%s]" % (best_partname, book, partname_name))
+            logger.debug("Fuzz match partname [%d] [%s] [%s]" % (best_partname, book, partname_name))
             return partname_id
 
         if books:
