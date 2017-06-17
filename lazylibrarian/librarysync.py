@@ -329,17 +329,15 @@ def LibraryScan(startdir=None, library='eBook'):
                     cmd += ' and BookFile like "' + startdir + '%"'
                 books = myDB.select(cmd)
                 status = lazylibrarian.CONFIG['NOTFOUND_STATUS']
-                logger.info('Missing books will be marked as %s' % status)
+                logger.info('Missing eBooks will be marked as %s' % status)
                 for book in books:
-                    bookID = book['BookID']
                     bookfile = book['BookFile']
 
                     if not (bookfile and os.path.isfile(bookfile)):
-                        myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
-                        myDB.action('update books set BookFile="" where BookID="%s"' % bookID)
-                        myDB.action('update books set BookLibrary="" where BookID="%s"' % bookID)
-                        logger.warn(
-                            'Book %s - %s updated as not found on disk' % (book['AuthorName'], book['BookName']))
+                        myDB.action('update books set Status="%s",BookFile="",BookLibrary="" where BookID="%s"' %
+                                    (status, book['BookID']))
+                        logger.warn('eBook %s - %s updated as not found on disk' %
+                                    (book['AuthorName'], book['BookName']))
 
             else:  # library == 'Audio':
                 cmd = 'select AuthorName, BookName, AudioFile, BookID from books,authors'
@@ -348,22 +346,20 @@ def LibraryScan(startdir=None, library='eBook'):
                     cmd += ' and AudioFile like "' + startdir + '%"'
                 books = myDB.select(cmd)
                 status = lazylibrarian.CONFIG['NOTFOUND_STATUS']
-                logger.info('Missing audiobooks will be marked as %s' % status)
+                logger.info('Missing AudioBooks will be marked as %s' % status)
                 for book in books:
-                    bookID = book['BookID']
                     bookfile = book['AudioFile']
 
                     if not (bookfile and os.path.isfile(bookfile)):
-                        myDB.action('update books set Status="%s" where BookID="%s"' % (status, bookID))
-                        myDB.action('update books set AudioFile="" where BookID="%s"' % bookID)
-                        myDB.action('update books set AudioLibrary="" where BookID="%s"' % bookID)
+                        myDB.action('update books set AudioStatus="%s",AudioFile="",AudioLibrary="" where BookID="%s"' %
+                                    (status, book['BookID']))
                         logger.warn('Audiobook %s - %s updated as not found on disk' %
                                     (book['AuthorName'], book['BookName']))
 
         # to save repeat-scans of the same directory if it contains multiple formats of the same book,
         # keep track of which directories we've already looked at
         processed_subdirectories = []
-        warned = False  # have we warned about no new authors setting
+        warned_no_new_authors = False  # only warn about the setting once
         matchString = ''
         for char in lazylibrarian.CONFIG['EBOOK_DEST_FILE']:
             matchString = matchString + '\\' + char
@@ -513,7 +509,7 @@ def LibraryScan(startdir=None, library='eBook'):
                         #  Failing anything better, just pattern match on filename
                         if not match:
                             # might need a different pattern match for audiobooks
-                            # as they often seem to have CodeChapter-Seriesnum Author Title
+                            # as they often seem to have xxChapter-Seriesnum Author Title
                             # but hopefully the tags will get there first...
                             match = pattern.match(files)
                             if match:
@@ -565,14 +561,12 @@ def LibraryScan(startdir=None, library='eBook'):
                                 bookid = find_book_in_db(myDB, author, book)
 
                                 if not bookid:
-                                    # Title or author name might not match or multiple authors
+                                    # Title or author name might not match, or maybe multiple authors
                                     # See if the gr_id, gb_id is already in our database
                                     if gr_id:
                                         bookid = gr_id
                                     elif gb_id:
                                         bookid = gb_id
-                                    else:
-                                        bookid = ""
 
                                     if bookid:
                                         match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % bookid)
@@ -753,9 +747,9 @@ def LibraryScan(startdir=None, library='eBook'):
                                         logger.warn(
                                             "Failed to match audiobook [%s] by [%s] in database" % (book, author))
                             else:
-                                if not warned and not lazylibrarian.CONFIG['ADD_AUTHOR']:
+                                if not warned_no_new_authors and not lazylibrarian.CONFIG['ADD_AUTHOR']:
                                     logger.warn("Add authors to database is disabled")
-                                    warned = True
+                                    warned_no_new_authors = True
 
         logger.info("%s/%s new/modified %s%s found and added to the database" %
                     (new_book_count, modified_count, library, plural(new_book_count + modified_count)))

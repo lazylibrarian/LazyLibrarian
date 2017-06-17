@@ -33,7 +33,7 @@ from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthor
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads

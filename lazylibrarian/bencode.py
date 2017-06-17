@@ -102,6 +102,9 @@ def inflate(exp):
         x = exp[:end]
         xs = inflate(exp[end:])
 
+    else:  # can't really get here, but for completeness...
+        return []
+
     # Returns the first item, with the inflated rest of the list.
     return [x] + xs
 

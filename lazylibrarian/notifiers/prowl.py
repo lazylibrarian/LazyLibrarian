@@ -4,8 +4,8 @@ from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from httplib import HTTPSConnection
 from urllib import urlencode
 
-class Prowl_Notifier:
 
+class Prowl_Notifier:
     def __init__(self):
         pass
 
@@ -19,7 +19,6 @@ class Prowl_Notifier:
             return False
 
         if prowl_api is None:
-
             prowl_api = lazylibrarian.CONFIG['PROWL_APIKEY']
 
         if prowl_priority is None:
@@ -29,40 +28,40 @@ class Prowl_Notifier:
         logger.debug(u"Prowl: event: " + event)
         logger.debug(u"Prowl: message: " + message)
 
-        data = {    'event'       : event,
-                    'description' : message.encode("utf-8"),
-                    'application' : title,
-                    'apikey'      : prowl_api,
-                    'priority'    : prowl_priority
-        }
+        data = {'event': event,
+                'description': message.encode("utf-8"),
+                'application': title,
+                'apikey': prowl_api,
+                'priority': prowl_priority
+                }
 
         try:
             http_handler = HTTPSConnection("api.prowlapp.com")
 
             http_handler.request("POST",
                                  "/publicapi/add",
-                                 headers = {'Content-type': "application/x-www-form-urlencoded"},
-                                 body = urlencode(data))
+                                 headers={'Content-type': "application/x-www-form-urlencoded"},
+                                 body=urlencode(data))
 
             response = http_handler.getresponse()
             request_status = response.status
 
             if request_status == 200:
-                    logger.info('Prowl notifications sent.')
-                    return True
+                logger.info('Prowl notifications sent.')
+                return True
             elif request_status == 401:
-                    logger.info('Prowl auth failed: %s' % response.reason)
-                    return False
+                logger.info('Prowl auth failed: %s' % response.reason)
+                return False
             else:
-                    logger.info('Prowl notification failed.')
-                    return False
+                logger.info('Prowl notification failed.')
+                return False
 
         except Exception as e:
             logger.warn('Error sending to Prowl: %s' % e)
             return False
-#
-# Public functions
-#
+        #
+        # Public functions
+        #
 
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['PROWL_ONSNATCH']:
@@ -75,9 +74,10 @@ class Prowl_Notifier:
     # noinspection PyUnusedLocal
     def test_notify(self, title="Test"):
         return self._sendProwl(prowl_api=None, prowl_priority=None, event="Test",
-                             message="Testing Prowl settings from LazyLibrarian", force=True)
+                               message="Testing Prowl settings from LazyLibrarian", force=True)
 
     def update_library(self, showName=None):
         pass
+
 
 notifier = Prowl_Notifier
