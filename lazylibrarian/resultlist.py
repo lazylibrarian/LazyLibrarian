@@ -240,16 +240,16 @@ def downloadResult(match, book):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             if '.nzb' in controlValueDict["NZBurl"]:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                            controlValueDict["NZBurl"], auxinfo)
+                                           controlValueDict["NZBurl"], auxinfo)
             elif newValueDict["NZBprov"] == 'libgen':  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                               controlValueDict["NZBurl"], resultTitle, auxinfo)
             elif newValueDict['NZBmode'] == "torznab" or newValueDict['NZBmode'] == "torrent":
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                            controlValueDict["NZBurl"], auxinfo)
+                                           controlValueDict["NZBurl"], auxinfo)
             else:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                            controlValueDict["NZBurl"], auxinfo)
+                                           controlValueDict["NZBurl"], auxinfo)
             if snatch:
                 logger.info('Downloading %s %s from %s' %
                             (auxinfo, newValueDict["NZBtitle"], newValueDict["NZBprov"]))

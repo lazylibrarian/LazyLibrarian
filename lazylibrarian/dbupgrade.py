@@ -703,7 +703,8 @@ def dbupgrade(db_current_version):
                     if has_column(myDB, "series", "AuthorID"):
                         lazylibrarian.UPDATE_MSG = 'Creating seriesauthors table'
                         upgradelog.write("%s v17: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        # In this version of the database there is only one author per series so use that as starting point
+                        # In this version of the database there is only one author per series
+                        # so use that as starting point
                         myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, \
                                     UNIQUE (SeriesID,AuthorID))')
                         series = myDB.select('SELECT SeriesID,AuthorID from series')

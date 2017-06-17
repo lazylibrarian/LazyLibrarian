@@ -288,12 +288,6 @@ def showJobs():
     wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
     result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
     result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
-    cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-    cmd += ' order by DateAdded ASC'
-    author = myDB.match(cmd)
-    dtnow = datetime.datetime.now()
-    diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-    result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
     for job in lazylibrarian.SCHED.get_jobs():
         job = str(job)
         if "search_magazines" in job:
@@ -316,6 +310,14 @@ def showJobs():
         jobtime = next_run(jobtime)
         jobinfo = "%s: Next run in %s" % (jobname, jobtime)
         result.append(jobinfo)
+
+    cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
+    cmd += ' order by DateAdded ASC'
+    author = myDB.match(cmd)
+    dtnow = datetime.datetime.now()
+    diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+    result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
+
     return result
 
 

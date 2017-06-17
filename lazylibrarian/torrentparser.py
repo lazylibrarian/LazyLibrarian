@@ -340,7 +340,8 @@ def WWT(book=None):
                 except IndexError:
                     pass
                 try:
-                    url = url_fix(host + '/download.php') + str(col0).split('href="download.php')[1].split('.torrent"')[0] + '.torrent'
+                    url = url_fix(host + '/download.php') + \
+                                  str(col0).split('href="download.php')[1].split('.torrent"')[0] + '.torrent'
                     mode = 'torrent'
                 except IndexError:
                     pass
