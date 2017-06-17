@@ -70,6 +70,7 @@ def serve_template(templatename, **kwargs):
         return exceptions.html_error_template().render()
 
 
+# noinspection PyProtectedMember,PyProtectedMember
 class WebInterface(object):
     @cherrypy.expose
     def index(self):
@@ -81,11 +82,13 @@ class WebInterface(object):
         cmd = 'SELECT * from authors '
         if lazylibrarian.IGNORED_AUTHORS:
             cmd += 'where Status == "Ignored" '
+            title = 'Ignored Authors'
         else:
             cmd += 'where Status != "Ignored" '
+            title = 'Authors'
         cmd += 'order by AuthorName COLLATE NOCASE'
         authors = myDB.select(cmd)
-        return serve_template(templatename="index.html", title="Authors", authors=authors)
+        return serve_template(templatename="index.html", title=title, authors=authors)
 
     @staticmethod
     def label_thread(name=None):
@@ -611,7 +614,6 @@ class WebInterface(object):
             lazylibrarian.IGNORED_AUTHORS = True
         raise cherrypy.HTTPRedirect("home")
 
-
     # BOOKS #############################################################
 
     @cherrypy.expose
@@ -654,7 +656,7 @@ class WebInterface(object):
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if provider == 'libgen':  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], 'eBook')
-            if mode in ["torznab", "torrent", "magnet"]:
+            elif mode in ["torznab", "torrent", "magnet"]:
                 snatch = TORDownloadMethod(bookid, bookname, url, 'eBook')
             else:
                 snatch = NZBDownloadMethod(bookid, bookname, url, 'eBook')

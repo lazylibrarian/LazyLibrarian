@@ -231,21 +231,21 @@ def find_book_in_db(myDB, author, book):
                 partname_name = a_book['BookName']
                 partname_id = a_book['BookID']
 
-            #if partial == best_partial:
+            # if partial == best_partial:
                 # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
                 # this eliminates most false matches against omnibuses when we want a single book
                 # find the position of the shortest string in the longest
-                #if len(getList(book_lower)) >= len(getList(a_book_lower)):
+                # if len(getList(book_lower)) >= len(getList(a_book_lower)):
                 #    match1 = book_lower.find(a_book_lower)
-                #else:
+                # else:
                 #    match1 = a_book_lower.find(book_lower)
 
-                #if len(getList(book_lower)) >= len(getList(partial_name.lower())):
+                # if len(getList(book_lower)) >= len(getList(partial_name.lower())):
                 #    match2 = book_lower.find(partial_name.lower())
-                #else:
+                # else:
                 #    match2 = partial_name.lower().find(book_lower)
 
-                #if match1 < match2:
+                # if match1 < match2:
                 #    logger.debug("Fuzz left change, prefer [%s] over [%s] for [%s]" %
                 #                (a_book['BookName'], partial_name, book))
                 #    best_partial = partial
@@ -403,7 +403,7 @@ def LibraryScan(startdir=None, library='eBook'):
                 # Made this conditional with a switch in config.ini
                 # in case user keeps multiple different books in the same subdirectory
                 if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
-                    (subdirectory in processed_subdirectories):
+                        (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
@@ -417,7 +417,7 @@ def LibraryScan(startdir=None, library='eBook'):
                     # and look up isbn/lang from LT or GR later
                     match = 0
                     if (library == 'eBook' and is_valid_booktype(files, 'ebook')) or \
-                        (library == 'Audio' and is_valid_booktype(files, 'audiobook')):
+                            (library == 'Audio' and is_valid_booktype(files, 'audiobook')):
 
                         logger.debug("[%s] Now scanning subdirectory %s" % (startdir, subdirectory))
                         language = "Unknown"
@@ -487,11 +487,11 @@ def LibraryScan(startdir=None, library='eBook'):
                             # no author/book from metadata file, and not embedded either
                             # or audiobook which may have id3 tags  -  this is based on Dive Into Python example
                             if is_valid_booktype(files, 'audiobook'):
-                                tagDataMap = {"title"   : (  3,  33),
-                                              "artist"  : ( 33,  63),
-                                              "album"   : ( 63,  93),
-                                              "year"    : ( 93,  97),
-                                              "comment" : ( 97, 126)}
+                                tagDataMap = {"title": (3, 33),
+                                              "artist": (33, 63),
+                                              "album": (63, 93),
+                                              "year": (93, 97),
+                                              "comment": (97, 126)}
                                 filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
                                 try:
                                     tags = {}

@@ -1249,4 +1249,5 @@ def shutdown(restart=False, update=False):
             logmsg('info', 'Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
+    logmsg('info', 'LazyLibrarian is exiting')
     os._exit(0)

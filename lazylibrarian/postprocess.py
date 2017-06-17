@@ -1167,7 +1167,7 @@ def processOPF(dest_path=None, data=None, global_name=None):
     bookname = data['BookName']
     bookdesc = data['BookDesc']
     bookisbn = data['BookIsbn']
-    bookimg = data['BookImg']
+    # bookimg = data['BookImg']
     bookdate = data['BookDate']
     booklang = data['BookLang']
     bookpub = data['BookPub']

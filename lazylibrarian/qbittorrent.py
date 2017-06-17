@@ -171,6 +171,7 @@ def removeTorrent(hashid, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
 
     qbclient = qbittorrentclient()
+    # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
     if torrentList:
         for torrent in torrentList:
@@ -209,6 +210,7 @@ def addTorrent(link):
     args = {'urls': link, 'savepath': lazylibrarian.DIRECTORY('Download')}
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
         args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
+    # noinspection PyProtectedMember
     return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')
 
 
@@ -217,6 +219,7 @@ def addFile(data):
 
     qbclient = qbittorrentclient()
     files = {'torrents': {'filename': '', 'content': data}}
+    # noinspection PyProtectedMember
     return qbclient._command('command/upload', files=files)
 
 
@@ -227,6 +230,7 @@ def getName(hashid):
     RETRIES = 5
     torrents = []
     while RETRIES:
+        # noinspection PyProtectedMember
         torrents = qbclient._get_list()
         if torrents:
             if hashid.upper() in str(torrents).upper():
@@ -246,6 +250,7 @@ def getFolder(hashid):
     qbclient = qbittorrentclient()
 
     # Get Active Directory from settings
+    # noinspection PyProtectedMember
     settings = qbclient._get_settings()
     active_dir = settings['temp_path']
     # completed_dir = settings['save_path']

@@ -24,7 +24,7 @@ def collapse(data):
 
 def stringlength(string, index=0):
     """ Given a bencoded expression, starting with a string, returns
-	the length of the string. """
+    the length of the string. """
 
     try:
         colon = string.find(":", index)  # Find the colon, ending the number.
@@ -41,8 +41,8 @@ def stringlength(string, index=0):
 
 def walk(exp, index=1):
     """ Given a compound bencoded expression, as a string, returns
-	the index of the end of the first dict, or list.
-	Start at an index of 1, to avoid the start of the actual list. """
+    the index of the end of the first dict, or list.
+    Start at an index of 1, to avoid the start of the actual list. """
 
     # The expression starts with an integer.
     if exp[index] == "i":
@@ -70,8 +70,8 @@ def walk(exp, index=1):
 
 def inflate(exp):
     """ Given a compound bencoded expression, as a string, returns the
-	individual data types within the string as items in a list.
-	Note, that lists and dicts will come out not inflated. """
+    individual data types within the string as items in a list.
+    Note, that lists and dicts will come out not inflated. """
 
     # Base case, for an empty expression.
     if exp == "":
@@ -121,7 +121,7 @@ def ben_type(exp):
 
 def check_type(exp, datatypes):
     """ Given an expression, and a datatype, checks the two against
-	each other. """
+    each other. """
 
     try:
         assert type(exp) in datatypes
@@ -131,7 +131,7 @@ def check_type(exp, datatypes):
 
 def check_ben_type(exp, datatype):
     """ Given a bencoded expression, and a datatype, checks the two
-	against each other. """
+    against each other. """
 
     try:
         assert ben_type(exp) == datatype
