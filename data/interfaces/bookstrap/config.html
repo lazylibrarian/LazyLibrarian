@@ -1187,7 +1187,8 @@
                 <label for="mag_dest_file">Magazine Filename Pattern:</label>
                 <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
                 <span class="help-block">Options include $Title, $IssueDate, any string
-                  <BR>Current limitation: Issue Filename must contain Title and Date</span>
+                  <BR>Current limitations: Issue Filename must contain IssueDate
+                  <BR>If Issue Filename does not contain Title, Foldername is used as Title</span>
               </div>
               <div class="checkbox">
                 <%
