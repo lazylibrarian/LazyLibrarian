@@ -6,13 +6,13 @@
     <div id="subhead_container" class="row">
         <form id="subhead_menu" class="form-inline">
             <div class="col-xs-10">
-                Searches: <a id="ebookbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&category=book"><i id="mb_icon" class="fa fa-book"></i> Author/Title</a>
-                <a id="ebooktitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&category=book"><i id="mt_icon" class="fa fa-book"></i> Title</a>
-                <a id="ebookauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&category=book"><i id="ma_icon" class="fa fa-book"></i> Author</a>
+                Searches: <a id="e_book" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&lib=ebook"><i id="mb_icon" class="fa fa-book"></i> Author/Title</a>
+                <a id="e_title" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&lib=ebook"><i id="mt_icon" class="fa fa-book"></i> Title</a>
+                <a id="e_author" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&lib=ebook"><i id="ma_icon" class="fa fa-book"></i> Author</a>
                 % if lazylibrarian.SHOW_AUDIO != 0:
-                <a id="audiobook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&category=audio"><i id="mb_icon" class="fa fa-headphones"></i> Author/Title</a>
-                <a id="audiotitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&category=audio"><i id="mt_icon" class="fa fa-headphones"></i> Title</a>
-                <a id="audioauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&category=audio"><i id="ma_icon" class="fa fa-headphones"></i> Author</a>
+                <a id="a_book" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&lib=audio"><i id="mb_icon" class="fa fa-headphones"></i> Author/Title</a>
+                <a id="a_title" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&lib=audio"><i id="mt_icon" class="fa fa-headphones"></i> Title</a>
+                <a id="a_author" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&lib=audio"><i id="ma_icon" class="fa fa-headphones"></i> Author</a>
                 % endif
             </div>
         </form>

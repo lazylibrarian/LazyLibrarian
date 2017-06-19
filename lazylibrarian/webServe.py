@@ -617,13 +617,22 @@ class WebInterface(object):
     # BOOKS #############################################################
 
     @cherrypy.expose
-    def booksearch(self, bookid=None, title="", author="", category=""):
+    def booksearch(self, bookid=None, title="", author="", lib=None):
         self.label_thread()
+
         searchterm = '%s %s' % (author, title)
-        searchterm.strip()
-        results = searchItem(searchterm, bookid, category)
-        return serve_template(templatename="manualsearch.html", title='Search Results: "' +
-                                                                      searchterm + '"', bookid=bookid, results=results)
+        searchterm = searchterm.strip()
+
+        if not author or not title:
+            cat = 'general'  # need both for ebook or audio searches
+        else:
+            cat = lib
+        results = searchItem(searchterm, bookid, cat)
+        library = 'eBook'
+        if lib == 'audio':
+            library = 'AudioBook'
+        return serve_template(templatename="manualsearch.html", title=library + ' Search Results: "' +
+                                searchterm + '"', bookid=bookid, results=results, library=library)
 
     @cherrypy.expose
     def countProviders(self):
@@ -632,7 +641,7 @@ class WebInterface(object):
         return "Searching %s providers, please wait..." % count
 
     @cherrypy.expose
-    def snatchBook(self, bookid=None, mode=None, provider=None, url=None, size=None):
+    def snatchBook(self, bookid=None, mode=None, provider=None, url=None, size=None, library=None):
         self.label_thread()
         logger.debug("snatch bookid %s mode=%s from %s url=[%s]" % (bookid, mode, provider, url))
         myDB = database.DBConnection()
@@ -646,7 +655,7 @@ class WebInterface(object):
                 "NZBsize": size,
                 "NZBtitle": bookdata["BookName"],
                 "NZBmode": mode,
-                "AuxInfo": 'eBook',
+                "AuxInfo": library,
                 "Status": "Skipped"
                 }
             myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -655,17 +664,17 @@ class WebInterface(object):
             url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if provider == 'libgen':  # for libgen we use direct download links
-                snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], 'eBook')
+                snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], library)
             elif mode in ["torznab", "torrent", "magnet"]:
-                snatch = TORDownloadMethod(bookid, bookname, url, 'eBook')
+                snatch = TORDownloadMethod(bookid, bookname, url, library)
             else:
-                snatch = NZBDownloadMethod(bookid, bookname, url, 'eBook')
+                snatch = NZBDownloadMethod(bookid, bookname, url, library)
             if snatch:
-                logger.info('Downloading %s from %s' % (bookdata["BookName"], provider))
+                logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 custom_notify_snatch(bookid)
                 scheduleJob(action='Start', target='processDir')
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
             logger.debug('snatchBook Invalid bookid [%s]' % bookid)
             raise cherrypy.HTTPRedirect("home")
