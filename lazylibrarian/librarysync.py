@@ -82,7 +82,7 @@ def get_book_info(fname):
         try:
             zipdata = zipfile.ZipFile(fname)
         except Exception as e:
-            logger.debug('Unable to parse zipfile %s, %s' % (fname, str(e)))
+            logger.debug('Unable to parse epub file %s, %s' % (fname, str(e)))
             return res
 
         # find the contents metafile
@@ -90,7 +90,7 @@ def get_book_info(fname):
         try:
             tree = ElementTree.fromstring(txt)
         except Exception as e:
-            logger.error("Error parsing metadata from zipfile: %s" % str(e))
+            logger.error("Error parsing metadata from epub zipfile: %s" % str(e))
             return res
         n = 0
         cfname = ""
@@ -686,7 +686,17 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 'UPDATE books set BookLibrary="%s" where BookID="%s"' % (now(), bookid))
 
                                             # store book location so we can check if it gets removed
+                                            # store the first book_type found in ebook_type
                                             book_filename = os.path.join(r, files)
+                                            book_basename = os.path.splitext(book_filename)[0]
+                                            booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+                                            for book_type in booktype_list:
+                                                preferred_type = "%s.%s" % (book_basename, book_type)
+                                                if os.path.exists(preferred_type):
+                                                    book_filename = preferred_type
+                                                    logger.debug("Link to preferred type %s" % book_type)
+                                                    break
+
                                             if not check_status['BookFile']:  # no previous location
                                                 myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                             (book_filename, bookid))
