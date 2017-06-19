@@ -4,13 +4,18 @@
 %>
 <%def name="headerIncludes()">
     <div id="subhead_container" class="row">
-        <div id="subhead_menu" class="form-inline">
+        <form id="subhead_menu" class="form-inline">
             <div class="col-xs-10">
-                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}"><i id="mb_icon" class="fa fa-refresh"></i> Author/Title Search</a>
-                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}"><i id="mt_icon" class="fa fa-refresh"></i> Title Search</a>
-                <a id="manualauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}"><i id="ma_icon" class="fa fa-refresh"></i> Author Search</a>
+                Searches: <a id="ebookbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&category=book"><i id="mb_icon" class="fa fa-book"></i> Author/Title</a>
+                <a id="ebooktitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&category=book"><i id="mt_icon" class="fa fa-book"></i> Title</a>
+                <a id="ebookauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&category=book"><i id="ma_icon" class="fa fa-book"></i> Author</a>
+                % if lazylibrarian.SHOW_AUDIO != 0:
+                <a id="audiobook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&category=audio"><i id="mb_icon" class="fa fa-headphones"></i> Author/Title</a>
+                <a id="audiotitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&category=audio"><i id="mt_icon" class="fa fa-headphones"></i> Title</a>
+                <a id="audioauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&category=audio"><i id="ma_icon" class="fa fa-headphones"></i> Author</a>
+                % endif
             </div>
-        </div>
+        </form>
     </div>
 </%def>
 <%def name="body()">
@@ -86,25 +91,19 @@
     function initThisPage()
     {
         "use strict";
-    
+
         $('#manualbook').click(function () {
-        //    $.get("countProviders",
-        //        function (data) { window.alert(data) });
             $('#mb_icon').addClass("fa-spin");
         });
         $('#manualtitle').click(function () {
-        //    $.get("countProviders",
-        //        function (data) { window.alert(data) });
             $('#mt_icon').addClass("fa-spin");
         });
         $('#manualauthor').click(function () {
-        //    $.get("countProviders",
-        //        function (data) { window.alert(data) });
             $('#ma_icon').addClass("fa-spin");
         });
-    
+
     }
-    
+
     $(document).ready(function() {
         initThisPage();
     });

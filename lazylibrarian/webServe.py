@@ -617,11 +617,11 @@ class WebInterface(object):
     # BOOKS #############################################################
 
     @cherrypy.expose
-    def booksearch(self, bookid=None, title="", author=""):
+    def booksearch(self, bookid=None, title="", author="", category=""):
         self.label_thread()
         searchterm = '%s %s' % (author, title)
         searchterm.strip()
-        results = searchItem(searchterm, bookid)
+        results = searchItem(searchterm, bookid, category)
         return serve_template(templatename="manualsearch.html", title='Search Results: "' +
                                                                       searchterm + '"', bookid=bookid, results=results)
 

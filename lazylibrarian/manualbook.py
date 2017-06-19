@@ -16,20 +16,23 @@
 import lazylibrarian
 import urllib
 from lazylibrarian.formatter import getList, unaccented_str, plural
-from lazylibrarian import logger
+from lazylibrarian import logger, database
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
 from lib.fuzzywuzzy import fuzz
 
 
-def searchItem(item=None, bookid=None):
+def searchItem(item=None, bookid=None, category=None):
     """
-    Call all active search providers asking for a "general" search for item
+    Call all active search providers to search for item
     return a list of results, each entry in list containing percentage_match, title, provider, size, url
     """
     results = []
 
     if not item:
         return results
+
+    if category is None or not category:
+        category = 'general'
 
     book = {}
     searchterm = unaccented_str(item)
@@ -40,15 +43,28 @@ def searchItem(item=None, bookid=None):
     else:
         book['bookid'] = searchterm
 
+    if category != 'general':
+        myDB = database.DBConnection()
+        cmd = 'SELECT authorName,bookName,bookSub from books,authors WHERE bookID="%s"' % bookid
+        cmd += ' and books.AuthorID=authors.AuthorID'
+        match = myDB.match(cmd)
+        if match:
+            book['authorName'] = match['authorName']
+            book['bookName'] = match['bookName']
+            book['bookSub'] = match['bookSub']
+        else:
+            logger.debug('Forcing general search')
+            category = 'general'
+
     nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
     logger.debug('Searching %s provider%s for %s' % (nproviders, plural(nproviders), searchterm))
 
     if lazylibrarian.USE_NZB():
-        resultlist, nproviders = IterateOverNewzNabSites(book, 'general')
+        resultlist, nproviders = IterateOverNewzNabSites(book, category)
         if nproviders:
             results += resultlist
     if lazylibrarian.USE_TOR():
-        resultlist, nproviders = IterateOverTorrentSites(book, 'general')
+        resultlist, nproviders = IterateOverTorrentSites(book, category)
         if nproviders:
             results += resultlist
     if lazylibrarian.USE_RSS():
@@ -114,5 +130,5 @@ def searchItem(item=None, bookid=None):
             # from operator import itemgetter
             # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
 
-    logger.debug('Found %s results for %s' % (len(searchresults), searchterm))
+    logger.debug('Found %s %s results for %s' % (len(searchresults), category, searchterm))
     return searchresults
