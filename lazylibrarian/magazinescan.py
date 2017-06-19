@@ -307,25 +307,38 @@ def magazineScan():
                 booktypes = book_type
             else:
                 booktypes = booktypes + '|' + book_type
-        matchString = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
+        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
-        pattern = re.compile(matchString, re.VERBOSE)
+        title_pattern = re.compile(match, re.VERBOSE)
+        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
+        date_pattern = re.compile(match, re.VERBOSE)
 
         for dirname, dirnames, filenames in os.walk(mag_path):
             for fname in filenames[:]:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
                     try:
-                        match = pattern.match(fname)
+                        match = title_pattern.match(fname)
                         if match:
                             issuedate = match.group("issuedate")
                             title = match.group("title")
                         else:
-                            logger.debug("Pattern match failed for [%s]" % fname)
-                            continue
+                            match = False
                     except Exception as e:
-                        logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
-                        continue
+                        match = False
+
+                    if not match:
+                        try:
+                            match = date_pattern.match(fname)
+                            if match:
+                                issuedate = match.group("issuedate")
+                                title = os.path.basename(dirname)
+                            else:
+                                logger.debug("Pattern match failed for [%s]" % fname)
+                                continue
+                        except Exception as e:
+                            logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
+                            continue
 
                     logger.debug("Found Issue %s" % fname)
 

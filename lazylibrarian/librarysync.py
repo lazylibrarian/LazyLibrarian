@@ -82,7 +82,7 @@ def get_book_info(fname):
         try:
             zipdata = zipfile.ZipFile(fname)
         except Exception as e:
-            logger.debug('Unable to parse zipfile %s, %s' % (fname, str(e)))
+            logger.debug('Unable to parse epub file %s, %s' % (fname, str(e)))
             return res
 
         # find the contents metafile
@@ -90,7 +90,7 @@ def get_book_info(fname):
         try:
             tree = ElementTree.fromstring(txt)
         except Exception as e:
-            logger.error("Error parsing metadata from zipfile: %s" % str(e))
+            logger.error("Error parsing metadata from epub zipfile: %s" % str(e))
             return res
         n = 0
         cfname = ""
@@ -423,60 +423,59 @@ def LibraryScan(startdir=None, library='eBook'):
                         gb_id = ""
                         extn = os.path.splitext(files)[1]
 
-                        if library == 'eBook':
-                            # if it's an epub or a mobi we can try to read metadata from it
-                            if (extn == ".epub") or (extn == ".mobi"):
-                                book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                        # if it's an epub or a mobi we can try to read metadata from it
+                        if (extn == ".epub") or (extn == ".mobi"):
+                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
 
-                                try:
-                                    res = get_book_info(book_filename)
-                                except Exception as e:
-                                    logger.debug('get_book_info failed for %s, %s' % (book_filename, str(e)))
-                                    res = {}
-                                # title and creator are the minimum we need
-                                if 'title' in res and 'creator' in res:
-                                    book = res['title']
-                                    author = res['creator']
-                                    if book and len(book) > 2 and author and len(author) > 2:
-                                        match = 1
-                                    if 'language' in res:
-                                        language = res['language']
-                                    if 'identifier' in res:
-                                        isbn = res['identifier']
-                                    if 'type' in res:
-                                        extn = res['type']
-                                    logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
-                                                 (isbn, language, author, book, extn))
-                                if not match:
-                                    logger.debug("Book meta incomplete in %s" % book_filename)
-
-                            # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
-                            # just look for any .opf file in the current directory since we don't know
-                            # LL preferred authorname/bookname at this point.
-                            # Allow metadata in file to override book contents as may be users pref
+                            try:
+                                res = get_book_info(book_filename)
+                            except Exception as e:
+                                logger.debug('get_book_info failed for %s, %s' % (book_filename, str(e)))
+                                res = {}
+                            # title and creator are the minimum we need
+                            if 'title' in res and 'creator' in res:
+                                book = res['title']
+                                author = res['creator']
+                                if book and len(book) > 2 and author and len(author) > 2:
+                                    match = 1
+                                if 'language' in res:
+                                    language = res['language']
+                                if 'identifier' in res:
+                                    isbn = res['identifier']
+                                if 'type' in res:
+                                    extn = res['type']
+                                logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
+                                             (isbn, language, author, book, extn))
                             if not match:
-                                metafile = opf_file(r)
-                                try:
-                                    res = get_book_info(metafile)
-                                except Exception as e:
-                                    logger.debug('get_book_info failed for %s, %s' % (metafile, str(e)))
-                                    res = {}
-                                # title and creator are the minimum we need
-                                if 'title' in res and 'creator' in res:
-                                    book = res['title']
-                                    author = res['creator']
-                                    if book and len(book) > 2 and author and len(author) > 2:
-                                        match = 1
-                                    if 'language' in res:
-                                        language = res['language']
-                                    if 'identifier' in res:
-                                        isbn = res['identifier']
-                                    if 'gr_id' in res:
-                                        gr_id = res['gr_id']
-                                    logger.debug(
-                                        "file meta [%s] [%s] [%s] [%s] [%s]" % (isbn, language, author, book, gr_id))
-                                if not match:
-                                    logger.debug("File meta incomplete in %s" % metafile)
+                                logger.debug("Book meta incomplete in %s" % book_filename)
+
+                        # calibre uses "metadata.opf", LL uses "bookname - authorname.opf"
+                        # just look for any .opf file in the current directory since we don't know
+                        # LL preferred authorname/bookname at this point.
+                        # Allow metadata in opf file to override book metadata as may be users pref
+                        res = {}
+                        try:
+                            metafile = opf_file(r)
+                            res = get_book_info(metafile)
+                        except Exception as e:
+                            logger.debug('get_book_info failed for %s, %s' % (metafile, str(e)))
+
+                        # title and creator are the minimum we need
+                        if res and 'title' in res and 'creator' in res:
+                            book = res['title']
+                            author = res['creator']
+                            if book and len(book) > 2 and author and len(author) > 2:
+                                match = 1
+                            if 'language' in res:
+                                language = res['language']
+                            if 'identifier' in res:
+                                isbn = res['identifier']
+                            if 'gr_id' in res:
+                                gr_id = res['gr_id']
+                            logger.debug(
+                                "file meta [%s] [%s] [%s] [%s] [%s]" % (isbn, language, author, book, gr_id))
+                            if not match:
+                                logger.debug("File meta incomplete in %s" % metafile)
 
                         if not match:
                             # no author/book from metadata file, and not embedded either
@@ -686,7 +685,17 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 'UPDATE books set BookLibrary="%s" where BookID="%s"' % (now(), bookid))
 
                                             # store book location so we can check if it gets removed
+                                            # store the first book_type found in ebook_type
                                             book_filename = os.path.join(r, files)
+                                            book_basename = os.path.splitext(book_filename)[0]
+                                            booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+                                            for book_type in booktype_list:
+                                                preferred_type = "%s.%s" % (book_basename, book_type)
+                                                if os.path.exists(preferred_type):
+                                                    book_filename = preferred_type
+                                                    logger.debug("Link to preferred type %s" % book_type)
+                                                    break
+
                                             if not check_status['BookFile']:  # no previous location
                                                 myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                             (book_filename, bookid))

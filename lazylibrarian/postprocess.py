@@ -1043,7 +1043,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
-        firstfile = ''  # try to keep track of the first part of multi-part audiobooks
+        firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
+
         for fname in os.listdir(pp_path):
             if isinstance(fname, str):
                 if int(lazylibrarian.LOGLEVEL) > 2:
@@ -1054,8 +1055,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
                 try:
                     if booktype == 'audiobook':
-                        # don't rename, just copy it
-                        destfile = os.path.join(dest_path, fname)
+                        destfile = os.path.join(dest_path, fname)  # don't rename, just copy it
                     else:
                         # for ebooks, the book, jpg, opf all have the same basename
                         destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
@@ -1069,6 +1069,18 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
             else:
                 logger.debug('Ignoring unwanted file: %s' % fname)
+
+        # for ebooks, prefer the first book_type found in ebook_type list
+        if booktype == 'ebook':
+            book_basename = os.path.join(dest_path, global_name)
+            booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+            for book_type in booktype_list:
+                preferred_type = "%s.%s" % (book_basename, book_type)
+                if os.path.exists(preferred_type):
+                    logger.debug("Link to preferred type %s" % book_type)
+                    firstfile = preferred_type
+                    break
+
         if firstfile:
             newbookfile = firstfile
     return True, newbookfile

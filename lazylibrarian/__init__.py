@@ -915,6 +915,7 @@ def add_torz_slot():
                              "GENERALSEARCH": 'search',
                              "BOOKSEARCH": 'book',
                              "MAGSEARCH": '',
+                             "AUDIOSEARCH": '',
                              "BOOKCAT": '8000,8010',
                              "MAGCAT": '8030',
                              "AUDIOCAT": '8030',
