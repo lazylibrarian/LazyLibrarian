@@ -4,18 +4,27 @@
 %>
 <%def name="headerIncludes()">
     <div id="subhead_container" class="row">
-        <form id="subhead_menu" class="form-inline">
-            <div class="col-xs-10">
-                Searches: <a id="e_book" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&lib=ebook"><i id="mb_icon" class="fa fa-book"></i> Author/Title</a>
-                <a id="e_title" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&lib=ebook"><i id="mt_icon" class="fa fa-book"></i> Title</a>
-                <a id="e_author" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&lib=ebook"><i id="ma_icon" class="fa fa-book"></i> Author</a>
+          <form action="booksearch" method="get" class="form-inline">
+            <div class="indented">
+            <input type="hidden" name="bookid" value=${config['BookID']}>
+            <input type="hidden" name="title" value="${config['BookName']}">
+            <input type="hidden" name="author" value="${config['AuthorName']}">
+            <div class="form-group">
+              <label for="booksearch" class="control-label">Searches: </label>
+              <select class="booksearch form-control input-sm" id="action" name="action">
+                <option value="e_full">&#xf02d; Title/Author</option>
+                <option value="e_title">&#xf02d; Title</option>
+                <option value="e_author">&#xf02d; Author</option>
+                <option value="g_full">&nbsp; General</option>
                 % if lazylibrarian.SHOW_AUDIO != 0:
-                <a id="a_book" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}&lib=audio"><i id="mb_icon" class="fa fa-headphones"></i> Author/Title</a>
-                <a id="a_title" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&lib=audio"><i id="mt_icon" class="fa fa-headphones"></i> Title</a>
-                <a id="a_author" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}&lib=audio"><i id="ma_icon" class="fa fa-headphones"></i> Author</a>
+                  <option value="a_full">&#xf025; Title/Author</option>
+                  <option value="a_title">&#xf025; Title</option>
+                  <option value="a_author">&#xf025; Author</option>
                 % endif
+              </select>
             </div>
-        </form>
+            <input type="submit" class="booksearch btn btn-sm btn-primary" id="go" value="Go">
+      </form>
     </div>
 </%def>
 <%def name="body()">
@@ -91,17 +100,6 @@
     function initThisPage()
     {
         "use strict";
-
-        $('#manualbook').click(function () {
-            $('#mb_icon').addClass("fa-spin");
-        });
-        $('#manualtitle').click(function () {
-            $('#mt_icon').addClass("fa-spin");
-        });
-        $('#manualauthor').click(function () {
-            $('#ma_icon').addClass("fa-spin");
-        });
-
     }
 
     $(document).ready(function() {

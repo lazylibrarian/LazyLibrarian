@@ -613,11 +613,17 @@ def processDir(reset=False):
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched) > 0:
-            for snatch in snatched:
+            for book in snatched:
+                book_type = book['AuxInfo']
+                if book_type != 'AudioBook' and book_type != 'eBook':
+                    if book_type is None or book_type == '':
+                        book_type = 'eBook'
+                    else:
+                        book_type = 'Magazine'
                 # FUTURE: we could check percentage downloaded or eta?
                 # if percentage is increasing, it's just slow
                 try:
-                    when_snatched = time.strptime(snatch['NZBdate'], '%Y-%m-%d %H:%M:%S')
+                    when_snatched = time.strptime(book['NZBdate'], '%Y-%m-%d %H:%M:%S')
                     when_snatched = time.mktime(when_snatched)
                     diff = time.time() - when_snatched  # time difference in seconds
                 except ValueError:
@@ -625,15 +631,15 @@ def processDir(reset=False):
                 hours = int(diff / 3600)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
                     logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
-                                (snatch['NZBtitle'], snatch['Source'].lower(), hours))
+                                (book['NZBtitle'], book['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
-                    if snatch['BookID'] != 'unknown':
+                    if book['BookID'] != 'unknown':
                         if book_type == 'eBook':
-                            myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
+                            myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
                         elif book_type == 'AudioBook':
-                            myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % snatch['BookID'])
-                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID="%s"' % snatch['BookID'])
-                        delete_task(snatch['Source'], snatch['DownloadID'], True)
+                            myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID="%s"' % book['BookID'])
+                        delete_task(book['Source'], book['DownloadID'], True)
 
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
