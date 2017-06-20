@@ -263,6 +263,7 @@ CONFIG_DEFINITIONS = {
     'TDL': ('bool', 'TDL', 0),
     'TDL_DLPRIORITY': ('int', 'TDL', 0),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
+    'GEN_SEARCH': ('str', 'GEN', 'search.php'),
     'GEN': ('bool', 'GEN', 0),
     'GEN_DLPRIORITY': ('int', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),

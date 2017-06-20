@@ -617,19 +617,26 @@ class WebInterface(object):
     # BOOKS #############################################################
 
     @cherrypy.expose
-    def booksearch(self, bookid=None, title="", author="", lib=None):
+    def booksearch(self, author=None, title=None, bookid=None, action=None):
         self.label_thread()
+        if '_title' in action:
+            searchterm = title
+        elif '_author' in action:
+            searchterm = kwargs['author']
+        else:  # if '_full' in action:
+            searchterm = '%s %s' % (author, title)
+            searchterm = searchterm.strip()
 
-        searchterm = '%s %s' % (author, title)
-        searchterm = searchterm.strip()
-
-        if not author or not title:
-            cat = 'general'  # need both for ebook or audio searches
+        if action == 'e_full':
+            cat = 'book'
+        elif action == 'a_full':
+            cat = 'audio'
         else:
-            cat = lib
+            cat = 'general'
+
         results = searchItem(searchterm, bookid, cat)
         library = 'eBook'
-        if lib == 'audio':
+        if action.startswith('a_'):
             library = 'AudioBook'
         return serve_template(templatename="manualsearch.html", title=library + ' Search Results: "' +
                                 searchterm + '"', bookid=bookid, results=results, library=library)

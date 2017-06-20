@@ -296,6 +296,7 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
+    # noinspection PyUnboundLocalVariable
     def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", refresh=False):
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
