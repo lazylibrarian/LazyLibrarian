@@ -628,11 +628,17 @@ def GEN(book=None):
     errmsg = ''
     provider = "libgen"
     host = lazylibrarian.CONFIG['GEN_HOST']
+    search = lazylibrarian.CONFIG['GEN_SEARCH']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    searchURL = url_fix(host + "/search.php?view=simple&open=0&phrase=0&column=def&res=100&req=" +
-                        book['searchterm'])
+    if not search or not search.endswith('.php'):
+        search = 'search.php'
+    if search[0] == '/':
+        search = search[1:]
+
+    searchURL = url_fix(host + "/%s?view=simple&open=0&phrase=0&column=def&res=100&req=" +
+                        (search,book['searchterm']))
 
     result, success = fetchURL(searchURL)
     if not success:

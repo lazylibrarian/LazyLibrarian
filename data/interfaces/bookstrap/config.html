@@ -1074,10 +1074,18 @@
                   </span>
                   <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" class="form-control">
                 </div>
+                <label for="gen_search" class="sr-only">libgen search</label>
+                <div class="input-group">
+                  <span class="input-group-addon">Search</span>
+                  <input type="text" placeholder="libgen search" id="gen_search" name="gen_search" value="${lazylibrarian.CONFIG['GEN_SEARCH']}" class="form-control">
+                </div>
                 <div class="input-group">
                   <span class="input-group-addon">Priority</span>
                   <input type="text" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
+                <span class="help-block">
+                    Search Examples: search.php  foreignfiction/index.php
+                </span>
               </div>
             </fieldset>
             <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"> Blocked Providers</button>
