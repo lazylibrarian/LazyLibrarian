@@ -31,8 +31,7 @@
           <td class="size text-right">${item['size']}</td>
           <td class="dateadded">${item['date']}</td>
           <td class="status text-center"> <a class="btn btn-xs btn-info button"
-                    href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&url=${item['url']}&size=${item['size']}"
-                    title="Snatch"><i class="fa fa-book"></i> Snatch</a></td>
+                    href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&size=${item['size']}&library=${library}&url=${item['url']}" title="Snatch"><i class="fa fa-book"></i> Snatch</a></td>
         </tr>
         %endfor
       </tbody>

@@ -317,6 +317,7 @@ def magazineScan():
             for fname in filenames[:]:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
+                    issuedate = ''
                     try:
                         match = title_pattern.match(fname)
                         if match:
@@ -324,7 +325,7 @@ def magazineScan():
                             title = match.group("title")
                         else:
                             match = False
-                    except Exception as e:
+                    except Exception:
                         match = False
 
                     if not match:
