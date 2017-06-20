@@ -637,8 +637,8 @@ def GEN(book=None):
     if search[0] == '/':
         search = search[1:]
 
-    searchURL = url_fix(host + "/%s?view=simple&open=0&phrase=0&column=def&res=100&req=" +
-                        (search,book['searchterm']))
+    searchURL = url_fix(host + "/%s?view=simple&open=0&phrase=0&column=def&res=100&req=%s" %
+                        (search, book['searchterm']))
 
     result, success = fetchURL(searchURL)
     if not success:
