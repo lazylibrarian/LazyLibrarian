@@ -333,7 +333,7 @@ def LibraryScan(startdir=None, library='eBook'):
                 for book in books:
                     bookfile = book['BookFile']
 
-                    if not (bookfile and os.path.isfile(bookfile)):
+                    if bookfile and not os.path.isfile(bookfile):
                         myDB.action('update books set Status="%s",BookFile="",BookLibrary="" where BookID="%s"' %
                                     (status, book['BookID']))
                         logger.warn('eBook %s - %s updated as not found on disk' %
@@ -350,7 +350,7 @@ def LibraryScan(startdir=None, library='eBook'):
                 for book in books:
                     bookfile = book['AudioFile']
 
-                    if not (bookfile and os.path.isfile(bookfile)):
+                    if bookfile and not os.path.isfile(bookfile):
                         myDB.action('update books set AudioStatus="%s",AudioFile="",AudioLibrary="" where BookID="%s"' %
                                     (status, book['BookID']))
                         logger.warn('Audiobook %s - %s updated as not found on disk' %
