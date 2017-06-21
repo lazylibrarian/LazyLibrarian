@@ -151,8 +151,10 @@ def search_book(books=None, library=None):
                         modelist.remove('rss')
                         break
 
-                if nproviders:
+                if resultlist:
                     match = findBestResult(resultlist, book, searchtype, mode)
+                else:
+                    match = None
 
                 # if you can't find the book, try author/title without any "(extended details, series etc)"
                 if not goodEnough(match) and '(' in book['bookName']:
@@ -164,7 +166,10 @@ def search_book(books=None, library=None):
                     elif mode == 'rss':
                         resultlist = rss_resultlist
 
-                    match = findBestResult(resultlist, book, searchtype, mode)
+                    if resultlist:
+                        match = findBestResult(resultlist, book, searchtype, mode)
+                    else:
+                        match = None
 
                 # if you can't find the book under "books", you might find under general search
                 # general search is the same as booksearch for torrents and rss, no need to check again
@@ -172,14 +177,20 @@ def search_book(books=None, library=None):
                     searchtype = 'general'
                     if mode == 'nzb':
                         resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
-                        match = findBestResult(resultlist, book, searchtype, mode)
+                        if resultlist:
+                            match = findBestResult(resultlist, book, searchtype, mode)
+                        else:
+                            match = None
 
                 # if still not found, try general search again without any "(extended details, series etc)"
                 if not goodEnough(match) and '(' in book['searchterm']:
                     searchtype = 'shortgeneral'
                     if mode == 'nzb':
                         resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
-                        match = findBestResult(resultlist, book, searchtype, mode)
+                        if resultlist:
+                            match = findBestResult(resultlist, book, searchtype, mode)
+                        else:
+                            match = None
 
                 if not goodEnough(match):
                     logger.info("%s Searches for %s %s returned no results." %

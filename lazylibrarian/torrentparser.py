@@ -21,7 +21,7 @@ import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented
+from lazylibrarian.formatter import plural, unaccented, formatAuthorName
 from lib.BeautifulSoup import BeautifulSoup
 
 
@@ -52,101 +52,109 @@ def TPB(book=None):
         elif book['library'] == 'magazine':
             cat = 0
 
-    params = {
-        "category": cat,
-        "page": "0",
-        "orderby": "99"
-    }
-    searchURL = providerurl + "&%s" % urllib.urlencode(params)
-
-    result, success = fetchURL(searchURL)
-    if not success:
-        # may return 404 if no results, not really an error
-        if '404' in result:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-        else:
-            logger.debug(searchURL)
-            logger.debug('Error fetching data from %s: %s' % (provider, result))
-            errmsg = result
-        result = False
-
+    page = 0
     results = []
+    next_page = True
 
-    if result:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-        minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
-        soup = BeautifulSoup(result)
-        try:
-            table = soup.findAll('table')[0]
-            rows = table.findAll('tr')
-        except Exception:   # no results = no table in result page
-            rows = []
+    while next_page:
 
-        c1 = []
-        c2 = []
+        params = {
+            "category": cat,
+            "page": page,
+            "orderby": "99"
+        }
 
-        if len(rows) > 1:
-            for row in rows[1:]:
-                if len(row.findAll('td')) > 2:
-                    c1.append(row.findAll('td')[1])
-                    c2.append(row.findAll('td')[2])
+        searchURL = providerurl + "&%s" % urllib.urlencode(params)
+        next_page = False
+        result, success = fetchURL(searchURL)
+        if not success:
+            # may return 404 if no results, not really an error
+            if '404' in result:
+                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            else:
+                logger.debug(searchURL)
+                logger.debug('Error fetching data from %s: %s' % (provider, result))
+                errmsg = result
+            result = False
 
-        for col1, col2 in zip(c1, c2):
+        if result:
+            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+            minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
+            soup = BeautifulSoup(result)
             try:
-                title = unaccented(str(col1).split('title=')[1].split('>')[1].split('<')[0])
-                magnet = str(col1).split('href="')[1].split('"')[0]
-                size = unaccented(col1.text.split(', Size ')[1].split('iB')[0])
-                mult = 1
-                try:
-                    if 'K' in size:
-                        size = size.split('K')[0]
-                        mult = 1024
-                    elif 'M' in size:
-                        size = size.split('M')[0]
-                        mult = 1024 * 1024
-                    size = int(float(size) * mult)
-                except (ValueError, IndexError):
-                    size = 0
-                try:
-                    seeders = int(col2.text)
-                except ValueError:
-                    seeders = 0
+                table = soup.findAll('table')[0]
+                rows = table.findAll('tr')
+            except Exception:   # no results = no table in result page
+                rows = []
 
-                if minimumseeders < seeders:
-                    # no point in asking for magnet link if not enough seeders
-                    magurl = '%s/%s' % (host, magnet)
-                    result, success = fetchURL(magurl)
-                    if not success:
-                        logger.debug('Error fetching url %s, %s' % (magurl, result))
-                    else:
-                        magnet = None
-                        new_soup = BeautifulSoup(result)
-                        for link in new_soup.findAll('a'):
-                            output = link.get('href')
-                            if output and output.startswith('magnet'):
-                                magnet = output
-                                break
-                    if not magnet or not title:
-                        logger.debug('Missing magnet or title')
-                    else:
-                        if minimumseeders < seeders:
-                            results.append({
-                                'bookid': book['bookid'],
-                                'tor_prov': provider,
-                                'tor_title': title,
-                                'tor_url': magnet,
-                                'tor_size': str(size),
-                                'tor_type': 'magnet',
-                                'priority': lazylibrarian.CONFIG['TPB_DLPRIORITY']
-                            })
-                            logger.debug('Found %s. Size: %s' % (title, size))
+            if len(rows) == 1:
+                rows = []
+
+            for row in rows[1:]:
+                td = row.findAll('td')
+                if len(td) > 2:
+                    try:
+                        title = unaccented(str(td[1]).split('title=')[1].split('>')[1].split('<')[0])
+                        magnet = str(td[1]).split('href="')[1].split('"')[0]
+                        size = unaccented(td[1].text.split(', Size ')[1].split('iB')[0])
+                        size = size.replace('&nbsp;', '')
+                        mult = 1
+                        try:
+                            if 'K' in size:
+                                size = size.split('K')[0]
+                                mult = 1024
+                            elif 'M' in size:
+                                size = size.split('M')[0]
+                                mult = 1024 * 1024
+                            elif 'G' in size:
+                                size = size.split('G')[0]
+                                mult = 1024 * 1024 * 1024
+                            size = int(float(size) * mult)
+                        except (ValueError, IndexError):
+                            size = 0
+                        try:
+                            seeders = int(td[2].text)
+                        except ValueError:
+                            seeders = 0
+
+                        if minimumseeders < int(seeders):
+                            # no point in asking for magnet link if not enough seeders
+                            magurl = '%s/%s' % (host, magnet)
+                            result, success = fetchURL(magurl)
+                            if not success:
+                                logger.debug('Error fetching url %s, %s' % (magurl, result))
+                            else:
+                                magnet = None
+                                new_soup = BeautifulSoup(result)
+                                for link in new_soup.findAll('a'):
+                                    output = link.get('href')
+                                    if output and output.startswith('magnet'):
+                                        magnet = output
+                                        break
+                            if not magnet or not title:
+                                logger.debug('Missing magnet or title')
+                            else:
+                                results.append({
+                                    'bookid': book['bookid'],
+                                    'tor_prov': provider,
+                                    'tor_title': title,
+                                    'tor_url': magnet,
+                                    'tor_size': str(size),
+                                    'tor_type': 'magnet',
+                                    'priority': lazylibrarian.CONFIG['TPB_DLPRIORITY']
+                                })
+                                logger.debug('Found %s. Size: %s' % (title, size))
+                                next_page = True
                         else:
                             logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
-                else:
-                    logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
-            except Exception as e:
-                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
-                logger.debug('%s: %s' % (provider, traceback.format_exc()))
+                    except Exception as e:
+                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.debug('%s: %s' % (provider, traceback.format_exc()))
+
+        page += 1
+        if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < page:
+            logger.warn('Maximum results page search reached, still more results available')
+            next_page = False
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -193,74 +201,71 @@ def KAT(book=None):
         except Exception:  # no results = no table in result page
             rows = []
 
-        c0 = []
-        c1 = []
-        c3 = []
+        if len(rows) == 1:
+            rows = []
 
-        if len(rows) > 1:
-            for row in rows[1:]:
-                if len(row.findAll('td')) > 3:
-                    c0.append(row.findAll('td')[0])
-                    c1.append(row.findAll('td')[1])
-                    c3.append(row.findAll('td')[3])
-
-        for col0, col1, col3 in zip(c0, c1, c3):
-            try:
-                title = unaccented(str(col0).split('cellMainLink">')[1].split('<')[0])
-                # kat can return magnet or torrent or both.
-                magnet = ''
-                url = ''
-                mode = 'torrent'
+        for row in rows[1:]:
+            td = row.findAll('td')
+            if len(td) > 3:
                 try:
-                    magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
-                    mode = 'magnet'
-                except IndexError:
-                    pass
-                try:
-                    url = 'http' + str(col0).split('href="http')[1].split('.torrent?')[0] + '.torrent'
+                    title = unaccented(str(td[0]).split('cellMainLink">')[1].split('<')[0])
+                    # kat can return magnet or torrent or both.
+                    magnet = ''
+                    url = ''
                     mode = 'torrent'
-                except IndexError:
-                    pass
+                    try:
+                        magnet = 'magnet' + str(td[0]).split('href="magnet')[1].split('"')[0]
+                        mode = 'magnet'
+                    except IndexError:
+                        pass
+                    try:
+                        url = 'http' + str(td[0]).split('href="http')[1].split('.torrent?')[0] + '.torrent'
+                        mode = 'torrent'
+                    except IndexError:
+                        pass
 
-                if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
-                    url = magnet
-                    mode = 'magnet'
+                    if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
+                        url = magnet
+                        mode = 'magnet'
 
-                try:
-                    size = str(col1.text).replace('&nbsp;', '').upper()
-                    mult = 1
-                    if 'K' in size:
-                        size = size.split('K')[0]
-                        mult = 1024
-                    elif 'M' in size:
-                        size = size.split('M')[0]
-                        mult = 1024 * 1024
-                    size = int(float(size) * mult)
-                except (ValueError, IndexError):
-                    size = 0
-                try:
-                    seeders = int(col3.text)
-                except ValueError:
-                    seeders = 0
+                    try:
+                        size = str(td[1].text).replace('&nbsp;', '').upper()
+                        mult = 1
+                        if 'K' in size:
+                            size = size.split('K')[0]
+                            mult = 1024
+                        elif 'M' in size:
+                            size = size.split('M')[0]
+                            mult = 1024 * 1024
+                        elif 'G' in size:
+                            size = size.split('G')[0]
+                            mult = 1024 * 1024 * 1024
+                        size = int(float(size) * mult)
+                    except (ValueError, IndexError):
+                        size = 0
+                    try:
+                        seeders = int(td[3].text)
+                    except ValueError:
+                        seeders = 0
 
-                if not url or not title:
-                    logger.debug('Missing url or title')
-                elif minimumseeders < seeders:
-                    results.append({
-                        'bookid': book['bookid'],
-                        'tor_prov': provider,
-                        'tor_title': title,
-                        'tor_url': url,
-                        'tor_size': str(size),
-                        'tor_type': mode,
-                        'priority': lazylibrarian.CONFIG['KAT_DLPRIORITY']
-                    })
-                    logger.debug('Found %s. Size: %s' % (title, size))
-                else:
-                    logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
-            except Exception as e:
-                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
-                logger.debug('%s: %s' % (provider, traceback.format_exc()))
+                    if not url or not title:
+                        logger.debug('Missing url or title')
+                    elif minimumseeders < int(seeders):
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                            'tor_type': mode,
+                            'priority': lazylibrarian.CONFIG['KAT_DLPRIORITY']
+                        })
+                        logger.debug('Found %s. Size: %s' % (title, size))
+                    else:
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                except Exception as e:
+                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -315,75 +320,72 @@ def WWT(book=None):
         except Exception:  # no results = no table in result page
             rows = []
 
-        c0 = []
-        c1 = []
-        c2 = []
+        if len(rows) == 1:
+            rows = []
 
-        if len(rows) > 1:
-            for row in rows[1:]:
-                if len(row.findAll('td')) > 3:
-                    c0.append(row.findAll('td')[0])
-                    c1.append(row.findAll('td')[1])
-                    c2.append(row.findAll('td')[2])
-
-        for col0, col1, col2 in zip(c0, c1, c2):
-            try:
-                title = unaccented(str(col0).split('title="')[1].split('"')[0])
-
-                # kat can return magnet or torrent or both.
-                magnet = ''
-                url = ''
-                mode = 'torrent'
+        for row in rows[1:]:
+            td = row.findAll('td')
+            if len(td) > 3:
                 try:
-                    magnet = 'magnet' + str(col0).split('href="magnet')[1].split('"')[0]
-                    mode = 'magnet'
-                except IndexError:
-                    pass
-                try:
-                    url = url_fix(host + '/download.php') + \
-                                  str(col0).split('href="download.php')[1].split('.torrent"')[0] + '.torrent'
+                    title = unaccented(str(td[0]).split('title="')[1].split('"')[0])
+
+                    # kat can return magnet or torrent or both.
+                    magnet = ''
+                    url = ''
                     mode = 'torrent'
-                except IndexError:
-                    pass
+                    try:
+                        magnet = 'magnet' + str(td[0]).split('href="magnet')[1].split('"')[0]
+                        mode = 'magnet'
+                    except IndexError:
+                        pass
+                    try:
+                        url = url_fix(host + '/download.php') + \
+                                      str(td[0]).split('href="download.php')[1].split('.torrent"')[0] + '.torrent'
+                        mode = 'torrent'
+                    except IndexError:
+                        pass
 
-                if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
-                    url = magnet
-                    mode = 'magnet'
+                    if not url or (magnet and url and lazylibrarian.CONFIG['PREFER_MAGNET']):
+                        url = magnet
+                        mode = 'magnet'
 
-                try:
-                    size = str(col1.text).replace('&nbsp;', '').upper()
-                    mult = 1
-                    if 'K' in size:
-                        size = size.split('K')[0]
-                        mult = 1024
-                    elif 'M' in size:
-                        size = size.split('M')[0]
-                        mult = 1024 * 1024
-                    size = int(float(size) * mult)
-                except (ValueError, IndexError):
-                    size = 0
-                try:
-                    seeders = int(col2.text)
-                except ValueError:
-                    seeders = 0
-                if not url or not title:
-                    logger.debug('Missing url or title')
-                elif minimumseeders < seeders:
-                    results.append({
-                        'bookid': book['bookid'],
-                        'tor_prov': provider,
-                        'tor_title': title,
-                        'tor_url': url,
-                        'tor_size': str(size),
-                        'tor_type': mode,
-                        'priority': lazylibrarian.CONFIG['WWT_DLPRIORITY']
-                    })
-                    logger.debug('Found %s. Size: %s' % (title, size))
-                else:
-                    logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
-            except Exception as e:
-                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
-                logger.debug('%s: %s' % (provider, traceback.format_exc()))
+                    try:
+                        size = str(td[1].text).replace('&nbsp;', '').upper()
+                        mult = 1
+                        if 'K' in size:
+                            size = size.split('K')[0]
+                            mult = 1024
+                        elif 'M' in size:
+                            size = size.split('M')[0]
+                            mult = 1024 * 1024
+                        elif 'G' in size:
+                            size = size.split('G')[0]
+                            mult = 1024 * 1024 * 1024
+                        size = int(float(size) * mult)
+                    except (ValueError, IndexError):
+                        size = 0
+                    try:
+                        seeders = int(td[2].text)
+                    except ValueError:
+                        seeders = 0
+                    if not url or not title:
+                        logger.debug('Missing url or title')
+                    elif minimumseeders < int(seeders):
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                            'tor_type': mode,
+                            'priority': lazylibrarian.CONFIG['WWT_DLPRIORITY']
+                        })
+                        logger.debug('Found %s. Size: %s' % (title, size))
+                    else:
+                        logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
+                except Exception as e:
+                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -445,7 +447,7 @@ def EXTRA(book=None):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < seeders:
+                    elif minimumseeders < int(seeders):
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -521,7 +523,7 @@ def ZOO(book=None):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < seeders:
+                    elif minimumseeders < int(seeders):
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -597,7 +599,7 @@ def LIME(book=None):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < seeders:
+                    elif minimumseeders < int(seeders):
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -632,118 +634,163 @@ def GEN(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    if not search or not search.endswith('.php'):
-        search = 'search.php'
-    if search[0] == '/':
-        search = search[1:]
-
-    searchURL = url_fix(host + "/%s?view=simple&open=0&phrase=0&column=def&res=100&req=%s" %
-                        (search, book['searchterm']))
-
-    result, success = fetchURL(searchURL)
-    if not success:
-        # may return 404 if no results, not really an error
-        if '404' in result:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
-        elif '111' in result:
-            # looks like libgen has ip based access limits
-            logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
-            errmsg = result
-        else:
-            logger.debug(searchURL)
-            logger.debug('Error fetching data from %s: %s' % (provider, result))
-            errmsg = result
-
-        result = False
-
+    page = 1
     results = []
+    next_page = True
 
-    if result:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-        soup = BeautifulSoup(result)
-        try:
-            table = soup.findAll('table')[2]
-            rows = table.findAll('tr')
-        except Exception:  # no results = no table in result page
-            rows = []
+    while next_page:
+        if not search or not search.endswith('.php'):
+            search = 'search.php'
+        if not 'index.php' in search and not 'search.php' in search:
+            search = 'search.php'
+        if search[0] == '/':
+            search = search[1:]
 
-        c1 = []
-        c2 = []
-        c7 = []
-        c8 = []
+        pagenum = ''
+        if page > 1:
+            pagenum = '&page=%s' % page
 
-        if len(rows) > 1:
-            for row in rows[1:]:
-                if len(row.findAll('td')) > 8:
-                    c1.append(row.findAll('td')[1])
-                    c2.append(row.findAll('td')[2])
-                    c7.append(row.findAll('td')[7])
-                    c8.append(row.findAll('td')[8])
+        if 'index.php' in search:
+            searchURL = url_fix(host + "/%s?%s&s=%s" %
+                                (search, pagenum, book['searchterm']))
+        else:
+            searchURL = url_fix(host + "/%s?view=simple&open=0&phrase=0&column=def&res=100%s&req=%s" %
+                                (search, pagenum, book['searchterm']))
 
-        for col1, col2, col7, col8 in zip(c1, c2, c7, c8):
+        next_page = False
+        result, success = fetchURL(searchURL)
+        if not success:
+            # may return 404 if no results, not really an error
+            if '404' in result:
+                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            elif '111' in result:
+                # looks like libgen has ip based access limits
+                logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
+                errmsg = result
+            else:
+                logger.debug(searchURL)
+                logger.debug('Error fetching data from %s: %s' % (provider, result))
+                errmsg = result
+
+            result = False
+
+        if result:
+            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             try:
-                author = unaccented(col1.text)
-                title = unaccented(str(col2).split('>')[2].split('<')[0].strip())
-                link = str(col2).split('href="')[1].split('?')[1].split('"')[0]
-                size = unaccented(col7.text).upper()
-                extn = col8.text
-
+                soup = BeautifulSoup(result)
                 try:
-                    mult = 1
-                    if 'K' in size:
-                        size = size.split('K')[0]
-                        mult = 1024
-                    elif 'M' in size:
-                        size = size.split('M')[0]
-                        mult = 1024 * 1024
-                    size = int(float(size) * mult)
-                except (ValueError, IndexError):
-                    size = 0
+                    table = soup.findAll('table')[2]
+                    rows = table.findAll('tr')
+                except Exception:  # no results = no table in result page
+                    rows = []
 
-                if link and title:
-                    if author:
-                        title = author.strip() + ' ' + title.strip()
-                    if extn:
-                        title = title + '.' + extn
+                if 'search.php' in search and len(rows) > 1:
+                    rows = rows[1:]
 
-                    url = url_fix(host + "/ads.php?" + link)
+                for row in rows:
+                    author = ''
+                    title = ''
+                    size = ''
+                    extn = ''
+                    link = ''
+                    td = row.findAll('td')
+                    if 'index.php' in search and len(td) > 3:
+                        try:
+                            author = formatAuthorName(unaccented(td[0].text))
+                            title = unaccented(td[2].text)
+                            temp = str(td[4])
+                            temp = temp.split('onmouseout')[1]
+                            extn = temp.split('">')[1].split('(')[0]
+                            size = temp.split('">')[1].split('(')[1].split(')')[0]
+                            size = size.upper()
+                            link = temp.split('href=')[2].split('"')[1]
+                        except IndexError as e:
+                            logger.debug('Error parsing libgen search.php results: %s' % str(e))
 
-                    bookresult, success = fetchURL(url)
-                    if not success:
-                        # may return 404 if no results, not really an error
-                        if '404' in bookresult:
-                            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                    elif 'search.php' in search and len(td) > 8:
+                        try:
+                            author = formatAuthorName(unaccented(td[1].text))
+                            title = unaccented(str(td[2]).split('>')[2].split('<')[0].strip())
+                            link = str(td[2]).split('href="')[1].split('?')[1].split('"')[0]
+                            size = unaccented(td[7].text).upper()
+                            extn = td[8].text
+                        except IndexError as e:
+                            logger.debug('Error parsing libgen search.php results; %s' % str(e))
+
+                    if not size:
+                        size = 0
+                    else:
+                        try:
+                            mult = 1
+                            if 'K' in size:
+                                size = size.split('K')[0]
+                                mult = 1024
+                            elif 'M' in size:
+                                size = size.split('M')[0]
+                                mult = 1024 * 1024
+                            elif 'G' in size:
+                                size = size.split('G')[0]
+                                mult = 1024 * 1024 * 1024
+                            size = int(float(size) * mult)
+                        except (ValueError, IndexError):
+                            size = 0
+
+                    if link and title:
+                        if author:
+                            title = author.strip() + ' ' + title.strip()
+                        if extn:
+                            title = title + '.' + extn
+
+                        if link.startswith('http'):
+                            url = link
                         else:
-                            logger.debug(url)
-                            logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
-                            errmsg = bookresult
-                        bookresult = False
+                            url = url_fix(host + "/ads.php?" + link)
+                        bookresult, success = fetchURL(url)
+                        if not success:
+                            # may return 404 if no results, not really an error
+                            if '404' in bookresult:
+                                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                            else:
+                                logger.debug(url)
+                                logger.debug('Error fetching data from %s: %s' % (provider, bookresult))
+                                errmsg = bookresult
+                            bookresult = False
 
-                    if bookresult:
-                        url = None
-                        new_soup = BeautifulSoup(bookresult)
-                        for link in new_soup.findAll('a'):
-                            output = link.get('href')
-                            if output and '/get.php' in output:
-                                url = '/get.php' + output.split('/get.php')[1]
-                                break
-                        if url:
-                            url = url_fix(host + url)
+                        if bookresult:
+                            url = None
+                            new_soup = BeautifulSoup(bookresult)
+                            for link in new_soup.findAll('a'):
+                                output = link.get('href')
+                                if output:
+                                    if '/get.php' in output:
+                                        url = '/get.php' + output.split('/get.php')[1]
+                                        break
+                                    elif '/download/book' in output:
+                                        url = '/download/book' + output.split('/download/book')[1]
+                                        break
+                            if url:
+                                url = url_fix(host + url)
 
-                    results.append({
-                        'bookid': book['bookid'],
-                        'tor_prov': provider,
-                        'tor_title': title,
-                        'tor_url': url,
-                        'tor_size': str(size),
-                        'tor_type': 'direct',
-                        'priority': lazylibrarian.CONFIG['GEN_DLPRIORITY']
-                    })
-                    logger.debug('Found %s, Size %s' % (title, size))
+                        results.append({
+                            'bookid': book['bookid'],
+                            'tor_prov': provider,
+                            'tor_title': title,
+                            'tor_url': url,
+                            'tor_size': str(size),
+                            'tor_type': 'direct',
+                            'priority': lazylibrarian.CONFIG['GEN_DLPRIORITY']
+                        })
+                        logger.debug('Found %s, Size %s' % (title, size))
+                        next_page = True
 
             except Exception as e:
                 logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
                 logger.debug('%s: %s' % (provider, traceback.format_exc()))
+
+        page += 1
+        if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < page:
+            logger.warn('Maximum results page search reached, still more results available')
+            next_page = False
 
     logger.debug(u"Found %i result%s from %s for %s" %
                  (len(results), plural(len(results)), provider, book['searchterm']))
@@ -792,7 +839,7 @@ def TDL(book=None):
                     size = int(item['size'])
                     url = None
 
-                    if link and minimumseeders < seeders:
+                    if link and minimumseeders < int(seeders):
                         # no point requesting the magnet link if not enough seeders
                         # TDL gives us a relative link
                         result, success = fetchURL(providerurl+link)
@@ -805,7 +852,6 @@ def TDL(book=None):
                                     url = output
                                     break
 
-                    if minimumseeders < int(seeders):
                         if not url or not title:
                             logger.debug('Missing url or title')
                         else:

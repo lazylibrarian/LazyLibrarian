@@ -314,14 +314,26 @@ class WebInterface(object):
                 regex = mag['Regex']
                 # seems kwargs parameters are passed as latin-1, can't see how to
                 # configure it, so we need to correct it on accented magazine names
-                # eg "Elle Quebec" where we might have e-acute
-                # otherwise the comparison fails
-                new_reject = kwargs.get('reject_list[%s]' % title.encode('latin-1'), None)
+                # eg "Elle Quebec" where we might have e-acute stored as utf-8
+                # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
+                # otherwise the comparison fails, but sometimes accented characters won't
+                # fit latin-1 but fit utf-8 gow can we tell ???
+                if isinstance(title, str):
+                    try:
+                        title = title.encode('latin-1')
+                    except UnicodeEncodeError:
+                        try:
+                            title = title.encode('utf-8')
+                        except UnicodeEncodeError:
+                            logger.warn('Unable to convert title [%s]' % repr(title))
+                            title = unaccented(title)
+
+                new_reject = kwargs.get('reject_list[%s]' % title, None)
                 if not new_reject == reject:
                     controlValueDict = {'Title': title}
                     newValueDict = {'Reject': new_reject}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                new_regex = kwargs.get('regex[%s]' % title.encode('latin-1'), None)
+                new_regex = kwargs.get('regex[%s]' % title, None)
                 if not new_regex == regex:
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
@@ -622,7 +634,7 @@ class WebInterface(object):
         if '_title' in action:
             searchterm = title
         elif '_author' in action:
-            searchterm = kwargs['author']
+            searchterm = author
         else:  # if '_full' in action:
             searchterm = '%s %s' % (author, title)
             searchterm = searchterm.strip()
