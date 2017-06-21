@@ -325,6 +325,7 @@ class WebInterface(object):
                         try:
                             title = title.encode('utf-8')
                         except UnicodeEncodeError:
+                            logger.warn('Unable to convert title [%s]' % repr(title))
                             title = unaccented(title)
 
                 new_reject = kwargs.get('reject_list[%s]' % title, None)
