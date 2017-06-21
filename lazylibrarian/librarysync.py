@@ -333,7 +333,7 @@ def LibraryScan(startdir=None, library='eBook'):
                 for book in books:
                     bookfile = book['BookFile']
 
-                    if not (bookfile and os.path.isfile(bookfile)):
+                    if bookfile and not os.path.isfile(bookfile):
                         myDB.action('update books set Status="%s",BookFile="",BookLibrary="" where BookID="%s"' %
                                     (status, book['BookID']))
                         logger.warn('eBook %s - %s updated as not found on disk' %
@@ -350,7 +350,7 @@ def LibraryScan(startdir=None, library='eBook'):
                 for book in books:
                     bookfile = book['AudioFile']
 
-                    if not (bookfile and os.path.isfile(bookfile)):
+                    if bookfile and not os.path.isfile(bookfile):
                         myDB.action('update books set AudioStatus="%s",AudioFile="",AudioLibrary="" where BookID="%s"' %
                                     (status, book['BookID']))
                         logger.warn('Audiobook %s - %s updated as not found on disk' %
@@ -676,16 +676,16 @@ def LibraryScan(startdir=None, library='eBook'):
                                         logger.debug('Unable to find bookid %s in database' % bookid)
                                     else:
                                         book_filename = None
-                                        if library == 'eBook' and check_status['Status'] != 'Open':
-                                            # we found a new book
-                                            new_book_count += 1
-                                            myDB.action(
-                                                'UPDATE books set Status="Open" where BookID="%s"' % bookid)
-                                            myDB.action(
-                                                'UPDATE books set BookLibrary="%s" where BookID="%s"' % (now(), bookid))
+                                        if library == 'eBook':
+                                            if check_status['Status'] != 'Open':
+                                                # we found a new book
+                                                new_book_count += 1
+                                                myDB.action(
+                                                    'UPDATE books set Status="Open" where BookID="%s"' % bookid)
+                                                myDB.action(
+                                                    'UPDATE books set BookLibrary="%s" where BookID="%s"' % (now(), bookid))
 
-                                            # store book location so we can check if it gets removed
-                                            # store the first book_type found in ebook_type
+                                            # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
                                             book_basename = os.path.splitext(book_filename)[0]
                                             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
@@ -710,17 +710,18 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
                                                             (book_filename, bookid))
 
-                                        elif library == 'Audio' and check_status['AudioStatus'] != 'Open':
-                                            # we found a new audiobook
-                                            new_book_count += 1
-                                            myDB.action(
-                                                'UPDATE books set AudioStatus="Open" where BookID="%s"' % bookid)
-                                            myDB.action(
-                                                'UPDATE books set AudioLibrary="%s" where BookID="%s"' % (
-                                                    now(), bookid))
-                                            # store audiobook location so we can check if it gets removed
+                                        elif library == 'Audio':
+                                            if check_status['AudioStatus'] != 'Open':
+                                                # we found a new audiobook
+                                                new_book_count += 1
+                                                myDB.action(
+                                                    'UPDATE books set AudioStatus="Open" where BookID="%s"' % bookid)
+                                                myDB.action(
+                                                    'UPDATE books set AudioLibrary="%s" where BookID="%s"' % (
+                                                        now(), bookid))
+                                            # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
-                                            # try to keep track of the first part of multi-part audiobooks
+                                            # link to the first part of multi-part audiobooks
                                             for fname in os.listdir(r):
                                                 if is_valid_booktype(fname, booktype='audiobook') and '01' in fname:
                                                     book_filename = os.path.join(r, fname)

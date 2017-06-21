@@ -1987,6 +1987,17 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("history")
 
     @cherrypy.expose
+    def clearblocked(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        # clear any currently blocked providers
+        num = len(lazylibrarian.PROVIDER_BLOCKLIST)
+        lazylibrarian.PROVIDER_BLOCKLIST = []
+        result = 'Cleared %s blocked providers' % num
+        logger.debug(result)
+        return result
+
+    @cherrypy.expose
     def showblocked(self):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"
@@ -2001,6 +2012,7 @@ class WebInterface(object):
 
         if result == '':
             result = 'No blocked providers'
+        logger.debug(result)
         return result
 
     @cherrypy.expose
