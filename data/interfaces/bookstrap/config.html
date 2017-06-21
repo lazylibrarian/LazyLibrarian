@@ -664,11 +664,11 @@
             </fieldset>
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="tor_downloader_rtorrent" class="control-label">
                 <input type="checkbox" id="tor_downloader_rtorrent" name="tor_downloader_rtorrent" value="1" ${checked} />
                 Use rTorrent</label>
@@ -2459,8 +2459,13 @@
                     message: '<pre>'+data+'</pre>',
                     buttons: {
                         primary: {
-                            label: "Close",
+                            label: "Ok",
                             className: 'btn-primary'
+                        },
+                        prompt: {
+                            label: "Clear Blocklist",
+                            className: 'btn-primary',
+                            callback: function(result){ $.get("clearblocked", function(e) {}); }
                         }
                     }
                 });
