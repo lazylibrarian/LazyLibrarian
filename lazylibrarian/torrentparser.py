@@ -195,7 +195,7 @@ def KAT(book=None):
         logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
         soup = BeautifulSoup(result)
-
+        rows = []
         try:
             table = soup.findAll('table')[1]  # un-named table
             if table:

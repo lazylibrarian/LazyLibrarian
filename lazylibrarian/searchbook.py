@@ -118,11 +118,11 @@ def search_book(books=None, library=None):
                          "searchterm": searchterm})
 
         # only get rss results once per run, as they are not search specific
+        rss_resultlist = None
         if 'rss' in modelist:
             rss_resultlist, nproviders = IterateOverRSSSites()
             if not nproviders:
                 modelist.remove('rss')
-                rss_resultlist = None
 
         book_count = 0
         for book in searchlist:
