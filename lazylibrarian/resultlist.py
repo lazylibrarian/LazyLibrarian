@@ -192,16 +192,16 @@ def findBestResult(resultlist, book, searchtype, source):
             highest = max(matches, key=lambda s: (s[0], s[4]))
             score = highest[0]
             resultTitle = highest[1]
-            # newValueDict = match[2]
-            # controlValueDict = match[3]
+            newValueDict = highest[2]
+            # controlValueDict = highest[3]
             dlpriority = highest[4]
 
             if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
                 logger.info(u'Nearest %s match (%s%%): %s using %s search for %s %s' %
                             (source.upper(), score, resultTitle, searchtype, book['authorName'], book['bookName']))
             else:
-                logger.info(u'Best %s match (%s%%): %s using %s search, priority %s' %
-                            (source.upper(), score, resultTitle, searchtype, dlpriority))
+                logger.info(u'Best %s match (%s%%): %s using %s search, %s priority %s' %
+                            (source.upper(), score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
             return highest
         else:
             logger.debug("No %s found for [%s] using searchtype %s" % (source, book["searchterm"], searchtype))

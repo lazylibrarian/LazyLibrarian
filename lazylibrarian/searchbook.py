@@ -39,6 +39,7 @@ def search_book(books=None, library=None):
     books is a list of new books to add, or None for backlog search
     library is "eBook" or "AudioBook" or None to search all book types
     """
+    # noinspection PyBroadException
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -117,9 +118,11 @@ def search_book(books=None, library=None):
                          "searchterm": searchterm})
 
         # only get rss results once per run, as they are not search specific
-        rss_resultlist, nproviders = IterateOverRSSSites()
-        if not nproviders:
-            rss_resultlist = None
+        if 'rss' in modelist:
+            rss_resultlist, nproviders = IterateOverRSSSites()
+            if not nproviders:
+                modelist.remove('rss')
+                rss_resultlist = None
 
         book_count = 0
         for book in searchlist:
@@ -130,26 +133,24 @@ def search_book(books=None, library=None):
                     searchtype = 'audio'
                 else:
                     searchtype = 'book'
+
+                resultlist = None
                 if mode == 'nzb':
                     resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
                     if not nproviders:
                         logger.debug("No active nzb providers found")
                         modelist.remove('nzb')
-                        break  # no point in continuing
                 elif mode == 'tor':
                     resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
                     if not nproviders:
                         logger.debug("No active tor providers found")
                         modelist.remove('tor')
-                        break  # no point in continuing
                 elif mode == 'rss':
                     if rss_resultlist:
                         resultlist = rss_resultlist
-                        nproviders = 1  # dummy value
                     else:
                         logger.debug("No active rss providers found")
                         modelist.remove('rss')
-                        break
 
                 if resultlist:
                     match = findBestResult(resultlist, book, searchtype, mode)
@@ -161,8 +162,14 @@ def search_book(books=None, library=None):
                     searchtype = 'short' + searchtype
                     if mode == 'nzb':
                         resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                        if not nproviders:
+                            logger.debug("No active nzb providers found")
+                            modelist.remove('nzb')
                     elif mode == 'tor':
                         resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
+                        if not nproviders:
+                            logger.debug("No active tor providers found")
+                            modelist.remove('nzb')
                     elif mode == 'rss':
                         resultlist = rss_resultlist
 
@@ -177,6 +184,9 @@ def search_book(books=None, library=None):
                     searchtype = 'general'
                     if mode == 'nzb':
                         resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                        if not nproviders:
+                            logger.debug("No active nzb providers found")
+                            modelist.remove('nzb')
                         if resultlist:
                             match = findBestResult(resultlist, book, searchtype, mode)
                         else:
@@ -186,7 +196,10 @@ def search_book(books=None, library=None):
                 if not goodEnough(match) and '(' in book['searchterm']:
                     searchtype = 'shortgeneral'
                     if mode == 'nzb':
-                        resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
+                        resultlist, _ = IterateOverNewzNabSites(book, searchtype)
+                        if not nproviders:
+                            logger.debug("No active nzb providers found")
+                            modelist.remove('nzb')
                         if resultlist:
                             match = findBestResult(resultlist, book, searchtype, mode)
                         else:
