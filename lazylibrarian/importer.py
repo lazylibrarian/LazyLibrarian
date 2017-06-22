@@ -277,6 +277,7 @@ def update_totals(AuthorID):
     # author totals needs to be updated every time a book is marked differently
     match = myDB.select('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
     if not match:
+        logger.debug('Update_totals - authorid [%s] not found' % AuthorID)
         return
     cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s"' % AuthorID
     cmd += ' AND Status != "Ignored" order by BookDate DESC'

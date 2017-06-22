@@ -97,8 +97,11 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
             Author_match = fuzz.token_set_ratio(author, resultTitle)
             Book_match = fuzz.token_set_ratio(title, resultTitle)
+            stype = source.upper()
+            if res[prefix + 'prov'] == 'libgen':
+                stype = "DIR"
             logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
-                         (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
+                         (stype, Author_match, Book_match, resultTitle, res[prefix + 'prov']))
 
             rejected = False
 
@@ -147,11 +150,11 @@ def findBestResult(resultlist, book, searchtype, source):
                 newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
 
                 if source == 'nzb':
-                    mode = res['nzbmode']
+                    mode = res['nzbmode']  # nzb, torznab
                 elif source == 'tor':
-                    mode = "torrent"
-                else:  # rss returns torrents
-                    mode = "torrent"
+                    mode = res['tor_type']  # torrent, magnet, direct
+                else:
+                    mode = res['tor_type']  # torrent, magnet, nzb
 
                 controlValueDict = {"NZBurl": url}
                 newValueDict = {
@@ -197,11 +200,11 @@ def findBestResult(resultlist, book, searchtype, source):
             dlpriority = highest[4]
 
             if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
-                logger.info(u'Nearest %s match (%s%%): %s using %s search for %s %s' %
-                            (source.upper(), score, resultTitle, searchtype, book['authorName'], book['bookName']))
+                logger.info(u'Nearest match (%s%%): %s using %s search for %s %s' %
+                            (score, resultTitle, searchtype, book['authorName'], book['bookName']))
             else:
-                logger.info(u'Best %s match (%s%%): %s using %s search, %s priority %s' %
-                            (source.upper(), score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
+                logger.info(u'Best match (%s%%): %s using %s search, %s priority %s' %
+                            (score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
             return highest
         else:
             logger.debug("No %s found for [%s] using searchtype %s" % (source, book["searchterm"], searchtype))

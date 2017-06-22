@@ -796,7 +796,7 @@ def GEN(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
-                            'tor_type': 'direct',
+                            'tor_type': 'download',
                             'priority': lazylibrarian.CONFIG['GEN_DLPRIORITY']
                         })
                         logger.debug('Found %s, Size %s' % (title, size))

@@ -40,6 +40,7 @@ def search_book(books=None, library=None):
     library is "eBook" or "AudioBook" or None to search all book types
     """
     # noinspection PyBroadException
+    print "***",books,library
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -67,8 +68,12 @@ def search_book(books=None, library=None):
                 cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
                 cmd += 'AND books.AuthorID = authors.AuthorID'
                 results = myDB.select(cmd)
-                for terms in results:
-                    searchbooks.append(terms)
+                if results:
+                    for terms in results:
+                        searchbooks.append(terms)
+                else:
+                    logger.debug("SearchBooks - BookID %s is not in the database" % book['bookid'])
+
 
         if len(searchbooks) == 0:
             logger.debug("SearchBooks - No books to search for")
@@ -209,8 +214,11 @@ def search_book(books=None, library=None):
                     logger.info("%s Searches for %s %s returned no results." %
                                 (mode.upper(), book['library'], book['searchterm']))
                 else:
+                    smode = mode.upper()
+                    if match[2]['NZBprov'] == 'libgen':
+                        smode = 'DIR'
                     logger.info("Found %s result: %s %s%%, %s priority %s" %
-                                (mode.upper(), searchtype, match[0], match[2]['NZBprov'], match[4]))
+                                (smode, searchtype, match[0], match[2]['NZBprov'], match[4]))
                     matches.append(match)
 
             if matches:
