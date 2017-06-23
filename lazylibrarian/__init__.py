@@ -15,6 +15,7 @@
 
 from __future__ import with_statement
 
+import ConfigParser
 import calendar
 import json
 import locale
@@ -24,7 +25,6 @@ import sys
 import threading
 import time
 import webbrowser
-import ConfigParser
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \

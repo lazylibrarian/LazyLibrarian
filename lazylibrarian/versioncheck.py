@@ -16,11 +16,11 @@
 import os
 import platform
 import re
-import time
 import socket
 import subprocess
 import tarfile
 import threading
+import time
 import urllib2
 
 import lazylibrarian

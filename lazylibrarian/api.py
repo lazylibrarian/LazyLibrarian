@@ -13,12 +13,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import ConfigParser
 import Queue
 import json
 import os
 import shutil
 import threading
-import ConfigParser
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -36,8 +36,8 @@ from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate
-from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchbook import search_book
+from lazylibrarian.searchmag import search_magazines
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +

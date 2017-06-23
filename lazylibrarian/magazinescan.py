@@ -17,13 +17,13 @@ import datetime
 import os
 import platform
 import re
+import shutil
 import subprocess
 import traceback
 from hashlib import sha1
-import shutil
-import lib.zipfile as zipfile
 
 import lazylibrarian
+import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural

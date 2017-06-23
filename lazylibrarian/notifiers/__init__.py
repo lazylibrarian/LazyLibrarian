@@ -18,14 +18,14 @@
 
 import androidpn
 import boxcar
+import custom_notify
 import email_notify
-import prowl
 import nma
+import prowl
 import pushbullet
 import pushover
 import slack
 import tweet
-import custom_notify
 from lazylibrarian import logger
 
 # online

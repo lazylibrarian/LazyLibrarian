@@ -13,16 +13,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import urllib
 from xml.etree import ElementTree
-import time
+
 import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
+from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int
 from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, LIME
-from lazylibrarian.directparser import GEN
 
 
 def get_searchterm(book, searchType):

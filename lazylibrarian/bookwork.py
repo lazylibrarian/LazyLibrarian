@@ -17,12 +17,12 @@ import os
 import shutil
 import time
 import urllib
-from lib.fuzzywuzzy import fuzz
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName
+from lib.fuzzywuzzy import fuzz
 
 
 def setAllBookAuthors():

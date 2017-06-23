@@ -13,10 +13,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
 import urllib
-from lazylibrarian.formatter import getList, unaccented_str, plural
+
+import lazylibrarian
 from lazylibrarian import logger, database
+from lazylibrarian.formatter import getList, unaccented_str, plural
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites, \
     IterateOverDirectSites
 from lib.fuzzywuzzy import fuzz

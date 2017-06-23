@@ -22,12 +22,12 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
     IterateOverDirectSites
-from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lib.fuzzywuzzy import fuzz
 
 

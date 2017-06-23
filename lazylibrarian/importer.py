@@ -13,19 +13,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import traceback
-import threading
-import lazylibrarian
 import Queue
-from lib.fuzzywuzzy import fuzz
-
+import threading
+import traceback
 from operator import itemgetter
+
+import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
 from lazylibrarian.cache import cache_img
 from lazylibrarian.formatter import today, unaccented, formatAuthorName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
+from lib.fuzzywuzzy import fuzz
 
 
 def addAuthorNameToDB(author=None, refresh=False, addbooks=True):

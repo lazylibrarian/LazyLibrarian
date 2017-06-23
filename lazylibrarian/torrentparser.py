@@ -13,9 +13,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import traceback
 import urllib
 import urlparse
-import traceback
 
 import lazylibrarian
 import lib.feedparser as feedparser
