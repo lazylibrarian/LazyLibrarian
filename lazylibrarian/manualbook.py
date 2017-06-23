@@ -17,7 +17,8 @@ import lazylibrarian
 import urllib
 from lazylibrarian.formatter import getList, unaccented_str, plural
 from lazylibrarian import logger, database
-from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
+from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites, \
+    IterateOverDirectSites
 from lib.fuzzywuzzy import fuzz
 
 
@@ -56,7 +57,8 @@ def searchItem(item=None, bookid=None, cat=None):
             logger.debug('Forcing general search')
             cat = 'general'
 
-    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
+                    lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
     logger.debug('Searching %s provider%s (%s) for %s' % (nproviders, plural(nproviders), cat, searchterm))
 
     if lazylibrarian.USE_NZB():
@@ -65,6 +67,10 @@ def searchItem(item=None, bookid=None, cat=None):
             results += resultlist
     if lazylibrarian.USE_TOR():
         resultlist, nproviders = IterateOverTorrentSites(book, cat)
+        if nproviders:
+            results += resultlist
+    if lazylibrarian.USE_DIRECT():
+        resultlist, nproviders = IterateOverDirectSites(book, cat)
         if nproviders:
             results += resultlist
     if lazylibrarian.USE_RSS():

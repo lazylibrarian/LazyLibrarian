@@ -22,7 +22,7 @@ import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented, formatAuthorName
-from lib.BeautifulSoup import BeautifulSoup
+from lib.BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
 
 def url_fix(s, charset='utf-8'):
@@ -731,8 +731,11 @@ def GEN(book=None):
                     td = row.findAll('td')
                     if 'index.php' in search and len(td) > 3:
                         try:
-                            author = formatAuthorName(unaccented(td[0].text))
-                            title = unaccented(td[2].text)
+                            res = str(BeautifulStoneSoup(td[0].text,
+                                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
+                            author = formatAuthorName(res)
+                            title = str(BeautifulStoneSoup(td[2].text,
+                                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
                             temp = str(td[4])
                             temp = temp.split('onmouseout')[1]
                             extn = temp.split('">')[1].split('(')[0]
@@ -744,8 +747,11 @@ def GEN(book=None):
 
                     elif 'search.php' in search and len(td) > 8:
                         try:
-                            author = formatAuthorName(unaccented(td[1].text))
-                            title = unaccented(str(td[2]).split('>')[2].split('<')[0].strip())
+                            res = str(BeautifulStoneSoup(td[1].text,
+                                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
+                            author = formatAuthorName(res)
+                            title = str(td[2]).split('>')[2].split('<')[0].strip()
+                            title = BeautifulStoneSoup(title, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
                             link = str(td[2]).split('href="')[1].split('?')[1].split('"')[0]
                             size = unaccented(td[7].text).upper()
                             extn = td[8].text
@@ -815,7 +821,7 @@ def GEN(book=None):
                             'tor_title': title,
                             'tor_url': url,
                             'tor_size': str(size),
-                            'tor_type': 'download',
+                            'tor_type': 'direct',
                             'priority': lazylibrarian.CONFIG['GEN_DLPRIORITY']
                         })
                         logger.debug('Found %s, Size %s' % (title, size))

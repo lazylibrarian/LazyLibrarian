@@ -19,7 +19,8 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural
-from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
+from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
+    IterateOverDirectSites
 from lazylibrarian.resultlist import findBestResult, downloadResult
 
 
@@ -40,7 +41,6 @@ def search_book(books=None, library=None):
     library is "eBook" or "AudioBook" or None to search all book types
     """
     # noinspection PyBroadException
-    print "***",books,library
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -79,7 +79,8 @@ def search_book(books=None, library=None):
             logger.debug("SearchBooks - No books to search for")
             return
 
-        nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+        nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
+                        lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
 
         if nproviders == 0:
             logger.debug("SearchBooks - No providers to search")
@@ -90,6 +91,8 @@ def search_book(books=None, library=None):
             modelist.append('nzb')
         if lazylibrarian.USE_TOR():
             modelist.append('tor')
+        if lazylibrarian.USE_DIRECT():
+            modelist.append('direct')
         if lazylibrarian.USE_RSS():
             modelist.append('rss')
 
@@ -150,6 +153,11 @@ def search_book(books=None, library=None):
                     if not nproviders:
                         logger.debug("No active tor providers found")
                         modelist.remove('tor')
+                elif mode == 'direct':
+                    resultlist, nproviders = IterateOverDirectSites(book, searchtype)
+                    if not nproviders:
+                        logger.debug("No active direct providers found")
+                        modelist.remove('direct')
                 elif mode == 'rss':
                     if rss_resultlist:
                         resultlist = rss_resultlist
@@ -174,7 +182,12 @@ def search_book(books=None, library=None):
                         resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
                         if not nproviders:
                             logger.debug("No active tor providers found")
-                            modelist.remove('nzb')
+                            modelist.remove('tor')
+                    elif mode == 'direct':
+                        resultlist, nproviders = IterateOverDirectSites(book, searchtype)
+                        if not nproviders:
+                            logger.debug("No active direct providers found")
+                            modelist.remove('direct')
                     elif mode == 'rss':
                         resultlist = rss_resultlist
 
@@ -214,11 +227,8 @@ def search_book(books=None, library=None):
                     logger.info("%s Searches for %s %s returned no results." %
                                 (mode.upper(), book['library'], book['searchterm']))
                 else:
-                    smode = mode.upper()
-                    if match[2]['NZBprov'] == 'libgen':
-                        smode = 'DIR'
                     logger.info("Found %s result: %s %s%%, %s priority %s" %
-                                (smode, searchtype, match[0], match[2]['NZBprov'], match[4]))
+                                (mode.upper(), searchtype, match[0], match[2]['NZBprov'], match[4]))
                     matches.append(match)
 
             if matches:

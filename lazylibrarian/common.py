@@ -135,13 +135,14 @@ def scheduleJob(action='Start', target=None):
                 minutes=int(lazylibrarian.CONFIG['SCAN_INTERVAL']))
             logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
         elif 'search_magazines' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
-            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() or lazylibrarian.USE_RSS():
+            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
                     minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
         elif 'search_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchbook.cron_search_book,
                     minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
@@ -264,7 +265,7 @@ def checkRunningJobs():
     if snatched:
         ensureRunning('processDir')
     if wanted:
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
             ensureRunning('search_book')
         if lazylibrarian.USE_RSS():
             ensureRunning('search_rss_book')
@@ -272,7 +273,7 @@ def checkRunningJobs():
         scheduleJob('Stop', 'search_book')
         scheduleJob('Stop', 'search_rss_book')
 
-    if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+    if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
         ensureRunning('search_magazines')
     else:
         scheduleJob('Stop', 'search_magazines')

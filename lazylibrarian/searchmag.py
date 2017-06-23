@@ -25,7 +25,8 @@ from lazylibrarian.common import scheduleJob
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
+from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
+    IterateOverDirectSites
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lib.fuzzywuzzy import fuzz
 
@@ -93,6 +94,23 @@ def search_magazines(mags=None, reset=False):
                 resultlist, nproviders = IterateOverNewzNabSites(book, 'mag')
                 if not nproviders:
                     logger.warn('No nzb providers are set. Check config for NEWZNAB or TORZNAB providers')
+
+            if lazylibrarian.USE_DIRECT():
+                dir_resultlist, nproviders = IterateOverDirectSites(book, 'mag')
+                if not nproviders:
+                    logger.warn('No direct providers are set. Check config for DIRECT providers')
+
+                if dir_resultlist:
+                    for item in dir_resultlist:  # reformat the results so they look like nzbs
+                        resultlist.append({
+                            'bookid': item['bookid'],
+                            'nzbprov': item['tor_prov'],
+                            'nzbtitle': item['tor_title'],
+                            'nzburl': item['tor_url'],
+                            'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned
+                            'nzbsize': item['tor_size'],
+                            'nzbmode': 'torrent'
+                        })
 
             if lazylibrarian.USE_TOR():
                 tor_resultlist, nproviders = IterateOverTorrentSites(book, 'mag')

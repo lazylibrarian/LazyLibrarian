@@ -996,8 +996,15 @@ def USE_RSS():
 
 def USE_TOR():
     count = 0
-    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'],
-                     CONFIG['TDL'], CONFIG['GEN'], CONFIG['WWT']]:
+    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL'], CONFIG['WWT']]:
+        if bool(provider):
+            count += 1
+    return count
+
+
+def USE_DIRECT():
+    count = 0
+    for provider in [CONFIG['GEN']]:
         if bool(provider):
             count += 1
     return count

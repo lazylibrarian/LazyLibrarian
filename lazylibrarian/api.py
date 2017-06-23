@@ -465,7 +465,7 @@ class Api(object):
             threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh]).start()
 
     def _forceMagSearch(self, **kwargs):
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_magazines(None, True)
             else:
@@ -478,7 +478,7 @@ class Api(object):
             library = kwargs['type']
         else:
             library = None
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_book(library=library)
             else:
@@ -709,7 +709,7 @@ class Api(object):
         else:
             library = None
 
-        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_book(books=books, library=library)
             else:
