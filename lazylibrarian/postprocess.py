@@ -529,6 +529,7 @@ def processDir(reset=False):
                                 logger.debug("Not removing original files as in download root")
 
                     logger.info('Successfully processed: %s' % global_name)
+
                     ppcount += 1
                     custom_notify_download(book['BookID'])
 
@@ -838,11 +839,6 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
 
     myDB = database.DBConnection()
 
-    # update authors book counts
-    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
-    if match:
-        update_totals(match['AuthorID'])
-
     controlValueDict = {"BookID": bookid}
     if book_type == 'AudioBook':
         newValueDict = {"AudioFile": dest_file, "AudioStatus": "Open", "AudioLibrary": now()}
@@ -850,6 +846,11 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     else:
         newValueDict = {"Status": "Open", "BookFile": dest_file, "BookLibrary": now()}
         myDB.upsert("books", newValueDict, controlValueDict)
+
+    # update authors book counts
+    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
+    if match:
+        update_totals(match['AuthorID'])
 
     if book_type != 'eBook':  # only do autoadd/img/opf for ebooks
         return

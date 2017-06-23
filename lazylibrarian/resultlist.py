@@ -97,8 +97,11 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
             Author_match = fuzz.token_set_ratio(author, resultTitle)
             Book_match = fuzz.token_set_ratio(title, resultTitle)
+            stype = source.upper()
+            if res[prefix + 'prov'] == 'libgen':
+                stype = "DIR"
             logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
-                         (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
+                         (stype, Author_match, Book_match, resultTitle, res[prefix + 'prov']))
 
             rejected = False
 
@@ -113,45 +116,39 @@ def findBestResult(resultlist, book, searchtype, source):
                     logger.debug("Rejecting %s, blacklisted at %s" % (resultTitle, already_failed['NZBprov']))
                     rejected = True
 
-            if not rejected:
-                if not url.startswith('http') and not url.startswith('magnet'):
+            if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                     rejected = True
                     logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))
 
             if not rejected:
-                author_words = getList(author.lower())
-                title_words = getList(title.lower())
-                result_words = getList(resultTitle.lower())
                 for word in reject_list:
-                    if word in result_words and word not in author_words and word not in title_words:
+                    if word in getList(resultTitle.lower()) and word not in getList(author.lower()) \
+                            and word not in getList(title.lower()):
                         rejected = True
                         logger.debug("Rejecting %s, contains %s" % (resultTitle, word))
                         break
 
-            size_temp = res[prefix + 'size']  # Need to cater for when this is NONE (Issue 35)
-            size_temp = check_int(size_temp, 1000)
+            size_temp = check_int(res[prefix + 'size'], 1000)  # Need to cater for when this is NONE (Issue 35)
             size = round(float(size_temp) / 1048576, 2)
 
-            if not rejected:
-                if maxsize and size > maxsize:
+            if not rejected and maxsize and size > maxsize:
                     rejected = True
                     logger.debug("Rejecting %s, too large" % resultTitle)
 
-            if not rejected:
-                if minsize and size < minsize:
-                    rejected = True
-                    logger.debug("Rejecting %s, too small" % resultTitle)
+            if not rejected and minsize and size < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % resultTitle)
 
             if not rejected:
                 bookid = book['bookid']
                 newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
 
                 if source == 'nzb':
-                    mode = res['nzbmode']
+                    mode = res['nzbmode']  # nzb, torznab
                 elif source == 'tor':
-                    mode = "torrent"
-                else:  # rss returns torrents
-                    mode = "torrent"
+                    mode = res['tor_type']  # torrent, magnet, direct
+                else:
+                    mode = res['tor_type']  # torrent, magnet, nzb
 
                 controlValueDict = {"NZBurl": url}
                 newValueDict = {
@@ -169,8 +166,7 @@ def findBestResult(resultlist, book, searchtype, source):
                 # lose a point for each unwanted word in the title so we get the closest match
                 # but for RSS ignore anything at the end in square braces [keywords, genres etc]
                 if source == 'rss':
-                    temptitle = resultTitle.rsplit('[', 1)[0]
-                    wordlist = getList(temptitle.lower())
+                    wordlist = getList(resultTitle.rsplit('[', 1)[0].lower())
                 else:
                     wordlist = getList(resultTitle.lower())
                 words = [x for x in wordlist if x not in getList(author.lower())]
@@ -184,8 +180,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
                 score -= len(words)
                 # prioritise titles that include the ebook types we want
-                if len(booktypes):
-                    score += 1
+                score += len(booktypes)
                 matches.append([score, resultTitle, newValueDict, controlValueDict, res['priority']])
 
         if matches:
@@ -197,11 +192,11 @@ def findBestResult(resultlist, book, searchtype, source):
             dlpriority = highest[4]
 
             if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
-                logger.info(u'Nearest %s match (%s%%): %s using %s search for %s %s' %
-                            (source.upper(), score, resultTitle, searchtype, book['authorName'], book['bookName']))
+                logger.info(u'Nearest match (%s%%): %s using %s search for %s %s' %
+                            (score, resultTitle, searchtype, book['authorName'], book['bookName']))
             else:
-                logger.info(u'Best %s match (%s%%): %s using %s search, %s priority %s' %
-                            (source.upper(), score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
+                logger.info(u'Best match (%s%%): %s using %s search, %s priority %s' %
+                            (score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
             return highest
         else:
             logger.debug("No %s found for [%s] using searchtype %s" % (source, book["searchterm"], searchtype))
