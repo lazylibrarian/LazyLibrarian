@@ -21,7 +21,8 @@ import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int
-from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, GEN, LIME
+from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, LIME
+from lazylibrarian.directparser import GEN
 
 
 def get_searchterm(book, searchType):
@@ -280,7 +281,7 @@ def IterateOverDirectSites(book=None, searchType=None):
 
     for prov in ['GEN']:
         if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
-            logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
+            logger.debug('[IterateOverDirectSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
             if prov == 'GEN':
                 results, error = GEN(book)
             else:

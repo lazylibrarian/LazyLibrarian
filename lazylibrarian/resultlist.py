@@ -95,7 +95,7 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
             Author_match = fuzz.token_set_ratio(author, resultTitle)
             Book_match = fuzz.token_set_ratio(title, resultTitle)
-            logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
+            logger.debug(u"%s author/book Match: %s/%s %s at %s" %
                          (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
 
             rejected = False
