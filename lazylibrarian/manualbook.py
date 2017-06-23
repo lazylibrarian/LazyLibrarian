@@ -58,7 +58,7 @@ def searchItem(item=None, bookid=None, cat=None):
             cat = 'general'
 
     nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
-                    lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
+                 lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
     logger.debug('Searching %s provider%s (%s) for %s' % (nproviders, plural(nproviders), cat, searchterm))
 
     if lazylibrarian.USE_NZB():
@@ -133,8 +133,8 @@ def searchItem(item=None, bookid=None, cat=None):
 
                 searchresults.append(result)
 
-            # from operator import itemgetter
-            # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
+                # from operator import itemgetter
+                # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
 
     logger.debug('Found %s %s results for %s' % (len(searchresults), cat, searchterm))
     return searchresults

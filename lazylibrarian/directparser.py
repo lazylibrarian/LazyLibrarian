@@ -48,7 +48,7 @@ def GEN(book=None):
     while next_page:
         if not search or not search.endswith('.php'):
             search = 'search.php'
-        if not 'index.php' in search and not 'search.php' in search:
+        if 'index.php' not in search and 'search.php' not in search:
             search = 'search.php'
         if search[0] == '/':
             search = search[1:]
@@ -118,10 +118,10 @@ def GEN(book=None):
                     if 'index.php' in search and len(td) > 3:
                         try:
                             res = str(BeautifulStoneSoup(td[0].text,
-                                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
+                                                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
                             author = formatAuthorName(res)
                             title = str(BeautifulStoneSoup(td[2].text,
-                                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
+                                                           convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
                             temp = str(td[4])
                             temp = temp.split('onmouseout')[1]
                             extn = temp.split('">')[1].split('(')[0]
@@ -134,7 +134,7 @@ def GEN(book=None):
                     elif 'search.php' in search and len(td) > 8:
                         try:
                             res = str(BeautifulStoneSoup(td[1].text,
-                                        convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
+                                                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
                             author = formatAuthorName(res)
                             title = str(td[2]).split('>')[2].split('<')[0].strip()
                             title = BeautifulStoneSoup(title, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)

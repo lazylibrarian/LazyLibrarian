@@ -683,7 +683,8 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 myDB.action(
                                                     'UPDATE books set Status="Open" where BookID="%s"' % bookid)
                                                 myDB.action(
-                                                    'UPDATE books set BookLibrary="%s" where BookID="%s"' % (now(), bookid))
+                                                    'UPDATE books set BookLibrary="%s" where BookID="%s"' %
+                                                    (now(), bookid))
 
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)

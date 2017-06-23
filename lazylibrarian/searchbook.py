@@ -74,13 +74,12 @@ def search_book(books=None, library=None):
                 else:
                     logger.debug("SearchBooks - BookID %s is not in the database" % book['bookid'])
 
-
         if len(searchbooks) == 0:
             logger.debug("SearchBooks - No books to search for")
             return
 
         nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
-                        lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
+                     lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
 
         if nproviders == 0:
             logger.debug("SearchBooks - No providers to search")

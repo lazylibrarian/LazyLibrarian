@@ -651,7 +651,7 @@ class WebInterface(object):
         if action.startswith('a_'):
             library = 'AudioBook'
         return serve_template(templatename="manualsearch.html", title=library + ' Search Results: "' +
-                                searchterm + '"', bookid=bookid, results=results, library=library)
+                              searchterm + '"', bookid=bookid, results=results, library=library)
 
     @cherrypy.expose
     def countProviders(self):
@@ -676,7 +676,7 @@ class WebInterface(object):
                 "NZBmode": mode,
                 "AuxInfo": library,
                 "Status": "Skipped"
-                }
+            }
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
             url = urllib.unquote_plus(url)
@@ -892,7 +892,7 @@ class WebInterface(object):
     def startBookSearch(self, books=None):
         if books:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
-                or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
                 logger.debug(u"Searching for book with id: " + books[0]["bookid"])
             else:
@@ -1260,7 +1260,7 @@ class WebInterface(object):
                     books.append({"bookid": bookid})
 
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
-                or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
 
         if redirect == "author":
@@ -1697,7 +1697,7 @@ class WebInterface(object):
     def startMagazineSearch(self, mags=None):
         if mags:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
-                or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 threading.Thread(target=search_magazines, name='SEARCHMAG', args=[mags, False]).start()
                 logger.debug(u"Searching for magazine with title: %s" % mags[0]["bookid"])
             else:
@@ -2248,12 +2248,12 @@ class WebInterface(object):
     def forceSearch(self, source=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
-                or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
         elif source in ["books", "audio"]:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
-                or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
         else:
