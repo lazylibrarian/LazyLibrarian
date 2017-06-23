@@ -57,7 +57,10 @@ def GEN(book=None, prov=None):
 
         if 'index.php' in search:
             params = {
-                "s": book['searchterm']
+                "s": book['searchterm'],
+                "f_lang": "All",
+                "f_columns": 0,
+                "f_ext": "All"
             }
             if page > 1:
                 params['page'] = page
@@ -139,7 +142,7 @@ def GEN(book=None, prov=None):
                                                          convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
                             author = formatAuthorName(res)
                             title = str(td[2]).split('>')[2].split('<')[0].strip()
-                            title = BeautifulStoneSoup(title, convertEntities=BeautifulStoneSoup.HTML_ENTITIES)
+                            title = str(BeautifulStoneSoup(title, convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
                             link = str(td[2]).split('href="')[1].split('?')[1].split('"')[0]
                             size = unaccented(td[7].text).upper()
                             extn = td[8].text
