@@ -41,7 +41,7 @@ def TPB(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    providerurl = url_fix(host + "/s/?q=" + book['searchterm'])
+    providerurl = url_fix(host + "/s/?")
 
     cat = 0  # 601=ebooks, 102=audiobooks, 0=all, no mag category
     if 'library' in book:
@@ -60,14 +60,17 @@ def TPB(book=None):
     while next_page:
 
         params = {
+            "q": book['searchterm'],
             "category": cat,
             "page": page,
             "orderby": "99"
         }
 
-        searchURL = providerurl + "&%s" % urllib.urlencode(params)
+        searchURL = providerurl + "?%s" % urllib.urlencode(params)
+
         next_page = False
         result, success = fetchURL(searchURL)
+
         if not success:
             # may return 404 if no results, not really an error
             if '404' in result:
@@ -90,7 +93,6 @@ def TPB(book=None):
 
             if len(rows) > 1:
                 rows = rows[1:]  # first row is headers
-
             for row in rows:
                 td = row.findAll('td')
                 if len(td) > 2:
@@ -169,7 +171,7 @@ def KAT(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    providerurl = url_fix(host + "/usearch/" + book['searchterm'])
+    providerurl = url_fix(host + "/usearch/" + urllib.quote(book['searchterm']))
 
     params = {
         "category": "books",
@@ -298,7 +300,6 @@ def WWT(book=None):
     next_page = True
 
     while next_page:
-
         params = {
             "search": book['searchterm'],
             "page": page,
@@ -323,7 +324,8 @@ def WWT(book=None):
             soup = BeautifulSoup(result)
 
             try:
-                table = soup.findAll('table')[2]  # un-named table
+                tables = soup.findAll('table')  # un-named table
+                table = tables[2]
                 if table:
                     rows = table.findAll('tr')
             except IndexError:  # no results table in result page
@@ -337,8 +339,7 @@ def WWT(book=None):
                 if len(td) > 3:
                     try:
                         title = unaccented(str(td[0]).split('title="')[1].split('"')[0])
-
-                        # kat can return magnet or torrent or both.
+                        # can return magnet or torrent or both.
                         magnet = ''
                         url = ''
                         mode = 'torrent'
@@ -377,6 +378,7 @@ def WWT(book=None):
                             seeders = int(td[2].text)
                         except ValueError:
                             seeders = 0
+
                         if not url or not title:
                             logger.debug('Missing url or title')
                         elif minimumseeders < int(seeders):
@@ -396,7 +398,6 @@ def WWT(book=None):
                     except Exception as e:
                         logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
                         logger.debug('%s: %s' % (provider, traceback.format_exc()))
-
         page += 1
         if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < page:
             logger.warn('Maximum results page search reached, still more results available')
@@ -492,13 +493,14 @@ def ZOO(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    providerurl = url_fix(host + "/search?q=" + book['searchterm'])
+    providerurl = url_fix(host + "/search")
 
     params = {
+        "q": book['searchterm'],
         "category": "books",
         "fmt": "rss"
     }
-    searchURL = providerurl + "&%s" % urllib.urlencode(params)
+    searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
     data, success = fetchURL(searchURL)
     if not success:
@@ -572,7 +574,11 @@ def LIME(book=None):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    searchURL = url_fix(host + "/searchrss/other/?q=" + book['searchterm'])
+    params = {
+        "q": book['searchterm']
+    }
+    providerurl = url_fix(host + "/searchrss/other")
+    searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
     data, success = fetchURL(searchURL)
     if not success:
@@ -661,16 +667,29 @@ def GEN(book=None):
         if search[0] == '/':
             search = search[1:]
 
-        pagenum = ''
-        if page > 1:
-            pagenum = '&page=%s' % page
-
         if 'index.php' in search:
-            searchURL = url_fix(host + "/%s?%s&s=%s" %
-                                (search, pagenum, book['searchterm']))
+            params = {
+                "s": book['searchterm']
+            }
+            if page > 1:
+                params['page'] = page
+
+            providerurl = url_fix(host + "/%s" % search)
+            searchURL = providerurl + "?%s" % urllib.urlencode(params)
         else:
-            searchURL = url_fix(host + "/%s?view=simple&open=0&phrase=0&column=def&res=100%s&req=%s" %
-                                (search, pagenum, book['searchterm']))
+            params = {
+                "view": "simple",
+                "open": 0,
+                "phrase": 0,
+                "column": "def",
+                "res": 100,
+                "req": book['searchterm']
+            }
+            if page > 1:
+                params['page'] = page
+
+            providerurl = url_fix(host + "/%s" % search)
+            searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
         next_page = False
         result, success = fetchURL(searchURL)
