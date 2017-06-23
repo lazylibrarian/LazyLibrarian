@@ -33,14 +33,16 @@ def url_fix(s, charset='utf-8'):
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
-def GEN(book=None):
+def GEN(book=None, prov=None):
     errmsg = ''
     provider = "libgen"
-    host = lazylibrarian.CONFIG['GEN_HOST']
-    search = lazylibrarian.CONFIG['GEN_SEARCH']
+    if prov is None:
+        prov = 'GEN'
+    host = lazylibrarian.CONFIG[prov + '_HOST']
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
+    search = lazylibrarian.CONFIG[prov + '_SEARCH']
     page = 1
     results = []
     next_page = True
@@ -208,7 +210,7 @@ def GEN(book=None):
                             'tor_url': url,
                             'tor_size': str(size),
                             'tor_type': 'direct',
-                            'priority': lazylibrarian.CONFIG['GEN_DLPRIORITY']
+                            'priority': lazylibrarian.CONFIG[prov + '_DLPRIORITY']
                         })
                         logger.debug('Found %s, Size %s' % (title, size))
                         next_page = True

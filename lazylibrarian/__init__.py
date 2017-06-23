@@ -266,6 +266,10 @@ CONFIG_DEFINITIONS = {
     'GEN_SEARCH': ('str', 'GEN', 'search.php'),
     'GEN': ('bool', 'GEN', 0),
     'GEN_DLPRIORITY': ('int', 'GEN', 0),
+    'GEN2_HOST': ('str', 'GEN', 'libgen.io'),
+    'GEN2_SEARCH': ('str', 'GEN', 'foreignfiction/index.php'),
+    'GEN2': ('bool', 'GEN', 0),
+    'GEN2_DLPRIORITY': ('int', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
     'LIME_DLPRIORITY': ('int', 'LIME', 0),
@@ -1004,7 +1008,7 @@ def USE_TOR():
 
 def USE_DIRECT():
     count = 0
-    for provider in [CONFIG['GEN']]:
+    for provider in [CONFIG['GEN'], CONFIG['GEN2']]:
         if bool(provider):
             count += 1
     return count

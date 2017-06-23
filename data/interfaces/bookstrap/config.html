@@ -1087,6 +1087,27 @@
                     Search Examples: search.php  foreignfiction/index.php
                 </span>
               </div>
+              <div class="form-group">
+                <label for="gen2_host" class="sr-only">libgen host</label>
+                <div class="input-group">
+                  <span class="input-group-addon">
+                    <input type="checkbox" id="gen2" name="gen2" value="1" ${checked} />
+                  </span>
+                  <input type="text" placeholder="libgen host" id="gen2_host" name="gen2_host" value="${lazylibrarian.CONFIG['GEN2_HOST']}" class="form-control">
+                </div>
+                <label for="gen2_search" class="sr-only">libgen search</label>
+                <div class="input-group">
+                  <span class="input-group-addon">Search</span>
+                  <input type="text" placeholder="libgen search" id="gen2_search" name="gen2_search" value="${lazylibrarian.CONFIG['GEN2_SEARCH']}" class="form-control">
+                </div>
+                <div class="input-group">
+                  <span class="input-group-addon">Priority</span>
+                  <input type="text" id="gen2_dlpriority" name="gen2_dlpriority" value="${lazylibrarian.CONFIG['GEN2_DLPRIORITY']}" class="form-control" placeholder="0">
+                </div>
+                <span class="help-block">
+                    Search Examples: search.php  foreignfiction/index.php
+                </span>
+              </div>
             </fieldset>
             <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"> Blocked Providers</button>
             <br><br>

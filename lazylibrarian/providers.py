@@ -279,16 +279,11 @@ def IterateOverDirectSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    for prov in ['GEN']:
+    for prov in ['GEN', 'GEN2']:
         if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
-            logger.debug('[IterateOverDirectSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
-            if prov == 'GEN':
-                results, error = GEN(book)
-            else:
-                results = ''
-                error = ''
-                logger.error('IterateOverDirectSites called with unknown provider [%s]' % prov)
-
+            logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
+                         lazylibrarian.CONFIG[prov + '_SEARCH']))
+            results, error = GEN(book, prov)
             if error:
                 BlockProvider(prov, error)
             else:
