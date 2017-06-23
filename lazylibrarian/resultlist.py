@@ -116,34 +116,28 @@ def findBestResult(resultlist, book, searchtype, source):
                     logger.debug("Rejecting %s, blacklisted at %s" % (resultTitle, already_failed['NZBprov']))
                     rejected = True
 
-            if not rejected:
-                if not url.startswith('http') and not url.startswith('magnet'):
+            if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                     rejected = True
                     logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))
 
             if not rejected:
-                author_words = getList(author.lower())
-                title_words = getList(title.lower())
-                result_words = getList(resultTitle.lower())
                 for word in reject_list:
-                    if word in result_words and word not in author_words and word not in title_words:
+                    if word in getList(resultTitle.lower()) and word not in getList(author.lower()) \
+                            and word not in getList(title.lower()):
                         rejected = True
                         logger.debug("Rejecting %s, contains %s" % (resultTitle, word))
                         break
 
-            size_temp = res[prefix + 'size']  # Need to cater for when this is NONE (Issue 35)
-            size_temp = check_int(size_temp, 1000)
+            size_temp = check_int(res[prefix + 'size'], 1000)  # Need to cater for when this is NONE (Issue 35)
             size = round(float(size_temp) / 1048576, 2)
 
-            if not rejected:
-                if maxsize and size > maxsize:
+            if not rejected and maxsize and size > maxsize:
                     rejected = True
                     logger.debug("Rejecting %s, too large" % resultTitle)
 
-            if not rejected:
-                if minsize and size < minsize:
-                    rejected = True
-                    logger.debug("Rejecting %s, too small" % resultTitle)
+            if not rejected and minsize and size < minsize:
+                rejected = True
+                logger.debug("Rejecting %s, too small" % resultTitle)
 
             if not rejected:
                 bookid = book['bookid']
@@ -172,8 +166,7 @@ def findBestResult(resultlist, book, searchtype, source):
                 # lose a point for each unwanted word in the title so we get the closest match
                 # but for RSS ignore anything at the end in square braces [keywords, genres etc]
                 if source == 'rss':
-                    temptitle = resultTitle.rsplit('[', 1)[0]
-                    wordlist = getList(temptitle.lower())
+                    wordlist = getList(resultTitle.rsplit('[', 1)[0].lower())
                 else:
                     wordlist = getList(resultTitle.lower())
                 words = [x for x in wordlist if x not in getList(author.lower())]
@@ -187,8 +180,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
                 score -= len(words)
                 # prioritise titles that include the ebook types we want
-                if len(booktypes):
-                    score += 1
+                score += len(booktypes)
                 matches.append([score, resultTitle, newValueDict, controlValueDict, res['priority']])
 
         if matches:
