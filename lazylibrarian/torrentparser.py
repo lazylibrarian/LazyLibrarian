@@ -310,7 +310,7 @@ def WWT(book=None):
         next_page = False
         result, success = fetchURL(searchURL)
         if not success:
-            # seems KAT returns 404 if no results, not really an error
+            # might return 404 if no results, not really an error
             if '404' in result:
                 logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
             else:

@@ -1084,9 +1084,15 @@
                   <input type="text" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
                 <span class="help-block">
-                    Search Examples: search.php  foreignfiction/index.php
+                    Search Examples: search.php or foreignfiction/index.php
                 </span>
               </div>
+              <%
+                if lazylibrarian.CONFIG['GEN2'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <div class="form-group">
                 <label for="gen2_host" class="sr-only">libgen host</label>
                 <div class="input-group">
@@ -1105,7 +1111,7 @@
                   <input type="text" id="gen2_dlpriority" name="gen2_dlpriority" value="${lazylibrarian.CONFIG['GEN2_DLPRIORITY']}" class="form-control" placeholder="0">
                 </div>
                 <span class="help-block">
-                    Search Examples: search.php  foreignfiction/index.php
+                    Search Examples: search.php or foreignfiction/index.php
                 </span>
               </div>
             </fieldset>
