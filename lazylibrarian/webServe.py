@@ -752,7 +752,7 @@ class WebInterface(object):
                 status_type = 'books.status'
 
             cmd += ' and books.AuthorID=?'
-            args.append(kwargs['AuthorID']
+            args.append(kwargs['AuthorID'])
             if 'ignored' in kwargs and kwargs['ignored'] == "True":
                 cmd += ' and %s="Ignored"' % status_type
             else:
