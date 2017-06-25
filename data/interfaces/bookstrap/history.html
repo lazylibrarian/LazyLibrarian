@@ -77,6 +77,11 @@
                         primary: {
                             label: "Close",
                             className: 'btn-primary'
+                        },
+                        prompt: {
+                            label: "Clear Counters",
+                            className: 'btn-primary',
+                            callback: function(result){ $.get("cleardownloads", function(e) {}); }
                         }
                     }
                 });

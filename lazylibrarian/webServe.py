@@ -2019,6 +2019,22 @@ class WebInterface(object):
         return result
 
     @cherrypy.expose
+    def cleardownloads(self):
+        cherrypy.response.headers[
+            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        # clear download counters
+        myDB = database.DBConnection()
+        count = myDB.match('SELECT COUNT(Provider) as counter FROM downloads')
+        if count:
+            num = count['counter']
+        else:
+            num = 0
+        result = 'Deleted download counter for %s provider%s' % (num, plural(num))
+        myDB.action('DELETE from downloads')
+        logger.debug(result)
+        return result
+
+    @cherrypy.expose
     def showdownloads(self):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"
