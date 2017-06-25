@@ -388,9 +388,9 @@ class Api(object):
             self.id = kwargs['name']
 
         myDB = database.DBConnection()
-        myDB.action('DELETE from magazines WHERE Title="%s"' % self.id)
-        myDB.action('DELETE from wanted WHERE BookID="%s"' % self.id)
-        myDB.action('DELETE from issues WHERE Title="%s"' % self.id)
+        myDB.action('DELETE from magazines WHERE Title=?', (self.id,))
+        myDB.action('DELETE from wanted WHERE BookID=?', (self.id,))
+        myDB.action('DELETE from issues WHERE Title=?', (self.id,))
 
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -618,13 +618,11 @@ class Api(object):
             return
         try:
             myDB = database.DBConnection()
-            authordata = myDB.match(
-                'SELECT AuthorName from authors WHERE AuthorID="%s"' % kwargs['toid'])
+            authordata = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['toid'],))
             if not authordata:
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
-                bookdata = myDB.match(
-                    'SELECT AuthorID, BookName from books where BookID="%s"' % kwargs['id'])
+                bookdata = myDB.match('SELECT AuthorID, BookName from books where BookID=?', (kwargs['id'],))
                 if not bookdata:
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
@@ -648,19 +646,17 @@ class Api(object):
         try:
             myDB = database.DBConnection()
             q = 'SELECT bookid,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
-            q += ' and authorname="%s"' % kwargs['fromname']
-            fromhere = myDB.select(q)
+            q += ' and authorname=?'
+            fromhere = myDB.select(q, (kwargs['fromname'],))
 
-            tohere = myDB.match(
-                'SELECT authorid from authors where authorname="%s"' % kwargs['toname'])
+            tohere = myDB.match('SELECT authorid from authors where authorname=?', (kwargs['toname'],))
             if not len(fromhere):
                 self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:
                 if not tohere:
                     self.data = "No destination author [%s] in the database" % kwargs['toname']
                 else:
-                    myDB.action('UPDATE books SET authorid="%s", where authorname="%s"' %
-                                (tohere[0], kwargs['fromname']))
+                    myDB.action('UPDATE books SET authorid=?, where authorname=?', (tohere[0], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
                     update_totals(fromhere[0][1])  # we moved from here
                     update_totals(tohere[0])  # to here
@@ -725,12 +721,12 @@ class Api(object):
             self.id = kwargs['id']
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % id)
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
         if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % id)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % id)
+            myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
+            myDB.action('DELETE from books WHERE AuthorID=?', (kwargs['id'],))
 
     def _writeCFG(self, **kwargs):
         if 'name' not in kwargs:

@@ -160,9 +160,8 @@ def find_book_in_db(myDB, author, book):
     logger.debug('Searching database for [%s] by [%s]' % (book, author))
 
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
-    cmd += 'and AuthorName="%s" COLLATE NOCASE and BookName="%s" COLLATE NOCASE' % \
-           (author.replace('"', '""'), book.replace('"', '""'))
-    match = myDB.match(cmd)
+    cmd += 'and AuthorName=? COLLATE NOCASE and BookName=? COLLATE NOCASE'
+    match = myDB.match(cmd, (author.replace('"', '""'), book.replace('"', '""')))
     if match:
         logger.debug('Exact match [%s]' % book)
         return match['BookID']
@@ -173,8 +172,8 @@ def find_book_in_db(myDB, author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
         cmd = 'SELECT BookID,BookName,BookISBN FROM books,authors where books.AuthorID = authors.AuthorID '
-        cmd += 'and AuthorName="%s" COLLATE NOCASE' % author.replace('"', '""')
-        books = myDB.select(cmd)
+        cmd += 'and AuthorName=? COLLATE NOCASE'
+        books = myDB.select(cmd, (author.replace('"', '""'),))
         best_ratio = 0
         best_partial = 0
         best_partname = 0
@@ -300,15 +299,14 @@ def LibraryScan(startdir=None, library='eBook'):
                         authorname = ' '.join(author['AuthorName'].split())
                         # Have we got author name both with-and-without extra spaces? If so, merge them
                         duplicate = myDB.match(
-                            'Select AuthorID,AuthorName FROM authors WHERE AuthorName="%s"' % authorname)
+                            'Select AuthorID,AuthorName FROM authors WHERE AuthorName=?', (authorname,))
                         if duplicate:
-                            myDB.action('DELETE from authors where authorname="%s"' % author['AuthorName'])
+                            myDB.action('DELETE from authors where authorname=?', (author['AuthorName'],))
                             if author['AuthorID'] != duplicate['AuthorID']:
-                                myDB.action('UPDATE books set AuthorID="%s" WHERE AuthorID="%s"' %
+                                myDB.action('UPDATE books set AuthorID=? WHERE AuthorID=?',
                                             (duplicate['AuthorID'], author['AuthorID']))
                         else:
-                            myDB.action(
-                                'UPDATE authors set AuthorName="%s" WHERE AuthorID="%s"' % (authorname, authorid))
+                            myDB.action('UPDATE authors set AuthorName=? WHERE AuthorID=?', (authorname, authorid))
             except Exception as e:
                 logger.info('Error: ' + str(e))
 
@@ -334,7 +332,7 @@ def LibraryScan(startdir=None, library='eBook'):
                     bookfile = book['BookFile']
 
                     if bookfile and not os.path.isfile(bookfile):
-                        myDB.action('update books set Status="%s",BookFile="",BookLibrary="" where BookID="%s"' %
+                        myDB.action('update books set Status=?,BookFile="",BookLibrary="" where BookID=?',
                                     (status, book['BookID']))
                         logger.warn('eBook %s - %s updated as not found on disk' %
                                     (book['AuthorName'], book['BookName']))
@@ -351,7 +349,7 @@ def LibraryScan(startdir=None, library='eBook'):
                     bookfile = book['AudioFile']
 
                     if bookfile and not os.path.isfile(bookfile):
-                        myDB.action('update books set AudioStatus="%s",AudioFile="",AudioLibrary="" where BookID="%s"' %
+                        myDB.action('update books set AudioStatus=?,AudioFile="",AudioLibrary="" where BookID=?',
                                     (status, book['BookID']))
                         logger.warn('Audiobook %s - %s updated as not found on disk' %
                                     (book['AuthorName'], book['BookName']))
@@ -532,9 +530,9 @@ def LibraryScan(startdir=None, library='eBook'):
                                     isbnhead = isbn[0:3]
                                 else:
                                     isbnhead = isbn[3:6]
-                                match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
+                                match = myDB.match('SELECT lang FROM languages where isbn=?', (isbnhead,))
                                 if not match:
-                                    myDB.action('insert into languages values ("%s", "%s")' % (isbnhead, language))
+                                    myDB.action('insert into languages values (?, ?)', (isbnhead, language))
                                     logger.debug("Cached Lang [%s] ISBN [%s]" % (language, isbnhead))
                                 else:
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
@@ -568,7 +566,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                         bookid = gb_id
 
                                     if bookid:
-                                        match = myDB.match('SELECT BookID FROM books where BookID = "%s"' % bookid)
+                                        match = myDB.match('SELECT BookID FROM books where BookID=?', (bookid,))
                                         if not match:
                                             msg = 'Unable to find book %s by %s in database, trying to add it using '
                                             if bookid == gr_id:
@@ -583,14 +581,14 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 GB_ID = GoogleBooks(gb_id)
                                                 GB_ID.find_book(gb_id, None)
                                             # see if it's there now...
-                                            match = myDB.match('SELECT BookID from books where BookID="%s"' % bookid)
+                                            match = myDB.match('SELECT BookID from books where BookID=?', (bookid,))
                                             if not match:
                                                 logger.debug("Unable to add bookid %s to database" % bookid)
                                                 bookid = ""
 
                                 if not bookid and isbn:
                                     # See if the isbn is in our database
-                                    match = myDB.match('SELECT BookID FROM books where BookIsbn = "%s"' % isbn)
+                                    match = myDB.match('SELECT BookID FROM books where BookIsbn=?', (isbn,))
                                     if match:
                                         bookid = match['BookID']
 
@@ -653,7 +651,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                             logger.debug("Setting language from metadata %s : %s" % (
                                                                          booktitle, language))
                                                             myDB.action(
-                                                                'UPDATE books SET BookLang="%s" WHERE BookID="%s"' %
+                                                                'UPDATE books SET BookLang=? WHERE BookID=?',
                                                                 (language, bookid))
                                                         break
                                                 if not bookid:
@@ -669,8 +667,8 @@ def LibraryScan(startdir=None, library='eBook'):
                                 if bookid:
                                     cmd = 'SELECT books.Status, AudioStatus, BookFile, AudioFile, AuthorName, BookName'
                                     cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
-                                    cmd += ' and BookID="%s"' % bookid
-                                    check_status = myDB.match(cmd)
+                                    cmd += ' and BookID=?'
+                                    check_status = myDB.match(cmd, (bookid,))
 
                                     if not check_status:
                                         logger.debug('Unable to find bookid %s in database' % bookid)
@@ -681,9 +679,9 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 # we found a new book
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set Status="Open" where BookID="%s"' % bookid)
+                                                    'UPDATE books set Status="Open" where BookID=?', (bookid,))
                                                 myDB.action(
-                                                    'UPDATE books set BookLibrary="%s" where BookID="%s"' %
+                                                    'UPDATE books set BookLibrary=? where BookID=?',
                                                     (now(), bookid))
 
                                             # check and store book location so we can check if it gets (re)moved
@@ -698,7 +696,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                     break
 
                                             if not check_status['BookFile']:  # no previous location
-                                                myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
+                                                myDB.action('UPDATE books set BookFile=? where BookID=?',
                                                             (book_filename, bookid))
                                             # location may have changed since last scan
                                             elif book_filename != check_status['BookFile']:
@@ -708,7 +706,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 logger.debug("%s %s matched %s BookID %s, [%s][%s]" %
                                                              (author, book, check_status['Status'], bookid,
                                                               check_status['AuthorName'], check_status['BookName']))
-                                                myDB.action('UPDATE books set BookFile="%s" where BookID="%s"' %
+                                                myDB.action('UPDATE books set BookFile=? where BookID=?',
                                                             (book_filename, bookid))
 
                                         elif library == 'Audio':
@@ -716,10 +714,9 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 # we found a new audiobook
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set AudioStatus="Open" where BookID="%s"' % bookid)
+                                                    'UPDATE books set AudioStatus="Open" where BookID=?', (bookid,))
                                                 myDB.action(
-                                                    'UPDATE books set AudioLibrary="%s" where BookID="%s"' % (
-                                                        now(), bookid))
+                                                    'UPDATE books set AudioLibrary=? where BookID=?', (now(), bookid))
                                             # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
                                             # link to the first part of multi-part audiobooks
@@ -729,7 +726,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                     break
 
                                             if not check_status['AudioFile']:  # no previous location
-                                                myDB.action('UPDATE books set AudioFile="%s" where BookID="%s"' %
+                                                myDB.action('UPDATE books set AudioFile=? where BookID=?',
                                                             (book_filename, bookid))
                                             # location may have changed since last scan
                                             elif book_filename != check_status['AudioFile']:
@@ -739,7 +736,7 @@ def LibraryScan(startdir=None, library='eBook'):
                                                 logger.debug("%s %s matched %s BookID %s, [%s][%s]" %
                                                              (author, book, check_status['AudioStatus'], bookid,
                                                               check_status['AuthorName'], check_status['BookName']))
-                                                myDB.action('UPDATE books set AudioFile="%s" where BookID="%s"' %
+                                                myDB.action('UPDATE books set AudioFile=? where BookID=?',
                                                             (book_filename, bookid))
 
                                         # update cover file to cover.jpg in book folder (if exists)
@@ -829,7 +826,7 @@ def LibraryScan(startdir=None, library='eBook'):
                     # bookname = item['bookname']
                     newimg, success = cache_img("book", bookid, bookimg)
                     if success:
-                        myDB.action('update books set BookImg="%s" where BookID="%s"' % (newimg, bookid))
+                        myDB.action('update books set BookImg=? where BookID=?', (newimg, bookid))
 
             images = myDB.select('select AuthorID, AuthorImg, AuthorName from authors where AuthorImg like "http%"')
             if len(images):
@@ -840,14 +837,14 @@ def LibraryScan(startdir=None, library='eBook'):
                     # authorname = item['authorname']
                     newimg, success = cache_img("author", authorid, authorimg)
                     if success:
-                        myDB.action('update authors set AuthorImg="%s" where AuthorID="%s"' % (newimg, authorid))
+                        myDB.action('update authors set AuthorImg=? where AuthorID=?', (newimg, authorid))
 
             # On full scan, update bookcounts for all authors, not just new ones - refresh may have located
             # new books for existing authors especially if switched provider gb/gr or changed wanted languages
             authors = myDB.select('select AuthorID from authors')
         else:
             # On single author/book import, just update bookcount for that author
-            authors = myDB.select('select AuthorID from authors where AuthorName = "%s"' % author.replace('"', '""'))
+            authors = myDB.select('select AuthorID from authors where AuthorName=?', (author.replace('"', '""'),))
 
         logger.debug('Updating bookcounts for %i author%s' % (len(authors), plural(len(authors))))
         for author in authors:

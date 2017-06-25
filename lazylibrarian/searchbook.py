@@ -65,9 +65,8 @@ def search_book(books=None, library=None):
             # The user has added a new book
             for book in books:
                 cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
-                cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
-                cmd += 'AND books.AuthorID = authors.AuthorID'
-                results = myDB.select(cmd)
+                cmd += 'from books,authors WHERE BookID=? AND books.AuthorID = authors.AuthorID'
+                results = myDB.select(cmd, (book['bookid'],))
                 if results:
                     for terms in results:
                         searchbooks.append(terms)

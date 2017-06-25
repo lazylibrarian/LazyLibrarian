@@ -31,7 +31,7 @@ def setAllBookAuthors():
     myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT, UNIQUE (AuthorID, BookID))')
     books = myDB.select('SELECT AuthorID,BookID from books')
     for item in books:
-        myDB.action('insert into bookauthors (AuthorID, BookID) values (%s, %s)' %
+        myDB.action('insert into bookauthors (AuthorID, BookID) values (?, ?)',
                     (item['AuthorID'], item['BookID']), suppress='UNIQUE')
     # also need to drop authorid from books table once it all works properly
     totalauthors = 0
@@ -57,7 +57,7 @@ def setBookAuthors(book):
             if authtype in ['primary author', 'main author', 'secondary author']:
                 if author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
                     name = formatAuthorName(unaccented(author['name']))
-                    exists = myDB.match('select authorid from authors where authorname = "%s"' % name)
+                    exists = myDB.match('select authorid from authors where authorname=?', (name,))
                     if exists:
                         authorid = exists['authorid']
                     else:
@@ -67,7 +67,7 @@ def setBookAuthors(book):
                             newauthors += 1
                     if authorid:
                         # suppress duplicates in bookauthors
-                        myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES ("%s", "%s")' %
+                        myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES (?, ?)',
                                     (authorid, book['bookid']), suppress='UNIQUE')
                         newrefs += 1
     except Exception as e:
@@ -157,16 +157,16 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=Tr
     myDB = database.DBConnection()
     if bookid:
         # delete any old series-member entries
-        myDB.action('DELETE from member WHERE BookID="%s"' % bookid)
+        myDB.action('DELETE from member WHERE BookID=?', (bookid,))
         for item in seriesdict:
-            match = myDB.match('SELECT SeriesID from series where SeriesName="%s" COLLATE NOCASE' % item)
+            match = myDB.match('SELECT SeriesID from series where SeriesName=? COLLATE NOCASE', (item,))
             if not match:
                 # new series, need to set status and get SeriesID
-                myDB.action('INSERT into series (SeriesName, Status) VALUES ("%s", "Active")' % item)
-                match = myDB.match('SELECT SeriesID from series where SeriesName="%s"' % item)
+                myDB.action('INSERT into series (SeriesName, Status) VALUES (?, ?)', (item, "Active"))
+                match = myDB.match('SELECT SeriesID from series where SeriesName=?', (item,))
                 # don't ask librarything what other books are in the series - leave for user to query if series wanted
                 # _ = getSeriesMembers(match['SeriesID'])
-            book = myDB.match('SELECT AuthorID from books where BookID="%s"' % bookid)
+            book = myDB.match('SELECT AuthorID from books where BookID=?', (bookid,))
             if match and book:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
                 newValueDict = {"SeriesNum": seriesdict[item]}
@@ -174,7 +174,7 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=Tr
                 # database versions earlier than 17 don't have seriesauthors table
                 # but this function is used in dbupgrade v15
                 if seriesauthors:
-                    myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES ("%s", "%s")' %
+                    myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES (?, ?)',
                                 (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
@@ -189,7 +189,7 @@ def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=Tr
                 if series and newseries:
                     series += '<br>'
                 series += newseries
-            myDB.action('UPDATE books SET SeriesDisplay="%s" WHERE BookID="%s"' % (series, bookid))
+            myDB.action('UPDATE books SET SeriesDisplay=? WHERE BookID=?', (series, bookid))
 
             # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
             # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
@@ -203,7 +203,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     if not bookid:
         return default
 
-    match = myDB.match('SELECT Status,AuthorID,BookName from books WHERE BookID="%s"' % bookid)
+    match = myDB.match('SELECT Status,AuthorID,BookName from books WHERE BookID=?', (bookid,))
     if not match:
         return default
 
@@ -218,7 +218,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     bookname = match['BookName']
     # Is the book part of any series we want?
     for item in seriesdict:
-        match = myDB.match('SELECT Status from series where SeriesName="%s" COLLATE NOCASE' % item)
+        match = myDB.match('SELECT Status from series where SeriesName=? COLLATE NOCASE', (item,))
         if match['Status'] == 'Wanted':
             new_status = 'Wanted'
             logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
@@ -227,7 +227,7 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     if not new_status:
         # Is it part of any series we don't want?
         for item in seriesdict:
-            match = myDB.match('SELECT Status from series where SeriesName="%s" COLLATE NOCASE' % item)
+            match = myDB.match('SELECT Status from series where SeriesName=? COLLATE NOCASE', (item,))
             if match['Status'] == 'Skipped':
                 new_status = 'Skipped'
                 logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
@@ -235,14 +235,14 @@ def setStatus(bookid=None, seriesdict=None, default=None):
 
     if not new_status:
         # Author we don't want?
-        match = myDB.match('SELECT Status from authors where AuthorID="%s"' % authorid)
+        match = myDB.match('SELECT Status from authors where AuthorID=?', (authorid,))
         if match['Status'] in ['Paused', 'Ignored']:
             new_status = 'Skipped'
             logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
 
     # If none of these, leave default "newbook" or "newauthor" status
     if new_status:
-        myDB.action('UPDATE books SET Status="%s" WHERE BookID="%s"' % (new_status, bookid))
+        myDB.action('UPDATE books SET Status=? WHERE BookID=?', (new_status, bookid))
         return new_status
 
     return default
@@ -254,11 +254,11 @@ def deleteEmptySeries():
     series = myDB.select('SELECT SeriesID,SeriesName from series')
     count = 0
     for item in series:
-        match = myDB.match('SELECT BookID from member where SeriesID="%s"' % item['SeriesID'])
+        match = myDB.match('SELECT BookID from member where SeriesID=?', (item['SeriesID'],))
         if not match:
             logger.debug('Deleting empty series %s' % item['SeriesName'])
             count += 1
-            myDB.action('DELETE from series where SeriesID="%s"' % item['SeriesID'])
+            myDB.action('DELETE from series where SeriesID=?', (item['SeriesID'],))
     return count
 
 
@@ -313,13 +313,14 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
     if bookID:
         # need to specify authors.AuthorName here as function is called during dbupgrade v15 to v16
         # while books.authorname column is still present
-        cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID="%s"' % bookID
+        cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
         cacheLocation = "WorkCache"
+        item = myDB.match(cmd, (bookID,))
     else:
-        cmd = 'select SeriesName from series where SeriesID="%s"' % seriesID
+        cmd = 'select SeriesName from series where SeriesID=?'
         cacheLocation = "SeriesCache"
-    item = myDB.match(cmd)
+        item = myDB.match(cmd, (seriesID,))
     if item:
         cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
         if bookID:
@@ -502,7 +503,7 @@ def getSeriesAuthors(seriesid):
     myDB = database.DBConnection()
     result = myDB.match("select count('AuthorID') as counter from authors")
     start = int(result['counter'])
-    result = myDB.match('select SeriesName from series where SeriesID="%s"' % seriesid)
+    result = myDB.match('select SeriesName from series where SeriesID=?', (seriesid,))
     seriesname = result['SeriesName']
     members = getSeriesMembers(seriesid)
     if members:
@@ -648,7 +649,7 @@ def getBookCover(bookID=None):
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
 
     myDB = database.DBConnection()
-    item = myDB.match('select BookFile from books where bookID="%s"' % bookID)
+    item = myDB.match('select BookFile from books where bookID=?', (bookID,))
     if item:
         bookfile = item['BookFile']
         if bookfile:  # we may have a cover.jpg in the same folder
@@ -678,9 +679,9 @@ def getBookCover(bookID=None):
             logger.debug('getBookCover: Image not found in work page for %s' % bookID)
 
     # not found in librarything work page, try to get a cover from goodreads or google instead
-    cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID="%s"' % bookID
+    cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID=?'
     cmd += ' and books.AuthorID = authors.AuthorID'
-    item = myDB.match(cmd)
+    item = myDB.match(cmd, (bookID,))
     if item:
         title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
         author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
@@ -764,7 +765,7 @@ def getAuthorImage(authorid=None):
 
     lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
     myDB = database.DBConnection()
-    authors = myDB.select('select AuthorName from authors where AuthorID="%s"' % authorid)
+    authors = myDB.select('select AuthorName from authors where AuthorID=?', (authorid,))
     if authors:
         authorname = safe_unicode(authors[0][0]).encode(lazylibrarian.SYS_ENCODING)
         safeparams = urllib.quote_plus("author %s" % authorname)

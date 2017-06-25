@@ -249,7 +249,7 @@ class GoogleBooks:
                             bookid = item['id']
 
                             author = myDB.select(
-                                'SELECT AuthorID FROM authors WHERE AuthorName = "%s"' % Author.replace('"', '""'))
+                                'SELECT AuthorID FROM authors WHERE AuthorName=?', (Author.replace('"', '""'),))
                             if author:
                                 AuthorID = author[0]['authorid']
                             else:
@@ -391,7 +391,7 @@ class GoogleBooks:
                                 if booklang == "Unknown" or booklang == "en":
                                     googlelang = booklang
                                     match = False
-                                    lang = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
+                                    lang = myDB.match('SELECT lang FROM languages where isbn=?', (isbnhead,))
                                     if lang:
                                         booklang = lang['lang']
                                         cache_hits += 1
@@ -417,7 +417,7 @@ class GoogleBooks:
                                                         match = True
                                                         break
                                             if match:
-                                                myDB.action('insert into languages values ("%s", "%s")' %
+                                                myDB.action('insert into languages values (?, ?)',
                                                             (isbnhead, booklang))
                                                 logger.debug(u"GB language: " + booklang)
 
@@ -435,7 +435,7 @@ class GoogleBooks:
                                             if resp != 'invalid' and resp != 'unknown':
                                                 booklang = resp  # found a language code
                                                 match = True
-                                                myDB.action('insert into languages values ("%s", "%s")' %
+                                                myDB.action('insert into languages values (?, ?)',
                                                             (isbnhead, booklang))
                                                 logger.debug(u"LT language: " + booklang)
                                         except Exception as e:
@@ -540,7 +540,7 @@ class GoogleBooks:
                         # GoodReads sometimes has multiple bookids for the same book (same author/title, different
                         # editions) and sometimes uses the same bookid if the book is the same but the title is
                         # slightly different. Not sure if googlebooks does too, but we only want one...
-                        existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                        existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID=?', (bookid,))
                         if existing_book:
                             book_status = existing_book['Status']
                             locked = existing_book['Manual']
@@ -574,9 +574,8 @@ class GoogleBooks:
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
-                            cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE' % \
-                                   (bookname.replace('"', '""'), authorname.replace('"', '""'))
-                            match = myDB.match(cmd)
+                            cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE',
+                            match = myDB.match(cmd, (bookname.replace('"', '""'), authorname.replace('"', '""')))
                             if match:
                                 if match['BookID'] != bookid:  # we have a different book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
@@ -586,8 +585,8 @@ class GoogleBooks:
 
                         if not rejected:
                             cmd = 'SELECT AuthorName,BookName FROM books,authors'
-                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID="%s"' % bookid
-                            match = myDB.match(cmd)
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
+                            match = myDB.match(cmd, (bookid,))
                             if match:  # we have a book with this bookid already
                                 if bookname != match['BookName'] or authorname != match['AuthorName']:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
@@ -684,9 +683,9 @@ class GoogleBooks:
             deleteEmptySeries()
             logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                          (authorname, api_hits, plural(api_hits)))
-
-            lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
-                               AND Status != "Ignored" order by BookDate DESC' % authorid)
+            cmd = 'SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID=?'
+            cmd += ' AND Status != "Ignored" order by BookDate DESC'
+            lastbook = myDB.match(cmd, (authorid,))
 
             if lastbook:  # maybe there are no books [remaining] for this author
                 lastbookname = lastbook['BookName']
@@ -718,7 +717,7 @@ class GoogleBooks:
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
             logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
-            myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
+            myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                          cache_hits, ignored, removedResults, not_cached, duplicates))
 
@@ -835,9 +834,9 @@ class GoogleBooks:
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
-            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
+            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
             if not match:
-                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' % author['authorname'])
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName=?', (author['authorname'],))
                 if match:
                     logger.debug('%s: Changing authorid from %s to %s' %
                                  (author['authorname'], AuthorID, match['AuthorID']))

@@ -106,7 +106,7 @@ def findBestResult(resultlist, book, searchtype, source):
                 logger.debug("Rejecting %s, no URL found" % resultTitle)
 
             if not rejected:
-                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % url)
+                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (url,))
                 if already_failed:
                     logger.debug("Rejecting %s, blacklisted at %s" % (resultTitle, already_failed['NZBprov']))
                     rejected = True
@@ -216,11 +216,11 @@ def downloadResult(match, book):
             auxinfo = 'eBook'
 
         if auxinfo == 'eBook':
-            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
-                                       newValueDict["BookID"])
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID=? and Status="Snatched"',
+                                       (newValueDict["BookID"],))
         else:
-            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and AudioStatus="Snatched"' %
-                                       newValueDict["BookID"])
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus="Snatched"',
+                                       (newValueDict["BookID"],))
 
         if snatchedbooks:
             logger.debug('%s %s already marked snatched' % (book['authorName'], book['bookName']))

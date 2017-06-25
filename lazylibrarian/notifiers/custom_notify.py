@@ -41,9 +41,9 @@ class CustomNotifier:
             data = myDB.match('SELECT * from books')
         else:
             # message is a bookid or a magazineid
-            data = myDB.match('SELECT * from books where BookID="%s"' % message)
+            data = myDB.match('SELECT * from books where BookID=?', (message,))
             if not data:
-                data = myDB.match('SELECT * from magazines where BookID="%s"' % message)
+                data = myDB.match('SELECT * from magazines where BookID=?', (message,))
         dictionary = dict(zip(data.keys(), data))
         dictionary['Event'] = event
 

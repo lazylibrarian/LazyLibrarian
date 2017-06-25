@@ -269,7 +269,7 @@ def magazineScan():
                 issuefile = mag['IssueFile']
 
                 if issuefile and not os.path.isfile(issuefile):
-                    myDB.action('DELETE from Issues where issuefile="%s"' % issuefile)
+                    myDB.action('DELETE from Issues where issuefile=?', (issuefile,))
                     logger.info('Issue %s - %s deleted as not found on disk' % (title, issuedate))
                     controlValueDict = {"Title": title}
                     newValueDict = {
@@ -285,11 +285,11 @@ def magazineScan():
             # now check the magazine titles and delete any with no issues
             for mag in mags:
                 title = mag['Title']
-                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
                 issues = count[0]['counter']
                 if not issues:
                     logger.debug('Magazine %s deleted as no issues found' % title)
-                    myDB.action('DELETE from magazines WHERE Title="%s"' % title)
+                    myDB.action('DELETE from magazines WHERE Title=?', (title,))
 
         logger.info(' Checking [%s] for magazines' % mag_path)
 
@@ -351,7 +351,7 @@ def magazineScan():
 
                     # is this magazine already in the database?
                     mag_entry = myDB.match(
-                        'SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title="%s"' % title)
+                        'SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title=?', (title,))
                     if not mag_entry:
                         # need to add a new magazine to the database
                         newValueDict = {
@@ -379,8 +379,8 @@ def magazineScan():
                     # is this issue already in the database?
                     controlValueDict = {"Title": title, "IssueDate": issuedate}
                     issue_id = create_id("%s %s" % (title, issuedate))
-                    iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
-                        title, issuedate))
+                    iss_entry = myDB.match('SELECT Title from issues WHERE Title=? and IssueDate=?',
+                                            (title, issuedate))
                     if not iss_entry:
                         newValueDict = {
                             "IssueAcquired": iss_acquired,

@@ -122,18 +122,22 @@ class WebInterface(object):
         cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+        args = []
         if whichStatus not in ['All', 'None']:
-            cmd += ' and series.Status="%s"' % whichStatus
-
+            cmd += ' and series.Status=?'
+            args.append(whichStatus)
         if AuthorID and not AuthorID == 'None':
-            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
             if match:
                 title = "%s Series" % match['AuthorName']
-            cmd += ' and seriesauthors.AuthorID="%s"' % AuthorID
+            cmd += ' and seriesauthors.AuthorID=?'
+            args.append(AuthorID)
         cmd += ' GROUP BY series.seriesID'
         cmd += ' order by AuthorName,SeriesName'
-
-        rowlist = myDB.select(cmd)
+        if args:
+            rowlist = myDB.select(cmd, tuple(args))
+        else:
+            rowlist = myDB.select(cmd)
 
         # turn the sqlite rowlist into a list of lists
         filtered = []
@@ -168,7 +172,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         title = "Series"
         if AuthorID:
-            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
             if match:
                 title = "%s Series" % match['AuthorName']
         return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=[],
@@ -180,14 +184,14 @@ class WebInterface(object):
         cmd = 'SELECT SeriesName,series.SeriesID,AuthorName,seriesauthors.AuthorID'
         cmd += ' from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
-        cmd += ' and series.SeriesID="%s"' % seriesid
-        series = myDB.match(cmd)
+        cmd += ' and series.SeriesID=?'
+        series = myDB.match(cmd, (seriesid,))
         cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
         cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
-        cmd += ' and series.SeriesID="%s" order by SeriesName' % seriesid
-        members = myDB.select(cmd)
+        cmd += ' and series.SeriesID=? order by SeriesName'
+        members = myDB.select(cmd, (seriesid,))
         # is it a multi-author series?
         multi = "False"
         authorid = ''
@@ -210,7 +214,7 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not seriesid == 'book_table_length':
                     if action in ["Wanted", "Active", "Skipped", "Ignored"]:
-                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID = "%s"' % seriesid)
+                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
                         if match:
                             myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
                             logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
@@ -453,14 +457,12 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if Ignored:
             languages = myDB.select(
-                "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status ='Ignored'" % AuthorID)
+                "SELECT DISTINCT BookLang from books WHERE AuthorID=? AND Status ='Ignored'", (AuthorID,))
         else:
             languages = myDB.select(
-                "SELECT DISTINCT BookLang from books WHERE AuthorID = '%s' AND Status !='Ignored'" % AuthorID)
+                "SELECT DISTINCT BookLang from books WHERE AuthorID=? AND Status !='Ignored'", (AuthorID,))
 
-        queryauthors = "SELECT * from authors WHERE AuthorID = '%s'" % AuthorID
-
-        author = myDB.match(queryauthors)
+        author = myDB.match("SELECT * from authors WHERE AuthorID=?", (AuthorID,))
 
         types = ['eBook']
         if lazylibrarian.SHOW_AUDIO:
@@ -479,8 +481,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Pausing author: %s" % AuthorName)
@@ -500,8 +501,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Resuming author: %s" % AuthorName)
@@ -521,8 +521,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Ignoring author: %s" % AuthorName)
@@ -541,14 +540,13 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
-            myDB.action('DELETE from seriesauthors WHERE AuthorID="%s"' % AuthorID)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
+            myDB.action('DELETE from authors WHERE AuthorID=', (AuthorID,))
+            myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (AuthorID,))
+            myDB.action('DELETE from books WHERE AuthorID=?', (AuthorID,))
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -556,7 +554,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             threading.Thread(target=addAuthorToDB, name='REFRESHAUTHOR', args=[None, True, AuthorID]).start()
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
@@ -569,7 +567,7 @@ class WebInterface(object):
         self.label_thread()
 
         myDB = database.DBConnection()
-        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
+        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
 
@@ -590,8 +588,8 @@ class WebInterface(object):
                 else:
                     sourcefile = 'BookFile'
                 cmd = 'SELECT %s from books,authors where books.AuthorID = authors.AuthorID' % sourcefile
-                cmd += '  and AuthorName="%s" and %s <> ""' % (AuthorName, sourcefile)
-                anybook = myDB.match(cmd)
+                cmd += '  and AuthorName=? and %s <> ""' % sourcefile
+                anybook = myDB.match(cmd, (AuthorName,))
                 if anybook:
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook[sourcefile])))
             if os.path.isdir(authordir):
@@ -664,7 +662,7 @@ class WebInterface(object):
         self.label_thread()
         logger.debug("snatch bookid %s mode=%s from %s url=[%s]" % (bookid, mode, provider, url))
         myDB = database.DBConnection()
-        bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID=?', (bookid,))
         if bookdata:
             controlValueDict = {"NZBurl": url}
             newValueDict = {
@@ -734,8 +732,10 @@ class WebInterface(object):
         cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
 
         status_type = 'books.status'
+        args = []
         if kwargs['source'] == "Manage":
-            cmd += ' and books.STATUS="%s"' % kwargs['whichStatus']
+            cmd += ' and books.STATUS=?'
+            args.append(kwargs['whichStatus'])
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
@@ -751,7 +751,8 @@ class WebInterface(object):
             else:
                 status_type = 'books.status'
 
-            cmd += ' and books.AuthorID="%s"' % kwargs['AuthorID']
+            cmd += ' and books.AuthorID=?'
+            args.append(kwargs['AuthorID']
             if 'ignored' in kwargs and kwargs['ignored'] == "True":
                 cmd += ' and %s="Ignored"' % status_type
             else:
@@ -760,9 +761,10 @@ class WebInterface(object):
         if kwargs['source'] in ["Books", "Author", "Audio"]:
             # for these we need to check and filter on BookLang if set
             if 'booklang' in kwargs and kwargs['booklang'] != '' and kwargs['booklang'] != 'None':
-                cmd += ' and BOOKLANG="%s"' % kwargs['booklang']
+                cmd += ' and BOOKLANG=?'
+                args.append(kwargs['booklang'])
 
-        rowlist = myDB.select(cmd)
+        rowlist = myDB.select(cmd, tuple(args))
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
         d = []
@@ -866,7 +868,7 @@ class WebInterface(object):
     def addBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ""
-        match = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
+        match = myDB.match('SELECT AuthorID from books WHERE BookID=?', (bookid,))
         if match:
             myDB.upsert("books", {'Status': 'Wanted'}, {'BookID': bookid})
             AuthorID = match['AuthorID']
@@ -904,7 +906,7 @@ class WebInterface(object):
     def searchForBook(self, bookid=None):
         myDB = database.DBConnection()
         AuthorID = ''
-        bookdata = myDB.match('SELECT AuthorID from books WHERE BookID="%s"' % bookid)
+        bookdata = myDB.match('SELECT AuthorID from books WHERE BookID=?', (bookid,))
         if bookdata:
             AuthorID = bookdata["AuthorID"]
 
@@ -934,9 +936,9 @@ class WebInterface(object):
     def openBook(self, bookid=None, source=None):
         self.label_thread()
         myDB = database.DBConnection()
-        cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID="%s"' % bookid
+        cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
-        bookdata = myDB.match(cmd)
+        bookdata = myDB.match(cmd, (bookid,))
         if bookdata:
             if source == 'audio':
                 source = 'AudioBook'
@@ -962,7 +964,7 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
 
-        data = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+        data = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
         if data:
             return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
         else:
@@ -974,7 +976,7 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
         if authorid:
-            authdata = myDB.match('SELECT * from authors WHERE AuthorID="%s"' % authorid)
+            authdata = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
             if authdata:
                 edited = ""
                 if authorborn == 'None':
@@ -995,7 +997,7 @@ class WebInterface(object):
                     edited += "Manual "
 
                 if not (authdata["AuthorName"] == authorname):
-                    match = myDB.match('SELECT AuthorName from authors where AuthorName="%s"' % authorname)
+                    match = myDB.match('SELECT AuthorName from authors where AuthorName=?', (authorname,))
                     if match:
                         logger.debug("Unable to rename, new author name %s already exists" % authorname)
                         authorname = authdata["AuthorName"]
@@ -1089,11 +1091,11 @@ class WebInterface(object):
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
         cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
-        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
-        bookdata = myDB.match(cmd)
+        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+        bookdata = myDB.match(cmd, (bookid,))
         cmd = 'SELECT SeriesName, SeriesNum from member,series '
-        cmd += 'where series.SeriesID=member.SeriesID and BookID="%s"' % bookid
-        seriesdict = myDB.select(cmd)
+        cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
+        seriesdict = myDB.select(cmd, (bookid,))
         if bookdata:
             return serve_template(templatename="editbook.html", title="Edit Book",
                                   config=bookdata, seriesdict=seriesdict, authors=authors)
@@ -1106,8 +1108,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if bookid:
             cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
-            cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID="%s"' % bookid
-            bookdata = myDB.match(cmd)
+            cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+            bookdata = myDB.match(cmd, (bookid,))
             if bookdata:
                 edited = ''
                 moved = False
@@ -1139,8 +1141,8 @@ class WebInterface(object):
                     myDB.upsert("books", newValueDict, controlValueDict)
 
                 cmd = 'SELECT SeriesName, SeriesNum from member,series '
-                cmd += 'where series.SeriesID=member.SeriesID and BookID="%s"' % bookid
-                old_series = myDB.select(cmd)
+                cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
+                old_series = myDB.select(cmd, (bookid,))
                 old_dict = {}
                 new_dict = {}
                 dict_counter = 0
@@ -1178,8 +1180,7 @@ class WebInterface(object):
                     logger.debug('Book [%s] has not been changed' % bookname)
 
                 if moved:
-                    authordata = myDB.match(
-                        'SELECT AuthorID from authors WHERE AuthorName="%s"' % authorname)
+                    authordata = myDB.match('SELECT AuthorID from authors WHERE AuthorName=?', (authorname,))
                     if authordata:
                         controlValueDict = {'BookID': bookid}
                         newValueDict = {'AuthorID': authordata['AuthorID']}
@@ -1213,7 +1214,7 @@ class WebInterface(object):
                 # ouch dirty workaround...
                 if not bookid == 'book_table_length':
                     if action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        title = myDB.match('SELECT BookName from books WHERE BookID = "%s"' % bookid)
+                        title = myDB.match('SELECT BookName from books WHERE BookID=?', (bookid,))
                         if title:
                             bookname = title['BookName']
                             if library == 'eBook':
@@ -1224,7 +1225,7 @@ class WebInterface(object):
                                 logger.debug(u'AudioStatus set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
-                            'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID = "%s"' % bookid)
+                            'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
                         if bookdata:
                             AuthorID = bookdata['AuthorID']
                             bookname = bookdata['BookName']
@@ -1240,12 +1241,12 @@ class WebInterface(object):
                                         except Exception as e:
                                             logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
 
-                            authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID = "%s"' % AuthorID)
+                            authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                 logger.debug(u'Status set to Ignored for "%s"' % bookname)
                             else:
-                                myDB.action('delete from books where bookid="%s"' % bookid)
+                                myDB.action('delete from books where bookid=?', (bookid,))
                                 logger.info(u'Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):
@@ -1358,8 +1359,7 @@ class WebInterface(object):
         if magazines:
             for mag in magazines:
                 title = mag['Title']
-                count = myDB.match(
-                    'SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+                count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
                 if count:
                     issues = count['counter']
                 else:
@@ -1390,7 +1390,7 @@ class WebInterface(object):
     def issuePage(self, title):
         myDB = database.DBConnection()
 
-        issues = myDB.select('SELECT * from issues WHERE Title="%s" order by IssueDate DESC' % title)
+        issues = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
 
         if not len(issues):
             raise cherrypy.HTTPRedirect("magazines")
@@ -1443,8 +1443,8 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
         # need to filter on whichStatus
-        rowlist = myDB.select(
-            'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=' + kwargs['whichStatus'])
+        rowlist = myDB.select('SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=?',
+                              (kwargs['whichStatus'],))
         rows = []
         filtered = []
         if len(rowlist):
@@ -1479,7 +1479,7 @@ class WebInterface(object):
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
-        mag_data = myDB.match('SELECT * from issues WHERE IssueID="%s"' % bookid)
+        mag_data = myDB.match('SELECT * from issues WHERE IssueID=?', (bookid,))
         if mag_data:
             IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
@@ -1487,7 +1487,7 @@ class WebInterface(object):
                 return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
 
         # or we may just have a title to find magazine in issues table
-        mag_data = myDB.select('SELECT * from issues WHERE Title="%s"' % bookid)
+        mag_data = myDB.select('SELECT * from issues WHERE Title=?', (bookid,))
         if len(mag_data) <= 0:  # no issues!
             raise cherrypy.HTTPRedirect("magazines")
         elif len(mag_data) == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:  # we only have one issue, get it
@@ -1521,18 +1521,18 @@ class WebInterface(object):
                     nzburl2 = ''
 
                 if not nzburl2:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s"' % nzburl)
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl=?', (nzburl,))
                 else:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl="%s" OR NZBurl="%s"' % (nzburl, nzburl2))
+                    title = myDB.select('SELECT * from pastissues WHERE NZBurl=? OR NZBurl=?', (nzburl, nzburl2))
 
                 for item in title:
                     nzburl = item['NZBurl']
                     if action == 'Remove':
-                        myDB.action('DELETE from pastissues WHERE NZBurl="%s"' % nzburl)
+                        myDB.action('DELETE from pastissues WHERE NZBurl=?', (nzburl,))
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     elif action in ['Have', 'Ignored', 'Skipped']:
-                        myDB.action('UPDATE pastissues set status="%s" WHERE NZBurl="%s"' % (action, nzburl))
+                        myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
                     elif action == 'Wanted':
@@ -1598,14 +1598,14 @@ class WebInterface(object):
         for item in args:
             # ouch dirty workaround...
             if not item == 'book_table_length':
-                issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID="%s"' % item)
+                issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
                 if issue:
                     if action == "Delete":
                         result = self.deleteIssue(issue['IssueFile'])
                         if result:
                             logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
                     if action == "Remove" or action == "Delete":
-                        myDB.action('DELETE from issues WHERE IssueID="%s"' % item)
+                        myDB.action('DELETE from issues WHERE IssueID=?', (item,))
                         logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
 
@@ -1645,7 +1645,7 @@ class WebInterface(object):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.info(u'Status of magazine %s changed to %s' % (item, action))
                 if action == "Delete":
-                    issues = myDB.select('SELECT IssueFile from issues WHERE Title="%s"' % item)
+                    issues = myDB.select('SELECT IssueFile from issues WHERE Title=?', (item,))
                     logger.debug(u'Deleting magazine %s from disc' % item)
                     issuedir = ''
                     for issue in issues:  # delete all issues of this magazine
@@ -1665,9 +1665,9 @@ class WebInterface(object):
                             logger.debug(u'Magazine directory %s is not empty' % magdir)
                     logger.info(u'Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
-                    myDB.action('DELETE from magazines WHERE Title="%s"' % item)
-                    myDB.action('DELETE from pastissues WHERE BookID="%s"' % item)
-                    myDB.action('DELETE from issues WHERE Title="%s"' % item)
+                    myDB.action('DELETE from magazines WHERE Title=?', (item,))
+                    myDB.action('DELETE from pastissues WHERE BookID=?', (item,))
+                    myDB.action('DELETE from issues WHERE Title=?', (item,))
                     logger.info(u'Magazine %s removed from database' % item)
                 if action == "Reset":
                     controlValueDict = {"Title": item}
@@ -1686,7 +1686,7 @@ class WebInterface(object):
     def searchForMag(self, bookid=None):
         myDB = database.DBConnection()
         bookid = urllib.unquote_plus(bookid)
-        bookdata = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
+        bookdata = myDB.match('SELECT * from magazines WHERE Title=?', (bookid,))
         if bookdata:
             # start searchthreads
             mags = [{"bookid": bookid}]
@@ -1720,7 +1720,7 @@ class WebInterface(object):
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
             dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
             title = replace_all(title, dic)
-            exists = myDB.match('SELECT Title from magazines WHERE Title="%s"' % title)
+            exists = myDB.match('SELECT Title from magazines WHERE Title=?', (title,))
             if exists:
                 logger.debug("Magazine %s already exists (%s)" % (title, exists['Title']))
             else:
@@ -1986,7 +1986,7 @@ class WebInterface(object):
             myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
             logger.info(u"Clearing history where status is %s" % status)
-            myDB.action('DELETE from wanted WHERE Status="%s"' % status)
+            myDB.action('DELETE from wanted WHERE Status=?', (status,))
         raise cherrypy.HTTPRedirect("history")
 
     @cherrypy.expose

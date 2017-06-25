@@ -47,9 +47,9 @@ def searchItem(item=None, bookid=None, cat=None):
 
     if cat in ['book', 'audio']:
         myDB = database.DBConnection()
-        cmd = 'SELECT authorName,bookName,bookSub from books,authors WHERE bookID="%s"' % bookid
-        cmd += ' and books.AuthorID=authors.AuthorID'
-        match = myDB.match(cmd)
+        cmd = 'SELECT authorName,bookName,bookSub from books,authors WHERE books.AuthorID=authors.AuthorID'
+        cmd += ' and bookID=?'
+        match = myDB.match(cmd, (bookid,))
         if match:
             book['authorName'] = match['authorName']
             book['bookName'] = match['bookName']

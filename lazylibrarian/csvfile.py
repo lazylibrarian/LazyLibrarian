@@ -43,8 +43,8 @@ def export_CSV(search_dir=None, status="Wanted"):
         myDB = database.DBConnection()
 
         cmd = 'SELECT BookID,AuthorName,BookName,BookIsbn,books.AuthorID FROM books,authors '
-        cmd += 'WHERE books.Status = "%s" and books.AuthorID = authors.AuthorID' % status
-        find_status = myDB.select(cmd)
+        cmd += 'WHERE books.Status=? and books.AuthorID = authors.AuthorID'
+        find_status = myDB.select(cmd, (status,))
 
         if not find_status:
             logger.warn(u"No books marked as %s" % status)
@@ -96,21 +96,21 @@ def finditem(item, authorname, headers):
     # try to find book in our database using bookid or isbn, or if that fails, name matching
     cmd = 'SELECT AuthorName,BookName,BookID,books.Status FROM books,authors where books.AuthorID = authors.AuthorID '
     if bookid:
-        fullcmd = cmd + 'and BookID=%s' % bookid
-        bookmatch = myDB.match(fullcmd)
+        fullcmd = cmd + 'and BookID=?'
+        bookmatch = myDB.match(fullcmd, (bookid,))
     if not bookmatch:
         if is_valid_isbn(isbn10):
-            fullcmd = cmd + 'and BookIsbn="%s"' % isbn10
-            bookmatch = myDB.match(fullcmd)
+            fullcmd = cmd + 'and BookIsbn=?'
+            bookmatch = myDB.match(fullcmd, (isbn10,))
     if not bookmatch:
         if is_valid_isbn(isbn13):
-            fullcmd = cmd + 'and BookIsbn="%s"' % isbn13
-            bookmatch = myDB.match(fullcmd)
+            fullcmd = cmd + 'and BookIsbn=?'
+            bookmatch = myDB.match(fullcmd, (isbn13,))
     if not bookmatch:
         bookid = find_book_in_db(myDB, authorname, bookname)
         if bookid:
-            fullcmd = cmd + 'and BookID="%s"' % bookid
-            bookmatch = myDB.match(fullcmd)
+            fullcmd = cmd + 'and BookID=?'
+            bookmatch = myDB.match(fullcmd, (bookid,))
     return bookmatch
 
 
@@ -171,7 +171,7 @@ def import_CSV(search_dir=None):
                 if isinstance(title, str):
                     title = title.decode(lazylibrarian.SYS_ENCODING)
 
-                authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
 
                 if authmatch:
                     logger.debug(u"CSV: Author %s found in database" % authorname)

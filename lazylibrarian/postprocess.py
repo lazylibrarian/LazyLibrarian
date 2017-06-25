@@ -44,12 +44,12 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
 
 def update_downloads(provider):
     myDB = database.DBConnection()
-    entry = myDB.match('SELECT Count FROM downloads where Provider="%s"' % provider)
+    entry = myDB.match('SELECT Count FROM downloads where Provider=?', (provider,))
     if entry:
         counter = int(entry['Count'])
-        myDB.action('UPDATE downloads SET Count=%s WHERE Provider="%s"' % (counter + 1, provider))
+        myDB.action('UPDATE downloads SET Count=? WHERE Provider=?', (counter + 1, provider))
     else:
-        myDB.action('INSERT into downloads (Count, Provider) VALUES  (%s, "%s")' % (1, provider))
+        myDB.action('INSERT into downloads (Count, Provider) VALUES  (?, ?)', (1, provider))
 
 
 def processAlternate(source_dir=None):
@@ -102,7 +102,7 @@ def processAlternate(source_dir=None):
                 bookname = metadata['title']
                 myDB = database.DBConnection()
                 authorid = ''
-                authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
 
                 if not authmatch:
                     # try goodreads preferred authorname
@@ -118,7 +118,7 @@ def processAlternate(source_dir=None):
                         authorid = author_gr['authorid']
                         logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                         authorname = grauthorname
-                        authmatch = myDB.match('SELECT * FROM authors where AuthorID="%s"' % authorid)
+                        authmatch = myDB.match('SELECT * FROM authors where AuthorID=?', (authorid,))
 
                 if authmatch:
                     logger.debug("ALT: Author %s found in database" % authorname)
@@ -269,8 +269,7 @@ def processDir(reset=False):
                 matchtitle = unaccented_str(book['NZBtitle'])
                 if torrentname and torrentname != matchtitle:
                     logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
-                    myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl = "%s"' %
-                                (torrentname, book['NZBurl']))
+                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
                     matchtitle = torrentname
 
                 # here we could also check percentage downloaded or eta or status?
@@ -394,9 +393,9 @@ def processDir(reset=False):
                     mostrecentissue = ''
                     logger.debug(u'Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
 
-                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % book['BookID']
+                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
                     cmd += ' and books.AuthorID = authors.AuthorID'
-                    data = myDB.match(cmd)
+                    data = myDB.match(cmd, (book['BookID'],))
                     if data:  # it's ebook/audiobook
                         logger.debug(u'Processing %s %s' % (book_type, book['BookID']))
                         authorname = data['AuthorName']
@@ -418,7 +417,7 @@ def processDir(reset=False):
                             dest_dir = lazylibrarian.DIRECTORY('Audio')
                         dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
-                        data = myDB.match('SELECT IssueDate from magazines WHERE Title="%s"' % book['BookID'])
+                        data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                         if data:  # it's a magazine
                             logger.debug(u'Processing magazine %s' % book['BookID'])
                             # AuxInfo was added for magazine release date, normally housed in 'magazines'
@@ -543,9 +542,9 @@ def processDir(reset=False):
                     # if it's a book, reset status so we try for a different version
                     # if it's a magazine, user can select a different one from pastissues table
                     if book_type == 'eBook':
-                        myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                        myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
                     elif book_type == 'AudioBook':
-                        myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                        myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
 
                     # at this point, as it failed we should move it or it will get postprocessed
                     # again (and fail again)
@@ -581,7 +580,7 @@ def processDir(reset=False):
                 if not extn or extn not in skipped_extensions:
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
-                    data = myDB.match('SELECT BookFile from books WHERE BookID="%s"' % bookID)
+                    data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
                     if data and data['BookFile'] and os.path.isfile(data['BookFile']):
                         logger.debug('Skipping BookID %s, already exists' % bookID)
                     else:
@@ -636,10 +635,10 @@ def processDir(reset=False):
                     # change status to "Failed", and ask downloader to delete task and files
                     if book['BookID'] != 'unknown':
                         if book_type == 'eBook':
-                            myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                            myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
                         elif book_type == 'AudioBook':
-                            myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % book['BookID'])
-                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID="%s"' % book['BookID'])
+                            myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
+                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
 
         # Check if postprocessor needs to run again
@@ -716,13 +715,12 @@ def import_book(pp_path=None, bookID=None):
             return False
 
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % bookID
-        cmd += ' and books.AuthorID = authors.AuthorID'
-        data = myDB.match(cmd)
+        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+        data = myDB.match(cmd, (bookID,))
         if data:
-            cmd = 'SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID="%s" and Status="Snatched"' % bookID
+            cmd = 'SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID=? and Status="Snatched"'
             # we may have snatched an ebook and audiobook of the same title/id
-            was_snatched = myDB.select(cmd)
+            was_snatched = myDB.select(cmd, (bookID,))
             want_audio = False
             want_ebook = False
             for item in was_snatched:
@@ -801,16 +799,16 @@ def import_book(pp_path=None, bookID=None):
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s" and Status="Snatched"' % bookID)
+                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
                 if was_snatched:
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                 # reset status so we try for a different version
                 if book_type == 'AudioBook':
-                    myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % bookID)
+                    myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (bookID,))
                 else:
-                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
+                    myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (bookID,))
                 try:
                     os.rename(pp_path, pp_path + '.fail')
                     logger.error('Warning - Residual files remain in %s.fail' % pp_path)
@@ -848,7 +846,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors book counts
-    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
+    match = myDB.match('SELECT AuthorID FROM books WHERE BookID=?', (bookid,))
     if match:
         update_totals(match['AuthorID'])
 
@@ -866,9 +864,8 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         processAutoAdd(dest_path)
 
     cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-    cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookid
-    cmd += ' and books.AuthorID = authors.AuthorID'
-    data = myDB.match(cmd)
+    cmd += 'BookLang,BookPub from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+    data = myDB.match(cmd, (bookid,))
     if not data:
         logger.error('processExtras: No data found for bookid %s' % bookid)
         return
