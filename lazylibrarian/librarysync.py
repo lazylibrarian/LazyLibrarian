@@ -149,7 +149,7 @@ def get_book_info(fname):
     return res
 
 
-def find_book_in_db(myDB, author, book):
+def find_book_in_db(author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
@@ -158,7 +158,7 @@ def find_book_in_db(myDB, author, book):
     if isinstance(book, str):
         book = book.decode(lazylibrarian.SYS_ENCODING)
     logger.debug('Searching database for [%s] by [%s]' % (book, author))
-
+    myDB = database.DBConnection()
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
     cmd += 'and AuthorName=? COLLATE NOCASE and BookName=? COLLATE NOCASE'
     match = myDB.match(cmd, (author.replace('"', '""'), book.replace('"', '""')))
@@ -271,23 +271,23 @@ def find_book_in_db(myDB, author, book):
         return 0
 
 
-def LibraryScan(startdir=None, library='eBook', AuthID=None):
+def LibraryScan(startdir=None, library='eBook', authid=None):
     """ Scan a directory tree adding new books into database
         Return how many books you added """
-    try:
-        destdir = lazylibrarian.DIRECTORY(library)
-        if not startdir:
-            if not destdir:
-                logger.warn('Cannot find destination directory: %s. Not scanning' % destdir)
-                return 0
-            startdir = destdir
 
-        if not os.path.isdir(startdir):
-            logger.warn('Cannot find directory: %s. Not scanning' % startdir)
+    destdir = lazylibrarian.DIRECTORY(library)
+    if not startdir:
+        if not destdir:
+            logger.warn('Cannot find destination directory: %s. Not scanning' % destdir)
             return 0
+        startdir = destdir
 
-        myDB = database.DBConnection()
+    if not os.path.isdir(startdir):
+        logger.warn('Cannot find directory: %s. Not scanning' % startdir)
+        return 0
 
+    myDB = database.DBConnection()
+    try:
         # keep statistics of full library scans
         if startdir == destdir:
             if library == 'eBook':
@@ -315,10 +315,10 @@ def LibraryScan(startdir=None, library='eBook', AuthID=None):
             except Exception as e:
                 logger.info('Error: ' + str(e))
         else:
-            if AuthID:
-                match = myDB.match('SELECT authorid from authors where authorid=?', (AuthID,))
+            if authid:
+                match = myDB.match('SELECT authorid from authors where authorid=?', (authid,))
                 if match:
-                    controlValueDict = {"AuthorID": AuthID}
+                    controlValueDict = {"AuthorID": authid}
                     newValueDict = {"Status": "Loading"}
                     myDB.upsert("authors", newValueDict, controlValueDict)
 
@@ -566,7 +566,7 @@ def LibraryScan(startdir=None, library='eBook', AuthID=None):
                                 # First try and find it under author and bookname
                                 # as we may have it under a different bookid or isbn to goodreads/googlebooks
                                 # which might have several bookid/isbn for the same book
-                                bookid = find_book_in_db(myDB, author, book)
+                                bookid = find_book_in_db(author, book)
 
                                 if not bookid:
                                     # Title or author name might not match, or maybe multiple authors
@@ -611,7 +611,7 @@ def LibraryScan(startdir=None, library='eBook', AuthID=None):
                                         newauthor = newauthor[:-1] + '.'
                                     if author.lower() != newauthor.lower():
                                         logger.debug("Trying authorname [%s]" % newauthor)
-                                        bookid = find_book_in_db(myDB, newauthor, book)
+                                        bookid = find_book_in_db(newauthor, book)
                                         if bookid:
                                             logger.warn("%s not found under [%s], found under [%s]" %
                                                         (book, author, newauthor))
@@ -858,10 +858,10 @@ def LibraryScan(startdir=None, library='eBook', AuthID=None):
             # new books for existing authors especially if switched provider gb/gr or changed wanted languages
             authors = myDB.select('select AuthorID from authors')
         else:
-            if AuthID:
-                match = myDB.match('SELECT authorid from authors where authorid=?', (AuthID,))
+            if authid:
+                match = myDB.match('SELECT authorid from authors where authorid=?', (authid,))
                 if match:
-                    controlValueDict = {"AuthorID": AuthID}
+                    controlValueDict = {"AuthorID": authid}
                     newValueDict = {"Status": "Active"}
                     myDB.upsert("authors", newValueDict, controlValueDict)
             # On single author/book import, just update bookcount for that author
@@ -881,10 +881,10 @@ def LibraryScan(startdir=None, library='eBook', AuthID=None):
             elif library == 'Audio':
                 lazylibrarian.AUDIO_UPDATE = 0
         else:
-            if AuthID:
-                match = myDB.match('SELECT authorid from authors where authorid=?', (AuthID,))
+            if authid:
+                match = myDB.match('SELECT authorid from authors where authorid=?', (authid,))
                 if match:
-                    controlValueDict = {"AuthorID": AuthID}
+                    controlValueDict = {"AuthorID": authid}
                     newValueDict = {"Status": "Active"}
                     myDB.upsert("authors", newValueDict, controlValueDict)
         logger.error('Unhandled exception in libraryScan: %s' % traceback.format_exc())

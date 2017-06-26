@@ -129,7 +129,7 @@ def processAlternate(source_dir=None):
                     else:
                         addAuthorNameToDB(author=authorname)
 
-                bookid = find_book_in_db(myDB, authorname, bookname)
+                bookid = find_book_in_db(authorname, bookname)
                 if bookid:
                     return import_book(source_dir, bookid)
                 else:

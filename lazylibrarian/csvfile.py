@@ -107,7 +107,7 @@ def finditem(item, authorname, headers):
             fullcmd = cmd + 'and BookIsbn=?'
             bookmatch = myDB.match(fullcmd, (isbn13,))
     if not bookmatch:
-        bookid = find_book_in_db(myDB, authorname, bookname)
+        bookid = find_book_in_db(authorname, bookname)
         if bookid:
             fullcmd = cmd + 'and BookID=?'
             bookmatch = myDB.match(fullcmd, (bookid,))
