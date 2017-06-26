@@ -570,7 +570,6 @@ class WebInterface(object):
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-
             library = 'eBook'
             if 'library' in kwargs:
                 library = kwargs['library']
@@ -594,12 +593,13 @@ class WebInterface(object):
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook[sourcefile])))
             if os.path.isdir(authordir):
                 try:
-                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library]).start()
+                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library, AuthorID]).start()
                 except Exception as e:
                     logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
                 # maybe we don't have any of their books
                 logger.warn(u'Unable to find author directory: %s' % authordir)
+
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
             logger.debug('ScanAuthor Invalid authorid [%s]' % AuthorID)

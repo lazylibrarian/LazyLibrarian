@@ -271,7 +271,7 @@ def find_book_in_db(myDB, author, book):
         return 0
 
 
-def LibraryScan(startdir=None, library='eBook'):
+def LibraryScan(startdir=None, library='eBook', AuthID=None):
     """ Scan a directory tree adding new books into database
         Return how many books you added """
     try:
@@ -290,6 +290,10 @@ def LibraryScan(startdir=None, library='eBook'):
 
         # keep statistics of full library scans
         if startdir == destdir:
+            if library == 'eBook':
+                lazylibrarian.EBOOK_UPDATE = 1
+            elif library == 'Audio':
+                lazylibrarian.AUDIO_UPDATE = 1
             myDB.action('DELETE from stats')
             try:  # remove any extra whitespace in authornames
                 authors = myDB.select('SELECT AuthorID,AuthorName FROM authors WHERE AuthorName like "%  %"')
@@ -310,9 +314,15 @@ def LibraryScan(startdir=None, library='eBook'):
                             myDB.action('UPDATE authors set AuthorName=? WHERE AuthorID=?', (authorname, authorid))
             except Exception as e:
                 logger.info('Error: ' + str(e))
+        else:
+            if AuthID:
+                match = myDB.match('SELECT authorid from authors where authorid=?', (AuthID,))
+                if match:
+                    controlValueDict = {"AuthorID": AuthID}
+                    newValueDict = {"Status": "Loading"}
+                    myDB.upsert("authors", newValueDict, controlValueDict)
 
         logger.info('Scanning %s directory: %s' % (library, startdir))
-
         new_book_count = 0
         modified_count = 0
         rescan_count = 0
@@ -840,10 +850,20 @@ def LibraryScan(startdir=None, library='eBook'):
                     if success:
                         myDB.action('update authors set AuthorImg=? where AuthorID=?', (newimg, authorid))
 
+            if library == 'eBook':
+                lazylibrarian.EBOOK_UPDATE = 0
+            elif library == 'Audio':
+                lazylibrarian.AUDIO_UPDATE = 0
             # On full scan, update bookcounts for all authors, not just new ones - refresh may have located
             # new books for existing authors especially if switched provider gb/gr or changed wanted languages
             authors = myDB.select('select AuthorID from authors')
         else:
+            if AuthID:
+                match = myDB.match('SELECT authorid from authors where authorid=?', (AuthID,))
+                if match:
+                    controlValueDict = {"AuthorID": AuthID}
+                    newValueDict = {"Status": "Active"}
+                    myDB.upsert("authors", newValueDict, controlValueDict)
             # On single author/book import, just update bookcount for that author
             authors = myDB.select('select AuthorID from authors where AuthorName=?', (author.replace('"', '""'),))
 
@@ -855,4 +875,16 @@ def LibraryScan(startdir=None, library='eBook'):
         return new_book_count
 
     except Exception:
+        if startdir == destdir:  # full library scan
+            if library == 'eBook':
+                lazylibrarian.EBOOK_UPDATE = 0
+            elif library == 'Audio':
+                lazylibrarian.AUDIO_UPDATE = 0
+        else:
+            if AuthID:
+                match = myDB.match('SELECT authorid from authors where authorid=?', (AuthID,))
+                if match:
+                    controlValueDict = {"AuthorID": AuthID}
+                    newValueDict = {"Status": "Active"}
+                    myDB.upsert("authors", newValueDict, controlValueDict)
         logger.error('Unhandled exception in libraryScan: %s' % traceback.format_exc())

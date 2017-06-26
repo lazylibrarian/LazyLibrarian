@@ -247,6 +247,7 @@ def create_id(issuename=None):
 
 
 def magazineScan():
+    lazylibrarian.MAG_UPDATE = 1
     try:
         myDB = database.DBConnection()
 
@@ -425,6 +426,8 @@ def magazineScan():
         logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
                     (magcount['count(*)'], plural(magcount['count(*)']),
                      isscount['count(*)'], plural(isscount['count(*)'])))
+        lazylibrarian.MAG_UPDATE = 0
 
     except Exception:
+        lazylibrarian.MAG_UPDATE = 0
         logger.error('Unhandled exception in magazineScan: %s' % traceback.format_exc())
