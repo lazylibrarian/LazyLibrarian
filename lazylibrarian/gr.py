@@ -779,8 +779,7 @@ class GoodReads:
         bookrate = float(rootxml.find('./book/average_rating').text)
         bookpages = rootxml.find('.book/num_pages').text
 
-        name = authorname
-        GR = GoodReads(name)
+        GR = GoodReads(authorname)
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
@@ -803,6 +802,7 @@ class GoodReads:
                         "DateAdded": today(),
                         "Status": "Ignored"
                     }
+                    authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
@@ -839,7 +839,7 @@ class GoodReads:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.info("%s added to the books database" % bookname)
+        logger.info("%s by %s added to the books database" % (bookname, authorname))
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

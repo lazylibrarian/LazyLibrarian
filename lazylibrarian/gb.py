@@ -853,6 +853,7 @@ class GoogleBooks:
                         "DateAdded": today(),
                         "Status": "Ignored"
                     }
+                    authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
@@ -879,7 +880,7 @@ class GoogleBooks:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.info("%s added to the books database" % bookname)
+        logger.info("%s by %s added to the books database" % (bookname, authorname))
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

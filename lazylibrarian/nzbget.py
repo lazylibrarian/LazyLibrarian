@@ -31,7 +31,7 @@ from lazylibrarian.formatter import check_int
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB('', cmd="test")
+    test = sendNZB(None, cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
@@ -40,11 +40,11 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        sendNZB('', 'GroupFinalDelete', nzbID)
-        return sendNZB('', 'HistoryFinalDelete', nzbID)
+        sendNZB(None, 'GroupFinalDelete', nzbID)
+        return sendNZB(None, 'HistoryFinalDelete', nzbID)
     else:
-        sendNZB('', 'GroupDelete', nzbID)
-        return sendNZB('', 'HistoryDelete', nzbID)
+        sendNZB(None, 'GroupDelete', nzbID)
+        return sendNZB(None, 'HistoryDelete', nzbID)
 
 
 def sendNZB(nzb, cmd=None, nzbID=None):

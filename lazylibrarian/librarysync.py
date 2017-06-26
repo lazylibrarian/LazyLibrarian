@@ -190,7 +190,8 @@ def find_book_in_db(myDB, author, book):
         if book_partname == book_lower:
             book_partname = ''
 
-        logger.debug('Found %s book%s by [%s] in database' % (len(books), plural(len(books)), author))
+        logger.debug('Searching %s book%s by [%s] in database for [%s]' %
+                     (len(books), plural(len(books)), author, book))
 
         for a_book in books:
             # tidy up everything to raise fuzziness scores
