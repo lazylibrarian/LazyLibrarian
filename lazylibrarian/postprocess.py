@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import threading
 import time
+import datetime
 import traceback
 from urllib import FancyURLopener
 
@@ -482,15 +483,18 @@ def processDir(reset=False):
                                             "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
                                             "IssueStatus": "Open"}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
+
+                        iss_id = create_id("%s %s" % (book['BookID'], book['AuxInfo']))
                         controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                         newValueDict = {"IssueAcquired": today(),
                                         "IssueFile": dest_file,
-                                        "IssueID": create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                                        "IssueID": iss_id
                                         }
                         myDB.upsert("issues", newValueDict, controlValueDict)
 
                         # create a thumbnail cover for the new issue
                         create_cover(dest_file)
+                        processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
 
                     # calibre or ll copied/moved the files we want, now delete source files
 
@@ -1171,11 +1175,42 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
 
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, errmsg))
 
+def processMAGOPF(issuefile, title, issue, issueID):
+    """ Needs calibre to be configured to read metadata from file contents, not filename """
+    dest_path, global_name = os.path.split(issuefile)
+    global_name, extn = os.path.splitext(global_name)
+    opfpath = os.path.join(dest_path, global_name + '.opf')
+    if len(issue) == 10 and issue[8:] == '01' and issue[4] == '-' and issue[7] == '-':  # yyyy-mm-01
+        yr = issue[0:4]
+        mn = issue[5:7]
+        month = lazylibrarian.MONTHNAMES[int(mn)][0]
+        iname = "%s - %s%s %s" % (title, month[0].upper(), month[1:], yr)  # The Magpi - January 2017
+    elif title in issue:
+        iname = issue  # 0063 - Android Magazine -> 0063
+    else:
+        iname = "%s - %s" % (title, issue)  # Android Magazine - 0063
+
+    mtime = os.path.getmtime(issuefile)
+    iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+    data = {
+            'AuthorName': title,
+            'BookID': issueID,
+            'BookName': iname,
+            'BookDesc': '',
+            'BookIsbn': '',
+            'BookDate': iss_acquired,
+            'BookLang': 'eng',
+            'BookImg': global_name + '.jpg',
+            'BookPub': ''
+            }
+    processOPF(dest_path, data, global_name)
 
 def processOPF(dest_path=None, data=None, global_name=None):
 
-    if not data:
-        logger.error('processOPF: No data found for %s' % global_name)
+    opfpath = os.path.join(dest_path, global_name + '.opf')
+    if os.path.exists(opfpath):
+        logger.debug('%s already exists. Did not create one.' % opfpath)
         return
 
     authorname = data['AuthorName']
@@ -1183,10 +1218,15 @@ def processOPF(dest_path=None, data=None, global_name=None):
     bookname = data['BookName']
     bookdesc = data['BookDesc']
     bookisbn = data['BookIsbn']
-    # bookimg = data['BookImg']
+    bookimg = data['BookImg']
     bookdate = data['BookDate']
     booklang = data['BookLang']
     bookpub = data['BookPub']
+
+    if bookid.isdigit():
+        scheme = 'GOODREADS'
+    else:
+        scheme = 'GoogleBooks'
 
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
@@ -1194,7 +1234,7 @@ def processOPF(dest_path=None, data=None, global_name=None):
         <dc:title>%s</dc:title>\n\
         <creator>%s</creator>\n\
         <dc:language>%s</dc:language>\n\
-        <dc:identifier scheme="GoogleBooks">%s</dc:identifier>\n' % (bookname, authorname, booklang, bookid)
+        <dc:identifier scheme="%s">%s</dc:identifier>\n' % (bookname, authorname, booklang, scheme, bookid)
 
     if bookisbn:
         opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % bookisbn
@@ -1208,11 +1248,13 @@ def processOPF(dest_path=None, data=None, global_name=None):
     if bookdesc:
         opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
 
+    if bookimg == None:
+        bookimg = 'cover.jpg'
     opfinfo += '        <guide>\n\
-            <reference href="cover.jpg" type="cover" title="Cover"/>\n\
+            <reference href="%s" type="cover" title="Cover"/>\n\
         </guide>\n\
     </metadata>\n\
-</package>'
+</package>' % bookimg
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 
@@ -1220,12 +1262,9 @@ def processOPF(dest_path=None, data=None, global_name=None):
 
     # handle metadata
     opfpath = os.path.join(dest_path, global_name + '.opf')
-    if not os.path.exists(opfpath):
-        with open(opfpath, 'wb') as opf:
-            opf.write(opfinfo)
-        logger.debug('Saved metadata to: ' + opfpath)
-    else:
-        logger.debug('%s already exists. Did not create one.' % opfpath)
+    with open(opfpath, 'wb') as opf:
+        opf.write(opfinfo)
+    logger.debug('Saved metadata to: ' + opfpath)
 
 
 class imgGoogle(FancyURLopener):

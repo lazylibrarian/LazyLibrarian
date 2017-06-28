@@ -26,7 +26,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, today
 
 
 def create_covers(refresh=False):
@@ -239,7 +239,6 @@ def create_cover(issuefile=None, refresh=False):
         logger.debug("Failed to copy nocover file, %s" % str(why))
     return
 
-
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
     # logger.debug('Issue %s Hash: %s' % (issuename, hashID))
@@ -324,6 +323,7 @@ def magazineScan():
                         if match:
                             issuedate = match.group("issuedate")
                             title = match.group("title")
+                            match = True
                         else:
                             match = False
                     except Exception:
@@ -342,7 +342,7 @@ def magazineScan():
                             logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
                             continue
 
-                    logger.debug("Found Issue %s" % fname)
+                    logger.debug("Found %s Issue %s" % (title, fname))
 
                     issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
                     mtime = os.path.getmtime(issuefile)
@@ -392,6 +392,7 @@ def magazineScan():
                         logger.debug("Adding issue %s %s" % (title, issuedate))
 
                     create_cover(issuefile)
+                    lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id)
 
                     # see if this issues date values are useful
                     controlValueDict = {"Title": title}
