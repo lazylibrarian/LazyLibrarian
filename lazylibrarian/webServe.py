@@ -1276,9 +1276,15 @@ class WebInterface(object):
     # WALL #########################################################
 
     @cherrypy.expose
-    def magWall(self):
+    def magWall(self, title=None):
         myDB = database.DBConnection()
-        issues = myDB.select('SELECT IssueFile,IssueID from issues order by IssueAcquired DESC')
+        cmd = 'SELECT IssueFile,IssueID from issues'
+        args = None
+        if title:
+            cmd += ' WHERE Title=?'
+            args = (title,)
+        cmd += ' order by IssueAcquired DESC'
+        issues = myDB.select(cmd, args)
 
         if not len(issues):
             raise cherrypy.HTTPRedirect("magazines")
@@ -2214,6 +2220,11 @@ class WebInterface(object):
                 lazylibrarian.CONFIG['EMAIL_SSL'] = True
             else:
                 lazylibrarian.CONFIG['EMAIL_SSL'] = False
+        if 'sendfile' in kwargs:
+            if kwargs['sendfile'] == 'True':
+                lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] = True
+            else:
+                lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] = False
         if 'emailfrom' in kwargs:
             lazylibrarian.CONFIG['EMAIL_FROM'] = kwargs['emailfrom']
         if 'emailto' in kwargs:
