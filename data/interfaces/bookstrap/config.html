@@ -1929,6 +1929,17 @@
                     <input type="checkbox" id="email_notify_ondownload" name="email_notify_ondownload" value="1" ${checked} />
                     Notify on download</label>
                 </div>
+                <div class="checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <label for="email_sendfile_ondownload">
+                    <input type="checkbox" id="email_sendfile_ondownload" name="email_sendfile_ondownload" value="1" ${checked} />
+                    Attach book on download</label>
+                </div>
                 <div class="form-group">
                   <label for="email_from">Email From</label>
                   <input type="text" id="email_from" name="email_from" value="${lazylibrarian.CONFIG['EMAIL_FROM']}" class="form-control" placeholder="Email From Address">
@@ -3025,13 +3036,14 @@
         $('#testEmail').click(function () {
             var tls = ($("#email_tls").prop('checked') == true) ? 'True' : 'False';
             var ssl = ($("#email_ssl").prop('checked') == true) ? 'True' : 'False';
+            var sendfile = ($("#email_sendfile_ondownload").prop('checked') == true) ? 'True' : 'False';
             var emailfrom = $.trim($("#email_from").val());
             var emailto = $.trim($("#email_to").val());
             var server = $.trim($("#email_smtp_server").val());
             var user = $.trim($("#email_smtp_user").val());
             var password = $.trim($("#email_smtp_password").val());
             var port = $.trim($("#email_smtp_port").val());
-            $.get("testEmail", {'tls': tls, 'ssl': ssl, 'emailfrom': emailfrom, 'emailto': emailto, 'server': server, 'user': user, 'password': password, 'port': port},
+            $.get("testEmail", {'tls': tls, 'ssl': ssl, 'emailfrom': emailfrom, 'emailto': emailto, 'server': server, 'user': user, 'password': password, 'port': port, 'sendfile': sendfile},
                 function (data) { window.alert(data) });
         });
 

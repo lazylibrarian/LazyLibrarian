@@ -358,6 +358,7 @@ CONFIG_DEFINITIONS = {
     'USE_EMAIL': ('bool', 'Email', 0),
     'EMAIL_NOTIFY_ONSNATCH': ('bool', 'Email', 0),
     'EMAIL_NOTIFY_ONDOWNLOAD': ('bool', 'Email', 0),
+    'EMAIL_SENDFILE_ONDOWNLOAD': ('bool', 'Email', 0),
     'EMAIL_FROM': ('str', 'Email', ''),
     'EMAIL_TO': ('str', 'Email', ''),
     'EMAIL_SSL': ('bool', 'Email', 0),

@@ -1558,6 +1558,15 @@
                   <input type="checkbox" id="email_notify_ondownload" name="email_notify_ondownload" value="1" ${checked} />Notify on download
                 </div>
                 <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="email_sendfile_ondownload" name="email_sendfile_ondownload" value="1" ${checked} />Attach book on download
+                </div>
+                <div class="row">
                   <input type="text" id="email_from" name="email_from" value="${lazylibrarian.CONFIG['EMAIL_FROM']}" size="26" placeholder="Email From">
                 </div>
                 <div class="row">
