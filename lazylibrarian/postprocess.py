@@ -536,7 +536,8 @@ def processDir(reset=False):
                     ppcount += 1
                     custom_notify_download(book['BookID'])
 
-                    notify_download("%s %s from %s at %s" % (book_type, global_name, book['NZBprov'], now()))
+                    notify_download("%s %s from %s at %s" %
+                                    (book_type, global_name, book['NZBprov'], now()), book['BookID'])
                     update_downloads(book['NZBprov'])
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
@@ -933,7 +934,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         params = []
         try:
             logger.debug('Importing %s into calibre library' % global_name)
-            # calibre ignores metadata.opf and book_name.opf
+            # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
+            # and ignores opf data if there is data embedded in the book file
+            # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(pp_path):
                 filename, extn = os.path.splitext(fname)
                 # calibre does not like quotes in author names
@@ -1112,10 +1115,10 @@ def processAutoAdd(src_path=None):
         # Caution - book may be pdf, mobi, epub or all 3.
         # for now simply copy all files, and let the autoadder sort it out
         #
-        # Update - seems Calibre only uses the ebook, not the jpeg or opf files
-        # and only imports one format of each ebook, treats the others as duplicates
-        # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
-        #
+        # Update - seems Calibre will only use the jpeg if named same as book, not cover.jpg
+        # and only imports one format of each ebook, treats the others as duplicates, might be configable in calibre?
+        # ignores author/title data in opf file if there is any embedded in book
+
         match = False
         if lazylibrarian.CONFIG['ONE_FORMAT']:
             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
@@ -1179,7 +1182,7 @@ def processMAGOPF(issuefile, title, issue, issueID):
     """ Needs calibre to be configured to read metadata from file contents, not filename """
     dest_path, global_name = os.path.split(issuefile)
     global_name, extn = os.path.splitext(global_name)
-    opfpath = os.path.join(dest_path, global_name + '.opf')
+
     if len(issue) == 10 and issue[8:] == '01' and issue[4] == '-' and issue[7] == '-':  # yyyy-mm-01
         yr = issue[0:4]
         mn = issue[5:7]
@@ -1218,7 +1221,7 @@ def processOPF(dest_path=None, data=None, global_name=None):
     bookname = data['BookName']
     bookdesc = data['BookDesc']
     bookisbn = data['BookIsbn']
-    bookimg = data['BookImg']
+    # bookimg = data['BookImg']
     bookdate = data['BookDate']
     booklang = data['BookLang']
     bookpub = data['BookPub']
@@ -1248,13 +1251,11 @@ def processOPF(dest_path=None, data=None, global_name=None):
     if bookdesc:
         opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
 
-    if bookimg == None:
-        bookimg = 'cover.jpg'
     opfinfo += '        <guide>\n\
             <reference href="%s" type="cover" title="Cover"/>\n\
         </guide>\n\
     </metadata>\n\
-</package>' % bookimg
+</package>' % global_name + '.jpg'  # file in current directory, not full path
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 
