@@ -26,7 +26,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural, today
+from lazylibrarian.formatter import getList, is_valid_booktype, plural
 
 
 def create_covers(refresh=False):
