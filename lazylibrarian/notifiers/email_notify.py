@@ -20,7 +20,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 
 import lazylibrarian
-from os.path import basename
+import os
 from lazylibrarian import logger, database
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lazylibrarian.formatter import check_int
@@ -40,6 +40,12 @@ class EmailNotifier:
         subject = event
         text = message
 
+        logger.debug('Email notification: %s' % message['Subject'])
+        logger.debug('Email from: %s' % message['From'])
+        logger.debug('Email to: %s' % message['To'])
+        logger.debug('Email text: %s' % text)
+        logger.debug('Files: %s' % files)
+
         if files:
             message = MIMEMultipart()
             message.attach(MIMEText(text))
@@ -51,19 +57,15 @@ class EmailNotifier:
         message['To'] = lazylibrarian.CONFIG['EMAIL_TO']
         message['Date'] = formatdate(localtime=True)
 
-        logger.debug('Email notification: %s' % message['Subject'])
-        logger.debug('Email from: %s' % message['From'])
-        logger.debug('Email to: %s' % message['To'])
-        logger.debug('Email text: %s' % text)
-        logger.debug('Files: %s' % files)
-
         if files:
             for f in files:
-                with open(f, "rb") as fil:
-
-                    part = MIMEApplication(fil.read(), Name=basename(f))
-                    part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
-                    message.attach(part)
+                if os.path.getsize(f) > 20000000:
+                    message.attach(MIMEText('%s is too large to email' % os.path.basename(f)))
+                else:
+                    with open(f, "rb") as fil:
+                        part = MIMEApplication(fil.read(), Name=os.path.basename(f))
+                        part['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(f)
+                        message.attach(part)
 
         try:
             if lazylibrarian.CONFIG['EMAIL_SSL']:
