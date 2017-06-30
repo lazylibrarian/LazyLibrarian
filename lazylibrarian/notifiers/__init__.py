@@ -18,14 +18,14 @@
 
 import androidpn
 import boxcar
+import custom_notify
 import email_notify
-import prowl
 import nma
+import prowl
 import pushbullet
 import pushover
 import slack
 import tweet
-import custom_notify
 from lazylibrarian import logger
 
 # online
@@ -68,10 +68,13 @@ def custom_notify_snatch(bookid):
         logger.warn('Custom notify snatch failed: %s' % str(e))
 
 
-def notify_download(title):
+def notify_download(title, bookid=None):
     try:
         for n in notifiers:
-            n.notify_download(title)
+            if n == 'email_notifier' and lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD']:
+                n.notify_download(title, bookid)
+            else:
+                n.notify_download(title)
     except Exception as e:
         logger.warn('Notify download failed: %s' % str(e))
 

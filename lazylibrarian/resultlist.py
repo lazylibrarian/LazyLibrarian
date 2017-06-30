@@ -84,9 +84,7 @@ def findBestResult(resultlist, book, searchtype, source):
 
         if source == 'nzb':
             prefix = 'nzb'
-        elif source == 'tor':
-            prefix = 'tor_'
-        else:  # rss returns torrents
+        else:  # rss returns same names as torrents
             prefix = 'tor_'
 
         logger.debug('Searching %s %s results for best %s match' % (len(resultlist), source, auxinfo))
@@ -97,11 +95,8 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
             Author_match = fuzz.token_set_ratio(author, resultTitle)
             Book_match = fuzz.token_set_ratio(title, resultTitle)
-            stype = source.upper()
-            if res[prefix + 'prov'] == 'libgen':
-                stype = "DIR"
-            logger.debug(u"%s author/book Match: %s/%s for %s at %s" %
-                         (stype, Author_match, Book_match, resultTitle, res[prefix + 'prov']))
+            logger.debug(u"%s author/book Match: %s/%s %s at %s" %
+                         (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
 
             rejected = False
 
@@ -111,7 +106,7 @@ def findBestResult(resultlist, book, searchtype, source):
                 logger.debug("Rejecting %s, no URL found" % resultTitle)
 
             if not rejected:
-                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' % url)
+                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (url,))
                 if already_failed:
                     logger.debug("Rejecting %s, blacklisted at %s" % (resultTitle, already_failed['NZBprov']))
                     rejected = True
@@ -145,10 +140,8 @@ def findBestResult(resultlist, book, searchtype, source):
 
                 if source == 'nzb':
                     mode = res['nzbmode']  # nzb, torznab
-                elif source == 'tor':
-                    mode = res['tor_type']  # torrent, magnet, direct
                 else:
-                    mode = res['tor_type']  # torrent, magnet, nzb
+                    mode = res['tor_type']  # torrent, magnet, nzb(from rss), direct
 
                 controlValueDict = {"NZBurl": url}
                 newValueDict = {
@@ -223,11 +216,11 @@ def downloadResult(match, book):
             auxinfo = 'eBook'
 
         if auxinfo == 'eBook':
-            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and Status="Snatched"' %
-                                       newValueDict["BookID"])
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID=? and Status="Snatched"',
+                                       (newValueDict["BookID"],))
         else:
-            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID="%s" and AudioStatus="Snatched"' %
-                                       newValueDict["BookID"])
+            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus="Snatched"',
+                                       (newValueDict["BookID"],))
 
         if snatchedbooks:
             logger.debug('%s %s already marked snatched' % (book['authorName'], book['bookName']))

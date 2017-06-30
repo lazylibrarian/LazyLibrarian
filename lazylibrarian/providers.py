@@ -13,20 +13,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
 import urllib
 from xml.etree import ElementTree
-import time
+
 import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
+from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int
-from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, GEN, LIME
+from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, LIME
 
 
 def get_searchterm(book, searchType):
-    authorname = cleanName(book['authorName'])
-    bookname = cleanName(book['bookName'])
+    authorname = cleanName(book['authorName'], "'")
+    bookname = cleanName(book['bookName'], "'")
     if searchType in ['book', 'audio'] or 'short' in searchType:
         if bookname == authorname and book['bookSub']:
             # books like "Spike Milligan: Man of Letters"
@@ -240,7 +242,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    for prov in ['KAT', 'WWT', 'TPB', 'ZOO', 'TDL', 'GEN', 'LIME']:
+    for prov in ['KAT', 'WWT', 'TPB', 'ZOO', 'TDL', 'LIME']:
         if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
             logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
             if prov == 'KAT':
@@ -255,8 +257,6 @@ def IterateOverTorrentSites(book=None, searchType=None):
             #    results, error = EXTRA(book)
             elif prov == 'TDL':
                 results, error = TDL(book)
-            elif prov == 'GEN':
-                results, error = GEN(book)
             elif prov == 'LIME':
                 results, error = LIME(book)
             else:
@@ -264,6 +264,27 @@ def IterateOverTorrentSites(book=None, searchType=None):
                 error = ''
                 logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
 
+            if error:
+                BlockProvider(prov, error)
+            else:
+                resultslist += results
+                providers += 1
+
+    return resultslist, providers
+
+
+def IterateOverDirectSites(book=None, searchType=None):
+    resultslist = []
+    providers = 0
+    if searchType != 'mag' and searchType != 'general':
+        authorname, bookname = get_searchterm(book, searchType)
+        book['searchterm'] = authorname + ' ' + bookname
+
+    for prov in ['GEN', 'GEN2']:
+        if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
+            logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
+                         lazylibrarian.CONFIG[prov + '_SEARCH']))
+            results, error = GEN(book, prov)
             if error:
                 BlockProvider(prov, error)
             else:

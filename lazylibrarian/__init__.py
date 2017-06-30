@@ -15,6 +15,7 @@
 
 from __future__ import with_statement
 
+import ConfigParser
 import calendar
 import json
 import locale
@@ -24,7 +25,6 @@ import sys
 import threading
 import time
 import webbrowser
-import ConfigParser
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
@@ -80,6 +80,9 @@ PROVIDER_BLOCKLIST = []
 SHOW_MAGS = 1
 SHOW_SERIES = 1
 SHOW_AUDIO = 0
+MAG_UPDATE = 0
+EBOOK_UPDATE = 0
+AUDIO_UPDATE = 0
 
 # Shared dictionaries
 isbn_979_dict = {
@@ -266,6 +269,10 @@ CONFIG_DEFINITIONS = {
     'GEN_SEARCH': ('str', 'GEN', 'search.php'),
     'GEN': ('bool', 'GEN', 0),
     'GEN_DLPRIORITY': ('int', 'GEN', 0),
+    'GEN2_HOST': ('str', 'GEN', 'libgen.io'),
+    'GEN2_SEARCH': ('str', 'GEN', 'foreignfiction/index.php'),
+    'GEN2': ('bool', 'GEN', 0),
+    'GEN2_DLPRIORITY': ('int', 'GEN', 0),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
     'LIME_DLPRIORITY': ('int', 'LIME', 0),
@@ -351,6 +358,7 @@ CONFIG_DEFINITIONS = {
     'USE_EMAIL': ('bool', 'Email', 0),
     'EMAIL_NOTIFY_ONSNATCH': ('bool', 'Email', 0),
     'EMAIL_NOTIFY_ONDOWNLOAD': ('bool', 'Email', 0),
+    'EMAIL_SENDFILE_ONDOWNLOAD': ('bool', 'Email', 0),
     'EMAIL_FROM': ('str', 'Email', ''),
     'EMAIL_TO': ('str', 'Email', ''),
     'EMAIL_SSL': ('bool', 'Email', 0),
@@ -425,7 +433,7 @@ def initialize():
         CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
-        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT
+        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE
 
     with INIT_LOCK:
 
@@ -996,8 +1004,15 @@ def USE_RSS():
 
 def USE_TOR():
     count = 0
-    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'],
-                     CONFIG['TDL'], CONFIG['GEN'], CONFIG['WWT']]:
+    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL'], CONFIG['WWT']]:
+        if bool(provider):
+            count += 1
+    return count
+
+
+def USE_DIRECT():
+    count = 0
+    for provider in [CONFIG['GEN'], CONFIG['GEN2']]:
         if bool(provider):
             count += 1
     return count

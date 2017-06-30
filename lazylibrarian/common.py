@@ -135,13 +135,14 @@ def scheduleJob(action='Start', target=None):
                 minutes=int(lazylibrarian.CONFIG['SCAN_INTERVAL']))
             logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
         elif 'search_magazines' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
-            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() or lazylibrarian.USE_RSS():
+            if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
+                    or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
                     minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
         elif 'search_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
-            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+            if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchbook.cron_search_book,
                     minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
@@ -264,7 +265,7 @@ def checkRunningJobs():
     if snatched:
         ensureRunning('processDir')
     if wanted:
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
             ensureRunning('search_book')
         if lazylibrarian.USE_RSS():
             ensureRunning('search_rss_book')
@@ -272,7 +273,7 @@ def checkRunningJobs():
         scheduleJob('Stop', 'search_book')
         scheduleJob('Stop', 'search_rss_book')
 
-    if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+    if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
         ensureRunning('search_magazines')
     else:
         scheduleJob('Stop', 'search_magazines')
@@ -405,7 +406,7 @@ def cleanCache():
             except IndexError:
                 logger.error('Clean Cache: Error splitting %s' % cached_file)
                 continue
-            item = myDB.match('select BookID from books where BookID="%s"' % bookid)
+            item = myDB.match('select BookID from books where BookID=?', (bookid,))
             if not item:
                 # WorkPage no longer referenced in database, delete cached_file
                 os.remove(target)
@@ -430,7 +431,7 @@ def cleanCache():
             except IndexError:
                 logger.error('Clean Cache: Error splitting %s' % cached_file)
                 continue
-            item = myDB.match('select SeriesID from series where SeriesID="%s"' % seriesid)
+            item = myDB.match('select SeriesID from series where SeriesID=?', (seriesid,))
             if not item:
                 # SeriesPage no longer referenced in database, delete cached_file
                 os.remove(target)
@@ -454,7 +455,7 @@ def cleanCache():
                 except IndexError:
                     logger.error('Clean Cache: Error splitting %s' % cached_file)
                     continue
-                item = myDB.match('select AuthorID from authors where AuthorID="%s"' % imgid)
+                item = myDB.match('select AuthorID from authors where AuthorID=?', (imgid,))
                 if not item:
                     # Author Image no longer referenced in database, delete cached_file
                     os.remove(target)
@@ -471,7 +472,7 @@ def cleanCache():
                 except IndexError:
                     logger.error('Clean Cache: Error splitting %s' % cached_file)
                     continue
-                item = myDB.match('select BookID from books where BookID="%s"' % imgid)
+                item = myDB.match('select BookID from books where BookID=?', (imgid,))
                 if not item:
                     # Book Image no longer referenced in database, delete cached_file
                     os.remove(target)
@@ -510,7 +511,7 @@ def cleanCache():
         else:
             cleaned += 1
             logger.debug('Cover missing for %s %s' % (item['BookName'], imgfile))
-            myDB.action('update books set BookImg="images/nocover.png" where Bookid="%s"' % item['BookID'])
+            myDB.action('update books set BookImg="images/nocover.png" where Bookid=?', (item['BookID'],))
 
     msg = "Cleaned %i missing cover file%s, kept %i" % (cleaned, plural(cleaned), kept)
     result.append(msg)
@@ -537,7 +538,7 @@ def cleanCache():
         else:
             cleaned += 1
             logger.debug('Image missing for %s %s' % (item['AuthorName'], imgfile))
-            myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID="%s"' % item['AuthorID'])
+            myDB.action('update authors set AuthorImg="images/nophoto.png" where AuthorID=?', (item['AuthorID'],))
 
     msg = "Cleaned %i missing author image%s, kept %i" % (cleaned, plural(cleaned), kept)
     result.append(msg)

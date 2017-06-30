@@ -13,19 +13,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import traceback
-import threading
-import lazylibrarian
 import Queue
-from lib.fuzzywuzzy import fuzz
-
+import threading
+import traceback
 from operator import itemgetter
+
+import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
 from lazylibrarian.cache import cache_img
 from lazylibrarian.formatter import today, unaccented, formatAuthorName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
+from lib.fuzzywuzzy import fuzz
 
 
 def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
@@ -41,7 +41,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
 
     author = formatAuthorName(author)
     # Check if the author exists, and import the author if not,
-    check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName="%s"' % author.replace('"', '""'))
+    check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName=?', (author.replace('"', '""'),))
 
     if not check_exist_author and lazylibrarian.CONFIG['ADD_AUTHOR']:
         logger.debug('Author %s not found in database, trying to add' % author)
@@ -88,14 +88,14 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
                 authorid = author_gr['authorid']
                 # this new authorname may already be in the
                 # database, so check again
-                check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorID="%s"' % authorid)
+                check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorID=?', (authorid,))
                 if check_exist_author:
                     logger.debug('Found goodreads authorname %s in database' % author)
                 else:
                     logger.info("Adding new author [%s]" % author)
                     try:
                         addAuthorToDB(authorname=author, refresh=refresh, authorid=authorid, addbooks=addbooks)
-                        check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorID="%s"' % authorid)
+                        check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorID=?', (authorid,))
                         if check_exist_author:
                             new = True
                     except Exception as e:
@@ -126,7 +126,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
 
-            dbauthor = myDB.match("SELECT * from authors WHERE AuthorID='%s'" % authorid)
+            dbauthor = myDB.match("SELECT * from authors WHERE AuthorID=?", (authorid,))
             if not dbauthor:
                 authorname = 'unknown author'
                 logger.debug("Adding new author id %s to database" % authorid)
@@ -159,18 +159,18 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             else:
                 logger.warn(u"Nothing found for %s" % authorid)
                 if not dbauthor:
-                    myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
+                    myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
 
         if authorname and not match:
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             GR = GoodReads(authorname)
             author = GR.find_author_id(refresh=refresh)
 
-            query = "SELECT * from authors WHERE AuthorName='%s'" % authorname.replace("'", "''")
-            dbauthor = myDB.match(query)
+            query = "SELECT * from authors WHERE AuthorName=?"
+            dbauthor = myDB.match(query, (authorname.replace("'", "''"),))
             if author and not dbauthor:  # may have different name for same authorid (spelling?)
-                query = "SELECT * from authors WHERE AuthorID='%s'" % author['authorid']
-                dbauthor = myDB.match(query)
+                query = "SELECT * from authors WHERE AuthorID=?"
+                dbauthor = myDB.match(query, (author['authorid'],))
                 authorname = dbauthor['AuthorName']
 
             controlValueDict = {"AuthorName": authorname}
@@ -208,7 +208,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             else:
                 logger.warn(u"Nothing found for %s" % authorname)
                 if not dbauthor:
-                    myDB.action('DELETE from authors WHERE AuthorName="%s"' % authorname)
+                    myDB.action('DELETE from authors WHERE AuthorName=?', (authorname,))
                 return
         if not match:
             logger.error("AddAuthorToDB: No matching result for authorname or authorid")
@@ -216,7 +216,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
 
         # if author is set to manual, should we allow replacing 'nophoto' ?
         new_img = False
-        match = myDB.match("SELECT Manual from authors WHERE AuthorID='%s'" % authorid)
+        match = myDB.match("SELECT Manual from authors WHERE AuthorID=?", (authorid,))
         if not match or not match['Manual']:
             if authorimg and 'nophoto' in authorimg:
                 newimg = getAuthorImage(authorid)
@@ -275,21 +275,19 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
 def update_totals(AuthorID):
     myDB = database.DBConnection()
     # author totals needs to be updated every time a book is marked differently
-    match = myDB.select('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
+    match = myDB.select('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
     if not match:
         logger.debug('Update_totals - authorid [%s] not found' % AuthorID)
         return
-    cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID="%s"' % AuthorID
+    cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID=?'
     cmd += ' AND Status != "Ignored" order by BookDate DESC'
-    lastbook = myDB.match(cmd)
-    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID
-    cmd += ' AND Status != "Ignored"'
-    unignoredbooks = myDB.match(cmd)
-    totalbooks = myDB.match(
-        'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID)
-    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID="%s"' % AuthorID
+    lastbook = myDB.match(cmd, (AuthorID,))
+    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID=? AND Status != "Ignored"'
+    unignoredbooks = myDB.match(cmd, (AuthorID,))
+    totalbooks = myDB.match('SELECT count("BookID") as counter FROM books WHERE AuthorID=?', (AuthorID,))
+    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID=?'
     cmd += ' AND (Status="Have" OR Status="Open" OR AudioStatus="Have" OR AudioStatus="Open")'
-    havebooks = myDB.match(cmd)
+    havebooks = myDB.match(cmd, (AuthorID,))
     controlValueDict = {"AuthorID": AuthorID}
 
     newValueDict = {

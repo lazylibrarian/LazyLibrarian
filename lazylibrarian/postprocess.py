@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import threading
 import time
+import datetime
 import traceback
 from urllib import FancyURLopener
 
@@ -44,12 +45,12 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
 
 def update_downloads(provider):
     myDB = database.DBConnection()
-    entry = myDB.match('SELECT Count FROM downloads where Provider="%s"' % provider)
+    entry = myDB.match('SELECT Count FROM downloads where Provider=?', (provider,))
     if entry:
         counter = int(entry['Count'])
-        myDB.action('UPDATE downloads SET Count=%s WHERE Provider="%s"' % (counter + 1, provider))
+        myDB.action('UPDATE downloads SET Count=? WHERE Provider=?', (counter + 1, provider))
     else:
-        myDB.action('INSERT into downloads (Count, Provider) VALUES  (%s, "%s")' % (1, provider))
+        myDB.action('INSERT into downloads (Count, Provider) VALUES  (?, ?)', (1, provider))
 
 
 def processAlternate(source_dir=None):
@@ -102,7 +103,7 @@ def processAlternate(source_dir=None):
                 bookname = metadata['title']
                 myDB = database.DBConnection()
                 authorid = ''
-                authmatch = myDB.match('SELECT * FROM authors where AuthorName="%s"' % authorname)
+                authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
 
                 if not authmatch:
                     # try goodreads preferred authorname
@@ -118,7 +119,7 @@ def processAlternate(source_dir=None):
                         authorid = author_gr['authorid']
                         logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
                         authorname = grauthorname
-                        authmatch = myDB.match('SELECT * FROM authors where AuthorID="%s"' % authorid)
+                        authmatch = myDB.match('SELECT * FROM authors where AuthorID=?', (authorid,))
 
                 if authmatch:
                     logger.debug("ALT: Author %s found in database" % authorname)
@@ -129,7 +130,7 @@ def processAlternate(source_dir=None):
                     else:
                         addAuthorNameToDB(author=authorname)
 
-                bookid = find_book_in_db(myDB, authorname, bookname)
+                bookid = find_book_in_db(authorname, bookname)
                 if bookid:
                     return import_book(source_dir, bookid)
                 else:
@@ -269,8 +270,7 @@ def processDir(reset=False):
                 matchtitle = unaccented_str(book['NZBtitle'])
                 if torrentname and torrentname != matchtitle:
                     logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
-                    myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl = "%s"' %
-                                (torrentname, book['NZBurl']))
+                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
                     matchtitle = torrentname
 
                 # here we could also check percentage downloaded or eta or status?
@@ -394,9 +394,9 @@ def processDir(reset=False):
                     mostrecentissue = ''
                     logger.debug(u'Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
 
-                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % book['BookID']
+                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
                     cmd += ' and books.AuthorID = authors.AuthorID'
-                    data = myDB.match(cmd)
+                    data = myDB.match(cmd, (book['BookID'],))
                     if data:  # it's ebook/audiobook
                         logger.debug(u'Processing %s %s' % (book_type, book['BookID']))
                         authorname = data['AuthorName']
@@ -418,7 +418,7 @@ def processDir(reset=False):
                             dest_dir = lazylibrarian.DIRECTORY('Audio')
                         dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
                     else:
-                        data = myDB.match('SELECT IssueDate from magazines WHERE Title="%s"' % book['BookID'])
+                        data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                         if data:  # it's a magazine
                             logger.debug(u'Processing magazine %s' % book['BookID'])
                             # AuxInfo was added for magazine release date, normally housed in 'magazines'
@@ -483,15 +483,18 @@ def processDir(reset=False):
                                             "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
                                             "IssueStatus": "Open"}
                         myDB.upsert("magazines", newValueDict, controlValueDict)
+
+                        iss_id = create_id("%s %s" % (book['BookID'], book['AuxInfo']))
                         controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
                         newValueDict = {"IssueAcquired": today(),
                                         "IssueFile": dest_file,
-                                        "IssueID": create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                                        "IssueID": iss_id
                                         }
                         myDB.upsert("issues", newValueDict, controlValueDict)
 
                         # create a thumbnail cover for the new issue
                         create_cover(dest_file)
+                        processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
 
                     # calibre or ll copied/moved the files we want, now delete source files
 
@@ -533,7 +536,8 @@ def processDir(reset=False):
                     ppcount += 1
                     custom_notify_download(book['BookID'])
 
-                    notify_download("%s %s from %s at %s" % (book_type, global_name, book['NZBprov'], now()))
+                    notify_download("%s %s from %s at %s" %
+                                    (book_type, global_name, book['NZBprov'], now()), book['BookID'])
                     update_downloads(book['NZBprov'])
                 else:
                     logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
@@ -543,9 +547,9 @@ def processDir(reset=False):
                     # if it's a book, reset status so we try for a different version
                     # if it's a magazine, user can select a different one from pastissues table
                     if book_type == 'eBook':
-                        myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                        myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
                     elif book_type == 'AudioBook':
-                        myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                        myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
 
                     # at this point, as it failed we should move it or it will get postprocessed
                     # again (and fail again)
@@ -581,7 +585,7 @@ def processDir(reset=False):
                 if not extn or extn not in skipped_extensions:
                     bookID = entry.split("LL.(")[1].split(")")[0]
                     logger.debug("Book with id: %s found in download directory" % bookID)
-                    data = myDB.match('SELECT BookFile from books WHERE BookID="%s"' % bookID)
+                    data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
                     if data and data['BookFile'] and os.path.isfile(data['BookFile']):
                         logger.debug('Skipping BookID %s, already exists' % bookID)
                     else:
@@ -636,10 +640,10 @@ def processDir(reset=False):
                     # change status to "Failed", and ask downloader to delete task and files
                     if book['BookID'] != 'unknown':
                         if book_type == 'eBook':
-                            myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % book['BookID'])
+                            myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
                         elif book_type == 'AudioBook':
-                            myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % book['BookID'])
-                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID="%s"' % book['BookID'])
+                            myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
+                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
 
         # Check if postprocessor needs to run again
@@ -716,13 +720,12 @@ def import_book(pp_path=None, bookID=None):
             return False
 
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID="%s"' % bookID
-        cmd += ' and books.AuthorID = authors.AuthorID'
-        data = myDB.match(cmd)
+        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+        data = myDB.match(cmd, (bookID,))
         if data:
-            cmd = 'SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID="%s" and Status="Snatched"' % bookID
+            cmd = 'SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID=? and Status="Snatched"'
             # we may have snatched an ebook and audiobook of the same title/id
-            was_snatched = myDB.select(cmd)
+            was_snatched = myDB.select(cmd, (bookID,))
             want_audio = False
             want_ebook = False
             for item in was_snatched:
@@ -801,16 +804,16 @@ def import_book(pp_path=None, bookID=None):
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID="%s" and Status="Snatched"' % bookID)
+                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
                 if was_snatched:
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                 # reset status so we try for a different version
                 if book_type == 'AudioBook':
-                    myDB.action('UPDATE books SET audiostatus = "Wanted" WHERE BookID="%s"' % bookID)
+                    myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (bookID,))
                 else:
-                    myDB.action('UPDATE books SET status = "Wanted" WHERE BookID="%s"' % bookID)
+                    myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (bookID,))
                 try:
                     os.rename(pp_path, pp_path + '.fail')
                     logger.error('Warning - Residual files remain in %s.fail' % pp_path)
@@ -848,7 +851,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors book counts
-    match = myDB.match('SELECT AuthorID FROM books WHERE BookID="%s"' % bookid)
+    match = myDB.match('SELECT AuthorID FROM books WHERE BookID=?', (bookid,))
     if match:
         update_totals(match['AuthorID'])
 
@@ -866,9 +869,8 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         processAutoAdd(dest_path)
 
     cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-    cmd += 'BookLang,BookPub from books,authors WHERE BookID="%s"' % bookid
-    cmd += ' and books.AuthorID = authors.AuthorID'
-    data = myDB.match(cmd)
+    cmd += 'BookLang,BookPub from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+    data = myDB.match(cmd, (bookid,))
     if not data:
         logger.error('processExtras: No data found for bookid %s' % bookid)
         return
@@ -932,7 +934,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         params = []
         try:
             logger.debug('Importing %s into calibre library' % global_name)
-            # calibre ignores metadata.opf and book_name.opf
+            # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
+            # and ignores opf data if there is data embedded in the book file
+            # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(pp_path):
                 filename, extn = os.path.splitext(fname)
                 # calibre does not like quotes in author names
@@ -1111,10 +1115,10 @@ def processAutoAdd(src_path=None):
         # Caution - book may be pdf, mobi, epub or all 3.
         # for now simply copy all files, and let the autoadder sort it out
         #
-        # Update - seems Calibre only uses the ebook, not the jpeg or opf files
-        # and only imports one format of each ebook, treats the others as duplicates
-        # Maybe need to rewrite this so we only copy the first ebook we find and ignore everything else
-        #
+        # Update - seems Calibre will only use the jpeg if named same as book, not cover.jpg
+        # and only imports one format of each ebook, treats the others as duplicates, might be configable in calibre?
+        # ignores author/title data in opf file if there is any embedded in book
+
         match = False
         if lazylibrarian.CONFIG['ONE_FORMAT']:
             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
@@ -1174,11 +1178,42 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
 
         logger.error('Error fetching cover from url: %s, %s' % (bookimg, errmsg))
 
+def processMAGOPF(issuefile, title, issue, issueID):
+    """ Needs calibre to be configured to read metadata from file contents, not filename """
+    dest_path, global_name = os.path.split(issuefile)
+    global_name, extn = os.path.splitext(global_name)
+
+    if len(issue) == 10 and issue[8:] == '01' and issue[4] == '-' and issue[7] == '-':  # yyyy-mm-01
+        yr = issue[0:4]
+        mn = issue[5:7]
+        month = lazylibrarian.MONTHNAMES[int(mn)][0]
+        iname = "%s - %s%s %s" % (title, month[0].upper(), month[1:], yr)  # The Magpi - January 2017
+    elif title in issue:
+        iname = issue  # 0063 - Android Magazine -> 0063
+    else:
+        iname = "%s - %s" % (title, issue)  # Android Magazine - 0063
+
+    mtime = os.path.getmtime(issuefile)
+    iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+    data = {
+            'AuthorName': title,
+            'BookID': issueID,
+            'BookName': iname,
+            'BookDesc': '',
+            'BookIsbn': '',
+            'BookDate': iss_acquired,
+            'BookLang': 'eng',
+            'BookImg': global_name + '.jpg',
+            'BookPub': ''
+            }
+    processOPF(dest_path, data, global_name)
 
 def processOPF(dest_path=None, data=None, global_name=None):
 
-    if not data:
-        logger.error('processOPF: No data found for %s' % global_name)
+    opfpath = os.path.join(dest_path, global_name + '.opf')
+    if os.path.exists(opfpath):
+        logger.debug('%s already exists. Did not create one.' % opfpath)
         return
 
     authorname = data['AuthorName']
@@ -1191,13 +1226,18 @@ def processOPF(dest_path=None, data=None, global_name=None):
     booklang = data['BookLang']
     bookpub = data['BookPub']
 
+    if bookid.isdigit():
+        scheme = 'GOODREADS'
+    else:
+        scheme = 'GoogleBooks'
+
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n\
         <dc:title>%s</dc:title>\n\
         <creator>%s</creator>\n\
         <dc:language>%s</dc:language>\n\
-        <dc:identifier scheme="GoogleBooks">%s</dc:identifier>\n' % (bookname, authorname, booklang, bookid)
+        <dc:identifier scheme="%s">%s</dc:identifier>\n' % (bookname, authorname, booklang, scheme, bookid)
 
     if bookisbn:
         opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % bookisbn
@@ -1212,10 +1252,10 @@ def processOPF(dest_path=None, data=None, global_name=None):
         opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
 
     opfinfo += '        <guide>\n\
-            <reference href="cover.jpg" type="cover" title="Cover"/>\n\
+            <reference href="%s" type="cover" title="Cover"/>\n\
         </guide>\n\
     </metadata>\n\
-</package>'
+</package>' % global_name + '.jpg'  # file in current directory, not full path
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 
@@ -1223,12 +1263,9 @@ def processOPF(dest_path=None, data=None, global_name=None):
 
     # handle metadata
     opfpath = os.path.join(dest_path, global_name + '.opf')
-    if not os.path.exists(opfpath):
-        with open(opfpath, 'wb') as opf:
-            opf.write(opfinfo)
-        logger.debug('Saved metadata to: ' + opfpath)
-    else:
-        logger.debug('%s already exists. Did not create one.' % opfpath)
+    with open(opfpath, 'wb') as opf:
+        opf.write(opfinfo)
+    logger.debug('Saved metadata to: ' + opfpath)
 
 
 class imgGoogle(FancyURLopener):

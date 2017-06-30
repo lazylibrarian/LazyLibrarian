@@ -89,15 +89,15 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
     if downloadID:
         logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
         if library == 'eBook':
-            myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+            myDB.action('UPDATE books SET status="Snatched" WHERE BookID=?', (bookid,))
         elif library == 'AudioBook':
-            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID=?', (bookid,))
+        myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, nzburl))
         return True
     else:
         logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % nzburl)
+        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (nzburl,))
         return False
 
 
@@ -155,15 +155,15 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     if downloadID:
         logger.debug(u'File %s has been downloaded from %s' % (tor_title, tor_url))
         if library == 'eBook':
-            myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+            myDB.action('UPDATE books SET status="Snatched" WHERE BookID=?', (bookid,))
         elif library == 'AudioBook':
-            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+            myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
+        myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, full_url))
         return True
     else:
         logger.error(u'Failed to download file @ <a href="%s">%s</a>' % (full_url, tor_url))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % full_url)
+        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
         return False
 
 
@@ -344,10 +344,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
     if downloadID:
         if library == 'eBook':
-            myDB.action('UPDATE books SET status = "Snatched" WHERE BookID="%s"' % bookid)
+            myDB.action('UPDATE books SET status="Snatched" WHERE BookID=?', (bookid,))
         elif library == 'AudioBook':
-            myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID="%s"' % bookid)
-        myDB.action('UPDATE wanted SET status = "Snatched", Source = "%s", DownloadID = "%s" WHERE NZBurl="%s"' %
+            myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
+        myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, full_url))
         if tor_title:
             if downloadID.upper() in tor_title.upper():
@@ -355,11 +355,11 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             else:
                 tor_title = unaccented_str(tor_title)
                 logger.debug('%s setting torrent name to [%s]' % (Source, tor_title))
-                myDB.action('UPDATE wanted SET NZBtitle = "%s" WHERE NZBurl="%s"' % (tor_title, full_url))
+                myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (tor_title, full_url))
         return True
     else:
         logger.error(u'Failed to download torrent from %s, %s' % (Source, tor_url))
-        myDB.action('UPDATE wanted SET status = "Failed" WHERE NZBurl="%s"' % full_url)
+        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
         return False
 
 

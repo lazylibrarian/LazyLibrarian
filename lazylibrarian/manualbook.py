@@ -13,11 +13,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
 import urllib
-from lazylibrarian.formatter import getList, unaccented_str, plural
+
+import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
+from lazylibrarian.formatter import getList, unaccented_str, plural
+from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites, \
+    IterateOverDirectSites
 from lib.fuzzywuzzy import fuzz
 
 
@@ -45,9 +47,9 @@ def searchItem(item=None, bookid=None, cat=None):
 
     if cat in ['book', 'audio']:
         myDB = database.DBConnection()
-        cmd = 'SELECT authorName,bookName,bookSub from books,authors WHERE bookID="%s"' % bookid
-        cmd += ' and books.AuthorID=authors.AuthorID'
-        match = myDB.match(cmd)
+        cmd = 'SELECT authorName,bookName,bookSub from books,authors WHERE books.AuthorID=authors.AuthorID'
+        cmd += ' and bookID=?'
+        match = myDB.match(cmd, (bookid,))
         if match:
             book['authorName'] = match['authorName']
             book['bookName'] = match['bookName']
@@ -56,7 +58,8 @@ def searchItem(item=None, bookid=None, cat=None):
             logger.debug('Forcing general search')
             cat = 'general'
 
-    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
+    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
+                 lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
     logger.debug('Searching %s provider%s (%s) for %s' % (nproviders, plural(nproviders), cat, searchterm))
 
     if lazylibrarian.USE_NZB():
@@ -65,6 +68,10 @@ def searchItem(item=None, bookid=None, cat=None):
             results += resultlist
     if lazylibrarian.USE_TOR():
         resultlist, nproviders = IterateOverTorrentSites(book, cat)
+        if nproviders:
+            results += resultlist
+    if lazylibrarian.USE_DIRECT():
+        resultlist, nproviders = IterateOverDirectSites(book, cat)
         if nproviders:
             results += resultlist
     if lazylibrarian.USE_RSS():
@@ -127,8 +134,8 @@ def searchItem(item=None, bookid=None, cat=None):
 
                 searchresults.append(result)
 
-            # from operator import itemgetter
-            # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
+                # from operator import itemgetter
+                # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
 
     logger.debug('Found %s %s results for %s' % (len(searchresults), cat, searchterm))
     return searchresults

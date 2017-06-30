@@ -13,8 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
 import subprocess
+
+import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
@@ -40,9 +41,9 @@ class CustomNotifier:
             data = myDB.match('SELECT * from books')
         else:
             # message is a bookid or a magazineid
-            data = myDB.match('SELECT * from books where BookID="%s"' % message)
+            data = myDB.match('SELECT * from books where BookID=?', (message,))
             if not data:
-                data = myDB.match('SELECT * from magazines where BookID="%s"' % message)
+                data = myDB.match('SELECT * from magazines where BookID=?', (message,))
         dictionary = dict(zip(data.keys(), data))
         dictionary['Event'] = event
 

@@ -34,6 +34,7 @@ import lazylibrarian
 from lazylibrarian import logger
 
 
+# noinspection PyArgumentList,PyArgumentList,PyArgumentList,PyArgumentList
 def magnet2torrent(magnet, output_name=None):
     try:
         import libtorrent as lt

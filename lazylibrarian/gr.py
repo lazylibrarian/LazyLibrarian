@@ -378,7 +378,7 @@ class GoodReads:
 
                             if bookLanguage == "Unknown" and isbnhead:
                                 # Nothing in the isbn dictionary, try any cached results
-                                match = myDB.match('SELECT lang FROM languages where isbn = "%s"' % isbnhead)
+                                match = myDB.match('SELECT lang FROM languages where isbn=?', (isbnhead,))
                                 if match:
                                     bookLanguage = match['lang']
                                     cache_hits += 1
@@ -399,7 +399,7 @@ class GoodReads:
                                             bookLanguage = "Unknown"
                                         else:
                                             bookLanguage = resp  # found a language code
-                                            myDB.action('insert into languages values ("%s", "%s")' %
+                                            myDB.action('insert into languages values (?, ?)',
                                                         (isbnhead, bookLanguage))
                                             logger.debug(u"LT language %s: %s" % (isbnhead, bookLanguage))
                                     except Exception as e:
@@ -452,7 +452,7 @@ class GoodReads:
                                         if isbnhead != "":
                                             # if GR didn't give an isbn we can't cache it
                                             # just use language for this book
-                                            myDB.action('insert into languages values ("%s", "%s")' %
+                                            myDB.action('insert into languages values (?, ?)',
                                                         (isbnhead, bookLanguage))
                                             logger.debug("GoodReads reports language [%s] for %s" %
                                                          (bookLanguage, isbnhead))
@@ -526,16 +526,17 @@ class GoodReads:
                                     else:
                                         logger.debug('Ignoring %s for %s, role is %s' %
                                                      (bookname, authorNameResult, role))
-                                else:
-                                    logger.debug('Ignoring %s for %s, authorid %s' %
-                                                 (bookname, authorNameResult, aid))
+                                # else: # multiple authors or wrong author
+                                #    logger.debug('Ignoring %s for %s, authorid %s' %
+                                #                 (bookname, authorNameResult, aid))
+                            if not amatch:
+                                logger.debug('Ignoring %s for %s, wrong author?' % (bookname, authorNameResult))
                             rejected = not amatch
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
-                            cmd += ' and BookName = "%s" COLLATE NOCASE and AuthorName = "%s" COLLATE NOCASE' % \
-                                   (bookname, authorNameResult.replace('"', '""'))
-                            match = myDB.match(cmd)
+                            cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
+                            match = myDB.match(cmd, (bookname, authorNameResult.replace('"', '""')))
                             if match:
                                 if match['BookID'] != bookid:
                                     # we have a different book with this author/title already
@@ -546,8 +547,8 @@ class GoodReads:
 
                         if not rejected:
                             cmd = 'SELECT AuthorName,BookName FROM books,authors'
-                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=%s' % bookid
-                            match = myDB.match(cmd)
+                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
+                            match = myDB.match(cmd, (bookid,))
                             if match:
                                 # we have a book with this bookid already
                                 if bookname != match['BookName'] or authorNameResult != match['AuthorName']:
@@ -562,7 +563,7 @@ class GoodReads:
                                 rejected = True
 
                         if check_status or not rejected:
-                            existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID = "%s"' % bookid)
+                            existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID=?', (bookid,))
                             if existing_book:
                                 book_status = existing_book['Status']
                                 locked = existing_book['Manual']
@@ -683,8 +684,9 @@ class GoodReads:
                             resultxml = None
 
             deleteEmptySeries()
-            lastbook = myDB.match('SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID="%s" \
-                                AND Status != "Ignored" order by BookDate DESC' % authorid)
+            cmd = 'SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID=?'
+            cmd += ' AND Status != "Ignored" order by BookDate DESC'
+            lastbook = myDB.match(cmd, (authorid,))
             if lastbook:
                 lastbookname = lastbook['BookName']
                 lastbooklink = lastbook['BookLink']
@@ -718,7 +720,7 @@ class GoodReads:
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
             logger.debug("Imported/Updated %s book%s" % (modified_count, plural(modified_count)))
 
-            myDB.action('insert into stats values ("%s", %i, %i, %i, %i, %i, %i, %i, %i, %i)' %
+            myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                          cache_hits, ignored, removedResults, not_cached, duplicates))
 
@@ -779,14 +781,13 @@ class GoodReads:
         bookrate = float(rootxml.find('./book/average_rating').text)
         bookpages = rootxml.find('.book/num_pages').text
 
-        name = authorname
-        GR = GoodReads(name)
+        GR = GoodReads(authorname)
         author = GR.find_author_id()
         if author:
             AuthorID = author['authorid']
-            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID="%s"' % AuthorID)
+            match = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
             if not match:
-                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName="%s"' % author['authorname'])
+                match = myDB.match('SELECT AuthorID from authors WHERE AuthorName=?', (author['authorname'],))
                 if match:
                     logger.debug('%s: Changing authorid from %s to %s' %
                                  (author['authorname'], AuthorID, match['AuthorID']))
@@ -803,6 +804,7 @@ class GoodReads:
                         "DateAdded": today(),
                         "Status": "Ignored"
                     }
+                    authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
@@ -839,7 +841,7 @@ class GoodReads:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.info("%s added to the books database" % bookname)
+        logger.info("%s by %s added to the books database" % (bookname, authorname))
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from librarything

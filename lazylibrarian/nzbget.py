@@ -31,7 +31,7 @@ from lazylibrarian.formatter import check_int
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB('', cmd="test")
+    test = sendNZB(None, cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
@@ -40,11 +40,11 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        sendNZB('', 'GroupFinalDelete', nzbID)
-        return sendNZB('', 'HistoryFinalDelete', nzbID)
+        sendNZB(None, 'GroupFinalDelete', nzbID)
+        return sendNZB(None, 'HistoryFinalDelete', nzbID)
     else:
-        sendNZB('', 'GroupDelete', nzbID)
-        return sendNZB('', 'HistoryDelete', nzbID)
+        sendNZB(None, 'GroupDelete', nzbID)
+        return sendNZB(None, 'HistoryDelete', nzbID)
 
 
 def sendNZB(nzb, cmd=None, nzbID=None):
@@ -166,7 +166,8 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
             nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-            else nzb.url, lazylibrarian.CONFIG['NZBGET_CATEGORY'], lazylibrarian.CONFIG['NZBGET_PRIORITY'], False,
+                                             else nzb.url, lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                             lazylibrarian.CONFIG['NZBGET_PRIORITY'], False,
                                              False, dupekey, dupescore, "score")
             if nzbget_result <= 0:
                 nzbget_result = False

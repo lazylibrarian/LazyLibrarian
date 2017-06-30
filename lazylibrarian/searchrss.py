@@ -62,7 +62,7 @@ def search_rss_book(books=None, library=None):
                 # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
                 logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
                 if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                    bookmatch = myDB.match('select Status,BookName from books where bookid="%s"' % book['rss_bookid'])
+                    bookmatch = myDB.match('select Status,BookName from books where bookid=?', (book['rss_bookid'],))
                     if bookmatch:
                         bookstatus = bookmatch['Status']
                         bookname = bookmatch['BookName']
@@ -148,9 +148,8 @@ def search_rss_book(books=None, library=None):
             # The user has added a new book
             for book in books:
                 cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
-                cmd += 'from books,authors WHERE BookID="%s" ' % book['bookid']
-                cmd += 'AND books.AuthorID = authors.AuthorID'
-                results = myDB.select(cmd)
+                cmd += 'from books,authors WHERE BookID=? AND books.AuthorID = authors.AuthorID'
+                results = myDB.select(cmd, (book['bookid'],))
                 for terms in results:
                     searchbooks.append(terms)
 

@@ -17,13 +17,13 @@ import datetime
 import os
 import platform
 import re
+import shutil
 import subprocess
 import traceback
 from hashlib import sha1
-import shutil
-import lib.zipfile as zipfile
 
 import lazylibrarian
+import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural
@@ -239,7 +239,6 @@ def create_cover(issuefile=None, refresh=False):
         logger.debug("Failed to copy nocover file, %s" % str(why))
     return
 
-
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
     # logger.debug('Issue %s Hash: %s' % (issuename, hashID))
@@ -247,6 +246,7 @@ def create_id(issuename=None):
 
 
 def magazineScan():
+    lazylibrarian.MAG_UPDATE = 1
     try:
         myDB = database.DBConnection()
 
@@ -269,7 +269,7 @@ def magazineScan():
                 issuefile = mag['IssueFile']
 
                 if issuefile and not os.path.isfile(issuefile):
-                    myDB.action('DELETE from Issues where issuefile="%s"' % issuefile)
+                    myDB.action('DELETE from Issues where issuefile=?', (issuefile,))
                     logger.info('Issue %s - %s deleted as not found on disk' % (title, issuedate))
                     controlValueDict = {"Title": title}
                     newValueDict = {
@@ -285,11 +285,11 @@ def magazineScan():
             # now check the magazine titles and delete any with no issues
             for mag in mags:
                 title = mag['Title']
-                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title="%s"' % title)
+                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
                 issues = count[0]['counter']
                 if not issues:
                     logger.debug('Magazine %s deleted as no issues found' % title)
-                    myDB.action('DELETE from magazines WHERE Title="%s"' % title)
+                    myDB.action('DELETE from magazines WHERE Title=?', (title,))
 
         logger.info(' Checking [%s] for magazines' % mag_path)
 
@@ -323,6 +323,7 @@ def magazineScan():
                         if match:
                             issuedate = match.group("issuedate")
                             title = match.group("title")
+                            match = True
                         else:
                             match = False
                     except Exception:
@@ -341,7 +342,7 @@ def magazineScan():
                             logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
                             continue
 
-                    logger.debug("Found Issue %s" % fname)
+                    logger.debug("Found %s Issue %s" % (title, fname))
 
                     issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
                     mtime = os.path.getmtime(issuefile)
@@ -351,7 +352,7 @@ def magazineScan():
 
                     # is this magazine already in the database?
                     mag_entry = myDB.match(
-                        'SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title="%s"' % title)
+                        'SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title=?', (title,))
                     if not mag_entry:
                         # need to add a new magazine to the database
                         newValueDict = {
@@ -379,8 +380,8 @@ def magazineScan():
                     # is this issue already in the database?
                     controlValueDict = {"Title": title, "IssueDate": issuedate}
                     issue_id = create_id("%s %s" % (title, issuedate))
-                    iss_entry = myDB.match('SELECT Title from issues WHERE Title="%s" and IssueDate="%s"' % (
-                        title, issuedate))
+                    iss_entry = myDB.match('SELECT Title from issues WHERE Title=? and IssueDate=?',
+                                           (title, issuedate))
                     if not iss_entry:
                         newValueDict = {
                             "IssueAcquired": iss_acquired,
@@ -391,6 +392,7 @@ def magazineScan():
                         logger.debug("Adding issue %s %s" % (title, issuedate))
 
                     create_cover(issuefile)
+                    lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id)
 
                     # see if this issues date values are useful
                     controlValueDict = {"Title": title}
@@ -425,6 +427,8 @@ def magazineScan():
         logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
                     (magcount['count(*)'], plural(magcount['count(*)']),
                      isscount['count(*)'], plural(isscount['count(*)'])))
+        lazylibrarian.MAG_UPDATE = 0
 
     except Exception:
+        lazylibrarian.MAG_UPDATE = 0
         logger.error('Unhandled exception in magazineScan: %s' % traceback.format_exc())

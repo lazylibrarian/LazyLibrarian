@@ -22,11 +22,12 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites
-from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
+from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
+    IterateOverDirectSites
 from lib.fuzzywuzzy import fuzz
 
 
@@ -55,7 +56,7 @@ def search_magazines(mags=None, reset=False):
             searchmags = []
             for magazine in mags:
                 searchmags_temp = myDB.select('SELECT Title, Regex, LastAcquired, IssueDate from magazines \
-                                          WHERE Title="%s" AND Status="Active"' % (magazine['bookid']))
+                                          WHERE Title=? AND Status="Active"', (magazine['bookid'],))
                 for terms in searchmags_temp:
                     searchmags.append(terms)
 
@@ -93,6 +94,23 @@ def search_magazines(mags=None, reset=False):
                 resultlist, nproviders = IterateOverNewzNabSites(book, 'mag')
                 if not nproviders:
                     logger.warn('No nzb providers are set. Check config for NEWZNAB or TORZNAB providers')
+
+            if lazylibrarian.USE_DIRECT():
+                dir_resultlist, nproviders = IterateOverDirectSites(book, 'mag')
+                if not nproviders:
+                    logger.warn('No direct providers are set. Check config for DIRECT providers')
+
+                if dir_resultlist:
+                    for item in dir_resultlist:  # reformat the results so they look like nzbs
+                        resultlist.append({
+                            'bookid': item['bookid'],
+                            'nzbprov': item['tor_prov'],
+                            'nzbtitle': item['tor_title'],
+                            'nzburl': item['tor_url'],
+                            'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned
+                            'nzbsize': item['tor_size'],
+                            'nzbmode': 'torrent'
+                        })
 
             if lazylibrarian.USE_TOR():
                 tor_resultlist, nproviders = IterateOverTorrentSites(book, 'mag')
@@ -155,7 +173,7 @@ def search_magazines(mags=None, reset=False):
                     nzbdate = nzbdate2format(nzbdate_temp)
                     nzbmode = nzb['nzbmode']
 
-                    results = myDB.match('SELECT * from magazines WHERE Title="%s"' % bookid)
+                    results = myDB.match('SELECT * from magazines WHERE Title=?', (bookid,))
                     if not results:
                         logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
                         bad_name += 1
@@ -214,11 +232,10 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
 
                         if not rejected:
-                            already_failed = myDB.match('SELECT * from wanted WHERE NZBurl="%s" and Status="Failed"' %
-                                                        nzburl)
-                            if already_failed:
+                            blocked = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (nzburl,))
+                            if blocked:
                                 logger.debug("Rejecting %s, blacklisted at %s" %
-                                             (nzbtitle_formatted, already_failed['NZBprov']))
+                                             (nzbtitle_formatted, blocked['NZBprov']))
                                 rejected = True
 
                         if not rejected:
@@ -433,8 +450,8 @@ def search_magazines(mags=None, reset=False):
                             #  and status has been user-set ( we only delete the "Skipped" ones )
                             #  In "wanted" table it might be already snatched/downloading/processing
 
-                            mag_entry = myDB.match('SELECT * from %s WHERE NZBtitle="%s" and NZBprov="%s"' % (
-                                insert_table, nzbtitle, nzbprov))
+                            mag_entry = myDB.match('SELECT * from %s WHERE NZBtitle=? and NZBprov=?' % insert_table,
+                                                   (nzbtitle, nzbprov))
                             if not mag_entry:
                                 controlValueDict = {
                                     "NZBtitle": nzbtitle,

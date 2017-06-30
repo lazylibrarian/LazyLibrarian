@@ -1,8 +1,9 @@
+from httplib import HTTPSConnection
+from urllib import urlencode
+
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-from httplib import HTTPSConnection
-from urllib import urlencode
 
 
 class Prowl_Notifier:

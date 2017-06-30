@@ -13,12 +13,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import ConfigParser
 import Queue
 import json
 import os
 import shutil
 import threading
-import ConfigParser
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -36,8 +36,8 @@ from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate
-from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchbook import search_book
+from lazylibrarian.searchmag import search_magazines
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -388,9 +388,9 @@ class Api(object):
             self.id = kwargs['name']
 
         myDB = database.DBConnection()
-        myDB.action('DELETE from magazines WHERE Title="%s"' % self.id)
-        myDB.action('DELETE from wanted WHERE BookID="%s"' % self.id)
-        myDB.action('DELETE from issues WHERE Title="%s"' % self.id)
+        myDB.action('DELETE from magazines WHERE Title=?', (self.id,))
+        myDB.action('DELETE from wanted WHERE BookID=?', (self.id,))
+        myDB.action('DELETE from issues WHERE Title=?', (self.id,))
 
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -465,7 +465,7 @@ class Api(object):
             threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh]).start()
 
     def _forceMagSearch(self, **kwargs):
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_magazines(None, True)
             else:
@@ -478,7 +478,7 @@ class Api(object):
             library = kwargs['type']
         else:
             library = None
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_book(library=library)
             else:
@@ -618,13 +618,11 @@ class Api(object):
             return
         try:
             myDB = database.DBConnection()
-            authordata = myDB.match(
-                'SELECT AuthorName from authors WHERE AuthorID="%s"' % kwargs['toid'])
+            authordata = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['toid'],))
             if not authordata:
                 self.data = "No destination author [%s] in the database" % kwargs['toid']
             else:
-                bookdata = myDB.match(
-                    'SELECT AuthorID, BookName from books where BookID="%s"' % kwargs['id'])
+                bookdata = myDB.match('SELECT AuthorID, BookName from books where BookID=?', (kwargs['id'],))
                 if not bookdata:
                     self.data = "No bookid [%s] in the database" % kwargs['id']
                 else:
@@ -648,19 +646,17 @@ class Api(object):
         try:
             myDB = database.DBConnection()
             q = 'SELECT bookid,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
-            q += ' and authorname="%s"' % kwargs['fromname']
-            fromhere = myDB.select(q)
+            q += ' and authorname=?'
+            fromhere = myDB.select(q, (kwargs['fromname'],))
 
-            tohere = myDB.match(
-                'SELECT authorid from authors where authorname="%s"' % kwargs['toname'])
+            tohere = myDB.match('SELECT authorid from authors where authorname=?', (kwargs['toname'],))
             if not len(fromhere):
                 self.data = "No books by [%s] in the database" % kwargs['fromname']
             else:
                 if not tohere:
                     self.data = "No destination author [%s] in the database" % kwargs['toname']
                 else:
-                    myDB.action('UPDATE books SET authorid="%s", where authorname="%s"' %
-                                (tohere[0], kwargs['fromname']))
+                    myDB.action('UPDATE books SET authorid=?, where authorname=?', (tohere[0], kwargs['fromname']))
                     self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
                     update_totals(fromhere[0][1])  # we moved from here
                     update_totals(tohere[0])  # to here
@@ -709,7 +705,7 @@ class Api(object):
         else:
             library = None
 
-        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_book(books=books, library=library)
             else:
@@ -725,12 +721,12 @@ class Api(object):
             self.id = kwargs['id']
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID="%s"' % id)
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
         if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % id)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % id)
+            myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
+            myDB.action('DELETE from books WHERE AuthorID=?', (kwargs['id'],))
 
     def _writeCFG(self, **kwargs):
         if 'name' not in kwargs:
