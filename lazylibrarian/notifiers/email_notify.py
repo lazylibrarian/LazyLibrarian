@@ -40,12 +40,6 @@ class EmailNotifier:
         subject = event
         text = message
 
-        logger.debug('Email notification: %s' % message['Subject'])
-        logger.debug('Email from: %s' % message['From'])
-        logger.debug('Email to: %s' % message['To'])
-        logger.debug('Email text: %s' % text)
-        logger.debug('Files: %s' % files)
-
         if files:
             message = MIMEMultipart()
             message.attach(MIMEText(text))
@@ -56,6 +50,12 @@ class EmailNotifier:
         message['From'] = formataddr(('LazyLibrarian', lazylibrarian.CONFIG['EMAIL_FROM']))
         message['To'] = lazylibrarian.CONFIG['EMAIL_TO']
         message['Date'] = formatdate(localtime=True)
+
+        logger.debug('Email notification: %s' % message['Subject'])
+        logger.debug('Email from: %s' % message['From'])
+        logger.debug('Email to: %s' % message['To'])
+        logger.debug('Email text: %s' % text)
+        logger.debug('Files: %s' % files)
 
         if files:
             for f in files:
