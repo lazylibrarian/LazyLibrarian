@@ -4,8 +4,11 @@
 %>
 <%def name="headerIncludes()">
   <div id="subhead_container">
+    %if authorid != None:
     <a href="authorPage?AuthorID=${authorid}" class="btn btn-sm btn-primary"><i class="fa fa-chevron-left"></i> Return to Author</a>
-    <a href="refreshAuthor?AuthorID=${authorid}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
+    %else:
+    <label for="dummy" class="control-label"> </label>
+    %endif
   </div>
 </%def>
 <%def name="body()">

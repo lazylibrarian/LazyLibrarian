@@ -6,8 +6,8 @@
   <div id="subhead_container">
     <div id="subhead_menu">
       <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Book</a>
-      <a href="importCSV" class="button btn btn-sm btn-primary"><i class="fa fa-upload"></i> Import CSV Wishlist</a>
-      <a href="exportCSV" class="button btn btn-sm btn-primary"><i class="fa fa-download"></i> Export CSV Wishlist</a>
+      <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv"><i class="fa fa-download"></i> Import CSV Wishlist</button>
+      <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv"><i class="fa fa-upload"></i> Export CSV Wishlist</button>
     </div>
   </div>
 </%def>
@@ -70,6 +70,39 @@
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
+
+        $('#exportcsv').on('click', function(e) {
+            $.get('exportCSV', function(data) {
+                bootbox.dialog({
+                    title: 'CSV Export Result',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+            });
+        });
+
+        $('#importcsv').on('click', function(e) {
+            $.get('importCSV', function(data) {
+                var myModal = bootbox.dialog({
+                    title: 'CSV Import Info',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+                setTimeout(function(){
+                myModal.modal('hide');
+                }, 5000);
+            });
+        });
 
          var table = $('#book_table').DataTable(
             {

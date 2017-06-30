@@ -17,6 +17,9 @@
 
 <%def name="body()">
 <h1>${title}</h1>
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Author Refresh in progress ...</p>
+  %endif
 <div class="table-responsive">
 %if lazylibrarian.CONFIG['TOGGLES'] == True:
 Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Latest</a> - <a class="toggle-vis" data-column="3">Released</a> - <a class="toggle-vis" data-column="4">Downloaded</a> - <a class="toggle-vis" data-column="5">Status</a>
@@ -89,6 +92,9 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
 </div>
 </%def>
 <%def name="headIncludes()">
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <meta http-equiv="refresh" content="20">
+  %endif
 </%def>
 <%def name="javascriptIncludes()">
   <script type="text/javascript">

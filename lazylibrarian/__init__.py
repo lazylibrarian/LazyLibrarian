@@ -83,6 +83,7 @@ SHOW_AUDIO = 0
 MAG_UPDATE = 0
 EBOOK_UPDATE = 0
 AUDIO_UPDATE = 0
+AUTHORS_UPDATE = 0
 
 # Shared dictionaries
 isbn_979_dict = {
