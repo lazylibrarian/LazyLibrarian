@@ -450,8 +450,8 @@ def search_magazines(mags=None, reset=False):
                             #  and status has been user-set ( we only delete the "Skipped" ones )
                             #  In "wanted" table it might be already snatched/downloading/processing
 
-                            mag_entry = myDB.match('SELECT * from ? WHERE NZBtitle=? and NZBprov=?',
-                                                   (insert_table, nzbtitle, nzbprov))
+                            mag_entry = myDB.match('SELECT * from %s WHERE NZBtitle=? and NZBprov=?' % insert_table,
+                                                   (nzbtitle, nzbprov))
                             if not mag_entry:
                                 controlValueDict = {
                                     "NZBtitle": nzbtitle,
