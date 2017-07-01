@@ -2,14 +2,29 @@
 <%!
     import lazylibrarian
 %>
+
 <%def name="headerIncludes()">
-  <div id="subhead_container">
-    <div id="subhead_menu">
-      <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Book</a>
-      <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv"><i class="fa fa-download"></i> Import CSV Wishlist</button>
-      <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv"><i class="fa fa-upload"></i> Export CSV Wishlist</button>
+    <div id="subhead_container" class="row">
+      <form action="search" method="get">
+        <div id="subhead_menu"  class="col-xs-12 col-md-8">
+          <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Book</a>
+          <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv"><i class="fa fa-download"></i> Import CSV Wishlist</button>
+          <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv"><i class="fa fa-upload"></i> Export CSV Wishlist</button>
+        </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Search</label>
+          <div class="input-group">
+            <input type="text" class="form-control deletable input-sm col-xs-12" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox" name="searchbox">
+            <span class="input-group-btn">
+              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        </div>
+      </form>
     </div>
-  </div>
 </%def>
 <%def name="body()">
   <h1>${title}</h1>
