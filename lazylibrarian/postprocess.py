@@ -306,7 +306,7 @@ def processDir(reset=False):
                         matchname = fname
                         # torrents might have words_separated_by_underscores
                         matchname = matchname.split(' LL.(')[0].replace('_', ' ')
-                        matchtitle = matchtitle.split(' LL.(')[0]
+                        matchtitle = matchtitle.split(' LL.(')[0].replace('_', ' ')
                         match = fuzz.token_set_ratio(matchtitle, matchname)
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
