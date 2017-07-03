@@ -21,11 +21,11 @@
     <script src="js/lazylibrarian-bs.js"></script>
     ${next.headIncludes()}
     <script type="text/javascript">
-      // Allow the user to reset the search box
+      // Allow the user to reset the filter box
       $(document).ready(function () {
           $.fn.dataTableExt.oApi.clearSearch = function ( oSettings ) {
               var table = this;
-              var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Search"></i>');
+              var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Filter"></i>');
 
               $(clearSearch).click( function ()
                       {
@@ -74,7 +74,7 @@
             </div>
             <div class="collapse navbar-collapse" id="MainNav">
               <ul class="nav navbar-nav">
-                <li><a href="home" class="navbarele">Authors</a></li>
+                <!--li><a href="home" class="navbarele">Authors</a></li-->
                 <li><a id="books" href="books" class="navbarele">eBooks</a></li>
                 <li><a id="series" href="series" class="navbarele">Series</a></li>
                 <li><a id="audio" href="audio" class="navbarele">AudioBooks</a></li>
