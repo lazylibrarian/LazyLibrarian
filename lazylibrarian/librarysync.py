@@ -51,8 +51,15 @@ def get_book_info(fname):
         except Exception as e:
             logger.debug('Unable to parse mobi in %s, %s' % (fname, str(e)))
             return res
-        res['creator'] = book.author()
-        res['title'] = book.title()
+
+        author = book.author()
+        title = book.title()
+        if isinstance(author, str):
+            author = author.decode(lazylibrarian.SYS_ENCODING)
+        if isinstance(title, str):
+            title = title.decode(lazylibrarian.SYS_ENCODING)
+        res['creator'] = author
+        res['title'] = title
         res['language'] = book.language()
         res['identifier'] = book.isbn()
         return res
@@ -134,11 +141,15 @@ def get_book_info(fname):
             txt = tree[0][n].text
             attrib = str(tree[0][n].attrib).lower()
             if 'title' in tag:
+                if isinstance(txt, str):
+                    txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['title'] = txt
             elif 'language' in tag:
                 res['language'] = txt
             elif 'creator' in tag and 'creator' not in res:
                 # take the first author name if multiple authors
+                if isinstance(txt, str):
+                    txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['creator'] = txt
             elif 'identifier' in tag and 'isbn' in attrib:
                 if is_valid_isbn(txt):
@@ -153,10 +164,6 @@ def find_book_in_db(author, book):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
-    if isinstance(author, str):
-        author = author.decode(lazylibrarian.SYS_ENCODING)
-    if isinstance(book, str):
-        book = book.decode(lazylibrarian.SYS_ENCODING)
     logger.debug('Searching database for [%s] by [%s]' % (book, author))
     myDB = database.DBConnection()
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
@@ -453,6 +460,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                     isbn = res['identifier']
                                 if 'type' in res:
                                     extn = res['type']
+
                                 logger.debug("book meta [%s] [%s] [%s] [%s] [%s]" %
                                              (isbn, language, author, book, extn))
                             if not match:
@@ -510,6 +518,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                         if 'album' in tags and 'artist' in tags:
                                             author = tags['artist']
                                             book = tags['album']
+                                            if isinstance(book, str):
+                                                book = book.decode(lazylibrarian.SYS_ENCODING)
+                                            if isinstance(author, str):
+                                                author = author.decode(lazylibrarian.SYS_ENCODING)
                                             match = True
                                 except IOError:
                                     pass
@@ -523,6 +535,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                             if match:
                                 author = match.group("author")
                                 book = match.group("book")
+                                if isinstance(book, str):
+                                    book = book.decode(lazylibrarian.SYS_ENCODING)
+                                if isinstance(author, str):
+                                    author = author.decode(lazylibrarian.SYS_ENCODING)
                                 if len(book) <= 2 or len(author) <= 2:
                                     match = 0
                             if not match:
@@ -548,9 +564,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                 else:
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
-                            if isinstance(author, str):
-                                author = author.decode(lazylibrarian.SYS_ENCODING)
-
                             newauthor, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
                             if len(newauthor) and newauthor != author:
                                 logger.debug("Preferred authorname changed from [%s] to [%s]" % (author, newauthor))
@@ -561,7 +574,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                 # some books might be stored under a different author name
                                 # eg books by multiple authors, books where author is "writing as"
                                 # or books we moved to "merge" authors
-                                book = book.replace("'", "")
+                                # strip all ascii and non-ascii quotes/apostrophes
+                                dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '', "'": "", '"': ''}
+                                book = replace_all(book, dic)
 
                                 # First try and find it under author and bookname
                                 # as we may have it under a different bookid or isbn to goodreads/googlebooks
@@ -606,6 +621,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                 if not bookid:
                                     # get author name from parent directory of this book directory
                                     newauthor = os.path.basename(os.path.dirname(r))
+                                    if isinstance(newauthor, str):
+                                        newauthor = newauthor.decode(lazylibrarian.SYS_ENCODING)
                                     # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
                                     if newauthor.endswith('_'):
                                         newauthor = newauthor[:-1] + '.'
