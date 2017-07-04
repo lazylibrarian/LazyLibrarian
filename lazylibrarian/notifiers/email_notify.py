@@ -61,8 +61,10 @@ class EmailNotifier:
             for f in files:
                 fsize = check_int(os.path.getsize(f), 0)
                 if fsize > 20000000:
-                    message.attach(MIMEText('%s is too large (%s) to email' % (os.path.basename(f), fsize)))
+                    msg = '%s is too large (%s) to email' % (os.path.basename(f), fsize)
+                    message.attach(MIMEText(msg))
                 else:
+                    logger.debug('Attaching %s' % os.path.basename(f))
                     with open(f, "rb") as fil:
                         part = MIMEApplication(fil.read(), Name=os.path.basename(f))
                         part['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(f)
@@ -103,21 +105,23 @@ class EmailNotifier:
 
     def notify_download(self, title, bookid=None, force=False):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
-            filename = ''
             files = None
-            event=notifyStrings[NOTIFY_DOWNLOAD]
+            event = notifyStrings[NOTIFY_DOWNLOAD]
             if bookid:
                 myDB = database.DBConnection()
                 data = myDB.match('SELECT BookFile,BookName from books where BookID=?', (bookid,))
                 try:
                     filename = data['BookFile']
                     title = data['BookName']
+                    logger.debug('Found %s for bookid %s' % (filename, bookid))
                 except Exception:
-                    data = myDB.match('SELECT IssueFile,Title,IssueDate from magazines where BookID=?', (bookid,))
+                    data = myDB.match('SELECT IssueFile,Title,IssueDate from issues where IssueID=?', (bookid,))
                     try:
                         filename = data['IssueFile']
                         title = "%s - %s" % (data['Title'], data['IssueDate'])
+                        logger.debug('Found %s for issueid %s' % (filename, bookid))
                     except Exception:
+                        logger.debug("No download match for %s" % bookid)
                         filename = ''
                 if filename:
                     files = [filename]  # could add cover_image, opf
