@@ -3,8 +3,9 @@
     import lazylibrarian
 %>
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <div id="subhead_menu">
+    <div id="subhead_container" class="row">
+      <form action="search" method="get">
+        <div id="subhead_menu"  class="col-xs-12 col-md-8">
             <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
             %if lazylibrarian.IGNORED_AUTHORS == True:
               <a href="toggleAuth" class="button btn btn-sm btn-primary">Show Active Authors</a>
@@ -12,11 +13,28 @@
               <a href="toggleAuth" class="button btn btn-sm btn-primary">Show Ignored Authors</a>
             %endif
         </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Search</label>
+          <div class="input-group">
+            <input type="text"  id="name" name="name" placeholder="Title / Author / ISBN" name="title" class="form-control input-sm col-xs-12">
+            <!--input type="text" class="form-control input-sm col-xs-12" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox" name="searchbox"-->
+            <span class="input-group-btn">
+              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        </div>
+      </form>
     </div>
 </%def>
 
 <%def name="body()">
 <h1>${title}</h1>
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Author Refresh in progress ...</p>
+  %endif
 <div class="table-responsive">
 %if lazylibrarian.CONFIG['TOGGLES'] == True:
 Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Latest</a> - <a class="toggle-vis" data-column="3">Released</a> - <a class="toggle-vis" data-column="4">Downloaded</a> - <a class="toggle-vis" data-column="5">Status</a>
@@ -89,6 +107,9 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
 </div>
 </%def>
 <%def name="headIncludes()">
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <meta http-equiv="refresh" content="20">
+  %endif
 </%def>
 <%def name="javascriptIncludes()">
   <script type="text/javascript">

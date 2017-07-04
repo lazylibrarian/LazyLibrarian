@@ -2,6 +2,26 @@
 <%!
     import lazylibrarian
 %>
+<%def name="headerIncludes()">
+    <div id="subhead_container" class="row">
+      <form action="search" method="get">
+        <div id="subhead_menu"  class="col-xs-12 col-md-8">
+        </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Search</label>
+          <div class="input-group">
+            <input type="text" class="form-control deletable input-sm col-xs-12" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox" name="searchbox">
+            <span class="input-group-btn">
+              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        </div>
+      </form>
+    </div>
+</%def>
 <%def name="body()">
 
 <h1>${title}</h1>

@@ -59,8 +59,9 @@ class EmailNotifier:
 
         if files:
             for f in files:
-                if os.path.getsize(f) > 20000000:
-                    message.attach(MIMEText('%s is too large to email' % os.path.basename(f)))
+                fsize = check_int(os.path.getsize(f), 0)
+                if fsize > 20000000:
+                    message.attach(MIMEText('%s is too large (%s) to email' % (os.path.basename(f), fsize)))
                 else:
                     with open(f, "rb") as fil:
                         part = MIMEApplication(fil.read(), Name=os.path.basename(f))

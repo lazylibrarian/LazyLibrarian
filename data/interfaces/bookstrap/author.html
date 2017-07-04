@@ -25,27 +25,25 @@
             %if showseries >= 1:
             <a href="series?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Series</a>
             %endif
+            <div class="form-group pull-right">
             %if len(types) > 1:
-                <div class="form-group pull-right">
-                    <label for="chooselib"><small>&nbsp;Library</small></label>
-                    <select class="form-control input-sm" name="chooselib" id="chooselib">
-                        %for library in types:
-                        <option value="${library}">${library}</option>
-                        %endfor
-                    </select>
-                </div>
+              <label for="chooselib"><small>&nbsp;Library</small></label>
+              <select class="form-control input-sm" name="chooselib" id="chooselib">
+                %for library in types:
+                  <option value="${library}">${library}</option>
+                %endfor
+              </select>
             %endif
             %if len(languages) > 1:
-              <div class="form-group pull-right">
-                <label for="chooselanguage"><small>Language</small></label>
-                <select class="form-control input-sm" name="chooselanguage" id="chooselanguage">
+              <label for="chooselanguage"><small>Language</small></label>
+              <select class="form-control input-sm" name="chooselanguage" id="chooselanguage">
                 <option value="">All</option>
                 %for language in languages:
-                <option value="${language['BookLang']}">${language['BookLang']}</option>
+                  <option value="${language['BookLang']}">${language['BookLang']}</option>
                 %endfor
-                </select>
-              </div>
+              </select>
             %endif
+            </div>
         </form>
     </div>
 <script type="text/javascript">

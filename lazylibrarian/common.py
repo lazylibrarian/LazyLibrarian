@@ -218,14 +218,17 @@ def dbUpdate(refresh=False):
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC'
         activeauthors = myDB.select(cmd)
+        lazylibrarian.AUTHORS_UPDATE = True
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
         for author in activeauthors:
             authorid = author['AuthorID']
             # noinspection PyUnresolvedReferences
             lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
+        lazylibrarian.AUTHORS_UPDATE = False
         return 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))
     except Exception:
+        lazylibrarian.AUTHORS_UPDATE = False
         msg = 'Unhandled exception in dbUpdate: %s' % traceback.format_exc()
         logger.error(msg)
         return msg

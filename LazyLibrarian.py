@@ -30,6 +30,7 @@ if opt_out_of_certificate_verification:
 def main():
     # rename this thread
     threading.currentThread().name = "MAIN"
+
     # Set paths
     if hasattr(sys, 'frozen'):
         lazylibrarian.FULL_PATH = os.path.abspath(sys.executable)
@@ -96,7 +97,7 @@ def main():
             # lazylibrarian.LOGLEVEL = 0
             lazylibrarian.daemonize()
         else:
-            print "Daemonize not supported under Windows, starting normally"
+            print("Daemonize not supported under Windows, starting normally")
 
     if options.nolaunch:
         lazylibrarian.CONFIG['LAUNCH_BROWSER'] = False

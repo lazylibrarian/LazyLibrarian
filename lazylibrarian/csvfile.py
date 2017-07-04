@@ -29,14 +29,17 @@ def export_CSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
     try:
         if not search_dir:
-            logger.warn("Alternate Directory not configured")
-            return False
+            msg = "Alternate Directory not configured"
+            logger.warn(msg)
+            return msg
         elif not os.path.isdir(search_dir):
-            logger.warn("Alternate Directory [%s] not found" % search_dir)
-            return False
+            msg = "Alternate Directory [%s] not found" % search_dir
+            logger.warn(msg)
+            return msg
         elif not os.access(search_dir, os.W_OK | os.X_OK):
-            logger.warn("Alternate Directory [%s] not writable" % search_dir)
-            return False
+            msg = "Alternate Directory [%s] not writable" % search_dir
+            logger.warn(msg)
+            return msg
 
         csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, now().replace(':', '-')))
 
@@ -47,7 +50,8 @@ def export_CSV(search_dir=None, status="Wanted"):
         find_status = myDB.select(cmd, (status,))
 
         if not find_status:
-            logger.warn(u"No books marked as %s" % status)
+            msg = "No books marked as %s" % status
+            logger.warn(msg)
         else:
             count = 0
             with open(csvFile, 'wb') as csvfile:
@@ -65,7 +69,7 @@ def export_CSV(search_dir=None, status="Wanted"):
                     count += 1
             msg = "CSV exported %s book%s to %s" % (count, plural(count), csvFile)
             logger.info(msg)
-            return msg
+        return msg
     except Exception:
         msg = 'Unhandled exception in exportCSV: %s' % traceback.format_exc()
         logger.error(msg)
@@ -122,11 +126,13 @@ def import_CSV(search_dir=None):
     """
     try:
         if not search_dir:
-            logger.warn("Alternate Directory not configured")
-            return False
+            msg = "Alternate Directory not configured"
+            logger.warn(msg)
+            return msg
         elif not os.path.isdir(search_dir):
-            logger.warn("Alternate Directory [%s] not found" % search_dir)
-            return False
+            msg = "Alternate Directory [%s] not found" % search_dir
+            logger.warn(msg)
+            return msg
 
         csvFile = csv_file(search_dir)
 
@@ -134,7 +140,9 @@ def import_CSV(search_dir=None):
         content = {}
 
         if not csvFile:
-            logger.warn(u"No CSV file found in %s" % search_dir)
+            msg = "No CSV file found in %s" % search_dir
+            logger.warn(msg)
+            return msg
         else:
             logger.debug(u'Reading file %s' % csvFile)
             reader = csv.reader(open(csvFile))
@@ -154,8 +162,9 @@ def import_CSV(search_dir=None):
             # To see the list of fields available for each book:  print headers
 
             if 'Author' not in headers or 'Title' not in headers:
-                logger.warn(u'Invalid CSV file found %s' % csvFile)
-                return
+                msg = 'Invalid CSV file found %s' % csvFile
+                logger.warn(msg)
+                return msg
 
             myDB = database.DBConnection()
             bookcount = 0

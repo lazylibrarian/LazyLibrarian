@@ -21,11 +21,11 @@
     <script src="js/lazylibrarian-bs.js"></script>
     ${next.headIncludes()}
     <script type="text/javascript">
-      // Allow the user to reset the search box
+      // Allow the user to reset the filter box
       $(document).ready(function () {
           $.fn.dataTableExt.oApi.clearSearch = function ( oSettings ) {
               var table = this;
-              var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Search"></i>');
+              var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Filter"></i>');
 
               $(clearSearch).click( function ()
                       {
@@ -74,7 +74,7 @@
             </div>
             <div class="collapse navbar-collapse" id="MainNav">
               <ul class="nav navbar-nav">
-                <li><a href="home" class="navbarele">Authors</a></li>
+                <!--li><a href="home" class="navbarele">Authors</a></li-->
                 <li><a id="books" href="books" class="navbarele">eBooks</a></li>
                 <li><a id="series" href="series" class="navbarele">Series</a></li>
                 <li><a id="audio" href="audio" class="navbarele">AudioBooks</a></li>
@@ -84,16 +84,6 @@
                 <li><a href="logs" class="navbarele">Logs</a></li>
                 <li><a href="config" class="navbarcfg"><i class="fa fa-cog"></i> Config</a></li>
               </ul>
-              <form class="navbar-form navbar-right" action="search" method="get">
-                <div class="form-group">
-                  <div class="input-group">
-                    <input type="text" class="form-control deletable input-sm" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox">
-                    <span class="input-group-btn">
-                      <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search"></i></button>
-                    </span>
-                  </div>
-                </div>
-              </form>
             </div>
           </div>
           <div id="subnav" class="navbar-inverse">

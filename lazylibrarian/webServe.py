@@ -31,7 +31,8 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, dbUpdate
+from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
+    dbUpdate, csv_file
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
@@ -1842,23 +1843,31 @@ class WebInterface(object):
             try:
                 threading.Thread(target=import_CSV, name='IMPORTCSV',
                                  args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                csvFile = csv_file(lazylibrarian.CONFIG['ALTERNATE_DIR'])
+                if os.path.exists(csvFile):
+                    message = "Importing books (background task) from %s" % csvFile
+                else:
+                    message = "No CSV file in [%s]" % lazylibrarian.CONFIG['ALTERNATE_DIR']
             except Exception as e:
-                logger.error(u'Unable to complete the import: %s' % str(e))
+                message = 'Unable to complete the import: %s' % str(e)
+                logger.error(message)
         else:
-            logger.debug('IMPORTCSV already running')
-        raise cherrypy.HTTPRedirect("manage")
+            message = 'IMPORTCSV already running'
+            logger.debug(message)
+
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+            raise cherrypy.HTTPRedirect("manage")
+        else:
+            return message
 
     @cherrypy.expose
     def exportCSV(self):
-        if 'EXPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
-            try:
-                threading.Thread(target=export_CSV, name='EXPORTCSV',
-                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
-            except Exception as e:
-                logger.error(u'Unable to complete the export: %s' % str(e))
+        message = export_CSV(lazylibrarian.CONFIG['ALTERNATE_DIR'])
+        message = message.replace('\n', '<br>')
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+            raise cherrypy.HTTPRedirect("manage")
         else:
-            logger.debug('EXPORTCSV already running')
-        raise cherrypy.HTTPRedirect("manage")
+            return message
 
     # JOB CONTROL #######################################################
 
