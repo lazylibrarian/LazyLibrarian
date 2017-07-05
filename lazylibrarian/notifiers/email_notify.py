@@ -102,31 +102,39 @@ class EmailNotifier:
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:
             return self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
+        return False
 
     def notify_download(self, title, bookid=None, force=False):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
             files = None
             event = notifyStrings[NOTIFY_DOWNLOAD]
-            if bookid:
+            if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] and not bookid:
+                logger.debug('Requested to attach book, but no bookid')
+            elif bookid:
                 myDB = database.DBConnection()
                 data = myDB.match('SELECT BookFile,BookName from books where BookID=?', (bookid,))
                 try:
+                    if not data:
+                        logger.debug('[%s] is not a valid bookid' % bookid)
                     filename = data['BookFile']
                     title = data['BookName']
                     logger.debug('Found %s for bookid %s' % (filename, bookid))
                 except Exception:
                     data = myDB.match('SELECT IssueFile,Title,IssueDate from issues where IssueID=?', (bookid,))
                     try:
+                        if not data:
+                            logger.debug('[%s] is not a valid issueid' % bookid)
                         filename = data['IssueFile']
                         title = "%s - %s" % (data['Title'], data['IssueDate'])
                         logger.debug('Found %s for issueid %s' % (filename, bookid))
                     except Exception:
-                        logger.debug("No download match for %s" % bookid)
+                        logger.debug("No attachment found for [%s]" % bookid)
                         filename = ''
                 if filename:
                     files = [filename]  # could add cover_image, opf
                     event = "LazyLibrarian Download"
             return self._notify(message=title, event=event, force=force, files=files)
+        return False
 
     def test_notify(self, title='Test'):
         message = u"This is a test notification from LazyLibrarian"

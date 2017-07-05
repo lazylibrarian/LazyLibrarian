@@ -507,12 +507,14 @@ def processDir(reset=False):
                     if to_delete:
                         # ask downloader to delete the torrent, but not the files
                         # we may delete them later, depending on other settings
-                        if book['DownloadID'] != "unknown":
-                            logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
-                            delete_task(book['Source'], book['DownloadID'], False)
-                        else:
+                        if not book['Source']:
+                            logger.warn("Unable to remove %s, no source" % book['NZBtitle'])
+                        elif not book['DownloadID'] or book['DownloadID'] == "unknown":
                             logger.warn("Unable to remove %s from %s, no DownloadID" %
                                         (book['NZBtitle'], book['Source'].lower()))
+                        elif book['Source'] != 'DIRECT':
+                            logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
+                            delete_task(book['Source'], book['DownloadID'], False)
 
                     if to_delete:
                         # only delete the files if not in download root dir and if DESTINATION_COPY not set
@@ -635,7 +637,8 @@ def processDir(reset=False):
                     diff = 0
                 hours = int(diff / 3600)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
-                    logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
+                    if book['Source']:
+                        logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
                                 (book['NZBtitle'], book['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
                     if book['BookID'] != 'unknown':
@@ -692,6 +695,8 @@ def delete_task(Source, DownloadID, remove_data):
             except Exception as e:
                 logger.debug('DelugeRPC failed %s' % str(e))
                 return False
+        elif Source == 'DIRECT':
+            return True
         else:
             logger.debug("Unknown source [%s] in delete_task" % Source)
             return False
