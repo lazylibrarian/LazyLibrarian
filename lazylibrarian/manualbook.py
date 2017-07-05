@@ -127,7 +127,7 @@ def searchItem(item=None, bookid=None, cat=None):
             words -= len(getList(title))
             score -= abs(words)
             if score >= 40:  # ignore wildly wrong results?
-                if not url.startswith('magnet'):
+                if not url.startswith('magnet') and not mode == 'torznab':  # what is this split for??
                     url = url.split('?')[0]
                 result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
                           'url': urllib.quote_plus(url), 'mode': mode}
