@@ -73,7 +73,7 @@ def notify_download(title, bookid=None):
     try:
         for n in notifiers:
             if n == 'email_notifier':
-                n.notify_download(title, bookid)
+                n.notify_download(title, bookid=bookid)
             else:
                 n.notify_download(title)
     except Exception as e:

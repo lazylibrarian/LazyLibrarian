@@ -108,31 +108,30 @@ class EmailNotifier:
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
             files = None
             event = notifyStrings[NOTIFY_DOWNLOAD]
-            if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] and not bookid:
-                logger.debug('Requested to attach book, but no bookid')
-            elif bookid:
-                myDB = database.DBConnection()
-                data = myDB.match('SELECT BookFile,BookName from books where BookID=?', (bookid,))
-                try:
-                    if not data:
+            logger.debug('Email send attachment is %s' % lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'])
+            if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD']:
+                if not bookid:
+                    logger.debug('Email request to attach book, but no bookid')
+                else:
+                    myDB = database.DBConnection()
+                    data = myDB.match('SELECT BookFile,BookName from books where BookID=?', (bookid,))
+                    if data:
+                        filename = data['BookFile']
+                        title = data['BookName']
+                        logger.debug('Found %s for bookid %s' % (filename, bookid))
+                    else:
                         logger.debug('[%s] is not a valid bookid' % bookid)
-                    filename = data['BookFile']
-                    title = data['BookName']
-                    logger.debug('Found %s for bookid %s' % (filename, bookid))
-                except Exception:
-                    data = myDB.match('SELECT IssueFile,Title,IssueDate from issues where IssueID=?', (bookid,))
-                    try:
-                        if not data:
-                            logger.debug('[%s] is not a valid issueid' % bookid)
-                        filename = data['IssueFile']
-                        title = "%s - %s" % (data['Title'], data['IssueDate'])
-                        logger.debug('Found %s for issueid %s' % (filename, bookid))
-                    except Exception:
-                        logger.debug("No attachment found for [%s]" % bookid)
-                        filename = ''
-                if filename:
-                    files = [filename]  # could add cover_image, opf
-                    event = "LazyLibrarian Download"
+                        data = myDB.match('SELECT IssueFile,Title,IssueDate from issues where IssueID=?', (bookid,))
+                        if data:
+                            filename = data['IssueFile']
+                            title = "%s - %s" % (data['Title'], data['IssueDate'])
+                            logger.debug('Found %s for issueid %s' % (filename, bookid))
+                        else:
+                            logger.debug('[%s] is not a valid bookid/issueid' % bookid)
+                            filename = ''
+                    if filename:
+                        files = [filename]  # could add cover_image, opf
+                        event = "LazyLibrarian Download"
             return self._notify(message=title, event=event, force=force, files=files)
         return False
 
@@ -143,7 +142,6 @@ class EmailNotifier:
             data = myDB.match('SELECT bookid from books where bookfile <> ""')
             if data:
                 return self.notify_download(title=message, bookid=data['bookid'], force=True)
-
-        return self._notify(message=message, event=title, force=True)
+        return self.notify_download(title=message, bookid=None, force=True)
 
 notifier = EmailNotifier
