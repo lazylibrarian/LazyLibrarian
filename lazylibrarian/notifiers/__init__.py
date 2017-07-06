@@ -72,8 +72,8 @@ def custom_notify_snatch(bookid):
 def notify_download(title, bookid=None):
     try:
         for n in notifiers:
-            if n == 'email_notifier' and lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD']:
-                n.notify_download(title, bookid)
+            if n == 'email_notifier':
+                n.notify_download(title, bookid=bookid)
             else:
                 n.notify_download(title)
     except Exception as e:
