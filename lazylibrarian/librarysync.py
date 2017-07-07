@@ -666,22 +666,29 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                             else:
                                                 resultxml = rootxml.getiterator('work')
                                                 for item in resultxml:
-                                                    booktitle = item.find('./best_book/title').text
+                                                    try:
+                                                        booktitle = item.find('./best_book/title').text
+                                                    except (KeyError, AttributeError):
+                                                        booktitle = ""
                                                     book_fuzz = fuzz.token_set_ratio(booktitle, book)
                                                     if book_fuzz >= 98:
                                                         logger.debug("Rescan found %s : %s" % (booktitle, language))
                                                         rescan_hits += 1
-                                                        bookid = item.find('./best_book/id').text
-                                                        GR_ID = GoodReads(bookid)
-                                                        GR_ID.find_book(bookid, None)
-                                                        if language and language != "Unknown":
-                                                            # set language from book metadata
-                                                            logger.debug("Setting language from metadata %s : %s" % (
-                                                                         booktitle, language))
-                                                            myDB.action(
-                                                                'UPDATE books SET BookLang=? WHERE BookID=?',
-                                                                (language, bookid))
-                                                        break
+                                                        try:
+                                                            bookid = item.find('./best_book/id').text
+                                                        except (KeyError, AttributeError):
+                                                            bookid = ""
+                                                        if bookid:
+                                                            GR_ID = GoodReads(bookid)
+                                                            GR_ID.find_book(bookid, None)
+                                                            if language and language != "Unknown":
+                                                                # set language from book metadata
+                                                                logger.debug("Setting language from metadata %s : %s" % (
+                                                                             booktitle, language))
+                                                                myDB.action(
+                                                                    'UPDATE books SET BookLang=? WHERE BookID=?',
+                                                                    (language, bookid))
+                                                            break
                                                 if not bookid:
                                                     logger.warn("GoodReads doesn't know about %s" % book)
                                         except Exception:

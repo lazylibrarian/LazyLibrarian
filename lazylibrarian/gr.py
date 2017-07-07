@@ -75,15 +75,21 @@ class GoodReads:
                 loopCount = 1
                 while resultxml:
                     for author in resultxml:
-
-                        if author.find('original_publication_year').text is None:
+                        try:
+                            if author.find('original_publication_year').text is None:
+                                bookdate = "0000"
+                            else:
+                                bookdate = author.find('original_publication_year').text
+                        except (KeyError, AttributeError):
                             bookdate = "0000"
-                        else:
-                            bookdate = author.find('original_publication_year').text
 
-                        authorNameResult = author.find('./best_book/author/name').text
-                        # Goodreads sometimes puts extra whitepase in the author names!
-                        authorNameResult = ' '.join(authorNameResult.split())
+                        try:
+                            authorNameResult = author.find('./best_book/author/name').text
+                            # Goodreads sometimes puts extra whitepase in the author names!
+                            authorNameResult = ' '.join(authorNameResult.split())
+                        except (KeyError, AttributeError):
+                            authorNameResult = ""
+
                         booksub = ""
                         bookpub = ""
                         booklang = "Unknown"
@@ -104,12 +110,24 @@ class GoodReads:
                         bookgenre = ''
                         bookdesc = ''
                         bookisbn = ''
-                        booklink = 'http://www.goodreads.com/book/show/' + author.find('./best_book/id').text
 
-                        if author.find('./best_book/title').text is None:
+                        try:
+                            booklink = 'http://www.goodreads.com/book/show/' + author.find('./best_book/id').text
+                        except (KeyError, AttributeError):
+                            booklink = ""
+
+                        try:
+                            authorid = author.find('./best_book/author/id').text
+                        except (KeyError, AttributeError):
+                            authorid = ""
+
+                        try:
+                            if author.find('./best_book/title').text is None:
+                                bookTitle = ""
+                            else:
+                                bookTitle = author.find('./best_book/title').text
+                        except (KeyError, AttributeError):
                             bookTitle = ""
-                        else:
-                            bookTitle = author.find('./best_book/title').text
 
                         if searchauthorname:
                             author_fuzz = fuzz.ratio(authorNameResult, searchauthorname)
@@ -132,12 +150,15 @@ class GoodReads:
 
                         highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
-                        bookid = author.find('./best_book/id').text
+                        try:
+                            bookid = author.find('./best_book/id').text
+                        except (KeyError, AttributeError):
+                            bookid = ""
 
                         resultlist.append({
-                            'authorname': author.find('./best_book/author/name').text,
+                            'authorname': authorNameResult,
                             'bookid': bookid,
-                            'authorid': author.find('./best_book/author/id').text,
+                            'authorid': authorid,
                             'bookname': bookTitle.encode("ascii", "ignore"),
                             'booksub': booksub,
                             'bookisbn': bookisbn,

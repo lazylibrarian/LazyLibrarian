@@ -527,11 +527,20 @@ def getSeriesAuthors(seriesid):
                 else:
                     resultxml = rootxml.getiterator('work')
                     for item in resultxml:
-                        booktitle = item.find('./best_book/title').text
+                        try:
+                            booktitle = item.find('./best_book/title').text
+                        except (KeyError, AttributeError):
+                            booktitle = ""
                         book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
                         if book_fuzz >= 98:
-                            author = item.find('./best_book/author/name').text
-                            authorid = item.find('./best_book/author/id').text
+                            try:
+                                author = item.find('./best_book/author/name').text
+                            except (KeyError, AttributeError):
+                                author = ""
+                            try:
+                                authorid = item.find('./best_book/author/id').text
+                            except (KeyError, AttributeError):
+                                authorid = ""
                             logger.debug("Author Search found %s %s, authorid %s" % (author, booktitle, authorid))
                             break
                 if not authorid:  # try again with title only
@@ -547,8 +556,14 @@ def getSeriesAuthors(seriesid):
                             booktitle = item.find('./best_book/title').text
                             book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
                             if book_fuzz >= 98:
-                                author = item.find('./best_book/author/name').text
-                                authorid = item.find('./best_book/author/id').text
+                                try:
+                                    author = item.find('./best_book/author/name').text
+                                except (KeyError, AttributeError):
+                                    author = ""
+                                try:
+                                    authorid = item.find('./best_book/author/id').text
+                                except (KeyError, AttributeError):
+                                    authorid = ""
                                 logger.debug("Title Search found %s %s, authorid %s" % (author, booktitle, authorid))
                                 break
                 if not authorid:
