@@ -545,7 +545,7 @@ class WebInterface(object):
         if authorsearch:  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch['AuthorName']
             logger.info(u"Removing all references to author: %s" % AuthorName)
-            myDB.action('DELETE from authors WHERE AuthorID=', (AuthorID,))
+            myDB.action('DELETE from authors WHERE AuthorID=?', (AuthorID,))
             myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (AuthorID,))
             myDB.action('DELETE from books WHERE AuthorID=?', (AuthorID,))
         raise cherrypy.HTTPRedirect("home")
