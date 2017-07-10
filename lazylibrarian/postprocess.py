@@ -460,7 +460,7 @@ def processDir(reset=False):
                 if success:
                     logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                     # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
-                    controlValueDict = {"BookID": book['BookID'], "NZBurl": book['NZBurl'], "Status": "Snatched"}
+                    controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
 
@@ -809,9 +809,9 @@ def import_book(pp_path=None, bookID=None):
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                 logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                was_snatched = myDB.match('SELECT BookID FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
+                was_snatched = myDB.match('SELECT NZBurl FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
                 if was_snatched:
-                    controlValueDict = {"BookID": bookID}
+                    controlValueDict = {"NZBurl": was_snatched['NZBurl']}
                     newValueDict = {"Status": "Failed", "NZBDate": now()}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                 # reset status so we try for a different version
