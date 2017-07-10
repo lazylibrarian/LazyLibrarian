@@ -244,7 +244,7 @@ class GoodReads:
 
         resultxml = rootxml.getiterator('author')
 
-        if not len(resultxml):
+        if resultxml is None or not len(resultxml):
             logger.warn('No authors found with name: %s' % author)
         else:
             # In spite of how this looks, goodreads only returns one result, even if there are multiple matches
@@ -273,7 +273,7 @@ class GoodReads:
 
         resultxml = rootxml.find('author')
 
-        if not len(resultxml):
+        if resultxml is None or not len(resultxml):
             logger.warn('No author found with ID: ' + authorid)
         else:
             # added authorname to author_dict - this holds the intact name preferred by GR
@@ -337,7 +337,7 @@ class GoodReads:
             book_ignore_count = 0
             total_count = 0
 
-            if not len(resultxml):
+            if resultxml is None or not len(resultxml):
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
                 logger.debug("[%s] Now processing books with GoodReads API" % authorname)
