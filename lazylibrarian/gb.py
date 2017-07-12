@@ -113,7 +113,7 @@ class GoogleBooks:
 
                         try:
                             jsonresults, in_cache = get_json_request(URL)
-                            if not jsonresults:
+                            if jsonresults is None:
                                 number_results = 0
                             else:
                                 if not in_cache:
@@ -335,7 +335,7 @@ class GoogleBooks:
 
                     try:
                         jsonresults, in_cache = get_json_request(URL, useCache=not refresh)
-                        if not jsonresults:
+                        if jsonresults is None:
                             number_results = 0
                         else:
                             if not in_cache:
@@ -741,7 +741,7 @@ class GoogleBooks:
               str(bookid) + "?key=" + lazylibrarian.CONFIG['GB_API']
         jsonresults, in_cache = get_json_request(URL)
 
-        if not jsonresults:
+        if jsonresults is None:
             logger.debug('No results found for %s' % bookid)
             return
 

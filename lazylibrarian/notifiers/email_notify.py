@@ -110,6 +110,7 @@ class EmailNotifier:
             event = notifyStrings[NOTIFY_DOWNLOAD]
             logger.debug('Email send attachment is %s' % lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'])
             if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD']:
+                print "email bookid=",bookid
                 if not bookid:
                     logger.debug('Email request to attach book, but no bookid')
                 else:
@@ -135,13 +136,12 @@ class EmailNotifier:
             return self._notify(message=title, event=event, force=force, files=files)
         return False
 
-    def test_notify(self, title='Test'):
-        message = u"This is a test notification from LazyLibrarian"
+    def test_notify(self, title='This is a test notification from LazyLibrarian'):
         if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD']:
             myDB = database.DBConnection()
             data = myDB.match('SELECT bookid from books where bookfile <> ""')
             if data:
-                return self.notify_download(title=message, bookid=data['bookid'], force=True)
-        return self.notify_download(title=message, bookid=None, force=True)
+                return self.notify_download(title=title, bookid=data['bookid'], force=True)
+        return self.notify_download(title=title, bookid=None, force=True)
 
 notifier = EmailNotifier

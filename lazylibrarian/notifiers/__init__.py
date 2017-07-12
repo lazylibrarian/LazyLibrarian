@@ -72,7 +72,7 @@ def custom_notify_snatch(bookid):
 def notify_download(title, bookid=None):
     try:
         for n in notifiers:
-            if n == 'email_notifier':
+            if 'EmailNotifier' in str(n):
                 n.notify_download(title, bookid=bookid)
             else:
                 n.notify_download(title)
