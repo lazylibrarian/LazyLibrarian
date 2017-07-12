@@ -803,7 +803,8 @@ def import_book(pp_path=None, bookID=None):
                 logger.info('Successfully processed: %s' % global_name)
                 custom_notify_download(bookID)
 
-                notify_download("%s %s %s at %s" % (book_type, global_name, snatched_from, now()))
+                notify_download("%s %s from %s at %s" %
+                                    (book_type, global_name, snatched_from, now()), bookID)
                 update_downloads(snatched_from)
                 return True
             else:

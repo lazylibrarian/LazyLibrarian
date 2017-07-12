@@ -67,7 +67,7 @@ class GoodReads:
                 except Exception as e:
                     logger.error("Error finding gr results: %s" % str(e))
                     return
-                if rootxml is None or not len(rootxml):
+                if rootxml is None:
                     logger.debug("Error requesting results")
                     return
 

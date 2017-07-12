@@ -661,8 +661,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                         set_url = base_url + searchterm + '&' + urllib.urlencode(params)
                                         try:
                                             rootxml, in_cache = get_xml_request(set_url)
-                                            if rootxml is None or not len(rootxml):
+                                            if rootxml is None:
                                                 logger.warn("Error requesting GoodReads for %s" % searchname)
+                                                logger.debug(set_url)
                                             else:
                                                 resultxml = rootxml.getiterator('work')
                                                 for item in resultxml:
