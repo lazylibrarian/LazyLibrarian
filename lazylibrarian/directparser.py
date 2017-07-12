@@ -32,6 +32,25 @@ def url_fix(s, charset='utf-8'):
     qs = urllib.quote_plus(qs, ':&=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
+def redirect_url(genhost, url):
+    """ libgen.io might have dns blocked, but user can bypass using genhost 93.174.95.27 in config
+        libgen might send us a book url that still contains http://libgen.io/  or /libgen.io/
+        so we might need to redirect it to users genhost setting """
+
+    scheme, netloc, path, qs, anchor = urlparse.urlsplit(url)
+    if netloc.lower() == 'libgen.io':
+        hostscheme, hostnetloc, hostpath, hostqs, hostanchor = urlparse.urlsplit(genhost)
+        # genhost http://93.174.95.27 -> scheme http, netloc 93.174.95.27, path ""
+        # genhost 93.174.95.27 -> scheme "", netloc "", path 93.174.95.27
+        if hostnetloc:
+            if hostnetloc.lower() != 'libgen.io':
+                netloc = hostnetloc
+                logger.debug('Redirected libgen.io to [%s]' % netloc)
+        elif hostpath:
+            if hostpath.lower() != 'libgen.io':
+                netloc = hostpath
+                logger.debug('Redirected libgen.io to [%s]' % netloc)
+    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 def GEN(book=None, prov=None):
     errmsg = ''
@@ -43,18 +62,18 @@ def GEN(book=None, prov=None):
         host = 'http://' + host
 
     search = lazylibrarian.CONFIG[prov + '_SEARCH']
+    if not search or not search.endswith('.php'):
+        search = 'search.php'
+    if 'index.php' not in search and 'search.php' not in search:
+        search = 'search.php'
+    if search[0] == '/':
+        search = search[1:]
+
     page = 1
     results = []
     next_page = True
 
     while next_page:
-        if not search or not search.endswith('.php'):
-            search = 'search.php'
-        if 'index.php' not in search and 'search.php' not in search:
-            search = 'search.php'
-        if search[0] == '/':
-            search = search[1:]
-
         if 'index.php' in search:
             params = {
                 "s": book['searchterm'],
@@ -62,11 +81,6 @@ def GEN(book=None, prov=None):
                 "f_columns": 0,
                 "f_ext": "All"
             }
-            if page > 1:
-                params['page'] = page
-
-            providerurl = url_fix(host + "/%s" % search)
-            searchURL = providerurl + "?%s" % urllib.urlencode(params)
         else:
             params = {
                 "view": "simple",
@@ -76,11 +90,12 @@ def GEN(book=None, prov=None):
                 "res": 100,
                 "req": book['searchterm']
             }
-            if page > 1:
-                params['page'] = page
 
-            providerurl = url_fix(host + "/%s" % search)
-            searchURL = providerurl + "?%s" % urllib.urlencode(params)
+        if page > 1:
+            params['page'] = page
+
+        providerurl = url_fix(host + "/%s" % search)
+        searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
         next_page = False
         result, success = fetchURL(searchURL)
@@ -96,7 +111,6 @@ def GEN(book=None, prov=None):
                 logger.debug(searchURL)
                 logger.debug('Error fetching page data from %s: %s' % (provider, result))
                 errmsg = result
-
             result = False
 
         if result:
@@ -173,10 +187,14 @@ def GEN(book=None, prov=None):
                         if extn:
                             title = title + '.' + extn
 
-                        if "/ads.php?" in link:
-                            url = url_fix(host + link)
+                        if not link.startswith('http'):
+                            if "/ads.php?" in link:
+                                url = url_fix(host + link)
+                            else:
+                                url = url_fix(host + "/ads.php?" + link)
                         else:
-                            url = url_fix(host + "/ads.php?" + link)
+                            url = redirect_url(host, link)
+
                         bookresult, success = fetchURL(url)
                         if not success:
                             # may return 404 if no results, not really an error
@@ -190,32 +208,40 @@ def GEN(book=None, prov=None):
 
                         if bookresult:
                             url = None
-                            new_soup = BeautifulSoup(bookresult)
-                            for link in new_soup.findAll('a'):
-                                output = link.get('href')
-                                if output:
-                                    if output.startswith('http') and '/get.php' in output:
-                                        url = output
-                                        break
-                                    elif '/get.php' in output:
-                                        url = '/get.php' + output.split('/get.php')[1]
-                                        break
-                                    elif '/download/book' in output:
-                                        url = '/download/book' + output.split('/download/book')[1]
-                                        break
-                            if url and not url.startswith('http'):
-                                url = url_fix(host + url)
+                            try:
+                                new_soup = BeautifulSoup(bookresult)
+                                for link in new_soup.findAll('a'):
+                                    output = link.get('href')
+                                    if output:
+                                        if output.startswith('http') and '/get.php' in output:
+                                            url = output
+                                            break
+                                        elif '/get.php' in output:
+                                            url = '/get.php' + output.split('/get.php')[1]
+                                            break
+                                        elif '/download/book' in output:
+                                            url = '/download/book' + output.split('/download/book')[1]
+                                            break
 
-                        results.append({
-                            'bookid': book['bookid'],
-                            'tor_prov': provider,
-                            'tor_title': title,
-                            'tor_url': url,
-                            'tor_size': str(size),
-                            'tor_type': 'direct',
-                            'priority': lazylibrarian.CONFIG[prov + '_DLPRIORITY']
-                        })
-                        logger.debug('Found %s, Size %s' % (title, size))
+                                if url and not url.startswith('http'):
+                                    url = url_fix(host + url)
+                                else:
+                                    url = redirect_url(host, url)
+                            except Exception as e:
+                                logger.debug('Error parsing bookresult for %s: %s' % (link, str(e)))
+                                url = None
+
+                        if url:
+                            results.append({
+                                'bookid': book['bookid'],
+                                'tor_prov': provider,
+                                'tor_title': title,
+                                'tor_url': url,
+                                'tor_size': str(size),
+                                'tor_type': 'direct',
+                                'priority': lazylibrarian.CONFIG[prov + '_DLPRIORITY']
+                            })
+                            logger.debug('Found %s, Size %s' % (title, size))
                         next_page = True
 
             except Exception as e:
