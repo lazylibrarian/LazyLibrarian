@@ -471,7 +471,7 @@ def initialize():
             CONFIG['LOGLEVEL'], CONFIG['LOGDIR'], CFGLOGLEVEL))
         if CONFIG['LOGLEVEL'] > 2:
             LOGFULL = True
-            logger.info("Screen Log set to DEBUG")
+            logger.info("Screen Log set to FULL DEBUG")
         else:
             LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
