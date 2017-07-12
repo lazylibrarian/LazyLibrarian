@@ -110,7 +110,6 @@ class EmailNotifier:
             event = notifyStrings[NOTIFY_DOWNLOAD]
             logger.debug('Email send attachment is %s' % lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'])
             if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD']:
-                print "email bookid=",bookid
                 if not bookid:
                     logger.debug('Email request to attach book, but no bookid')
                 else:
@@ -128,7 +127,7 @@ class EmailNotifier:
                             title = "%s - %s" % (data['Title'], data['IssueDate'])
                             logger.debug('Found %s for issueid %s' % (filename, bookid))
                         else:
-                            logger.debug('[%s] is not a valid bookid/issueid' % bookid)
+                            logger.debug('[%s] is not a valid issueid' % bookid)
                             filename = ''
                     if filename:
                         files = [filename]  # could add cover_image, opf
