@@ -717,7 +717,6 @@ def import_book(pp_path=None, bookID=None):
     try:
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
-        # eg from a manual search
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("import_book %s" % pp_path)
         if book_file(pp_path, "audiobook"):
@@ -735,7 +734,7 @@ def import_book(pp_path=None, bookID=None):
         data = myDB.match(cmd, (bookID,))
         if data:
             cmd = 'SELECT BookID, NZBprov, AuxInfo FROM wanted WHERE BookID=? and Status="Snatched"'
-            # we may have snatched an ebook and audiobook of the same title/id
+            # we may have wanted to snatch an ebook and audiobook of the same title/id
             was_snatched = myDB.select(cmd, (bookID,))
             want_audio = False
             want_ebook = False
@@ -782,16 +781,19 @@ def import_book(pp_path=None, bookID=None):
                                                     global_name, bookID, book_type)
             if success:
                 # update nzbs
-                snatched_from = "from " + was_snatched[0]['NZBprov'] if was_snatched else "manually added"
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.debug("was_snatched %s" % snatched_from)
                 if was_snatched:
+                    snatched_from = was_snatched[0]['NZBprov']
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("%s was snatched from %s" % (global_name, snatched_from))
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
+                else:
+                    snatched_from = "manually added"
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("%s was %s" % (global_name, snatched_from))
 
-                if bookname:
-                    processExtras(dest_file, global_name, bookID, book_type)
+                processExtras(dest_file, global_name, bookID, book_type)
 
                 if not lazylibrarian.CONFIG['DESTINATION_COPY'] and pp_path != dest_dir:
                     if os.path.isdir(pp_path):
@@ -808,8 +810,7 @@ def import_book(pp_path=None, bookID=None):
 
                 logger.info('Successfully processed: %s' % global_name)
                 custom_notify_download(bookID)
-                notify_download("%s %s from %s at %s" %
-                                    (book_type, global_name, snatched_from, now()), bookID)
+                notify_download("%s %s from %s at %s" % (book_type, global_name, snatched_from, now()), bookID)
                 update_downloads(snatched_from)
                 return True
             else:
