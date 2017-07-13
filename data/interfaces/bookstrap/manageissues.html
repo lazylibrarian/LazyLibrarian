@@ -4,6 +4,9 @@
 %>
 <%def name="headerIncludes()">
   <div id="subhead_container">
+    <div id="subhead_menu">
+        <label for="wallColumns" class="">&nbsp;&nbsp;</label>
+    </div>
   </div>
 </%def>
 <%def name="body()">
@@ -12,7 +15,7 @@
     <div class="form-group">
       <label for="whichStatus" class="control-label">Manage Issues with status: </label>
       <select name="whichStatus" id="whichStatus" class="form-control input-sm">
-        %for item in ['Skipped', 'Have', 'Ignored']:
+        %for item in ['Skipped', 'Ignored']:
         <option value="${item}"
                     %if whichStatus == item:
                         selected = "selected"
@@ -45,7 +48,7 @@
       <div class="form-group">
         <label class="control-label">Change selected magazines to:</label>
         <select class="form-control input-sm" name="action">
-          %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Remove']:
+          %for item in ['Skipped', 'Wanted', 'Ignored', 'Remove']:
           %if whichStatus != item:
           <option value="${item}">${item}</option>
           %endif
