@@ -1538,9 +1538,9 @@ class WebInterface(object):
                         myDB.action('DELETE from pastissues WHERE NZBurl=?', (nzburl,))
                         logger.debug(u'Item %s removed from past issues' % nzburl)
                         maglist.append({'nzburl': nzburl})
-                    elif action in ['Have', 'Ignored', 'Skipped']:
+                    elif action in ['Ignored', 'Skipped']:
                         myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
-                        logger.debug(u'Item %s removed from past issues' % nzburl)
+                        logger.debug(u'Item %s marked %s in past issues' % (nzburl, action))
                         maglist.append({'nzburl': nzburl})
                     elif action == 'Wanted':
                         bookid = item['BookID']
