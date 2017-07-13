@@ -26,7 +26,6 @@ import pushbullet
 import pushover
 import slack
 import tweet
-import lazylibrarian
 from lazylibrarian import logger
 
 # online
