@@ -6,7 +6,7 @@
   <div id="subhead_container">
     <ul id="subhead_menu">
       <li><a href="clearLog" id="button"> Clear Log </a></li>
-      %if lazylibrarian.LOGFULL == True:
+      %if lazylibrarian.LOGLEVEL >= 2:
       <li><a href="toggleLog" id="button"> Stop Debug Log</a></li>
       %else:
       <li><a href="toggleLog" id="button"> Start Debug Log</a></li>
