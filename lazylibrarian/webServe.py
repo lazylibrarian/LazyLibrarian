@@ -1927,18 +1927,17 @@ class WebInterface(object):
         # LOGLEVEL 0, quiet
         # 1 normal
         # 2 debug
-        # >2 do not turn off file/console log
+        # >2 extra debugging
         self.label_thread()
 
-        if lazylibrarian.LOGFULL:  # if LOGLIST logging on, turn off
-            lazylibrarian.LOGFULL = False
-            if lazylibrarian.LOGLEVEL < 3:
-                lazylibrarian.LOGLEVEL = 1
+        if lazylibrarian.LOGLEVEL > 1:
+            lazylibrarian.LOGLEVEL -= 2
+        else:
+            if lazylibrarian.LOGLEVEL < 2:
+                lazylibrarian.LOGLEVEL += 2
+        if lazylibrarian.LOGLEVEL < 2:
             logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
         else:
-            lazylibrarian.LOGFULL = True
-            if lazylibrarian.LOGLEVEL < 2:
-                lazylibrarian.LOGLEVEL = 2  # Make sure debug ON
             logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
 

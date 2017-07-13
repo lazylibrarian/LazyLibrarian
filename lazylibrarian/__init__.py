@@ -59,7 +59,7 @@ started = False
 
 # Transients used by logger process
 LOGLIST = []
-LOGFULL = True
+LOGTOGGLE = 2  # normal debug
 
 # These are transient globals
 UPDATE_MSG = ''
@@ -431,7 +431,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
 def initialize():
     global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
-        CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGFULL, \
+        CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGTOGGLE, \
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
         AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE
@@ -470,10 +470,10 @@ def initialize():
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
             CONFIG['LOGLEVEL'], CONFIG['LOGDIR'], CFGLOGLEVEL))
         if CONFIG['LOGLEVEL'] > 2:
-            LOGFULL = True
             logger.info("Screen Log set to FULL DEBUG")
+        elif CONFIG['LOGLEVEL'] == 2:
+            logger.info("Screen Log set to DEBUG")
         else:
-            LOGFULL = False
             logger.info("Screen Log set to INFO/WARN/ERROR")
 
         config_read()
