@@ -452,7 +452,11 @@ def search_magazines(mags=None, reset=False):
 
                             mag_entry = myDB.match('SELECT * from %s WHERE NZBtitle=? and NZBprov=?' % insert_table,
                                                    (nzbtitle, nzbprov))
-                            if not mag_entry:
+                            if mag_entry:
+                                if lazylibrarian.LOGLEVEL > 2:
+                                    logger.debug('%s is already in %s marked %s' %
+                                                 (nzbtitle, insert_table, insert_status))
+                            else:
                                 controlValueDict = {
                                     "NZBtitle": nzbtitle,
                                     "NZBprov": nzbprov
@@ -467,6 +471,8 @@ def search_magazines(mags=None, reset=False):
                                     "NZBmode": nzbmode
                                 }
                                 myDB.upsert(insert_table, newValueDict, controlValueDict)
+                                if lazylibrarian.LOGLEVEL > 2:
+                                    logger.debug('Added %s to %s marked %s' % (nzbtitle, insert_table, insert_status))
 
                 msg = 'Found %i result%s for %s. %i new,' % (total_nzbs, plural(total_nzbs), bookid, new_date)
                 msg += ' %i old, %i fail date, %i fail name,' % (old_date, bad_date, bad_name)
