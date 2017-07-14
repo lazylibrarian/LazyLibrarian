@@ -12,7 +12,7 @@
   <br>
   <form action="pastIssues" method="get">
     Manage Issues with status <select name="whichStatus">
-      %for item in ['Skipped', 'Ignored']:
+      %for item in ['Skipped', 'Ignored', 'Wanted', 'Snatched']:
       <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"

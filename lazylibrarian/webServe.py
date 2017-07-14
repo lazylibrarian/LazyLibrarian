@@ -32,7 +32,7 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    dbUpdate, csv_file
+    dbUpdate, csv_file, saveLog
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
@@ -1231,21 +1231,28 @@ class WebInterface(object):
                             AuthorID = bookdata['AuthorID']
                             bookname = bookdata['BookName']
                             if action == "Delete":
-                                for bookfile in [bookdata['BookFile'], bookdata['AudioFile']]:
-                                    if bookfile and os.path.isfile(bookfile):
-                                        try:
-                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
-                                            if bookfile == bookdata['BookFile']:
-                                                logger.info(u'eBook %s deleted from disc' % bookname)
-                                            if bookfile == bookdata['AudioFile']:
-                                                logger.info(u'AudioBook %s deleted from disc' % bookname)
-                                        except Exception as e:
-                                            logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
+                                if library == 'eBook':
+                                    bookfile = bookdata['BookFile']
+                                else:
+                                    bookfile = bookdata['AudioFile']
+                                if bookfile and os.path.isfile(bookfile):
+                                    try:
+                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                        if bookfile == bookdata['BookFile']:
+                                            logger.info(u'eBook %s deleted from disc' % bookname)
+                                        if bookfile == bookdata['AudioFile']:
+                                            logger.info(u'AudioBook %s deleted from disc' % bookname)
+                                    except Exception as e:
+                                        logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
 
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
-                                myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
-                                logger.debug(u'Status set to Ignored for "%s"' % bookname)
+                                if library == 'eBook':
+                                    myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
+                                    logger.debug(u'Status set to Ignored for "%s"' % bookname)
+                                else:
+                                    myDB.upsert("books", {"AudioStatus": "Ignored"}, {"BookID": bookid})
+                                    logger.debug(u'AudioStatus set to Ignored for "%s"' % bookname)
                             else:
                                 myDB.action('delete from books where bookid=?', (bookid,))
                                 logger.info(u'Removed "%s" from database' % bookname)
@@ -1536,11 +1543,7 @@ class WebInterface(object):
                     nzburl = item['NZBurl']
                     if action == 'Remove':
                         myDB.action('DELETE from pastissues WHERE NZBurl=?', (nzburl,))
-                        logger.debug(u'Item %s removed from past issues' % nzburl)
-                        maglist.append({'nzburl': nzburl})
-                    elif action in ['Ignored', 'Skipped']:
-                        myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
-                        logger.debug(u'Item %s marked %s in past issues' % (nzburl, action))
+                        logger.debug(u'Item %s removed from past issues' % item['NZBtitle'])
                         maglist.append({'nzburl': nzburl})
                     elif action == 'Wanted':
                         bookid = item['BookID']
@@ -1570,6 +1573,11 @@ class WebInterface(object):
                         }
                         myDB.upsert("wanted", newValueDict, controlValueDict)
 
+                    elif action in ['Ignored', 'Skipped']:
+                        myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
+                        logger.debug(u'Item %s marked %s in past issues' % (item['NZBtitle'], action))
+                        maglist.append({'nzburl': nzburl})
+
         if action == 'Remove':
             logger.info(u'Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))
         else:
@@ -1578,7 +1586,15 @@ class WebInterface(object):
         if action == 'Wanted':
             for items in maglist:
                 logger.debug(u'Snatching %s' % items['nzbtitle'])
-                if items['nzbmode'] in ['torznab', 'torrent', 'magnet']:
+                myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, items['nzburl']))
+                if items['nzbprov'] == 'libgen':
+                    snatch = DirectDownloadMethod(
+                        items['bookid'],
+                        items['nzbtitle'],
+                        items['nzburl'],
+                        items['nzbtitle'],
+                        'magazine')
+                elif items['nzbmode'] in ['torznab', 'torrent', 'magnet']:
                     snatch = TORDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
@@ -1591,6 +1607,7 @@ class WebInterface(object):
                         items['nzburl'],
                         'magazine')
                 if snatch:  # if snatch fails, downloadmethods already report it
+                    myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', ("Snatched", items['nzburl']))
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     custom_notify_snatch(items['bookid'])
@@ -1922,6 +1939,14 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("logs")
 
     @cherrypy.expose
+    def saveLog(self):
+        # Save the debug log to a zipfile
+        self.label_thread()
+        result = saveLog()
+        logger.info(result)
+        raise cherrypy.HTTPRedirect("logs")
+
+    @cherrypy.expose
     def toggleLog(self):
         # Toggle the debug log
         # LOGLEVEL 0, quiet
@@ -1936,9 +1961,9 @@ class WebInterface(object):
             if lazylibrarian.LOGLEVEL < 2:
                 lazylibrarian.LOGLEVEL += 2
         if lazylibrarian.LOGLEVEL < 2:
-            logger.info(u'Debug log display OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
+            logger.info(u'Debug log OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
         else:
-            logger.info(u'Debug log display ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
+            logger.info(u'Debug log ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
 
     @cherrypy.expose
