@@ -15,11 +15,14 @@
 
 import datetime
 import os
+import sys
 import platform
+import string
 import shutil
 import threading
 import time
 import traceback
+import lib.zipfile as zipfile
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -342,6 +345,107 @@ def clearLog():
         lazylibrarian.LOGLIST = []
         return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
             lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
+
+def reverse_readline(filename, buf_size=8192):
+    """a generator that returns the lines of a file in reverse order"""
+    with open(filename) as fh:
+        segment = None
+        offset = 0
+        fh.seek(0, os.SEEK_END)
+        file_size = remaining_size = fh.tell()
+        while remaining_size > 0:
+            offset = min(file_size, offset + buf_size)
+            fh.seek(file_size - offset)
+            buf = fh.read(min(remaining_size, buf_size))
+            remaining_size -= buf_size
+            lines = buf.split('\n')
+            # the first line of the buffer is probably not a complete line so
+            # we'll save it and append it to the last line of the next buffer
+            # we read
+            if segment is not None:
+                # if the previous chunk starts right from the beginning of line
+                # do not concact the segment to the last line of new chunk
+                # instead, yield the segment first
+                if buf[-1] is not '\n':
+                    lines[-1] += segment
+                else:
+                    yield segment
+            segment = lines[0]
+            for index in range(len(lines) - 1, 0, -1):
+                if len(lines[index]):
+                    yield lines[index]
+        # Don't yield None if the file was empty
+        if segment is not None:
+            yield segment
+
+
+def saveLog():
+    if not os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
+        return 'LOGDIR does not exist'
+
+    header = 'Interface: %s\n' % lazylibrarian.CONFIG['HTTP_LOOK']
+    header += 'Loglevel: %s\n' % lazylibrarian.LOGLEVEL
+    for item in lazylibrarian.CONFIG_GIT:
+        header += '%s: %s\n' % (item, lazylibrarian.CONFIG[item])
+    header += "Python version: %s\n" % sys.version.split('\n')
+    header += "Distribution: %s\n" % str(platform.dist())
+    header += "System: %s\n" % str(platform.system())
+    header += "Machine: %s\n" % str(platform.machine())
+    header += "Platform: %s\n" % str(platform.platform())
+    header += "uname: %s\n" % str(platform.uname())
+    header += "version: %s\n" % str(platform.version())
+    header += "mac_ver: %s\n" % str(platform.mac_ver())
+
+    basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
+    outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
+    passchars = string.ascii_letters + string.digits + '_/'  # _/ used by slack and googlebooks
+    with open(outfile + '.tmp', 'w') as out:
+        nextfile = True
+        extn = 0
+        redacts = 0
+        while nextfile:
+            fname = basename
+            if extn:
+                fname = fname + '.' + str(extn)
+            if os.path.exists(fname):
+                logger.debug('Processing %s' % fname)
+                for line in reverse_readline(fname):
+                    redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ',
+                                  'using api [', 'apikey=']
+                    for item in redactlist:
+                        startpos = line.find(item)
+                        if startpos >= 0:
+                            startpos += len(item)
+                            endpos = startpos
+                            while endpos < len(line) and not line[endpos] in passchars:
+                                endpos += 1
+                            while endpos < len(line) and line[endpos] in passchars:
+                                endpos += 1
+                            if endpos != startpos:
+                                line = line[:startpos] + '<redacted>' + line[endpos:]
+                                redacts += 1
+
+                    out.write("%s\n" % line)
+                    if "Debug log ON" in line:
+                        nextfile = False
+                        break
+                extn += 1
+            else:
+                nextfile = False
+
+        with open(outfile + '.log', 'w') as logfile:
+            logfile.write(header)
+            lines = len(header.split('\n'))
+            for line in reverse_readline(outfile + '.tmp'):
+                logfile.write("%s\n" % line)
+                lines += 1
+    os.remove(outfile + '.tmp')
+    logger.debug("Redacted %s passwords/apikeys" % redacts)
+    logger.debug("%s lines written to %s" % (lines, outfile + '.log'))
+    with zipfile.ZipFile(outfile + '.zip', 'w') as myzip:
+        myzip.write(outfile + '.log', 'debug.log')
+    os.remove(outfile + '.log')
+    return "Debug log saved as %s" % (outfile + '.zip')
 
 
 def cleanCache():
