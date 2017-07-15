@@ -77,10 +77,11 @@ class RotatingLogger(object):
         # Ensure messages are correctly encoded as some author names contain accents and the web page doesnt like them
         message = formatter.safe_unicode(message).encode(lazylibrarian.SYS_ENCODING)
 
-        # Limit the size of the "in-memory" log, as gets slow if too long
-        lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))
-        if len(lazylibrarian.LOGLIST) > lazylibrarian.CONFIG['LOGLIMIT']:
-            del lazylibrarian.LOGLIST[-1]
+        if level != 'DEBUG' or lazylibrarian.LOGLEVEL >= 2:
+            # Limit the size of the "in-memory" log, as gets slow if too long
+            lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))
+            if len(lazylibrarian.LOGLIST) > lazylibrarian.CONFIG['LOGLIMIT']:
+                del lazylibrarian.LOGLIST[-1]
 
         message = "%s : %s" % (threadname, message)
 
