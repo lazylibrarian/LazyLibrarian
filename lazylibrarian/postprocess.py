@@ -643,7 +643,7 @@ def processDir(reset=False):
                     diff = 0
                 hours = int(diff / 3600)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
-                    if book['Source']:
+                    if book['Source'] and book['Source'] != 'DIRECT':
                         logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
                                 (book['NZBtitle'], book['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
