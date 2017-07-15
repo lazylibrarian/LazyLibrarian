@@ -7,3 +7,5 @@ To help with identifying and fixing issues, please include as much information a
 ### Relevant debug log with api keys and any passwords redacted
 
 Please note - usually a single line of log is not sufficient. The lines just before the error occurs can give useful context and greatly assist with debugging.
+
+### There is a built-in debug log creator on the logs page which makes it easy to provide this information
