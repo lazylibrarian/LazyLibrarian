@@ -77,7 +77,7 @@ def processAlternate(source_dir=None):
         # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
-        new_book = book_file(source_dir, booktype='book')
+        new_book = book_file(source_dir, booktype='ebook')
         if new_book:
             metadata = {}
             # see if there is a metadata file in this folder with the info we need
@@ -810,7 +810,12 @@ def import_book(pp_path=None, bookID=None):
 
                 logger.info('Successfully processed: %s' % global_name)
                 custom_notify_download(bookID)
-                notify_download("%s %s from %s at %s" % (book_type, global_name, snatched_from, now()), bookID)
+                if snatched_from == "manually added":
+                    frm = ''
+                else:
+                    frm = 'from '
+
+                notify_download("%s %s %s%s at %s" % (book_type, global_name, frm, snatched_from, now()), bookID)
                 update_downloads(snatched_from)
                 return True
             else:
@@ -850,6 +855,9 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
 
     if not bookid:
         logger.error('processExtras: No bookid supplied')
+        return
+    if not dest_file:
+        logger.error('processExtras: No dest_file supplied')
         return
 
     myDB = database.DBConnection()
@@ -1031,6 +1039,15 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         setperm(target_dir)
                         for fname in os.listdir(target_dir):
                             setperm(os.path.join(target_dir, fname))
+
+                        book_basename = os.path.join(target_dir, global_name)
+                        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+                        for book_type in booktype_list:
+                            preferred_type = "%s.%s" % (book_basename, book_type)
+                            if os.path.exists(preferred_type):
+                                logger.debug("Calibre link to preferred type %s, %s" % (book_type, preferred_type))
+                                newbookfile = preferred_type
+                                break
                     else:
                         logger.warn("Failed to find a valid ebook in [%s]" % target_dir)
                         imported = False
@@ -1100,7 +1117,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for book_type in booktype_list:
                 preferred_type = "%s.%s" % (book_basename, book_type)
                 if os.path.exists(preferred_type):
-                    logger.debug("Link to preferred type %s" % book_type)
+                    logger.debug("Link to preferred type %s, %s" % (book_type, preferred_type))
                     firstfile = preferred_type
                     break
 
