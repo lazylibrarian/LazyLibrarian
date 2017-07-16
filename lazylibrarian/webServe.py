@@ -681,7 +681,7 @@ class WebInterface(object):
             url = urllib.unquote_plus(url)
             url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
-            if provider == 'libgen':  # for libgen we use direct download links
+            if 'libgen' in provider:  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], library)
             elif mode in ["torznab", "torrent", "magnet"]:
                 snatch = TORDownloadMethod(bookid, bookname, url, library)
@@ -1587,7 +1587,7 @@ class WebInterface(object):
             for items in maglist:
                 logger.debug(u'Snatching %s' % items['nzbtitle'])
                 myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, items['nzburl']))
-                if items['nzbprov'] == 'libgen':
+                if 'libgen' in items['nzbprov']:
                     snatch = DirectDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],

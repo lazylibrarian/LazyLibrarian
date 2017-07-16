@@ -230,7 +230,7 @@ def downloadResult(match, book):
             if '.nzb' in controlValueDict["NZBurl"]:
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                            controlValueDict["NZBurl"], auxinfo)
-            elif newValueDict["NZBprov"] == 'libgen':  # for libgen we use direct download links
+            elif 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                               controlValueDict["NZBurl"], resultTitle, auxinfo)
             elif newValueDict['NZBmode'] == "torznab" or newValueDict['NZBmode'] == "torrent":

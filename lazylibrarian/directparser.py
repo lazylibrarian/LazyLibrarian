@@ -57,7 +57,7 @@ def redirect_url(genhost, url):
 
 def GEN(book=None, prov=None):
     errmsg = ''
-    provider = "libgen"
+    provider = "libgen.io"
     if prov is None:
         prov = 'GEN'
     host = lazylibrarian.CONFIG[prov + '_HOST']
@@ -237,7 +237,7 @@ def GEN(book=None, prov=None):
                         if url:
                             results.append({
                                 'bookid': book['bookid'],
-                                'tor_prov': provider,
+                                'tor_prov': provider + '/' + search,
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),
