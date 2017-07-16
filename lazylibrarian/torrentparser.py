@@ -38,7 +38,7 @@ def TPB(book=None):
     errmsg = ''
     provider = "TPB"
     host = lazylibrarian.CONFIG['TPB_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/s/?")
@@ -168,7 +168,7 @@ def KAT(book=None):
     errmsg = ''
     provider = "KAT"
     host = lazylibrarian.CONFIG['KAT_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/usearch/" + urllib.quote(book['searchterm']))
@@ -280,7 +280,7 @@ def WWT(book=None):
     errmsg = ''
     provider = "WorldWideTorrents"
     host = lazylibrarian.CONFIG['WWT_HOST']
-    if not str(host)[:4] == "http":
+    if host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/torrents-search.php")
@@ -412,7 +412,7 @@ def EXTRA(book=None):
     errmsg = ''
     provider = "Extratorrent"
     host = lazylibrarian.CONFIG['EXTRA_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/rss")
@@ -490,7 +490,7 @@ def ZOO(book=None):
     errmsg = ''
     provider = "zooqle"
     host = lazylibrarian.CONFIG['ZOO_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/search")
@@ -571,7 +571,7 @@ def LIME(book=None):
     errmsg = ''
     provider = "Limetorrent"
     host = lazylibrarian.CONFIG['LIME_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     params = {
@@ -651,7 +651,7 @@ def TDL(book=None):
     errmsg = ''
     provider = "torrentdownloads"
     host = lazylibrarian.CONFIG['TDL_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host)
