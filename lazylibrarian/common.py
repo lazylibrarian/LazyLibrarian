@@ -383,10 +383,13 @@ def saveLog():
     if not os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
         return 'LOGDIR does not exist'
 
-    header = 'Interface: %s\n' % lazylibrarian.CONFIG['HTTP_LOOK']
+    popen_list = [sys.executable, lazylibrarian.FULL_PATH]
+    popen_list += lazylibrarian.ARGS
+    header = "Startup cmd: %s\n" % str(popen_list)
+    header += 'Interface: %s\n' % lazylibrarian.CONFIG['HTTP_LOOK']
     header += 'Loglevel: %s\n' % lazylibrarian.LOGLEVEL
     for item in lazylibrarian.CONFIG_GIT:
-        header += '%s: %s\n' % (item, lazylibrarian.CONFIG[item])
+        header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
     header += "Distribution: %s\n" % str(platform.dist())
     header += "System: %s\n" % str(platform.system())
