@@ -1285,6 +1285,11 @@ def shutdown(restart=False, update=False):
         popen_list += ARGS
         if '--update' in popen_list:
             popen_list.remove('--update')
+        if LOGLEVEL:
+            if '--quiet' in popen_list:
+                popen_list.remove('--quiet')
+            if '-q' in popen_list:
+                popen_list.remove('-q')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
 
