@@ -1287,7 +1287,8 @@ def shutdown(restart=False, update=False):
             popen_list.remove('--update')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
-            logmsg('info', 'Restarting LazyLibrarian with ' + str(popen_list))
+
+        logmsg('debug', 'Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
     logmsg('info', 'LazyLibrarian is exiting')
