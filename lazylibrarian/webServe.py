@@ -593,8 +593,9 @@ class WebInterface(object):
                 if anybook:
                     authordir = safe_unicode(os.path.dirname(os.path.dirname(anybook[sourcefile])))
             if os.path.isdir(authordir):
+                remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 try:
-                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library, AuthorID]).start()
+                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library, AuthorID, remove]).start()
                 except Exception as e:
                     logger.error(u'Unable to complete the scan: %s' % str(e))
             else:
@@ -1819,10 +1820,11 @@ class WebInterface(object):
         library = 'eBook'
         if 'library' in kwargs:
             library = kwargs['library']
+        remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
         threadname = "%s_SCAN" % library.upper()
         if threadname not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=LibraryScan, name=threadname, args=[None, library]).start()
+                threading.Thread(target=LibraryScan, name=threadname, args=[None, library, None, remove]).start()
             except Exception as e:
                 logger.error(u'Unable to complete the scan: %s' % str(e))
         else:
@@ -1841,6 +1843,18 @@ class WebInterface(object):
         else:
             logger.debug('MAGAZINE_SCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
+
+    @cherrypy.expose
+    def includeAlternate(self):
+        if 'ALT-LIBRARYSCAN' not in [n.name for n in [t for t in threading.enumerate()]]:
+            try:
+                threading.Thread(target=LibraryScan, name='ALT-LIBRARYSCAN',
+                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], 'eBook', None, False]).start()
+            except Exception as e:
+                logger.error(u'Unable to complete the libraryscan: %s' % str(e))
+        else:
+            logger.debug('ALT-LIBRARYSCAN already running')
+        raise cherrypy.HTTPRedirect("manage")
 
     @cherrypy.expose
     def importAlternate(self):

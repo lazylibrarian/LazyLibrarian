@@ -1032,8 +1032,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):  # assumed author directory
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
+                remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 if os.path.isdir(target_dir):
-                    imported = LibraryScan(target_dir)
+                    imported = LibraryScan(target_dir, remove=remove)
                     newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
@@ -1052,7 +1053,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         logger.warn("Failed to find a valid ebook in [%s]" % target_dir)
                         imported = False
                 else:
-                    imported = LibraryScan(calibre_dir)  # rescan whole authors directory
+                    imported = LibraryScan(calibre_dir, remove=remove)  # rescan whole authors directory
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
