@@ -50,7 +50,7 @@ def redirect_url(genhost, url):
         if host.netloc.lower() != 'libgen.io':
             myurl = myurl._replace(**{"netloc": host.netloc})
             logger.debug('Redirected libgen.io to [%s]' % host.netloc)
-    elif hostpath:
+    elif host.path:
         if host.path.lower() != 'libgen.io':
             myurl = myurl._replace(**{"netloc": host.netloc})
             logger.debug('Redirected libgen.io to [%s]' % host.netloc)
