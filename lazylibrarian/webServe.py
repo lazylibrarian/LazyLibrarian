@@ -804,6 +804,8 @@ class WebInterface(object):
 
             if sortcolumn in [4, 12]:  # date, series
                 self.natural_sort(filtered, key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            elif sortcolumn in [2]:  # title
+                filtered.sort(key=lambda x: x[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
             else:
                 filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
