@@ -280,7 +280,7 @@ def WWT(book=None):
     errmsg = ''
     provider = "WorldWideTorrents"
     host = lazylibrarian.CONFIG['WWT_HOST']
-    if host.startswith('http'):
+    if not host.startswith('http'):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/torrents-search.php")
