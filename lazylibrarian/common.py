@@ -78,7 +78,7 @@ def any_file(search_dir=None, extn=None):
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(search_dir, str):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
-    if extn and search_dir and os.path.isdir(search_dir):
+    if os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if fname.endswith(extn):
                 return os.path.join(search_dir, fname)
@@ -383,10 +383,13 @@ def saveLog():
     if not os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
         return 'LOGDIR does not exist'
 
-    header = 'Interface: %s\n' % lazylibrarian.CONFIG['HTTP_LOOK']
+    popen_list = [sys.executable, lazylibrarian.FULL_PATH]
+    popen_list += lazylibrarian.ARGS
+    header = "Startup cmd: %s\n" % str(popen_list)
+    header += 'Interface: %s\n' % lazylibrarian.CONFIG['HTTP_LOOK']
     header += 'Loglevel: %s\n' % lazylibrarian.LOGLEVEL
     for item in lazylibrarian.CONFIG_GIT:
-        header += '%s: %s\n' % (item, lazylibrarian.CONFIG[item])
+        header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
     header += "Distribution: %s\n" % str(platform.dist())
     header += "System: %s\n" % str(platform.system())

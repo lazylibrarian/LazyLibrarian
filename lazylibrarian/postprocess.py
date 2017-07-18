@@ -77,7 +77,7 @@ def processAlternate(source_dir=None):
         # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
-        new_book = book_file(source_dir, booktype='book')
+        new_book = book_file(source_dir, booktype='ebook')
         if new_book:
             metadata = {}
             # see if there is a metadata file in this folder with the info we need
@@ -164,10 +164,10 @@ def try_rename(directory, filename):
     # strip out any non-ascii characters and try to rename
     newfname = ''.join([c for c in filename if 128 > ord(c) > 31])
     try:
-        os.rename(os.path.join(directory, filename), os.path.join(directory, newfname))
+        shutil.move(os.path.join(directory, filename), os.path.join(directory, newfname))
         return newfname
-    except OSError:
-        logger.error("Unable to rename %s" % repr(filename))
+    except Exception as e:
+        logger.error("[try_rename] Unable to rename %s, %s" % (repr(filename), str(e)))
         return ""
 
 
@@ -561,19 +561,17 @@ def processDir(reset=False):
 
                     # at this point, as it failed we should move it or it will get postprocessed
                     # again (and fail again)
-                    try:
-                        os.rename(pp_path, pp_path + '.fail')
-                        logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                    except Exception as e:
-                        # rename fails on MacOS as can't rename a directory that's not empty??
-                        logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
+                    if os.path.isdir(pp_path + '.fail'):
                         try:
-                            fname = os.path.join(pp_path, "LL.(fail).bts")
-                            with open(fname, 'a'):
-                                os.utime(fname, None)
-                            logger.error('Warning - Residual files remain in %s' % pp_path)
-                        except OSError:
-                            logger.error('Warning - Unable to create bts file. Residual files remain in %s' % pp_path)
+                            shutil.rmtree(pp_path + '.fail')
+                        except Exception as why:
+                            logger.debug("Unable to remove %s, %s" % (pp_path + '.fail', str(why)))
+                    try:
+                        shutil.move(pp_path, pp_path + '.fail')
+                        logger.warn('Residual files remain in %s.fail' % pp_path)
+                    except Exception as why:
+                        logger.error("[processDir] Unable to rename %s, %s" % (pp_path, str(why)))
+                        logger.warn('Residual files remain in %s' % pp_path)
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
         # do a fresh listdir in case we processed and deleted any earlier
@@ -810,12 +808,28 @@ def import_book(pp_path=None, bookID=None):
 
                 logger.info('Successfully processed: %s' % global_name)
                 custom_notify_download(bookID)
-                notify_download("%s %s from %s at %s" % (book_type, global_name, snatched_from, now()), bookID)
+                if snatched_from == "manually added":
+                    frm = ''
+                else:
+                    frm = 'from '
+
+                notify_download("%s %s %s%s at %s" % (book_type, global_name, frm, snatched_from, now()), bookID)
                 update_downloads(snatched_from)
                 return True
             else:
                 logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
-                logger.error('Warning - Residual files remain in %s.fail' % pp_path)
+                if os.path.isdir(pp_path + '.fail'):
+                    try:
+                        shutil.rmtree(pp_path + '.fail')
+                    except Exception as why:
+                        logger.debug("Unable to remove %s, %s" % (pp_path + '.fail', str(why)))
+                try:
+                    shutil.move(pp_path, pp_path + '.fail')
+                    logger.warn('Residual files remain in %s.fail' % pp_path)
+                except Exception as e:
+                    logger.error("[importBook] Unable to rename %s, %s" % (pp_path, str(e)))
+                    logger.warn('Residual files remain in %s' % pp_path)
+
                 was_snatched = myDB.match('SELECT NZBurl FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
                 if was_snatched:
                     controlValueDict = {"NZBurl": was_snatched['NZBurl']}
@@ -826,20 +840,6 @@ def import_book(pp_path=None, bookID=None):
                     myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (bookID,))
                 else:
                     myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (bookID,))
-                try:
-                    os.rename(pp_path, pp_path + '.fail')
-                    logger.error('Warning - Residual files remain in %s.fail' % pp_path)
-                except Exception as e:
-                    # rename fails on MacOS as can't rename a directory that's not empty??
-                    logger.error("Unable to rename %s, %s" % (pp_path, str(e)))
-                    try:
-                        fname = os.path.join(pp_path, "LL.(fail).bts")
-                        with open(fname, 'a'):
-                            os.utime(fname, None)
-                        logger.error('Warning - Residual files remain in %s' % pp_path)
-                    except OSError as e:
-                        logger.error('Warning - Unable to create bts file. Residual files remain in %s: %s' %
-                                     (pp_path, str(e)))
         return False
     except Exception:
         logger.error('Unhandled exception in importBook: %s' % traceback.format_exc())
@@ -850,6 +850,9 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
 
     if not bookid:
         logger.error('processExtras: No bookid supplied')
+        return
+    if not dest_file:
+        logger.error('processExtras: No dest_file supplied')
         return
 
     myDB = database.DBConnection()
@@ -952,10 +955,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for fname in os.listdir(pp_path):
                 filename, extn = os.path.splitext(fname)
                 # calibre does not like quotes in author names
-                os.rename(os.path.join(pp_path, filename + extn), os.path.join(
+                shutil.move(os.path.join(pp_path, filename + extn), os.path.join(
                     pp_path, global_name.replace('"', '_') + extn))
 
-            calibre_id = ''
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
@@ -970,72 +972,85 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug(str(params))
             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
             if not res:
-                logger.debug('No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB'])
-            else:
-                logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
-                if 'already exist' in res:
-                    logger.warn('Calibre failed to import %s %s, reports book already exists' % (authorname, bookname))
-                if 'Added book ids' in res:
-                    calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
-                    logger.debug('Calibre ID: %s' % calibre_id)
-                    authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                    'set_metadata',
-                                    '--field',
-                                    'authors:%s' % unaccented(authorname),
-                                    '--with-library',
-                                    dest_dir,
-                                    calibre_id
-                                    ]
-                    logger.debug(str(authorparams))
-                    res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
-                    if res:
-                        logger.debug(
-                            '%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+                return False, 'No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB']
 
-                    titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                   'set_metadata',
-                                   '--field',
-                                   'title:%s' % unaccented(bookname),
-                                   '--with-library',
-                                   dest_dir,
-                                   calibre_id
-                                   ]
-                    logger.debug(str(titleparams))
-                    res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
-                    if res:
-                        logger.debug(
-                            '%s book reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            if 'already exist' in res:
+                return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
+            if not 'Added book ids' in res:
+                return False, 'Calibre failed to import %s %s, no added bookids' % (authorname, bookname)
 
-                    metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                  'set_metadata',
-                                  '--field',
-                                  'identifiers:%s' % identifier,
-                                  '--with-library',
-                                  dest_dir,
-                                  calibre_id
-                                  ]
-                    logger.debug(str(metaparams))
-                    res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
-                    if res:
-                        logger.debug(
-                            '%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
+            logger.debug('Calibre ID: %s' % calibre_id)
+
+            authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                            'set_metadata',
+                            '--field',
+                            'authors:%s' % unaccented(authorname),
+                            '--with-library',
+                            dest_dir,
+                            calibre_id
+                            ]
+            logger.debug(str(authorparams))
+            res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+            if res:
+                logger.debug(
+                    '%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+
+            titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                           'set_metadata',
+                           '--field',
+                           'title:%s' % unaccented(bookname),
+                           '--with-library',
+                           dest_dir,
+                           calibre_id
+                           ]
+            logger.debug(str(titleparams))
+            res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+            if res:
+                logger.debug(
+                    '%s title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+
+            metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                          'set_metadata',
+                          '--field',
+                          'identifiers:%s' % identifier,
+                          '--with-library',
+                          dest_dir,
+                          calibre_id
+                          ]
+            logger.debug(str(metaparams))
+            res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+            if res:
+                logger.debug(
+                    '%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):  # assumed author directory
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
+                remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 if os.path.isdir(target_dir):
-                    imported = LibraryScan(target_dir)
+                    imported = LibraryScan(target_dir, remove=remove)
                     newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
                         for fname in os.listdir(target_dir):
                             setperm(os.path.join(target_dir, fname))
+
+                        book_basename = os.path.join(target_dir, global_name)
+                        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+                        for book_type in booktype_list:
+                            preferred_type = "%s.%s" % (book_basename, book_type)
+                            if os.path.exists(preferred_type):
+                                logger.debug("Calibre link to preferred type %s, %s" % (book_type, preferred_type))
+                                newbookfile = preferred_type
+                                break
                     else:
                         logger.warn("Failed to find a valid ebook in [%s]" % target_dir)
                         imported = False
                 else:
-                    imported = LibraryScan(calibre_dir)  # rescan whole authors directory
+                    imported = LibraryScan(calibre_dir, remove=remove)  # rescan whole authors directory
             else:
                 logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
                 imported = False
@@ -1100,7 +1115,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for book_type in booktype_list:
                 preferred_type = "%s.%s" % (book_basename, book_type)
                 if os.path.exists(preferred_type):
-                    logger.debug("Link to preferred type %s" % book_type)
+                    logger.debug("Link to preferred type %s, %s" % (book_type, preferred_type))
                     firstfile = preferred_type
                     break
 
@@ -1217,7 +1232,9 @@ def processMAGOPF(issuefile, title, issue, issueID):
             'BookDate': iss_acquired,
             'BookLang': 'eng',
             'BookImg': global_name + '.jpg',
-            'BookPub': ''
+            'BookPub': '',
+            'Series': title,
+            'Series_index': issue
             }
     processOPF(dest_path, data, global_name)
 
@@ -1263,11 +1280,17 @@ def processOPF(dest_path=None, data=None, global_name=None):
     if bookdesc:
         opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
 
+    if 'Series' in data:
+        opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % data['Series']
+
+    if 'Series_index' in data:
+        opfinfo += '        <meta content="%s" name="calibre:series_index"/>\n' % data['Series_index']
+
     opfinfo += '        <guide>\n\
-            <reference href="%s" type="cover" title="Cover"/>\n\
+            <reference href="%s.jpg" type="cover" title="Cover"/>\n\
         </guide>\n\
     </metadata>\n\
-</package>' % global_name + '.jpg'  # file in current directory, not full path
+</package>' % global_name  # file in current directory, not full path
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 

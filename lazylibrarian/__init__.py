@@ -20,6 +20,7 @@ import calendar
 import json
 import locale
 import os
+import platform
 import subprocess
 import sys
 import threading
@@ -1258,13 +1259,41 @@ def shutdown(restart=False, update=False):
     if restart:
         logmsg('info', 'LazyLibrarian is restarting ...')
 
-        popen_list = [sys.executable, FULL_PATH]
+        # Try to use the currently running python executable, as it is known to work
+        # if not able to determine, sys.executable returns empty string or None
+        # and we have to go looking for it...
+        executable = sys.executable
+
+        if not executable:
+            if platform.system() == "Windows":
+                params = ["where", "python2"]
+                try:
+                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                except Exception as e:
+                    logger.debug("where python2 failed: %s" % str(e))
+            else:
+                params = ["which", "python2"]
+                try:
+                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                except Exception as e:
+                    logger.debug("which python2 failed: %s" % str(e))
+
+        if not executable:
+            executable = 'python'  # default if not found, still might not work if points to python3
+
+        popen_list = [executable, FULL_PATH]
         popen_list += ARGS
         if '--update' in popen_list:
             popen_list.remove('--update')
+        if LOGLEVEL:
+            if '--quiet' in popen_list:
+                popen_list.remove('--quiet')
+            if '-q' in popen_list:
+                popen_list.remove('-q')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
-            logmsg('info', 'Restarting LazyLibrarian with ' + str(popen_list))
+
+        logmsg('debug', 'Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
     logmsg('info', 'LazyLibrarian is exiting')

@@ -32,33 +32,38 @@ def url_fix(s, charset='utf-8'):
     qs = urllib.quote_plus(qs, ':&=')
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
+
+# noinspection PyProtectedMember,PyProtectedMember
 def redirect_url(genhost, url):
     """ libgen.io might have dns blocked, but user can bypass using genhost 93.174.95.27 in config
         libgen might send us a book url that still contains http://libgen.io/  or /libgen.io/
         so we might need to redirect it to users genhost setting """
 
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(url)
-    if netloc.lower() == 'libgen.io':
-        hostscheme, hostnetloc, hostpath, hostqs, hostanchor = urlparse.urlsplit(genhost)
-        # genhost http://93.174.95.27 -> scheme http, netloc 93.174.95.27, path ""
-        # genhost 93.174.95.27 -> scheme "", netloc "", path 93.174.95.27
-        if hostnetloc:
-            if hostnetloc.lower() != 'libgen.io':
-                netloc = hostnetloc
-                logger.debug('Redirected libgen.io to [%s]' % netloc)
-        elif hostpath:
-            if hostpath.lower() != 'libgen.io':
-                netloc = hostpath
-                logger.debug('Redirected libgen.io to [%s]' % netloc)
-    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+    myurl = urlparse.urlparse(url)
+    if myurl.netloc.lower() != 'libgen.io':
+        return url
+
+    host = urlparse.urlparse(genhost)
+    # genhost http://93.174.95.27 -> scheme http, netloc 93.174.95.27, path ""
+    # genhost 93.174.95.27 -> scheme "", netloc "", path 93.174.95.27
+    if host.netloc:
+        if host.netloc.lower() != 'libgen.io':
+            myurl = myurl._replace(**{"netloc": host.netloc})
+            logger.debug('Redirected libgen.io to [%s]' % host.netloc)
+    elif host.path:
+        if host.path.lower() != 'libgen.io':
+            myurl = myurl._replace(**{"netloc": host.netloc})
+            logger.debug('Redirected libgen.io to [%s]' % host.netloc)
+    return myurl.geturl()
+
 
 def GEN(book=None, prov=None):
     errmsg = ''
-    provider = "libgen"
+    provider = "libgen.io"
     if prov is None:
         prov = 'GEN'
     host = lazylibrarian.CONFIG[prov + '_HOST']
-    if not str(host)[:4] == "http":
+    if not host.startswith('http'):
         host = 'http://' + host
 
     search = lazylibrarian.CONFIG[prov + '_SEARCH']
@@ -234,7 +239,7 @@ def GEN(book=None, prov=None):
                         if url:
                             results.append({
                                 'bookid': book['bookid'],
-                                'tor_prov': provider,
+                                'tor_prov': provider + '/' + search,
                                 'tor_title': title,
                                 'tor_url': url,
                                 'tor_size': str(size),

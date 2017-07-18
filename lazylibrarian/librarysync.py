@@ -278,7 +278,7 @@ def find_book_in_db(author, book):
         return 0
 
 
-def LibraryScan(startdir=None, library='eBook', authid=None):
+def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
     """ Scan a directory tree adding new books into database
         Return how many books you added """
 
@@ -337,7 +337,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
         file_count = 0
         author = ""
 
-        if lazylibrarian.CONFIG['FULL_SCAN']:
+        # allow full_scan override so we can scan in alternate directories without deleting others
+        if remove:
             if library == 'eBook':
                 cmd = 'select AuthorName, BookName, BookFile, BookID from books,authors'
                 cmd += ' where BookLibrary is not null and books.AuthorID = authors.AuthorID'
@@ -393,6 +394,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                 booktypes = book_type
             else:
                 booktypes = booktypes + '|' + book_type
+
         matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)") + '\.[' + booktypes + ']'
         pattern = re.compile(matchString, re.VERBOSE)
@@ -410,6 +412,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                     r = r.decode(lazylibrarian.SYS_ENCODING)
 
                 subdirectory = r.replace(startdir, '')
+
                 # Added new code to skip if we've done this directory before.
                 # Made this conditional with a switch in config.ini
                 # in case user keeps multiple different books in the same subdirectory
@@ -728,7 +731,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None):
                                                 preferred_type = "%s.%s" % (book_basename, book_type)
                                                 if os.path.exists(preferred_type):
                                                     book_filename = preferred_type
-                                                    logger.debug("Link to preferred type %s" % book_type)
+                                                    logger.debug("Link to preferred type %s: %s" %
+                                                                 (book_type, preferred_type))
                                                     break
 
                                             if not check_status['BookFile']:  # no previous location

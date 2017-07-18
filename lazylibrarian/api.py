@@ -71,8 +71,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'unignoreAuthor': '&id= unignore author by AuthorID',
             'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
             'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, refresh cache',
-            'forceLibraryScan': '[&wait] rescan whole book library',
-            'forceAudioBookScan': '[&wait] rescan whole audiobook library',
+            'forceLibraryScan': '[&wait] [&remove] [&dir=] [&id=] rescan whole or part book library',
+            'forceAudioBookScan': '[&wait] [&remove] [&dir=] [&id=] rescan whole or part audiobook library',
             'forceMagazineScan': '[&wait] rescan whole magazine library',
             'getVersion': 'show lazylibrarian current/git version',
             'shutdown': 'stop lazylibrarian',
@@ -492,17 +492,35 @@ class Api(object):
 
     @staticmethod
     def _forceLibraryScan(**kwargs):
+        startdir=None
+        authid=None
+        remove=False
+        if 'remove' in kwargs:
+            remove = True
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        if 'id' in kwargs:
+            authid = kwargs['id']
         if 'wait' in kwargs:
-            LibraryScan()
+            LibraryScan(startdir=startdir, library='eBook', authid=authid, remove=remove)
         else:
-            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[None, 'eBook']).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[startdir, 'eBook', authid, remove]).start()
 
     @staticmethod
     def _forceAudioBookScan(**kwargs):
+        startdir=None
+        authid=None
+        remove=False
+        if 'remove' in kwargs:
+            remove = True
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        if 'id' in kwargs:
+            authid = kwargs['id']
         if 'wait' in kwargs:
-            LibraryScan(library='audio')
+            LibraryScan(startdir=startdir, library='audio', authid=authid, remove=remove)
         else:
-            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[None, 'audio']).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[startdir, 'audio', authid, remove]).start()
 
     @staticmethod
     def _forceMagazineScan(**kwargs):
