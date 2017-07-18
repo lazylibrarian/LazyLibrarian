@@ -72,8 +72,8 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
             nzbname = str(nzbtitle) + '.nzb'
             nzbpath = os.path.join(lazylibrarian.CONFIG['NZB_BLACKHOLEDIR'], nzbname)
             try:
-                with open(nzbpath, 'w') as f:
-                    f.write(nzbfile)
+                with open(nzbpath, 'wb') as f:
+                    f.write(nzbfile.encode("UTF-8"))
                 logger.debug('NZB file saved to: ' + nzbpath)
                 setperm(nzbpath)
                 downloadID = nzbname
@@ -241,7 +241,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
                 try:
                     with open(tor_path, 'wb') as torrent_file:
-                        torrent_file.write(torrent)
+                        torrent_file.write(torrent.encode("UTF-8"))
                     logger.debug('Magnet file saved: %s' % tor_path)
                     setperm(tor_path)
                     downloadID = Source
@@ -253,7 +253,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
             try:
                 with open(tor_path, 'wb') as torrent_file:
-                    torrent_file.write(torrent)
+                    torrent_file.write(torrent.encode("UTF-8"))
                 setperm(tor_path)
                 logger.debug('Torrent file saved: %s' % tor_name)
                 downloadID = Source
