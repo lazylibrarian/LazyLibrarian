@@ -1235,7 +1235,9 @@ def processMAGOPF(issuefile, title, issue, issueID):
             'BookDate': iss_acquired,
             'BookLang': 'eng',
             'BookImg': global_name + '.jpg',
-            'BookPub': ''
+            'BookPub': '',
+            'Series': title,
+            'Series_index': issue
             }
     processOPF(dest_path, data, global_name)
 
@@ -1281,11 +1283,17 @@ def processOPF(dest_path=None, data=None, global_name=None):
     if bookdesc:
         opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
 
+    if 'Series' in data:
+        opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % data['Series']
+
+    if 'Series_index' in data:
+        opfinfo += '        <meta content="%s" name="calibre:series_index"/>\n' % data['Series_index']
+
     opfinfo += '        <guide>\n\
-            <reference href="%s" type="cover" title="Cover"/>\n\
+            <reference href="%s.jpg" type="cover" title="Cover"/>\n\
         </guide>\n\
     </metadata>\n\
-</package>' % global_name + '.jpg'  # file in current directory, not full path
+</package>' % global_name  # file in current directory, not full path
 
     dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
 
