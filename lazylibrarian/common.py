@@ -78,7 +78,7 @@ def any_file(search_dir=None, extn=None):
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(search_dir, str):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
-    if extn and search_dir and os.path.isdir(search_dir):
+    if os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
             if fname.endswith(extn):
                 return os.path.join(search_dir, fname)
