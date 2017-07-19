@@ -1428,6 +1428,19 @@
                 </select>
                 <span class="help-block">Status for ebooks by new authors</span>
               </div>
+              <div class="checkbox">
+                <%
+                    if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <label for="newauthor_books" class="control-label">
+                  <input type="checkbox" id="newauthor_books" name="newauthor_books" value="1" ${checked} />
+                  Include other books by new authors</label>
+                <span class="help-block">This will include details for other books by new authors found in wishlists or csv files,<br>
+                or when manually importing a book by a new author</span>
+              </div>
             </fieldset>
         <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
         <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>

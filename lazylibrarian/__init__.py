@@ -304,6 +304,7 @@ CONFIG_DEFINITIONS = {
     'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUDIO_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUTHOR_BOOKS': ('bool', 'LibraryScan', 0),
     'NO_FUTURE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),

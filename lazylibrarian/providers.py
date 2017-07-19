@@ -493,6 +493,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if not result or result == "''":
                 result = "Got an empty response"
             logger.error('Error reading data from %s: %s' % (host, result))
+            BlockProvider(host, result)
 
         if rootxml is not None:
             # to debug because of api

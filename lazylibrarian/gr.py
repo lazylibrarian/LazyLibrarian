@@ -755,8 +755,7 @@ class GoodReads:
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
-    # noinspection PyUnusedLocal
-    def find_book(self, bookid=None, queue=None):
+    def find_book(self, bookid=None):
         myDB = database.DBConnection()
 
         URL = 'http://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
@@ -813,7 +812,7 @@ class GoodReads:
                     logger.debug('%s: Changing authorid from %s to %s' %
                                  (author['authorname'], AuthorID, match['AuthorID']))
                     AuthorID = match['AuthorID']  # we have a different authorid for that authorname
-                else:  # no author but request to add book, add author as "ignored"
+                else:  # no author but request to add book, add author with newauthor status
                     # User hit "add book" button from a search
                     controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
@@ -823,10 +822,12 @@ class GoodReads:
                         "AuthorBorn": author['authorborn'],
                         "AuthorDeath": author['authordeath'],
                         "DateAdded": today(),
-                        "Status": "Ignored"
+                        "Status": lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
                     }
                     authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
+                    if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS']:
+                        self.get_author_books(AuthorID)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
