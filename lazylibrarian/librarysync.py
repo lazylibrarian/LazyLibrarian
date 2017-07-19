@@ -605,10 +605,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             logger.debug(msg % (book, author))
                                             if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and gr_id:
                                                 GR_ID = GoodReads(gr_id)
-                                                GR_ID.find_book(gr_id, None)
+                                                GR_ID.find_book(gr_id)
                                             elif lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks" and gb_id:
                                                 GB_ID = GoogleBooks(gb_id)
-                                                GB_ID.find_book(gb_id, None)
+                                                GB_ID.find_book(gb_id)
                                             # see if it's there now...
                                             match = myDB.match('SELECT BookID from books where BookID=?', (bookid,))
                                             if not match:
@@ -684,7 +684,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                             bookid = ""
                                                         if bookid:
                                                             GR_ID = GoodReads(bookid)
-                                                            GR_ID.find_book(bookid, None)
+                                                            GR_ID.find_book(bookid)
                                                             if language and language != "Unknown":
                                                                 # set language from book metadata
                                                                 logger.debug("Setting language from metadata %s : %s" % (

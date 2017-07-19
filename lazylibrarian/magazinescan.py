@@ -188,6 +188,7 @@ def create_cover(issuefile=None, refresh=False):
 
                 elif interface == 'wand':
                     generator = "wand interface"
+                    # noinspection PyUnboundLocalVariable
                     with Image(filename=issuefile + '[0]') as img:
                         img.save(filename=coverfile)
 
