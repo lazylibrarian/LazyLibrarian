@@ -402,19 +402,22 @@ def saveLog():
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
     passchars = string.ascii_letters + string.digits + '_/'  # _/ used by slack and googlebooks
+    redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ', 'using api [', 'apikey=']
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0
         redacts = 0
         while nextfile:
             fname = basename
-            if extn:
+            if extn > 0:
                 fname = fname + '.' + str(extn)
-            if os.path.exists(fname):
-                logger.debug('Processing %s' % fname)
+            if not os.path.exists(fname):
+                logger.debug("logfile [%s] does not exist" % fname)
+                nextfile = False
+            else:
+                logger.debug('Processing logfile [%s]' % fname)
+                linecount = 0
                 for line in reverse_readline(fname):
-                    redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ',
-                                  'using api [', 'apikey=']
                     for item in redactlist:
                         startpos = line.find(item)
                         if startpos >= 0:
@@ -430,21 +433,21 @@ def saveLog():
 
                     out.write("%s\n" % line)
                     if "Debug log ON" in line:
+                        logger.debug('Found "Debug log ON" line %s in %s' % (linecount, fname))
                         nextfile = False
                         break
+                    linecount += 1
                 extn += 1
-            else:
-                nextfile = False
 
-        with open(outfile + '.log', 'w') as logfile:
-            logfile.write(header)
-            lines = len(header.split('\n'))
-            for line in reverse_readline(outfile + '.tmp'):
-                logfile.write("%s\n" % line)
-                lines += 1
+    with open(outfile + '.log', 'w') as logfile:
+        logfile.write(header)
+        lines = 0  # len(header.split('\n'))
+        for line in reverse_readline(outfile + '.tmp'):
+            logfile.write("%s\n" % line)
+            lines += 1
     os.remove(outfile + '.tmp')
     logger.debug("Redacted %s passwords/apikeys" % redacts)
-    logger.debug("%s lines written to %s" % (lines, outfile + '.log'))
+    logger.debug("%s log lines written to %s" % (lines, outfile + '.log'))
     with zipfile.ZipFile(outfile + '.zip', 'w') as myzip:
         myzip.write(outfile + '.log', 'debug.log')
     os.remove(outfile + '.log')
