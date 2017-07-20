@@ -251,6 +251,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         else:
             tor_name += '.torrent'
             tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
+            msg = ''
             try:
                 msg = 'Opening '
                 with open(tor_path, 'wb') as torrent_file:
@@ -263,7 +264,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 downloadID = Source
             except Exception as e:
                 logger.debug("Failed to write torrent to file: %s" % (str(e)))
-                logger.debug("Progress: %s" % (msg))
+                logger.debug("Progress: %s" % msg)
                 logger.debug("Filename [%s]" % (repr(tor_path)))
                 #logger.debug("Failed to write torrent to file %s, %s" % (repr(tor_path), str(e)))
                 return False
