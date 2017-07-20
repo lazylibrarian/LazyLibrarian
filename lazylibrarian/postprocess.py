@@ -1125,7 +1125,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
 
 def processAutoAdd(src_path=None):
-    # Called to copy the book files to an auto add directory for the likes of Calibre which can't do nested dirs
+    # Called to copy/move the book files to an auto add directory for the likes of Calibre which can't do nested dirs
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(src_path, str):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
@@ -1138,7 +1138,7 @@ def processAutoAdd(src_path=None):
     # Now try and copy all the book files into a single dir.
     try:
         names = os.listdir(src_path)
-        # TODO : n files jpg, opf & book(s) should have same name
+        # files jpg, opf & book(s) should have same name
         # Caution - book may be pdf, mobi, epub or all 3.
         # for now simply copy all files, and let the autoadder sort it out
         #
@@ -1156,7 +1156,7 @@ def processAutoAdd(src_path=None):
                         if extn and extn.lower() == booktype:
                             match = booktype
                             break
-
+        copied = False
         for name in names:
             if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
                 logger.debug('Skipping %s' % os.path.splitext(name)[1])
@@ -1166,6 +1166,7 @@ def processAutoAdd(src_path=None):
                 logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
                     shutil.copyfile(srcname, dstname)
+                    copied = True
                 except Exception as why:
                     logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
                     return False
@@ -1174,6 +1175,9 @@ def processAutoAdd(src_path=None):
                 except OSError as why:
                     logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
                     # permissions might not be fatal, continue
+
+        if copied and not lazylibrarian.CONFIG['DESTINATION_COPY']:  # do we want to keep the original files?
+            shutil.rmtree(src_path)
 
     except OSError as why:
         logger.error('AutoAdd - Failed because [%s]' % why.strerror)
