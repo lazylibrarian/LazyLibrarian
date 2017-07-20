@@ -22,6 +22,7 @@ from xml.etree import ElementTree
 
 import lazylibrarian
 import lib.zipfile as zipfile
+import lib.id3reader as id3reader
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages
 from lazylibrarian.cache import cache_img, get_xml_request
@@ -400,9 +401,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
         pattern = re.compile(matchString, re.VERBOSE)
 
         for r, d, f in os.walk(startdir):
-            for directory in d[:]:
+            for directory in d:
                 # prevent magazine being scanned
                 if directory.startswith("_") or directory.startswith("."):
+                    d.remove(directory)
+                # ignore directories containing this special file
+                elif os.path.exists(os.path.join(startdir, directory, '.ll_ignore')):
                     d.remove(directory)
 
             for files in f:
@@ -499,34 +503,16 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                         if not match:
                             # no author/book from metadata file, and not embedded either
-                            # or audiobook which may have id3 tags  -  this is based on Dive Into Python example
+                            # or audiobook which may have id3 tags
                             if is_valid_booktype(files, 'audiobook'):
-                                tagDataMap = {"title": (3, 33),
-                                              "artist": (33, 63),
-                                              "album": (63, 93),
-                                              "year": (93, 97),
-                                              "comment": (97, 126)}
                                 filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
                                 try:
-                                    tags = {}
-                                    fsock = open(filename, "rb", 0)
-                                    try:
-                                        fsock.seek(-128, 2)
-                                        tagdata = fsock.read(128)
-                                    finally:
-                                        fsock.close()
-                                    if tagdata[:3] == "TAG":
-                                        for tag, (start, end) in tagDataMap.items():
-                                            tags[tag] = tagdata[start:end].replace("\00", "").strip()
-                                        if 'album' in tags and 'artist' in tags:
-                                            author = tags['artist']
-                                            book = tags['album']
-                                            if isinstance(book, str):
-                                                book = book.decode(lazylibrarian.SYS_ENCODING)
-                                            if isinstance(author, str):
-                                                author = author.decode(lazylibrarian.SYS_ENCODING)
-                                            match = True
-                                except IOError:
+                                    id3r = id3reader.Reader(filename)
+                                    author = id3r.getValue('performer')
+                                    book = id3r.getValue('title')
+                                    match = True
+                                except Exception as e:
+                                    logger.debug("id3reader error %s" % str(e))
                                     pass
 
                         #  Failing anything better, just pattern match on filename
