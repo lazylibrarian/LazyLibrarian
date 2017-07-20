@@ -252,13 +252,20 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             tor_name += '.torrent'
             tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
             try:
+                msg = 'Opening '
                 with open(tor_path, 'wb') as torrent_file:
+                    msg += 'Writing '
                     torrent_file.write(torrent.encode("UTF-8"))
+                msg += 'SettingPerm '
                 setperm(tor_path)
+                msg += 'Saved'
                 logger.debug('Torrent file saved: %s' % tor_name)
                 downloadID = Source
             except Exception as e:
-                logger.debug("Failed to write torrent to file %s, %s" % (tor_path, str(e)))
+                logger.debug("Failed to write torrent to file: %s" % (str(e)))
+                logger.debug("Progress: %s" % (msg))
+                logger.debug("Filename [%s]" % (repr(tor_path)))
+                #logger.debug("Failed to write torrent to file %s, %s" % (repr(tor_path), str(e)))
                 return False
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] and lazylibrarian.CONFIG['UTORRENT_HOST']:
