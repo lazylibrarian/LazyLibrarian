@@ -101,7 +101,6 @@ class WebInterface(object):
                 threading.currentThread().name = "WEBSERVER"
 
     # SERIES ############################################################
-    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getSeries(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -128,9 +127,6 @@ class WebInterface(object):
             cmd += ' and series.Status=?'
             args.append(whichStatus)
         if AuthorID and not AuthorID == 'None':
-            match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
-            if match:
-                title = "%s Series" % match['AuthorName']
             cmd += ' and seriesauthors.AuthorID=?'
             args.append(AuthorID)
         cmd += ' GROUP BY series.seriesID'
@@ -717,7 +713,6 @@ class WebInterface(object):
         return serve_template(templatename="books.html", title='Books', books=[],
                               languages=languages, booklang=BookLang)
 
-    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -769,7 +764,6 @@ class WebInterface(object):
         rowlist = myDB.select(cmd, tuple(args))
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
-        d = []
         rows = []
         filtered = []
         if len(rowlist):
@@ -1451,7 +1445,6 @@ class WebInterface(object):
         return serve_template(
             templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus)
 
-    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params

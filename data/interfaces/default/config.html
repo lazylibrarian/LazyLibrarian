@@ -1111,6 +1111,19 @@
               <br>
               <small>Status for ebooks by new authors</small>
             </div>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <label>Include other books by new authors:</label>
+              <input type="checkbox" id="newauthor_books" name="newauthor_books" value=1 ${checked} />
+              <br>
+              <small>This will include details for other books by new authors found in wishlists or csv files,<br>
+                or when manually importing a book by a new author</small>
+            </div>
           </td>
         </tr>
       </table>

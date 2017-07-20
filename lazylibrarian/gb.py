@@ -296,7 +296,6 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
-    # noinspection PyUnboundLocalVariable
     def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", refresh=False):
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
@@ -731,9 +730,7 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
-    # noinspection PyUnusedLocal
-    @staticmethod
-    def find_book(bookid=None, queue=None):
+    def find_book(self, bookid=None):
         myDB = database.DBConnection()
         if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
@@ -841,7 +838,7 @@ class GoogleBooks:
                     logger.debug('%s: Changing authorid from %s to %s' %
                                  (author['authorname'], AuthorID, match['AuthorID']))
                     AuthorID = match['AuthorID']  # we have a different authorid for that authorname
-                else:  # no author but request to add book, add author as "ignored"
+                else:  # no author but request to add book, add author with newauthor status
                     # User hit "add book" button from a search
                     controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
@@ -851,10 +848,12 @@ class GoogleBooks:
                         "AuthorBorn": author['authorborn'],
                         "AuthorDeath": author['authordeath'],
                         "DateAdded": today(),
-                        "Status": "Ignored"
+                        "Status": lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
                     }
                     authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
+                    if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS']:
+                        self.get_author_books(AuthorID)
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return
