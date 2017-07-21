@@ -33,13 +33,14 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
     # if not in database, try to import them.
     # return authorname,new where new=False if author already in db, new=True if added
     # authorname returned is our preferred name, or empty string if not found or unable to add
-    myDB = database.DBConnection()
+
     new = False
-    if len(author) < 2:
+    if not author or len(author) < 2:
         logger.debug('Invalid Author Name [%s]' % author)
         return "", "", False
 
     author = formatAuthorName(author)
+    myDB = database.DBConnection()
     # Check if the author exists, and import the author if not,
     check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName=?', (author.replace('"', '""'),))
 
