@@ -84,6 +84,7 @@ class WebInterface(object):
             title = 'Ignored Authors'
         return serve_template(templatename="index.html", title=title, authors=[])
 
+    # noinspection PyUnusedLocal
     @cherrypy.expose
     def getIndex(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
@@ -114,7 +115,7 @@ class WebInterface(object):
                 arow = list(row)
                 nrow = arow[:4]
                 if int(arow[8]):
-                    percent = int(round((arow[7]*100.0)/arow[8]))
+                    percent = (arow[7]*100.0)/arow[8]
                 else:
                     percent = 0
                 if percent > 100:
