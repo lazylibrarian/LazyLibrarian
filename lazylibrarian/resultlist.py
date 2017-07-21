@@ -227,18 +227,19 @@ def downloadResult(match, book):
             return True  # someone else already found it
         else:
             myDB.upsert("wanted", newValueDict, controlValueDict)
-            if '.nzb' in controlValueDict["NZBurl"]:
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                           controlValueDict["NZBurl"], auxinfo)
-            elif 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
+            if 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                               controlValueDict["NZBurl"], resultTitle, auxinfo)
-            elif newValueDict['NZBmode'] == "torznab" or newValueDict['NZBmode'] == "torrent":
+            elif newValueDict['NZBmode'] in ["torznab", "torrent", "magnet"]:
                 snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                            controlValueDict["NZBurl"], auxinfo)
-            else:
+            elif newValueDict['NZBmode'] == 'nzb':
                 snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                            controlValueDict["NZBurl"], auxinfo)
+            else:
+                logger.error('Unhandled NZBmode [%s] for %s' % (newValueDict['NZBmode'], controlValueDict["NZBurl"]))
+                snatch = False
+
             if snatch:
                 logger.info('Downloading %s %s from %s' %
                             (auxinfo, newValueDict["NZBtitle"], newValueDict["NZBprov"]))

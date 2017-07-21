@@ -74,7 +74,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
             try:
                 with open(nzbpath, 'wb') as f:
                     if isinstance(nzbfile, unicode):
-                        torrent = nzbfile.encode('iso-8859-1')
+                        nzbfile = nzbfile.encode('iso-8859-1')
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 setperm(nzbpath)
