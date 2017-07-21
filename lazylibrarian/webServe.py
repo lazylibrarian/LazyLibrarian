@@ -79,17 +79,92 @@ class WebInterface(object):
 
     @cherrypy.expose
     def home(self):
+        title = 'Authors'
+        if lazylibrarian.IGNORED_AUTHORS:
+            title = 'Ignored Authors'
+        return serve_template(templatename="index.html", title=title, authors=[])
+
+    @cherrypy.expose
+    def getIndex(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
+        # for arg in kwargs:
+        #     print arg, kwargs[arg]
+
         myDB = database.DBConnection()
-        cmd = 'SELECT * from authors '
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
+        cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
+        cmd += ',AuthorLink,LastLink,HaveBooks,TotalBooks,AuthorID from authors '
         if lazylibrarian.IGNORED_AUTHORS:
             cmd += 'where Status == "Ignored" '
-            title = 'Ignored Authors'
         else:
             cmd += 'where Status != "Ignored" '
-            title = 'Authors'
         cmd += 'order by AuthorName COLLATE NOCASE'
-        authors = myDB.select(cmd)
-        return serve_template(templatename="index.html", title=title, authors=authors)
+        rowlist = myDB.select(cmd)
+
+        # At his point we want to sort and filter _before_ adding the html as it's much quicker
+        # turn the sqlite rowlist into a list of lists
+        rows = []
+        filtered = []
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+                arow = list(row)
+                nrow = arow[:4]
+                if int(arow[8]):
+                    percent = int(round((arow[7]*100.0)/arow[8]))
+                else:
+                    percent = 0
+                if percent > 100:
+                    percent = 100
+                if percent <= 100:
+                    css = 'success'
+                if percent <= 75:
+                    css = 'info'
+                if percent <= 50:
+                    css = 'warning'
+                if percent <= 25:
+                    css = 'danger'
+
+                nrow.append(percent)  # convert have/total into a float
+                nrow.extend(arow[4:])
+                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+                    bar =  '<div class="progress-container %s">' % css
+                    bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
+                    bar += '%s/%s</span></div>' % (arow[7], arow[8])
+                else:
+                    bar = '<div class="progress center-block" style="width: 150px;">'
+                    bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
+                    bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
+                            percent, percent)
+                    bar += '<span class="sr-only">%s%% Complete</span>' % percent
+                    bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (arow[7], arow[8])
+                nrow.append(bar)
+                rows.append(nrow)  # add each rowlist to the masterlist
+
+            if sSearch:
+                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+            else:
+                filtered = rows
+
+            sortcolumn = int(iSortCol_0)
+
+            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
+        s = simplejson.dumps(mydict)
+        # print ("Getindex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+        return s
 
     @staticmethod
     def label_thread(name=None):
