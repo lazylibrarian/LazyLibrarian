@@ -60,49 +60,6 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
     <th class="status col-xs-1 text-center">Status</th>
   </tr>
 </thead>
-<tbody>
-  %for author in authors:
-  <%
-                totalbooks = author['UnignoredBooks']
-                havebooks = author['HaveBooks']
-                if not havebooks:
-                    havebooks = 0
-                try:
-                    percent = (havebooks*100.0)/totalbooks
-                    if percent > 100:
-                        percent = 100
-                    if percent <= 100:
-                        css = 'success'
-                    if percent <= 75:
-                        css = 'info'
-                    if percent <= 50:
-                        css = 'warning'
-                    if percent <= 25:
-                        css = 'danger'
-                except (ZeroDivisionError, TypeError):
-                    percent = 0
-                    totalbooks = '0'
-                    css = 'danger'
-
-                if author['Status'] == 'Paused':
-                    grade = 'X'
-            %>
-  <tr>
-    <td class="name text-center ${hidden}"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" alt="Cover" class="bookcover-sm"></a></td>
-    <td class="name"><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
-    <td class="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
-    <td class="date text-center">${author['LastDate']}</td>
-    <td class="have "><span title="${percent}" class="sr-only">${percent}% Complete</span>
-      <div class="progress center-block" style="width: 150px;">
-        <div class="progress-bar-${css} progress-bar progress-bar-striped" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
-          <span class="sr-only">${percent}% Complete</span><span class="progressbar-front-text">${havebooks}/${totalbooks}</span>
-        </div>
-      </div>
-    </td>
-    <td class="status text-center">${author['Status']}</td>
-  </tr>
-  %endfor
-</tbody>
 </table>
 </div>
 </%def>
@@ -115,6 +72,10 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
   <script type="text/javascript">
     $(document).ready(function()
     {
+        var show = ""+${lazylibrarian.CONFIG['AUTHOR_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
         var table = $('#author_table').DataTable(
             {
                 "responsive": true,
@@ -123,7 +84,16 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
                 "order": [[ 1, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
-                     { type: 'natural', targets: 3 },
+                     { targets: [0],
+                         'visible': showimg,
+                         'render': function(data, type, row) {
+                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm"></a>';} },
+                     { targets: [1], 'render': function(data, type, row) {
+                         return '<a href="authorPage?AuthorID=' + row[10] + '">' + data + '</a>';} },
+                     { targets: [2], 'render': function(data, type, row) {
+                         return '<a href="' + row[7] + '" target="_new">' + data + '</a>';} },
+                     { targets: [4], 'render': function(data, type, row) {
+                         return row[11];} },
                      { type: 'natural-nohtml', targets: 4 }],
                 "oLanguage": {
                     "sSearch": "Filter: ",
@@ -132,9 +102,18 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "bServerSide": true,
+                "sAjaxSource": 'getIndex',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(3).addClass('text-center');
+                    $('td', nRow).eq(4).addClass('text-center');
+                    $('td', nRow).eq(5).addClass('text-center');
+                    return nRow;
+                },
                 "aaSorting": [[1, 'asc']],
             });
         $('.dataTables_filter input').attr("placeholder", "Results filter");

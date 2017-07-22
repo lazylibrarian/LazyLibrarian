@@ -31,46 +31,6 @@
     <th id="status">Status</th>
   </tr>
 </thead>
-<tbody>
-  %for author in authors:
-  <%
-                totalbooks = author['UnignoredBooks']
-                havebooks = author['HaveBooks']
-                if not havebooks:
-                    havebooks = 0
-                try:
-                    percent = (havebooks*100.0)/totalbooks
-                    if percent > 100:
-                        percent = 100
-                    if percent <= 100:
-                        css = "<div class=\"progress-container success\">"
-                    if percent <= 75:
-                        css = "<div class=\"progress-container info\">"
-                    if percent <= 50:
-                        css = "<div class=\"progress-container warning\">"
-                    if percent <= 25:
-                        css = "<div class=\"progress-container danger\">"
-                except (ZeroDivisionError, TypeError):
-                    percent = 0
-                    totalbooks = '0'
-                    css = "<div class=\"progress-container danger\">"
-
-                if author['Status'] == 'Paused':
-                    grade = 'X'
-
-            %>
-  <tr class="gradeZ">
-    <td id="status" ${hidden}><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" width="60" alt="Cover" class="bookcover-sm"></a></td>
-    <td id=authorname><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
-    <td id="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
-    <td id="date">${author['LastDate']}</td>
-    <td id="have"><span title="${percent}"></span><span class="hidden">${percent}</span>${css}
-      <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
-    </td>
-    <td id="status">${author['Status']}</td>
-  </tr>
-  %endfor
-</tbody>
 </table>
 <p>&nbsp;</p>
 <p>&nbsp;</p>
@@ -84,15 +44,33 @@
   <script>
     $(document).ready(function()
     {
+        var show = ""+${lazylibrarian.CONFIG['AUTHOR_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
         $('#author_table').dataTable(
             {
                 "bAutoWidth": false,
                 "aoColumns": [
-                    {"bSortable": false},
+                    {"bSortable": false,
+                     "bVisible": showimg,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[0] + '" target="_new"><img src="' + oObj.aData[0] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        return '<a href="authorPage?AuthorID=' + oObj.aData[10] + '">' + oObj.aData[1] + '</a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[7] + '" target="_new">' + oObj.aData[2] + '</a>'
+                      }
+                    },
                     null,
-                    null,
-                    null,
-                    { "sType": "natural" },
+                    { "fnRender": function ( oObj ) {
+                        return oObj.aData[11]
+                      }
+                    },
                     null
                     ],
                 "order": [[ 1, 'asc']],
@@ -102,9 +80,18 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ authors",
                     "sInfoEmpty":"Showing 0 to 0 of 0 authors",
                     "sInfoFiltered":"(filtered from _MAX_ total authors)"},
+                "bServerSide": true,
+                "sAjaxSource": 'getIndex',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(3).addClass('center');
+                    $('td', nRow).eq(4).addClass('center');
+                    $('td', nRow).eq(5).addClass('center');
+                    return nRow;
+                },
                 "aaSorting": [[1, 'asc']],
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");

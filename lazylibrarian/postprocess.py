@@ -1177,6 +1177,7 @@ def processAutoAdd(src_path=None):
                     # permissions might not be fatal, continue
 
         if copied and not lazylibrarian.CONFIG['DESTINATION_COPY']:  # do we want to keep the original files?
+            logger.debug('Removing %s' % src_path)
             shutil.rmtree(src_path)
 
     except OSError as why:

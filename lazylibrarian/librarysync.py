@@ -404,9 +404,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             for directory in d:
                 # prevent magazine being scanned
                 if directory.startswith("_") or directory.startswith("."):
+                    logger.debug('Skipping %s' % directory)
                     d.remove(directory)
                 # ignore directories containing this special file
-                elif os.path.exists(os.path.join(startdir, directory, '.ll_ignore')):
+                elif os.path.exists(os.path.join(r, directory, '.ll_ignore')):
+                    logger.debug('Found .ll_ignore file in %s' % os.path.join(r,directory))
                     d.remove(directory)
 
             for files in f:
@@ -459,7 +461,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             if 'title' in res and 'creator' in res:
                                 book = res['title']
                                 author = res['creator']
-                                if book and len(book) > 2 and author and len(author) > 2:
+                                if author and book and len(book) > 2 and len(author) > 2:
                                     match = 1
                                 if 'language' in res:
                                     language = res['language']
@@ -488,7 +490,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         if res and 'title' in res and 'creator' in res:
                             book = res['title']
                             author = res['creator']
-                            if book and len(book) > 2 and author and len(author) > 2:
+                            if author and book and len(book) > 2 and len(author) > 2:
                                 match = 1
                             if 'language' in res:
                                 language = res['language']
@@ -510,7 +512,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     id3r = id3reader.Reader(filename)
                                     author = id3r.getValue('performer')
                                     book = id3r.getValue('title')
-                                    match = True
+                                    if author and book:
+                                        match = True
                                 except Exception as e:
                                     logger.debug("id3reader error %s" % str(e))
                                     pass
@@ -524,12 +527,15 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             if match:
                                 author = match.group("author")
                                 book = match.group("book")
+                                if not author or not book:
+                                    match = False
                                 if isinstance(book, str):
                                     book = book.decode(lazylibrarian.SYS_ENCODING)
                                 if isinstance(author, str):
                                     author = author.decode(lazylibrarian.SYS_ENCODING)
-                                if len(book) <= 2 or len(author) <= 2:
-                                    match = 0
+                                if match:
+                                    if len(book) <= 2 or len(author) <= 2:
+                                        match = False
                             if not match:
                                 logger.debug("Pattern match failed [%s]" % files)
 

@@ -73,6 +73,8 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
             nzbpath = os.path.join(lazylibrarian.CONFIG['NZB_BLACKHOLEDIR'], nzbname)
             try:
                 with open(nzbpath, 'wb') as f:
+                    if isinstance(nzbfile, unicode):
+                        nzbfile = nzbfile.encode('iso-8859-1')
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
                 setperm(nzbpath)
@@ -239,14 +241,24 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             else:
                 tor_name += '.magnet'
                 tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
+                msg = ''
                 try:
+                    msg = 'Opening '
                     with open(tor_path, 'wb') as torrent_file:
+                        msg += 'Writing '
+                        if isinstance(torrent, unicode):
+                            torrent = torrent.encode('iso-8859-1')
                         torrent_file.write(torrent)
-                    logger.debug('Magnet file saved: %s' % tor_path)
+                    msg += 'SettingPerm'
                     setperm(tor_path)
+                    msg += 'Saved'
+                    logger.debug('Magnet file saved: %s' % tor_path)
                     downloadID = Source
                 except Exception as e:
-                    logger.debug("Failed to write magnet to file %s, %s" % (tor_path, str(e)))
+                    logger.debug("Failed to write magnet to file: %s" % (str(e)))
+                    logger.debug("Progress: %s" % msg)
+                    logger.debug("Filename [%s]" % (repr(tor_path)))
+                    #logger.debug("Failed to write magnet to file %s, %s" % (tor_path, str(e)))
                     return False
         else:
             tor_name += '.torrent'
@@ -256,6 +268,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 msg = 'Opening '
                 with open(tor_path, 'wb') as torrent_file:
                     msg += 'Writing '
+                    if isinstance(torrent, unicode):
+                        torrent = torrent.encode('iso-8859-1')
                     torrent_file.write(torrent)
                 msg += 'SettingPerm '
                 setperm(tor_path)
