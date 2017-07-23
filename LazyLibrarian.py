@@ -142,6 +142,9 @@ def main():
     if not os.access(lazylibrarian.DATADIR, os.W_OK):
         raise SystemExit('Cannot write to the data directory: ' + lazylibrarian.DATADIR + '. Exit ...')
 
+    print "Lazylibrarian is starting up..."
+    time.sleep(4)  # allow a bit of time for old task to exit if restarting. Needs to free logfile and server port.
+
     # create database and config
     lazylibrarian.DBFILE = os.path.join(lazylibrarian.DATADIR, 'lazylibrarian.db')
     lazylibrarian.CFG = ConfigParser.RawConfigParser()

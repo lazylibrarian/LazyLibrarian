@@ -1218,6 +1218,17 @@
                 <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
                 <span class="help-block">Directory for a copy to be placed for auto add process</span>
               </div>
+              <div class="checkbox">
+                <%
+                    if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
+                <label for="imp_autoadd_bookonly">
+                  <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value="1" ${checked} />
+                  Only autoadd eBook, not opf or jpg</label>
+              </div>
               <div class="form-group">
                 <label for="mag_dest_folder">Magazine Foldername Pattern:</label>
                 <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" class="form-control" placeholder="Magazines Destination Folder">

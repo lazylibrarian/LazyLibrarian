@@ -1029,34 +1029,27 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):  # assumed author directory
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
-                remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
+                logger.debug('Calibre trying directory [%s]' % target_dir)
                 if os.path.isdir(target_dir):
+                    remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                     imported = LibraryScan(target_dir, remove=remove)
                     newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
                         for fname in os.listdir(target_dir):
                             setperm(os.path.join(target_dir, fname))
-
-                        book_basename = os.path.join(target_dir, global_name)
-                        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
-                        for book_type in booktype_list:
-                            preferred_type = "%s.%s" % (book_basename, book_type)
-                            if os.path.exists(preferred_type):
-                                logger.debug("Calibre link to preferred type %s, %s" % (book_type, preferred_type))
-                                newbookfile = preferred_type
-                                break
-                    else:
-                        logger.warn("Failed to find a valid ebook in [%s]" % target_dir)
-                        imported = False
+                        return True, newbookfile
+                    return False, "Failed to find a valid ebook in [%s]" % target_dir
                 else:
                     imported = LibraryScan(calibre_dir, remove=remove)  # rescan whole authors directory
-            else:
-                logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
-                imported = False
-                # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
-            if not imported:
-                return False, "Unable to import book to %s" % calibre_dir
+                    if imported:
+                        myDB = database.DBConnection()
+                        match = myDB.match('SELECT BookFile FROM books WHERE BookID=?', (bookid,))
+                        if match:
+                            return True, match['BookFile']
+                    return False, 'Failed to find bookfile for %s in database' % bookid
+            return False, "Failed to locate calibre author dir [%s]" % calibre_dir
+            # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
         except subprocess.CalledProcessError as e:
             logger.debug(params)
             return False, 'calibredb import failed: %s' % e.output
@@ -1130,10 +1123,9 @@ def processAutoAdd(src_path=None):
     if isinstance(src_path, str):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
-    logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
 
     if not os.path.exists(autoadddir):
-        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
+        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd' % autoadddir)
         return False
     # Now try and copy all the book files into a single dir.
     try:
@@ -1160,15 +1152,21 @@ def processAutoAdd(src_path=None):
         for name in names:
             if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
                 logger.debug('Skipping %s' % os.path.splitext(name)[1])
+            elif lazylibrarian.CONFIG('IMP_AUTOADD_BOOKONLY') and not is_valid_booktype(name, booktype="book"):
+                logger.debug('Skipping %s' % name)
             else:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
-                    shutil.copyfile(srcname, dstname)
+                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                        logger.debug('AutoAdd Copying file [%s] from [%s] to [%s]' % (name, srcname, dstname))
+                        shutil.copyfile(srcname, dstname)
+                    else:
+                        logger.debug('AutoAdd Moving file [%s] from [%s] to [%s]' % (name, srcname, dstname))
+                        shutil.move(srcname, dstname)
                     copied = True
                 except Exception as why:
-                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                    logger.error('AutoAdd - Failed to copy/move file [%s] because [%s] ' % (name, str(why)))
                     return False
                 try:
                     os.chmod(dstname, 0o666)  # make rw for calibre

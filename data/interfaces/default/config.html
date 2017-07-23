@@ -995,6 +995,17 @@
             <small>Directory for a copy to be placed for auto add process</small>
             <div>
               <%
+                    if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value=1 ${checked} /><label>Autoadd eBook only</label>
+              <BR>
+              <small>Only autoadd eBook, not opf or jpg</small>
+            </div>
+            <div>
+              <%
                     if lazylibrarian.CONFIG['FULL_SCAN'] == True:
                         checked = 'checked="checked"'
                     else:

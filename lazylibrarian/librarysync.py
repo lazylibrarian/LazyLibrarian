@@ -723,7 +723,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 preferred_type = "%s.%s" % (book_basename, book_type)
                                                 if os.path.exists(preferred_type):
                                                     book_filename = preferred_type
-                                                    logger.debug("Link to preferred type %s: %s" %
+                                                    logger.debug("Librarysync link to preferred type %s: %s" %
                                                                  (book_type, preferred_type))
                                                     break
 
