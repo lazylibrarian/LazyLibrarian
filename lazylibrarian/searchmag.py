@@ -379,7 +379,7 @@ def search_magazines(mags=None, reset=False):
                         if rejected:
                             rejects += 1
                         else:
-                            if lazylibrarian.LOGLEVEL > 3:
+                            if lazylibrarian.LOGLEVEL > 2:
                                 logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, newdatish))
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped"
@@ -391,7 +391,10 @@ def search_magazines(mags=None, reset=False):
                                 # could perhaps calc differently for weekly, biweekly etc
                                 # or for magazines with only an issue number, use zero
 
-                                if '-' in str(newdatish):
+                                if str(newdatish).isdigit():
+                                    logger.debug('Magazine comparing issue numbers (%s)' % newdatish)
+                                    control_date = 0
+                                elif '-' in str(newdatish):
                                     start_time = time.time()
                                     start_time -= int(
                                         lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
@@ -400,20 +403,24 @@ def search_magazines(mags=None, reset=False):
                                     control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
                                     logger.debug('Magazine date comparing to %s' % control_date)
                                 else:
+                                    logger.debug('Magazine unable to find comparison type [%s]' % newdatish)
                                     control_date = 0
 
                             if '-' in str(control_date) and '-' in str(newdatish):
                                 # only grab a copy if it's newer than the most recent we have,
                                 # or newer than a month ago if we have none
                                 comp_date = datecompare(newdatish, control_date)
-                            elif '-' not in str(control_date) and '-' not in str(newdatish):
+                            elif str(control_date).isdigit() and str(newdatish).isdigit():
                                 # for issue numbers, check if later than last one we have
                                 comp_date = int(newdatish) - int(control_date)
                                 newdatish = "%s" % newdatish
                                 newdatish = newdatish.zfill(4)  # pad so we sort correctly
                             else:
                                 # invalid comparison of date and issue number
-                                logger.debug('Magazine %s incorrect date or issue format.' % nzbtitle_formatted)
+                                if '-' in str(control_date):
+                                    logger.debug('Magazine %s failed: Expecting a date' % nzbtitle_formatted)
+                                else:
+                                    logger.debug('Magazine %s failed: Expecting issue number' % nzbtitle_formatted)
                                 bad_date += 1
                                 newdatish = "1970-01-01"  # this is our fake date for ones we can't decipher
                                 comp_date = 0
