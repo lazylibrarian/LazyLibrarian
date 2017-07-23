@@ -1030,8 +1030,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if os.path.isdir(calibre_dir):  # assumed author directory
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
                 logger.debug('Calibre trying directory [%s]' % target_dir)
+                remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 if os.path.isdir(target_dir):
-                    remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                     imported = LibraryScan(target_dir, remove=remove)
                     if imported:
                         newbookfile = book_file(target_dir, booktype='ebook')
