@@ -178,7 +178,7 @@ def month2num(month):
 
 def datecompare(nzbdate, control_date):
     """
-    Return how many days between two dates given in yy-mm-dd format
+    Return how many days between two dates given in yy-mm-dd format or yyyy-mm-dd format
     """
     y1 = int(nzbdate.split('-')[0])
     m1 = int(nzbdate.split('-')[1])
