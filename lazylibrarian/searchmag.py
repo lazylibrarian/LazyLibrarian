@@ -242,6 +242,11 @@ def search_magazines(mags=None, reset=False):
                             reject_list = getList(results['Reject'])
                             lower_title = unaccented(nzbtitle_formatted).lower()
                             lower_bookid = unaccented(bookid).lower()
+                            if reject_list:
+                                if lazylibrarian.LOGLEVEL > 2:
+                                    logger.debug('Reject: %s' % str(reject_list))
+                                    logger.debug('Title: %s' % lower_title)
+                                    logger.debug('Bookid: %s' % lower_bookid)
                             for word in reject_list:
                                 if word in lower_title and word not in lower_bookid:
                                     rejected = True
