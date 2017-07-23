@@ -1033,11 +1033,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if os.path.isdir(target_dir):
                     remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                     imported = LibraryScan(target_dir, remove=remove)
-                    newbookfile = book_file(target_dir, booktype='ebook')
-                    if newbookfile:
-                        setperm(target_dir)
-                        for fname in os.listdir(target_dir):
-                            setperm(os.path.join(target_dir, fname))
+                    if imported:
+                        newbookfile = book_file(target_dir, booktype='ebook')
+                        if newbookfile:
+                            setperm(target_dir)
+                            for fname in os.listdir(target_dir):
+                                setperm(os.path.join(target_dir, fname))
                         return True, newbookfile
                     return False, "Failed to find a valid ebook in [%s]" % target_dir
                 else:

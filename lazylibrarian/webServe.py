@@ -19,7 +19,6 @@ import os
 import random
 import re
 import threading
-import traceback
 import time
 import urllib
 from shutil import copyfile, rmtree
