@@ -26,7 +26,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str
 
 
 def create_covers(refresh=False):
@@ -195,6 +195,9 @@ def create_cover(issuefile=None, refresh=False):
                 elif interface == 'pythonmagick':
                     generator = "pythonmagick interface"
                     img = PythonMagick.Image()
+                    # PythonMagick requires filename to be str, not unicode
+                    if type(issuefile) is unicode:
+                        issuefile = unaccented_str(issuefile)
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
 
@@ -225,7 +228,7 @@ def create_cover(issuefile=None, refresh=False):
                                 logger.debug("Failed to create jpg: %s" % res)
             except Exception:
                 logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
-                logger.debug('Exception in gs create_cover: %s' % traceback.format_exc())
+                logger.debug('Exception in create_cover: %s' % traceback.format_exc())
 
         if os.path.isfile(coverfile):
             setperm(coverfile)
