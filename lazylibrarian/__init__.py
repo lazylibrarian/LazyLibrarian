@@ -164,6 +164,7 @@ CONFIG_DEFINITIONS = {
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
+    'IMP_AUTOADD_BOOKONLY': ('bool', 'General', 0),
     'IMP_AUTOSEARCH': ('bool', 'General', 0),
     'IMP_CALIBREDB': ('str', 'General', ''),
     'IMP_ONLYISBN': ('bool', 'General', 0),
@@ -1221,8 +1222,6 @@ def logmsg(level, msg):
     if __INITIALIZED__:
         if level == 'error':
             logger.error(msg)
-        elif level == 'info':
-            logger.info(msg)
         elif level == 'debug':
             logger.debug(msg)
         elif level == 'warn':
@@ -1239,11 +1238,8 @@ def shutdown(restart=False, update=False):
     # config_write() don't automatically rewrite config on exit
 
     if not restart and not update:
-        msg = 'LazyLibrarian is shutting down...'
-        if __INITIALIZED__:
-            logger.info(msg)
-        else:
-            print(msg)
+        logmsg('info', 'LazyLibrarian is shutting down...')
+
     if update:
         logmsg('info', 'LazyLibrarian is updating...')
         try:
