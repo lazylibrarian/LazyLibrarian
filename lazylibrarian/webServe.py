@@ -19,7 +19,6 @@ import os
 import random
 import re
 import threading
-import traceback
 import time
 import urllib
 from shutil import copyfile, rmtree
@@ -121,8 +120,10 @@ class WebInterface(object):
                 if lazylibrarian.LOGLEVEL > 2:
                     logger.debug('getIndex %s: %s' % (i,str(arow)))
                 nrow = arow[:4]
-                if int(arow[8]):
-                    percent = (arow[7]*100.0)/arow[8]
+                havebooks = check_int(arow[7], 0)
+                totalbooks = check_int(arow[8], 0)
+                if totalbooks:
+                    percent = (havebooks*100.0)/totalbooks
                 else:
                     percent = 0
                 if percent > 100:
@@ -141,14 +142,14 @@ class WebInterface(object):
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
                     bar =  '<div class="progress-container %s">' % css
                     bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
-                    bar += '%s/%s</span></div>' % (arow[7], arow[8])
+                    bar += '%s/%s</span></div>' % (havebooks, totalbooks)
                 else:
                     bar = '<div class="progress center-block" style="width: 150px;">'
                     bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
                     bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
                             percent, percent)
                     bar += '<span class="sr-only">%s%% Complete</span>' % percent
-                    bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (arow[7], arow[8])
+                    bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (havebooks, totalbooks)
                 nrow.append(bar)
                 rows.append(nrow)  # add each rowlist to the masterlist
             if lazylibrarian.LOGLEVEL > 2:
@@ -1722,11 +1723,13 @@ class WebInterface(object):
     @staticmethod
     def deleteIssue(issuefile):
         try:
-            # delete the magazine file and any cover image
+            # delete the magazine file and any cover image / opf
             if os.path.exists(issuefile):
                 os.remove(issuefile)
             fname, extn = os.path.splitext(issuefile)
-            fname = fname + '.jpg'
+            for extn in ['.opf', '.jpg']
+                if os.path.exists(fname + extn):
+                    os.remove(fname + extn)
             if os.path.exists(fname):
                 os.remove(fname)
             # if the directory is now empty, delete that too

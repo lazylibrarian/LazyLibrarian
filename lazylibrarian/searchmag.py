@@ -242,6 +242,11 @@ def search_magazines(mags=None, reset=False):
                             reject_list = getList(results['Reject'])
                             lower_title = unaccented(nzbtitle_formatted).lower()
                             lower_bookid = unaccented(bookid).lower()
+                            if reject_list:
+                                if lazylibrarian.LOGLEVEL > 2:
+                                    logger.debug('Reject: %s' % str(reject_list))
+                                    logger.debug('Title: %s' % lower_title)
+                                    logger.debug('Bookid: %s' % lower_bookid)
                             for word in reject_list:
                                 if word in lower_title and word not in lower_bookid:
                                     rejected = True
@@ -394,7 +399,7 @@ def search_magazines(mags=None, reset=False):
                                 if str(newdatish).isdigit():
                                     logger.debug('Magazine comparing issue numbers (%s)' % newdatish)
                                     control_date = 0
-                                elif '-' in str(newdatish):
+                                elif re.match('\d+-\d\d-\d\d', newdatish):
                                     start_time = time.time()
                                     start_time -= int(
                                         lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
@@ -406,7 +411,7 @@ def search_magazines(mags=None, reset=False):
                                     logger.debug('Magazine unable to find comparison type [%s]' % newdatish)
                                     control_date = 0
 
-                            if '-' in str(control_date) and '-' in str(newdatish):
+                            if re.match('\d+-\d\d-\d\d', control_date) and re.match('\d+-\d\d-\d\d', newdatish):
                                 # only grab a copy if it's newer than the most recent we have,
                                 # or newer than a month ago if we have none
                                 comp_date = datecompare(newdatish, control_date)
@@ -417,7 +422,7 @@ def search_magazines(mags=None, reset=False):
                                 newdatish = newdatish.zfill(4)  # pad so we sort correctly
                             else:
                                 # invalid comparison of date and issue number
-                                if '-' in str(control_date):
+                                if re.match('\d+-\d\d-\d\d', control_date):
                                     logger.debug('Magazine %s failed: Expecting a date' % nzbtitle_formatted)
                                 else:
                                     logger.debug('Magazine %s failed: Expecting issue number' % nzbtitle_formatted)
