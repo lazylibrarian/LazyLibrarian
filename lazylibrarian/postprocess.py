@@ -1130,10 +1130,9 @@ def processAutoAdd(src_path=None):
     if isinstance(src_path, str):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
-    logger.debug('AutoAdd - Attempt to copy from [%s] to [%s]' % (src_path, autoadddir))
 
     if not os.path.exists(autoadddir):
-        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd copy' % autoadddir)
+        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd' % autoadddir)
         return False
     # Now try and copy all the book files into a single dir.
     try:
@@ -1160,15 +1159,21 @@ def processAutoAdd(src_path=None):
         for name in names:
             if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
                 logger.debug('Skipping %s' % os.path.splitext(name)[1])
+            elif lazylibrarian.CONFIG('IMP_AUTOADD_BOOKONLY') and not is_valid_booktype(name, booktype="book"):
+                logger.debug('Skipping %s' % name)
             else:
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
-                logger.debug('AutoAdd Copying file [%s] as copy [%s] to [%s]' % (name, srcname, dstname))
                 try:
-                    shutil.copyfile(srcname, dstname)
+                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                        logger.debug('AutoAdd Copying file [%s] from [%s] to [%s]' % (name, srcname, dstname))
+                        shutil.copyfile(srcname, dstname)
+                    else:
+                        logger.debug('AutoAdd Moving file [%s] from [%s] to [%s]' % (name, srcname, dstname))
+                        shutil.move(srcname, dstname)
                     copied = True
                 except Exception as why:
-                    logger.error('AutoAdd - Failed to copy file [%s] because [%s] ' % (name, str(why)))
+                    logger.error('AutoAdd - Failed to copy/move file [%s] because [%s] ' % (name, str(why)))
                     return False
                 try:
                     os.chmod(dstname, 0o666)  # make rw for calibre
