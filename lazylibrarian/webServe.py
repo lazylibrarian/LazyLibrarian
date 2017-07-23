@@ -19,6 +19,7 @@ import os
 import random
 import re
 import threading
+import traceback
 import time
 import urllib
 from shutil import copyfile, rmtree
@@ -90,7 +91,8 @@ class WebInterface(object):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
         #     print arg, kwargs[arg]
-
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug('getIndex: %s,%s,%s,%s,[%s]' % (iDisplayStart, iDisplayLength, iSortCol_0, sSortDir_0, sSearch))
         myDB = database.DBConnection()
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -103,8 +105,11 @@ class WebInterface(object):
         else:
             cmd += 'where Status != "Ignored" '
         cmd += 'order by AuthorName COLLATE NOCASE'
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug('getIndex cmd: %s' % cmd)
         rowlist = myDB.select(cmd)
-
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug('getIndex rowlist: %s' % len(rowlist))
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
         rows = []
@@ -113,6 +118,8 @@ class WebInterface(object):
             # the masterlist to be filled with the row data
             for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
                 arow = list(row)
+                if lazylibrarian.LOGLEVEL > 2:
+                    logger.debug('getIndex %s: %s' % (i,str(arow)))
                 nrow = arow[:4]
                 if int(arow[8]):
                     percent = (arow[7]*100.0)/arow[8]
@@ -144,27 +151,34 @@ class WebInterface(object):
                     bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (arow[7], arow[8])
                 nrow.append(bar)
                 rows.append(nrow)  # add each rowlist to the masterlist
-
+            if lazylibrarian.LOGLEVEL > 2:
+                logger.debug('getIndex rows: %s' % len(rows))
             if sSearch:
                 filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
                 filtered = rows
-
+            if lazylibrarian.LOGLEVEL > 2:
+                logger.debug('getIndex filtered: %s' % len(filtered))
             sortcolumn = int(iSortCol_0)
 
             filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            if lazylibrarian.LOGLEVEL > 2:
+                logger.debug('getIndex sorted: %s' % len(filtered))
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+            if lazylibrarian.LOGLEVEL > 2:
+                logger.debug('getIndex rows: %s' % len(rows))
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
                   }
         s = simplejson.dumps(mydict)
-        # print ("Getindex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
         return s
 
     @staticmethod
