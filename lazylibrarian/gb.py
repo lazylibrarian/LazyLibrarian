@@ -559,8 +559,7 @@ class GoogleBooks:
                             rejected = True
 
                         if not rejected and not bookname:
-                            logger.debug('Rejecting bookid %s for %s, no bookname' %
-                                         (bookid, authorname))
+                            logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
                             removedResults += 1
                             rejected = True
 

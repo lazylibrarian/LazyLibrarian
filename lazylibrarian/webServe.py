@@ -1727,7 +1727,7 @@ class WebInterface(object):
             if os.path.exists(issuefile):
                 os.remove(issuefile)
             fname, extn = os.path.splitext(issuefile)
-            for extn in ['.opf', '.jpg']
+            for extn in ['.opf', '.jpg']:
                 if os.path.exists(fname + extn):
                     os.remove(fname + extn)
             if os.path.exists(fname):
