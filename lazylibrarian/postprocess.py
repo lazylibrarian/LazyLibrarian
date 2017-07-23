@@ -1029,34 +1029,27 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):  # assumed author directory
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
-                remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
+                logger.debug('Calibre trying directory [%s]' % target_dir)
                 if os.path.isdir(target_dir):
+                    remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                     imported = LibraryScan(target_dir, remove=remove)
                     newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
                         for fname in os.listdir(target_dir):
                             setperm(os.path.join(target_dir, fname))
-
-                        book_basename = os.path.join(target_dir, global_name)
-                        booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
-                        for book_type in booktype_list:
-                            preferred_type = "%s.%s" % (book_basename, book_type)
-                            if os.path.exists(preferred_type):
-                                logger.debug("Calibre link to preferred type %s, %s" % (book_type, preferred_type))
-                                newbookfile = preferred_type
-                                break
-                    else:
-                        logger.warn("Failed to find a valid ebook in [%s]" % target_dir)
-                        imported = False
+                        return True, newbookfile
+                    return False, "Failed to find a valid ebook in [%s]" % target_dir
                 else:
                     imported = LibraryScan(calibre_dir, remove=remove)  # rescan whole authors directory
-            else:
-                logger.error("Failed to locate calibre dir [%s]" % calibre_dir)
-                imported = False
-                # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
-            if not imported:
-                return False, "Unable to import book to %s" % calibre_dir
+                    if imported:
+                        myDB = database.DBConnection()
+                        match = myDB.match('SELECT BookFile FROM books WHERE BookID=?', (bookid,))
+                        if match:
+                            return True, match['BookFile']
+                    return False, 'Failed to find bookfile for %s in database' % bookid
+            return False, "Failed to locate calibre author dir [%s]" % calibre_dir
+            # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
         except subprocess.CalledProcessError as e:
             logger.debug(params)
             return False, 'calibredb import failed: %s' % e.output
