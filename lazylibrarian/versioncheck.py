@@ -350,7 +350,7 @@ def getCommitDifferenceFromGit():
             logmsg('info', '[VersionCheck] -  New version is available. You are one commit behind')
         elif commits == 0:
             logmsg('info', '[VersionCheck] -  lazylibrarian is up to date ')
-            lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+            # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         elif commits < 0:
             msg = '[VersionCheck] -  You are running an unknown version of lazylibrarian. '
             msg += 'Run the updater to identify your version'
@@ -419,8 +419,8 @@ def update():
                 logmsg('info', '(update) No update available, not updating')
                 logmsg('info', '(update) Output: ' + str(output))
                 success = False
-                lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-            elif line.endswith('Aborting.'):
+                # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+            elif 'Aborting' in line or 'local changes' in line:
                 logmsg('error', '(update) Unable to update from git: ' + line)
                 logmsg('info', '(update) Output: ' + str(output))
                 success = False
@@ -493,7 +493,7 @@ def update():
 
         # Update version.txt
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
-        lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+        # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         return True
     else:
         logmsg('error', "(update) Cannot perform update - Install Type not set")
