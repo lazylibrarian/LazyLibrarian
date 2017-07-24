@@ -984,7 +984,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('Calibre ID: %s' % calibre_id)
 
             our_opf = False
-            if not lazylibrarian.CONFIG('IMP_AUTOADD_BOOKONLY'):
+            if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
                 # we can pass an opf with all the info, and a cover image
                 myDB = database.DBConnection()
                 cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
@@ -993,8 +993,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if not data:
                     logger.error('processDestination: No data found for bookid %s' % bookid)
                 else:
-                    processIMG(dest_path, data['BookImg'], global_name)
-                    opfpath, our_opf = processOPF(dest_path, data, global_name)
+                    processIMG(pp_path, data['BookImg'], global_name)
+                    opfpath, our_opf = processOPF(pp_path, data, global_name)
                     opfparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                  'set_metadata',
                                  '--with-library',
@@ -1179,7 +1179,7 @@ def processAutoAdd(src_path=None):
         for name in names:
             if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
                 logger.debug('Skipping %s' % os.path.splitext(name)[1])
-            elif lazylibrarian.CONFIG('IMP_AUTOADD_BOOKONLY') and not is_valid_booktype(name, booktype="book"):
+            elif lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] and not is_valid_booktype(name, booktype="book"):
                 logger.debug('Skipping %s' % name)
             else:
                 srcname = os.path.join(src_path, name)

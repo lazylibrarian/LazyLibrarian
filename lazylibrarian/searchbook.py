@@ -145,23 +145,27 @@ def search_book(books=None, library=None):
                     resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
                     if not nproviders:
                         logger.debug("No active nzb providers found")
-                        modelist.remove('nzb')
+                        if 'nzb' in modelist:
+                            modelist.remove('nzb')
                 elif mode == 'tor':
                     resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
                     if not nproviders:
                         logger.debug("No active tor providers found")
-                        modelist.remove('tor')
+                        if 'tor' in modelist:
+                            modelist.remove('tor')
                 elif mode == 'direct':
                     resultlist, nproviders = IterateOverDirectSites(book, searchtype)
                     if not nproviders:
                         logger.debug("No active direct providers found")
-                        modelist.remove('direct')
+                        if 'direct' in modelist:
+                            modelist.remove('direct')
                 elif mode == 'rss':
                     if rss_resultlist:
                         resultlist = rss_resultlist
                     else:
                         logger.debug("No active rss providers found")
-                        modelist.remove('rss')
+                        if 'rss' in modelist:
+                            modelist.remove('rss')
 
                 if resultlist:
                     match = findBestResult(resultlist, book, searchtype, mode)
@@ -175,17 +179,20 @@ def search_book(books=None, library=None):
                         resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
                         if not nproviders:
                             logger.debug("No active nzb providers found")
-                            modelist.remove('nzb')
+                            if 'nzb' in modelist:
+                                modelist.remove('nzb')
                     elif mode == 'tor':
                         resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
                         if not nproviders:
                             logger.debug("No active tor providers found")
-                            modelist.remove('tor')
+                            if 'tor' in modelist:
+                                modelist.remove('tor')
                     elif mode == 'direct':
                         resultlist, nproviders = IterateOverDirectSites(book, searchtype)
                         if not nproviders:
                             logger.debug("No active direct providers found")
-                            modelist.remove('direct')
+                            if 'direct' in modelist:
+                                modelist.remove('direct')
                     elif mode == 'rss':
                         resultlist = rss_resultlist
 
@@ -215,7 +222,8 @@ def search_book(books=None, library=None):
                         resultlist, _ = IterateOverNewzNabSites(book, searchtype)
                         if not nproviders:
                             logger.debug("No active nzb providers found")
-                            modelist.remove('nzb')
+                            if 'nzb' in modelist:
+                                modelist.remove('nzb')
                         if resultlist:
                             match = findBestResult(resultlist, book, searchtype, mode)
                         else:
