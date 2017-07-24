@@ -877,12 +877,6 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         logger.debug('Calibre should have created the extras for us')
         return
 
-    dest_path = os.path.dirname(dest_file)
-    # If you use auto add by Calibre you need the book in a single directory, not nested
-    # So take the file you Copied/Moved to Dest_path and copy it to a Calibre auto add folder.
-    if lazylibrarian.CONFIG['IMP_AUTOADD']:
-        processAutoAdd(dest_path)
-
     cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
     cmd += 'BookLang,BookPub from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
     data = myDB.match(cmd, (bookid,))
@@ -890,11 +884,17 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         logger.error('processExtras: No data found for bookid %s' % bookid)
         return
 
-    # try image
-    processIMG(dest_path, data['BookImg'], global_name)
+    dest_path = os.path.dirname(dest_file)
 
-    # try metadata
-    processOPF(dest_path, data, global_name)
+    # download image
+    processIMG(dest_path, data['BookImg'], global_name)
+    # create metadata
+    _ = processOPF(dest_path, data, global_name)
+
+    # If you use auto add by Calibre you need the book in a single directory, not nested
+    # So take the files you Copied/Moved to Dest_path and copy/move into Calibre auto add folder.
+    if lazylibrarian.CONFIG['IMP_AUTOADD']:
+        processAutoAdd(dest_path)
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
@@ -983,47 +983,73 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
             logger.debug('Calibre ID: %s' % calibre_id)
 
-            authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                            'set_metadata',
-                            '--field',
-                            'authors:%s' % unaccented(authorname),
-                            '--with-library',
-                            dest_dir,
-                            calibre_id
-                            ]
-            logger.debug(str(authorparams))
-            res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
-            if res:
-                logger.debug(
-                    '%s author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            our_opf = False
+            if not lazylibrarian.CONFIG('IMP_AUTOADD_BOOKONLY'):
+                # we can pass an opf with all the info, and a cover image
+                myDB = database.DBConnection()
+                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
+                cmd += 'BookLang,BookPub from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+                data = myDB.match(cmd, (bookid,))
+                if not data:
+                    logger.error('processDestination: No data found for bookid %s' % bookid)
+                else:
+                    processIMG(dest_path, bookimg=data['BookImg'], global_name)
+                    opfpath, our_opf = processOPF(dest_path, data, global_name)
+                    opfparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                                 'set_metadata',
+                                 '--with-library',
+                                 dest_dir,
+                                 calibre_id,
+                                 opfpath
+                                ]
+                    logger.debug(str(opfparams))
+                    res = subprocess.check_output(opfparams, stderr=subprocess.STDOUT)
+                    if res:
+                        logger.debug(
+                            '%s set opf reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-            titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                           'set_metadata',
-                           '--field',
-                           'title:%s' % unaccented(bookname),
-                           '--with-library',
-                           dest_dir,
-                           calibre_id
-                           ]
-            logger.debug(str(titleparams))
-            res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
-            if res:
-                logger.debug(
-                    '%s title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            if not our_opf:  # pre-existing opf might not have our preferred authorname/title/identifier
+                authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                                'set_metadata',
+                                '--field',
+                                'authors:%s' % unaccented(authorname),
+                                '--with-library',
+                                dest_dir,
+                                calibre_id
+                                ]
+                logger.debug(str(authorparams))
+                res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                if res:
+                    logger.debug(
+                        '%s set author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-            metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                          'set_metadata',
-                          '--field',
-                          'identifiers:%s' % identifier,
-                          '--with-library',
-                          dest_dir,
-                          calibre_id
-                          ]
-            logger.debug(str(metaparams))
-            res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
-            if res:
-                logger.debug(
-                    '%s identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+                titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                               'set_metadata',
+                               '--field',
+                               'title:%s' % unaccented(bookname),
+                               '--with-library',
+                               dest_dir,
+                               calibre_id
+                               ]
+                logger.debug(str(titleparams))
+                res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                if res:
+                    logger.debug(
+                        '%s set title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+
+                metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                              'set_metadata',
+                              '--field',
+                              'identifiers:%s' % identifier,
+                              '--with-library',
+                              dest_dir,
+                              calibre_id
+                              ]
+                logger.debug(str(metaparams))
+                res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+                if res:
+                    logger.debug(
+                        '%s set identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
@@ -1196,10 +1222,6 @@ def processIMG(dest_path=None, bookimg=None, global_name=None):
             with open(coverpath, 'wb') as img:
                 imggoogle = imgGoogle()
                 img.write(imggoogle.open(bookimg).read())
-                # try:
-                #    os.chmod(coverpath, 0777)
-                # except Exception, e:
-                #    logger.error("Could not chmod path: " + str(coverpath))
 
     except (IOError, EOFError) as e:
         if hasattr(e, 'strerror'):
@@ -1240,14 +1262,14 @@ def processMAGOPF(issuefile, title, issue, issueID):
             'Series': title,
             'Series_index': issue
             }
-    processOPF(dest_path, data, global_name)
+    _ = processOPF(dest_path, data, global_name)
 
 def processOPF(dest_path=None, data=None, global_name=None):
 
     opfpath = os.path.join(dest_path, global_name + '.opf')
     if os.path.exists(opfpath):
         logger.debug('%s already exists. Did not create one.' % opfpath)
-        return
+        return opfpath, False
 
     authorname = data['AuthorName']
     bookid = data['BookID']
@@ -1305,6 +1327,7 @@ def processOPF(dest_path=None, data=None, global_name=None):
     with open(opfpath, 'wb') as opf:
         opf.write(opfinfo)
     logger.debug('Saved metadata to: ' + opfpath)
+    return opfpath, True
 
 
 class imgGoogle(FancyURLopener):
