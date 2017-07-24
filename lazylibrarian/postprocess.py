@@ -993,8 +993,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if not data:
                     logger.error('processDestination: No data found for bookid %s' % bookid)
                 else:
-                    processIMG(dest_path, data['BookImg'], global_name)
-                    opfpath, our_opf = processOPF(dest_path, data, global_name)
+                    processIMG(pp_path, data['BookImg'], global_name)
+                    opfpath, our_opf = processOPF(pp_path, data, global_name)
                     opfparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                  'set_metadata',
                                  '--with-library',
