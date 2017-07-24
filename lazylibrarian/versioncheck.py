@@ -290,7 +290,7 @@ def getLatestVersion_FromGit():
                 if hasattr(e, 'code') and str(e.code) == '304':  # Not modified
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
                     logmsg('debug', '(getLatestVersion_FromGit) Not modified, currently on Latest Version')
-                    lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+                    # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
                 else:
                     logmsg('warn', '(getLatestVersion_FromGit) Could not get the latest commit from github')
                     logmsg('debug', 'git error for %s: %s' % (url, errmsg))
