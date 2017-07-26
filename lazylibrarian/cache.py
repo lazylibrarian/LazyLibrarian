@@ -16,6 +16,7 @@
 import hashlib
 import json
 import os
+import shutil
 import socket
 import time
 import urllib2
@@ -63,30 +64,37 @@ def fetchURL(URL, headers=None, retry=True):
 
 
 def cache_img(img_type, img_ID, img_url, refresh=False):
-    """ Cache the image from the given URL in the local images cache
+    """ Cache the image from the given filename or URL in the local images cache
         linked to the id, return the link to the cached file, True
         or error message, False if failed to cache """
 
     if img_type not in ['book', 'author']:
         logger.debug('Internal error in cache_img, img_type = [%s]' % img_type)
         img_type = 'book'
-    cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
+
+    cachefile = os.path.join(lazylibrarian.CACHEDIR, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
-    if os.path.isfile(coverfile) and not refresh:  # overwrite any cached image
+    if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
         return link, True
 
-    result, success = fetchURL(img_url)
-
-    if success:
+    if img_url.startswith('http'):
+        result, success = fetchURL(img_url)
+        if success:
+            try:
+                with open(cachefile, 'wb') as img:
+                    img.write(result)
+                return link, True
+            except Exception as e:
+                logger.debug("Error writing image to %s, %s" % (cachefile, str(e)))
+                return str(e), False
+        return result, False
+    else:
         try:
-            with open(coverfile, 'wb') as img:
-                img.write(result)
+            shutil.copyfile(img_url, cachefile)
             return link, True
         except Exception as e:
-            logger.debug("Error writing image to %s, %s" % (coverfile, str(e)))
+            logger.debug("Error copying image to %s, %s" % (cachefile, str(e)))
             return str(e), False
-    return result, False
 
 
 def get_xml_request(my_url, useCache=True):

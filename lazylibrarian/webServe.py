@@ -549,63 +549,40 @@ class WebInterface(object):
             showseries=lazylibrarian.SHOW_SERIES)
 
     @cherrypy.expose
-    def pauseAuthor(self, AuthorID):
+    def setAuthor(self, AuthorID, status):
         self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:
             AuthorName = authorsearch['AuthorName']
-            logger.info(u"Pausing author: %s" % AuthorName)
+            logger.info(u"%s author: %s" % (status, AuthorName))
 
             controlValueDict = {'AuthorID': AuthorID}
-            newValueDict = {'Status': 'Paused'}
+            newValueDict = {'Status': status}
             myDB.upsert("authors", newValueDict, controlValueDict)
             logger.debug(
-                u'AuthorID [%s]-[%s] Paused - redirecting to Author home page' % (AuthorID, AuthorName))
+                u'AuthorID [%s]-[%s] %s - redirecting to Author home page' % (AuthorID, AuthorName, status))
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('pauseAuthor Invalid authorid [%s]' % AuthorID)
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
+    def pauseAuthor(self, AuthorID):
+        self.setAuthor(AuthorID, 'Paused')
+
+    @cherrypy.expose
+    def wantAuthor(self, AuthorID):
+        self.setAuthor(AuthorID, 'Wanted')
+
+    @cherrypy.expose
     def resumeAuthor(self, AuthorID):
-        self.label_thread()
-
-        myDB = database.DBConnection()
-        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
-        if authorsearch:
-            AuthorName = authorsearch['AuthorName']
-            logger.info(u"Resuming author: %s" % AuthorName)
-
-            controlValueDict = {'AuthorID': AuthorID}
-            newValueDict = {'Status': 'Active'}
-            myDB.upsert("authors", newValueDict, controlValueDict)
-            logger.debug(
-                u'AuthorID [%s]-[%s] Restarted - redirecting to Author home page' % (AuthorID, AuthorName))
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
-        else:
-            logger.debug('resumeAuthor Invalid authorid [%s]' % AuthorID)
-            raise cherrypy.HTTPRedirect("home")
+        self.setAuthor(AuthorID, 'Active')
 
     @cherrypy.expose
     def ignoreAuthor(self, AuthorID):
-        self.label_thread()
-
-        myDB = database.DBConnection()
-        authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
-        if authorsearch:
-            AuthorName = authorsearch['AuthorName']
-            logger.info(u"Ignoring author: %s" % AuthorName)
-
-            controlValueDict = {'AuthorID': AuthorID}
-            newValueDict = {'Status': 'Ignored'}
-            myDB.upsert("authors", newValueDict, controlValueDict)
-            logger.debug(
-                u'AuthorID [%s]-[%s] Ignored - redirecting to home page' % (AuthorID, AuthorName))
-        else:
-            logger.debug('ignoreAuthor Invalid authorid [%s]' % AuthorID)
-        raise cherrypy.HTTPRedirect("home")
+        self.setAuthor(AuthorID, 'Ignored')
 
     @cherrypy.expose
     def removeAuthor(self, AuthorID):

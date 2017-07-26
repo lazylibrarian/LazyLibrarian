@@ -240,6 +240,13 @@ def setStatus(bookid=None, seriesdict=None, default=None):
             new_status = 'Skipped'
             logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
 
+    if not new_status:
+        # Author we do want?
+        match = myDB.match('SELECT Status from authors where AuthorID=?', (authorid,))
+        if match['Status'] == 'Wanted':
+            new_status = 'Wanted'
+            logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
+
     # If none of these, leave default "newbook" or "newauthor" status
     if new_status:
         myDB.action('UPDATE books SET Status=? WHERE BookID=?', (new_status, bookid))
