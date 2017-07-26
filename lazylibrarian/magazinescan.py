@@ -196,9 +196,11 @@ def create_cover(issuefile=None, refresh=False):
                     generator = "pythonmagick interface"
                     # noinspection PyUnboundLocalVariable,PyArgumentList
                     img = PythonMagick.Image()
-                    # PythonMagick requires filename to be str, not unicode
+                    # PythonMagick requires filenames to be str, not unicode
                     if type(issuefile) is unicode:
                         issuefile = unaccented_str(issuefile)
+                    if type(coverfile) is unicode:
+                        coverfile = unaccented_str(coverfile)
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
 
