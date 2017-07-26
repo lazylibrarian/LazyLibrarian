@@ -96,6 +96,9 @@ def bts_file(search_dir=None):
 def csv_file(search_dir=None):
     return any_file(search_dir, '.csv')
 
+def jpg_file(search_dir=None):
+    return any_file(search_dir, '.jpg')
+
 
 def book_file(search_dir=None, booktype=None):
     # find a book/mag file in this directory, any book will do

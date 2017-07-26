@@ -26,7 +26,7 @@ import lazylibrarian
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
     unaccented, getList
 from lazylibrarian.gr import GoodReads
@@ -885,9 +885,10 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     # download and cache image if http link
     processIMG(dest_path, data['BookID'], data['BookImg'], global_name)
 
-    # do we want to create metadata
+    # do we want to create metadata - there may already be one in pp_path, but it was downloaded and might
+    # not contain our choice of authorname/title/identifier, so we ignore it and write our own
     if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
-        _ = processOPF(dest_path, data, global_name)
+        _ = processOPF(dest_path, data, global_name, True)
 
     # If you use auto add by Calibre you need the book in a single directory, not nested
     # So take the files you Copied/Moved to Dest_path and copy/move into Calibre auto add folder.
@@ -992,7 +993,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.error('processDestination: No data found for bookid %s' % bookid)
                 else:
                     processIMG(pp_path, data['BookID'], data['BookImg'], global_name)
-                    opfpath, our_opf = processOPF(pp_path, data, global_name)
+                    opfpath, our_opf = processOPF(pp_path, data, global_name, True)
                     opfparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                  'set_metadata',
                                  '--with-library',
@@ -1052,7 +1053,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
             if os.path.isdir(calibre_dir):  # assumed author directory
-                target_dir = os.path.join(calibre_dir, '%s (%s)' % (global_name, calibre_id))
+                target_dir = os.path.join(calibre_dir, '%s (%s)' % (unaccented(bookname), calibre_id))
                 logger.debug('Calibre trying directory [%s]' % target_dir)
                 remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 if os.path.isdir(target_dir):
@@ -1214,18 +1215,22 @@ def processAutoAdd(src_path=None):
 
 def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     """ cache the bookimg from url or filename, and optionally copy it to bookdir """
+    if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
+        logger.debug('Not creating coverfile, bookonly is set')
+        return
+
+    jpgfile = jpg_file(dest_path)
+    if jpgfile:
+        logger.debug('Cover %s already exists' % jpgfile)
+        return
+
     link, success = cache_img('book', bookid, bookimg, False)
     if not success:
         logger.error('Error caching cover from %s, %s' % (bookimg, link))
         return
-    coverfile = os.path.join(dest_path, global_name + '.jpg')
-    if os.path.exists(coverfile):
-        logger.debug('%s already exists. Did not create one.' % coverfile)
-        return
-    if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
-        logger.debug('Not creating coverfile, bookonly is set')
-        return
+
     cachefile = os.path.join(lazylibrarian.CACHEDIR, 'book', bookid + '.jpg')
+    coverfile = os.path.join(dest_path, global_name + '.jpg')
     try:
         shutil.copyfile(cachefile, coverfile)
     except Exception as e:
@@ -1264,12 +1269,12 @@ def processMAGOPF(issuefile, title, issue, issueID):
             'Series': title,
             'Series_index': issue
             }
-    _ = processOPF(dest_path, data, global_name)
+    _ = processOPF(dest_path, data, global_name, True)
 
-def processOPF(dest_path=None, data=None, global_name=None):
+def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
     opfpath = os.path.join(dest_path, global_name + '.opf')
-    if os.path.exists(opfpath):
+    if not overwrite and os.path.exists(opfpath):
         logger.debug('%s already exists. Did not create one.' % opfpath)
         return opfpath, False
 
@@ -1324,8 +1329,6 @@ def processOPF(dest_path=None, data=None, global_name=None):
 
     opfinfo = unaccented_str(replace_all(opfinfo, dic))
 
-    # handle metadata
-    opfpath = os.path.join(dest_path, global_name + '.opf')
     with open(opfpath, 'wb') as opf:
         opf.write(opfinfo)
     logger.debug('Saved metadata to: ' + opfpath)
