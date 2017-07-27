@@ -1511,8 +1511,14 @@ class WebInterface(object):
         if len(rowlist):
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 thisrow = list(row)
+                # title needs spaces for column resizing
+                title = thisrow[1]
+                title = title.replace('.', ' ')
+                title = title.replace('LL (', 'LL.(')
+                thisrow[1] = title
+                # make this shorter and with spaces for column resizing
                 provider = thisrow[4]
-                if len(provider) > 20:  # make this shorter and with spaces for column resizing
+                if len(provider) > 20:
                     while len(provider) > 20 and '/' in provider:
                         provider = provider.split('/', 1)[1]
                     provider = provider.replace('/', ' ')
@@ -2089,8 +2095,14 @@ class WebInterface(object):
             # the masterlist to be filled with the row data
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 thisrow = dict(row)
+                # title needs spaces for column resizing
+                title = thisrow['NZBtitle']
+                title = title.replace('.', ' ')
+                title = title.replace('LL (', 'LL.(')
+                thisrow['NZBtitle'] = title
+                # provider needs to be shorter and with spaces for column resizing
                 provider = thisrow['NZBprov']
-                if len(provider) > 20:  # needs to be shorter and with spaces for column resizing
+                if len(provider) > 20:
                     while len(provider) > 20 and '/' in provider:
                         provider = provider.split('/', 1)[1]
                     provider = provider.replace('/', ' ')
