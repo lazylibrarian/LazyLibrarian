@@ -108,8 +108,7 @@ class WebInterface(object):
         rows = []
         filtered = []
         if len(rowlist):
-            # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+            for row in rowlist:  # iterate through the sqlite3.Row objects
                 arow = list(row)
                 nrow = arow[:4]
                 havebooks = check_int(arow[7], 0)
@@ -217,7 +216,7 @@ class WebInterface(object):
 
         if len(rowlist):
             # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+            for row in rowlist:  # iterate through the sqlite3.Row objects
                 rows.append(list(row))  # add the rowlist to the masterlist
             if sSearch:
                 filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
@@ -820,7 +819,7 @@ class WebInterface(object):
         filtered = []
         if len(rowlist):
             # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
+            for row in rowlist:  # iterate through the sqlite3.Row objects
                 rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
@@ -1510,9 +1509,15 @@ class WebInterface(object):
         rows = []
         filtered = []
         if len(rowlist):
-            # the masterlist to be filled with the row data
-            for i, row in enumerate(rowlist):  # iterate through the sqlite3.Row objects
-                rows.append(list(row))  # add each rowlist to the masterlist
+            for row in rowlist:  # iterate through the sqlite3.Row objects
+                thisrow = list(row)
+                provider = thisrow[4]
+                if len(provider) > 20:  # make this shorter and with spaces for column resizing
+                    while len(provider) > 20 and '/' in provider:
+                        provider = provider.split('/', 1)[1]
+                    provider = provider.replace('/', ' ')
+                    thisrow[4] = provider
+                rows.append(thisrow)  # add each rowlist to the masterlist
 
             if sSearch:
                 filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
@@ -2070,14 +2075,28 @@ class WebInterface(object):
         return serve_template(templatename="shutdown.html", title="Download Count", prefix='', message=message, timer=0)
 
     @cherrypy.expose
-    def history(self, source=None):
+    def history(self):
         self.label_thread()
         myDB = database.DBConnection()
-        if not source:
-            # wanted status holds snatched processed for all, plus skipped and
-            # ignored for magazine back issues
-            history = myDB.select("SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
-            return serve_template(templatename="history.html", title="History", history=history)
+        # wanted status holds snatched processed for all, plus skipped and
+        # ignored for magazine back issues
+        cmd = "SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo"
+        cmd += " from wanted WHERE Status != 'Skipped' and Status != 'Ignored'"
+        rowlist = myDB.select(cmd)
+        # turn the sqlite rowlist into a list of dicts
+        rows = []
+        if len(rowlist):
+            # the masterlist to be filled with the row data
+            for row in rowlist:  # iterate through the sqlite3.Row objects
+                thisrow = dict(row)
+                provider = thisrow['NZBprov']
+                if len(provider) > 20:  # needs to be shorter and with spaces for column resizing
+                    while len(provider) > 20 and '/' in provider:
+                        provider = provider.split('/', 1)[1]
+                    provider = provider.replace('/', ' ')
+                    thisrow['NZBprov'] = provider
+                rows.append(thisrow)  # add the rowlist to the masterlist
+        return serve_template(templatename="history.html", title="History", history=rows)
 
     @cherrypy.expose
     def clearhistory(self, status=None):
