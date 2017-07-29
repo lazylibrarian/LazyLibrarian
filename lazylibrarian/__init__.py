@@ -407,7 +407,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
     elif cfg_type == 'bool':
         try:
-            my_val = CFG.getboolean(cfg_name, None) #item_name)
+            my_val = CFG.getboolean(cfg_name, item_name)
         except ConfigParser.Error:
             my_val = str(def_val)
         except Exception as e:
