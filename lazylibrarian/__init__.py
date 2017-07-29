@@ -85,6 +85,9 @@ MAG_UPDATE = 0
 EBOOK_UPDATE = 0
 AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
+LOGGED_IN = 0
+PERMISSIONS = 65535
+LOGIN_MSG = ''
 
 # Shared dictionaries
 isbn_979_dict = {
@@ -120,9 +123,11 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
                  'WALL_COLUMNS']
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
-                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB']
+                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
+                     'USER_ACCOUNTS']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
+    'USER_ACCOUNTS': ('bool', 'General', 0),
     'LOGDIR': ('str', 'General', ''),
     'LOGLIMIT': ('int', 'General', 500),
     'LOGFILES': ('int', 'General', 10),
@@ -388,23 +393,26 @@ def check_section(sec):
 
 def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
     """ Check option exists, coerce to correct type, or return default"""
+    my_val = def_val
     if cfg_type == 'int':
         try:
             my_val = CFG.getint(cfg_name, item_name)
-        except ValueError:
-            logger.warn('Invalid int for %s: %s, using default %s' % (cfg_name, item_name, int(def_val)))
-            my_val = int(def_val)
         except ConfigParser.Error:
-            # no such item, could be new config file
+            # no such item, might be a new entry
+            my_val = str(def_val)
+        except Exception as e:
+            logger.warn('Invalid int for %s: %s, using default %s' % (cfg_name, item_name, int(def_val)))
+            logger.debug(str(e))
             my_val = int(def_val)
 
     elif cfg_type == 'bool':
         try:
-            my_val = CFG.getboolean(cfg_name, item_name)
-        except ValueError:
-            logger.warn('Invalid bool for %s: %s, using default %s' % (cfg_name, item_name, bool(def_val)))
-            my_val = bool(def_val)
+            my_val = CFG.getboolean(cfg_name, None) #item_name)
         except ConfigParser.Error:
+            my_val = str(def_val)
+        except Exception as e:
+            logger.warn('Invalid bool for %s: %s, using default %s' % (cfg_name, item_name, bool(def_val)))
+            logger.debug(str(e))
             my_val = bool(def_val)
 
     elif cfg_type == 'str':
@@ -416,13 +424,12 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
             if not len(my_val):
                 my_val = def_val
             my_val = my_val.decode(SYS_ENCODING)
-        except ValueError:
-            logger.warn('Invalid str for %s: %s, using default %s' % (cfg_name, item_name, str(def_val)))
-            my_val = str(def_val)
         except ConfigParser.Error:
             my_val = str(def_val)
-    else:
-        my_val = def_val
+        except Exception as e:
+            logger.warn('Invalid str for %s: %s, using default %s' % (cfg_name, item_name, str(def_val)))
+            logger.debug(str(e))
+            my_val = str(def_val)
 
     check_section(cfg_name)
     CFG.set(cfg_name, item_name, my_val)
