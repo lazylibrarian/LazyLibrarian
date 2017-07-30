@@ -14,6 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+import datetime
 import urllib
 from xml.etree import ElementTree
 
@@ -539,9 +540,25 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 nzbcount = 0
                 for nzb in resultxml:
                     try:
-                        nzbcount += 1
-                        results.append(
-                            ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY']))
+                        thisnzb = ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY'])
+                        maxage = check_int(lazylibrarian.CONFIG['USENET_RETENTION'], 0)
+                        nzbage = 1
+                        if maxage:
+                            # example nzbdate format: Mon, 27 May 2013 02:12:09 +0200
+                            nzbdate = thisnzb['nzbdate']
+                            try:
+                                parts = nzbdate.split(' ')
+                                nzbdate = ' '.join(parts[:5])  # strip the +0200
+                                dt = datetime.datetime.strptime(nzbdate, "%a, %d %b %Y %H:%M:%S").timetuple()
+                                nzbage = age('%04d-%02d-%02d' % (dt.tm_year, dt.tm_mon, dt.tm_mday))
+                            except Exception as e:
+                                logger.debug('Unable to get age from [%s] %s' % (thisnzb['nzbdate'], str(e)))
+                        if nzbage <= maxage:
+                            nzbcount += 1
+                            results.append(thisnzb)
+                        else:
+                            logger.debug('%s is too old (%s days)' % (thisnzb['nzbtitle'], nzbage))
+
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
                 logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
