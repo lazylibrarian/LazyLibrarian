@@ -542,7 +542,7 @@ class GoodReads:
                                 aid = aname.find('id').text
                                 if aid == authorid:
                                     role = aname.find('role').text
-                                    if role is None or 'Author' in role:
+                                    if role is None or 'author' in role.lower() or 'pseudonym' in role.lower():
                                         amatch = True
                                     else:
                                         logger.debug('Ignoring %s for %s, role is %s' %
