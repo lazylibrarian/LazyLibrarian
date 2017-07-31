@@ -191,11 +191,11 @@ def main():
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
-    # Try to start the server.
     curr_ver = dbupgrade.upgrade_needed()
     if curr_ver:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s' % curr_ver
 
+    # Try to start the server.
     webStart.initialize({
         'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
         'http_host': lazylibrarian.CONFIG['HTTP_HOST'],

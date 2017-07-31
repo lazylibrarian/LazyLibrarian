@@ -17,6 +17,7 @@ import os
 import sys
 
 import cherrypy
+import requests
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
@@ -44,6 +45,7 @@ def initialize(options=None):
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
         'tools.decode.on': True,
+        'error_page.401': lazylibrarian.common.error_page_401,
     }
 
     if https_enabled:
