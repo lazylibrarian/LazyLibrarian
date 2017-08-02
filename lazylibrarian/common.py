@@ -38,6 +38,23 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
+def error_page_401(status, message, traceback, version):
+    """ Custom handler for 401 error """
+    title = 'Access denied'
+    body = 'Error %s: You need to provide a valid username and password.' % status
+    return r'''
+<html>
+    <head>
+    <h1>LazyLibrarian</h1>
+    <title>%s</title>
+    </head>
+    <body>
+    <br/><br/>
+    <font color="#0000FF">%s</font>
+    </body>
+</html>
+''' % (title, body)
+
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--

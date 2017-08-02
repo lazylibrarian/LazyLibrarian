@@ -538,12 +538,14 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             else:
                 resultxml = rootxml.getiterator('item')
                 nzbcount = 0
+                maxage = check_int(lazylibrarian.CONFIG['USENET_RETENTION'], 0)
                 for nzb in resultxml:
                     try:
                         thisnzb = ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY'])
-                        maxage = check_int(lazylibrarian.CONFIG['USENET_RETENTION'], 0)
-                        nzbage = 1
-                        if maxage:
+                        if not maxage:
+                            nzbcount += 1
+                            results.append(thisnzb)
+                        else:
                             # example nzbdate format: Mon, 27 May 2013 02:12:09 +0200
                             nzbdate = thisnzb['nzbdate']
                             try:
@@ -553,11 +555,12 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                                 nzbage = age('%04d-%02d-%02d' % (dt.tm_year, dt.tm_mon, dt.tm_mday))
                             except Exception as e:
                                 logger.debug('Unable to get age from [%s] %s' % (thisnzb['nzbdate'], str(e)))
-                        if nzbage <= maxage:
-                            nzbcount += 1
-                            results.append(thisnzb)
-                        else:
-                            logger.debug('%s is too old (%s days)' % (thisnzb['nzbtitle'], nzbage))
+                                nzbage = 0
+                            if nzbage <= maxage:
+                                nzbcount += 1
+                                results.append(thisnzb)
+                            else:
+                                logger.debug('%s is too old (%s days)' % (thisnzb['nzbtitle'], nzbage))
 
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
