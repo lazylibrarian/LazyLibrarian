@@ -560,7 +560,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                                 nzbcount += 1
                                 results.append(thisnzb)
                             else:
-                                logger.debug('%s is too old (%s days)' % (thisnzb['nzbtitle'], nzbage))
+                                logger.debug('%s is too old (%s day%s)' % (thisnzb['nzbtitle'], nzbage, plural(nzbage)))
 
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, book['searchterm']))
