@@ -21,9 +21,6 @@ import re
 import threading
 import time
 import urllib
-import string
-import random
-import requests
 from shutil import copyfile, rmtree
 
 import cherrypy
@@ -44,11 +41,10 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
-from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch, notify_message
+from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.grsync import grauth, grsync
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -62,24 +58,15 @@ def serve_template(templatename, **kwargs):
         lazylibrarian.CONFIG['HTTP_LOOK'] = 'default'
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
-    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-        lazylibrarian.CONFIG['USER_ACCOUNTS'] = 0
-
     _hplookup = TemplateLookup(directories=[template_dir])
     try:
         if lazylibrarian.UPDATE_MSG:
             template = _hplookup.get_template("dbupdate.html")
             return template.render(message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
-
-        if templatename == 'contact.html' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
-            template = _hplookup.get_template(templatename)
         else:
-            if lazylibrarian.SESSION_USER:
-                template = _hplookup.get_template(templatename)
-            else:
-                template = _hplookup.get_template("login.html")
-        return template.render(**kwargs)
+            template = _hplookup.get_template(templatename)
+            return template.render(**kwargs)
     except Exception:
         return exceptions.html_error_template().render()
 
@@ -96,16 +83,6 @@ class WebInterface(object):
         if lazylibrarian.IGNORED_AUTHORS:
             title = 'Ignored Authors'
         return serve_template(templatename="index.html", title=title, authors=[])
-
-    @cherrypy.expose
-    def contact(self):
-        return serve_template(templatename="contact.html", title='Contact')
-
-    @cherrypy.expose
-    def logout(self):
-        lazylibrarian.SESSION_USER = 0
-        lazylibrarian.SESSION_PERMS = 0
-        raise cherrypy.HTTPRedirect("home")
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
@@ -196,79 +173,6 @@ class WebInterface(object):
                 threading.currentThread().name = name
             else:
                 threading.currentThread().name = "WEBSERVER"
-
-    # LOGIN ############################################################
-    @cherrypy.expose
-    def userlogin(self, **kwargs):
-        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        self.label_thread()
-        #print len(kwargs)
-        #for arg in kwargs:
-        #    print arg, kwargs[arg]
-        # assume login failure...
-        lazylibrarian.LOGIN_MSG='Username or Password does not match our records, please try again'
-        if 'username' in kwargs and 'password' in kwargs:
-            username = kwargs['username']
-            password = kwargs['password']
-            if username and password:
-                myDB = database.DBConnection()
-                cmd = 'SELECT * from users where UserName=?'
-                userinfo = myDB.match(cmd, (username,))
-                if userinfo:
-                    if userinfo['Password'] == hashlib.md5(password).hexdigest():
-                        userid = userinfo['UserID']
-                        logger.debug('User %s [%s] logged in' % (userid, username))
-                        lazylibrarian.LOGIN_MSG = ''
-                        lazylibrarian.SESSION_USER = userid
-                        lazylibrarian.SESSION_PERMS = userinfo['Perms']
-                    else:
-                        logger.debug('Password failed for [%s]' % username)
-                else:
-                    logger.debug('No such user [%s]' % username)
-            else:
-                logger.debug('Missing username or password')
-        raise cherrypy.HTTPRedirect("home")
-
-    @cherrypy.expose
-    def password_reset(self, **kwargs):
-        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        myDB = database.DBConnection()
-        #print len(kwargs)
-        #for arg in kwargs:
-        #    print arg, kwargs[arg]
-        # assume failure
-        LOGIN_MSG='Username does not match our records, please try again'
-        if 'username' in kwargs:
-            username = kwargs['username']
-            if username:
-                cmd = 'SELECT * from users where UserName=?'
-                userinfo = myDB.match(cmd, (username,))
-                if userinfo:
-                    email = userinfo['Email']
-                    if email:
-                        logger.debug('Generated new password for [%s]' % username)
-                        # generate a new user password random string length 10
-                        password = ''.join(random.SystemRandom().choice(
-                                        string.ascii_letters + string.digits) for _ in range(10))
-                        try:
-                            sent = notify_message('LazyLibrarian Password Reset',
-                                                  'Your new lazylibrarian password is %s' % password, email)
-                        except Exception as e:
-                            logger.debug('Failed to send email: %s' % str(e))
-                            sent = 0
-                        if sent:
-                            passhash = hashlib.md5(password).hexdigest()
-                            #myDB.action('UPDATE users SET Password=? WHERE UserID=?', (passhash, userinfo['UserID']))
-                            LOGIN_MSG='New password sent. Check your email'
-                        else:
-                            LOGIN_MSG='Unable to send email, please contact us'
-                    else:
-                        LOGIN_MSG='No email address in our records, please contact us'
-                else:
-                    LOGIN_MSG='Username not found, please contact us'
-        lazylibrarian.LOGIN_MSG = ''
-        return LOGIN_MSG
-
 
     # SERIES ############################################################
     @cherrypy.expose
@@ -2279,32 +2183,9 @@ class WebInterface(object):
             result = 'No downloads'
         return result
 
-    # GOODREADS #########################################################
-    @cherrypy.expose
-    def syncToGoodreads(self):
-        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        logger.debug('Syncing to Goodreads')
-        to_shelf, to_ll = grsync('Wanted', 'to-read')
-        msg = "%s added to goodreads to-read shelf\n" % to_shelf
-        msg += '%s added to lazylibrarian as Wanted\n' % to_ll
-
-        to_shelf, to_ll = grsync('Open', 'owned')
-        msg += "%s added to goodreads owned shelf\n" % to_shelf
-        msg += '%s added to lazylibrarian as owned\n' % to_ll
-
-        return msg
-
-    @cherrypy.expose
-    def grauthStep1(self):
-        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        GA = grauth()
-        ret = GA.goodreads_oauth1()
-        print ret
-        return ret
-
     # NOTIFIERS #########################################################
-    @cherrypy.expose
 
+    @cherrypy.expose
     def twitterStep1(self):
         cherrypy.response.headers[
             'Cache-Control'] = "max-age=0,no-cache,no-store"
