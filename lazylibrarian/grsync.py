@@ -138,6 +138,11 @@ class grauth():
             while True:
                 current_page = current_page + 1
 
+
+                time_now = int(time.time())
+                if time_now <= lazylibrarian.LAST_GOODREADS:
+                    time.sleep(1)
+                    lazylibrarian.LAST_GOODREADS = time_now
                 content = self.getShelfBooks(current_page, shelf)
                 xmldoc = xml.dom.minidom.parseString(content)
 
@@ -145,10 +150,11 @@ class grauth():
                 for book in xmldoc.getElementsByTagName('book'):
                     book_id , book_title = self.getBookInfo(book)
 
-                    try:
-                        logger.debug('Book %10s : %s' % (str(book_id), book_title))
-                    except UnicodeEncodeError:
-                        loger.debug('Book %10s : %s' % (str(book_id), 'Title Messed Up By Unicode Error'))
+                    if lazylibrarian.LOGLEVEL > 2:
+                        try:
+                            logger.debug('Book %10s : %s' % (str(book_id), book_title))
+                        except UnicodeEncodeError:
+                            loger.debug('Book %10s : %s' % (str(book_id), 'Title Messed Up By Unicode Error'))
 
                     gr_list.append(book_id)
 
@@ -156,7 +162,6 @@ class grauth():
                     total_books += 1
 
                 logger.debug('Found %s books on page %s (total = %s)' % (page_books, current_page, total_books))
-                time.sleep(1)  # gr api restriction
                 if (page_books == 0):
                     break;
 
@@ -206,12 +211,15 @@ class grauth():
         return book_id, book_title
 
 
-    def addBookToList(self, book_id, shelf_name):
-        body = urllib.urlencode({'name': shelf_name, 'book_id': book_id})
+    def BookToList(self, book_id, shelf_name, action='add'):
+        if action == 'remove':
+            body = urllib.urlencode({'name': shelf_name, 'book_id': book_id, 'a': 'remove'})
+        else:
+            body = urllib.urlencode({'name': shelf_name, 'book_id': book_id})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         response, content = self.client.request('%s/shelf/add_to_shelf.xml' % self.url,'POST', body, headers)
 
-        if response['status'] != '201':
+        if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
             return False, msg
         return True, content
@@ -230,77 +238,133 @@ def test_auth():
     else:
         return "Failed, check the debug log"
 
+
+def sync_to_gr():
+    to_read_shelf, ll_wanted, moved = grsync('Wanted', 'to-read')
+    to_owned_shelf, ll_have, moved = grsync('Open', 'owned')
+    msg = "%s added to to-read shelf\n" % to_read_shelf
+    msg += "%s added to owned shelf\n" % to_owned_shelf
+    msg += "%s moved to owned shelf\n" % moved
+    msg += "%s marked Wanted\n" % ll_wanted
+    msg += "%s marked Have" % ll_have
+    return msg
+
 def grsync(status, shelf):
+    try:
+        logger.debug('Syncing %s to %s shelf' % (status, shelf))
+        myDB = database.DBConnection()
+        cmd = 'select bookid from books where status="%s"' % status
+        if status == 'Open':
+            cmd += ' or status="Have"'
+        results = myDB.select(cmd)
+        ll_list = []
+        for terms in results:
+            ll_list.append(terms['bookid'])
 
-    lazylibrarian.DBFILE = '/home/phil/.lazylibrarian/lazylibrarian.db'
-    myDB = database.DBConnection()
-    cmd = 'select bookid from books where status="%s"' % status
-    if status == 'Open':
-        cmd += ' or status="Have"'
-    results = myDB.select(cmd)
-    ll_list = []
-    for terms in results:
-        ll_list.append(terms['bookid'])
+        GA = grauth()
+        GR = None
+        gr_shelf = GA.get_gr_shelf(shelf=shelf)
+        dstatus = status
+        if dstatus == "Open":
+            dstatus += "/Have"
 
-    GA = grauth()
-    gr_shelf = GA.get_gr_shelf(shelf=shelf)
-    dstatus = status
-    if dstatus == "Open":
-        dstatus += "/Have"
+        logger.debug("There are %s %s books, %s books on goodreads %s shelf" %
+                     (len(ll_list), dstatus, len(gr_shelf), shelf))
+        #print ll_list
+        #print gr_shelf
 
-    logger.debug("There are %s %s books, %s books on goodreads %s shelf" %
-                 (len(ll_list), dstatus, len(gr_shelf), shelf))
-    #print ll_list
-    #print gr_shelf
+        not_on_shelf = []
+        not_in_ll = []
+        for book in ll_list:
+            if book not in gr_shelf:
+                not_on_shelf.append(book)
+        for book in gr_shelf:
+            if book not in ll_list:
+                not_in_ll.append(book)
 
-    not_on_shelf = []
-    not_in_ll = []
-    for book in ll_list:
-        if book not in gr_shelf:
-            not_on_shelf.append(book)
-    for book in gr_shelf:
-        if book not in ll_list:
-            not_in_ll.append(book)
+        to_shelf = 0
+        to_ll = 0
+        moved = 0
+        # these need adding to shelf
+        if not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
+            logger.debug('Not connected to goodreads')
+        else:
+            for book in not_on_shelf:
+                #print "%s is not on shelf" % book
+                time_now = int(time.time())
+                if time_now <= lazylibrarian.LAST_GOODREADS:
+                    time.sleep(1)
+                    lazylibrarian.LAST_GOODREADS = time_now
+                try:
+                    res, content = GA.BookToList(book, shelf)
+                except Exception as e:
+                    logger.debug("Error in BookToList: %s" % str(e))
+                    res = None
 
-    #print not_in_ll
-    #print not_on_shelf
-    to_shelf = 0
-    to_ll = 0
-    # these need adding to shelf
-    if not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-        logger.debug('Not connected to goodreads')
-    else:
-        for book in not_on_shelf:
-            #print "%s is not on shelf" % book
-            res, content = GA.addBookToList(book, shelf)
-            if res:
-                logger.debug("%s added to %s shelf" % (book, shelf))
-                to_shelf += 1
-                #print content
-            else:
-                logger.debug("Failed to add %s to %s shelf" % (book, shelf))
-                #print content
-            time.sleep(1)
+                if res:
+                    logger.debug("%10s added to %s shelf" % (book, shelf))
+                    to_shelf += 1
+                    #print content
+                else:
+                    logger.debug("Failed to add %s to %s shelf" % (book, shelf))
+                    #print content
 
-    # "to-read" books need adding to lazylibrarian as "wanted",
-    # "owned" need adding as "Have" as librarysync will pick up "Open" ones
+        # "to-read" books need adding to lazylibrarian as "wanted" if not already Open/Have,
+        # if they are already Open/Have, remove from goodreads to-read shelf, add to owned shelf
+        # "owned" need adding as "Have" as librarysync will pick up "Open" ones or change Have to Open
 
-    for book in not_in_ll:
-        #print "%s is not marked %s" % (book, status)
-        cmd = 'select Status from books where bookid="%s"' % book
-        result = myDB.match(cmd)
-        if result:
-            if result['Status'] in ['Have', 'Open']:  # don't change status if we have it
-                logger.debug("%s is already marked %s" % (book, result['Status']))
-            elif shelf == 'owned':
-                myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
-            else:
-                myDB.action('UPDATE books SET Status=? WHERE BookID=?', (status, book))
-        else:  # add book to database
-            GR = GoodReads(book)
-            GR.find_book(book)
-            to_ll += 1
-    return to_shelf, to_ll
+        for book in not_in_ll:
+            #print "%s is not marked %s" % (book, status)
+            cmd = 'select Status from books where bookid="%s"' % book
+            result = myDB.match(cmd)
+            if result:
+                if result['Status'] in ['Have', 'Open']:  # don't change status if we have it
+                    if shelf == 'to-read':
+
+                        time_now = int(time.time())
+                        if time_now <= lazylibrarian.LAST_GOODREADS:
+                            time.sleep(1)
+                            lazylibrarian.LAST_GOODREADS = time_now
+                        # need to move it from to-read shelf to owned shelf
+                        res, content = GA.BookToList(book, 'to-read', 'remove')
+                        if res:
+                            logger.debug("%10s removed from to-read shelf" % book)
+                            #print content
+                        else:
+                            logger.debug("Failed to remove %s from to-read shelf" % book)
+                            #print content
+
+                        time_now = int(time.time())
+                        if time_now <= lazylibrarian.LAST_GOODREADS:
+                            time.sleep(1)
+                            lazylibrarian.LAST_GOODREADS = time_now
+                        res, content = GA.BookToList(book, 'owned', 'add')
+                        if res:
+                            logger.debug("%10s added to owned shelf" % book)
+                            moved += 1
+                            #print content
+                        else:
+                            logger.debug("Failed to add %s to owned shelf" % book)
+                            #print content
+                    else:
+                        logger.debug("%10s is already marked %s" % (book, result['Status']))
+                elif shelf == 'owned':
+                    myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
+                else:
+                    myDB.action('UPDATE books SET Status=? WHERE BookID=?', (status, book))
+            else:  # add book to database as wanted
+                logger.debug('Adding new book %s to database' % book)
+                if not GR:
+                    GR = GoodReads(book)
+                GR.find_book(book)
+                to_ll += 1
+
+        logger.debug('Sync %s to %s shelf complete' % (status, shelf))
+        return to_shelf, to_ll, moved
+
+    except Exception:
+        logger.error('Unhandled exception in grsync: %s' % traceback.format_exc())
+        return 0,0,0
 
 if __name__ == '__main__':
   test_auth()

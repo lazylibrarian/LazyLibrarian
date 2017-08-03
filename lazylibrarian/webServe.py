@@ -2184,6 +2184,15 @@ class WebInterface(object):
         return result
 
     @cherrypy.expose
+    def syncToGoodreads(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        self.label_thread('GRSync')
+        msg = grsync.sync_to_gr()
+        logger.debug(msg)
+        return msg
+
+
+    @cherrypy.expose
     def testGRAuth(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return grsync.test_auth()
