@@ -26,6 +26,7 @@ import sys
 import threading
 import time
 import webbrowser
+import requests
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
@@ -85,9 +86,9 @@ MAG_UPDATE = 0
 EBOOK_UPDATE = 0
 AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
-LOGGED_IN = 0
-PERMISSIONS = 65535
 LOGIN_MSG = ''
+SESSION_USER = 0
+SESSION_PERMS = 0
 
 # Shared dictionaries
 isbn_979_dict = {
@@ -121,13 +122,15 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                 'WALL_COLUMNS']
+                 'WALL_COLUMNS', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET']
+# default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
-                     'USER_ACCOUNTS']
+                     'USER_ACCOUNTS', 'ADMIN_EMAIL', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
+    'ADMIN_EMAIL': ('str', 'General', ''),
     'LOGDIR': ('str', 'General', ''),
     'LOGLIMIT': ('int', 'General', 500),
     'LOGFILES': ('int', 'General', 10),
@@ -378,6 +381,10 @@ CONFIG_DEFINITIONS = {
     'EMAIL_SMTP_PASSWORD': ('str', 'Email', ''),
     'BOOK_API': ('str', 'API', 'GoodReads'),
     'GR_API': ('str', 'API', 'ckvsiSDsuqh7omh74ZZ6Q'),
+    'GR_SYNC': ('bool', 'API', 0),
+    'GR_SECRET': ('str', 'API', ''),  # tied to users own api key
+    'GR_OAUTH_TOKEN': ('str', 'API', ''),  # gives access to users bookshelves
+    'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
     'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own
 }
 
@@ -444,7 +451,8 @@ def initialize():
         CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGTOGGLE, \
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
-        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE
+        AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE, \
+        SESSION_USER, SESSION_PERMS
 
     with INIT_LOCK:
 
