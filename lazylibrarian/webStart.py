@@ -17,7 +17,6 @@ import os
 import sys
 
 import cherrypy
-import requests
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
