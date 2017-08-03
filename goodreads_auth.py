@@ -8,9 +8,9 @@
 # write down token!
 #
 import sys
-import lib.oauth2 as oauth
-import urllib
 import urlparse
+
+import lib.oauth2 as oauth
 
 if len(sys.argv) !=3:
     print "Usage: goodreads_auth your_key your_secret"

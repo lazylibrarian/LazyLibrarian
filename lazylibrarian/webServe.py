@@ -2191,6 +2191,12 @@ class WebInterface(object):
         logger.info(msg.replace('\n', ', '))
         return msg
 
+    @cherrypy.expose
+    def grauthStep1(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        GA = grsync.grauth()
+        res = GA.goodreads_oauth1()
+        return res
 
     @cherrypy.expose
     def testGRAuth(self):

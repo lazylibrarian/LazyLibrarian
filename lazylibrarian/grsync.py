@@ -27,7 +27,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
 
-class grauth():
+class grauth:
 
     def __init__(self):
         self.key = lazylibrarian.CONFIG['GR_API']
@@ -40,6 +40,7 @@ class grauth():
         self.token = None
         self.user_id = None
         self.oauth = None
+        self.request_token = None
 
 
     def goodreads_oauth1(self):
@@ -51,42 +52,43 @@ class grauth():
         if self.oauth_token and self.oauth_secret:
             return "Already authorised"
 
-        request_token_url = u'%s/oauth/request_token' % self.url
+        request_token_url = '%s/oauth/request_token' % self.url
         authorize_url = '%s/oauth/authorize' % self.url
-        access_token_url = '%s/oauth/access_token' % self.url
+        # access_token_url = '%s/oauth/access_token' % self.url
 
-        consumer = oauth.Consumer(key=self.key, secret=self.secret)
+        consumer = oauth.Consumer(key=str(self.key), secret=str(self.secret))
 
         client = oauth.Client(consumer)
 
         try:
             response, content = client.request(request_token_url, 'GET')
         except Exception as e:
-            return str(e)
+            return "Exception in client.request: %s" % str(e)
 
         if response['status'] != '200':
             return 'Invalid response from: %s' % request_token_url
 
-        request_token = dict(urlparse.parse_qsl(content))
+        self.request_token = dict(urlparse.parse_qsl(content))
 
-        authorize_link = '%s?oauth_token=%s' % (authorize_url, request_token['oauth_token'])
+        authorize_link = '%s?oauth_token=%s' % (authorize_url, self.request_token['oauth_token'])
         return authorize_link
 
     def goodreads_oauth2(self):
-        token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+        self.token = oauth.Token(self.request_token['oauth_token'], self.request_token['oauth_token_secret'])
+        access_token_url = '%s/oauth/access_token' % self.url
 
-        client = oauth.Client(consumer, token)
+        client = oauth.Client(self.consumer, self.token)
         response, content = client.request(access_token_url, 'POST')
         if response['status'] != '200':
             raise Exception('Invalid response: %s' % response['status'])
 
         access_token = dict(urlparse.parse_qsl(content))
 
-        self.oauth_token = oauth_token
-        self.oauth_secret = oauth_secret
-        return {'gr_oauth_token': oauth_token, 'gr_oauth_secret': oauth_secret}
-        #lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = oauth_token
-        #lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = oauth_secret
+        self.oauth_token = access_token['oauth_token']
+        self.oauth_secret = access_token['oauth_token_secret']
+        return {'gr_oauth_token': self.oauth_token, 'gr_oauth_secret': self.oauth_secret}
+        #lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = self.oauth_token
+        #lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = self.oauth_secret
         #lazylibrarian.config_write()
 
 
@@ -154,7 +156,7 @@ class grauth():
                         try:
                             logger.debug('Book %10s : %s' % (str(book_id), book_title))
                         except UnicodeEncodeError:
-                            loger.debug('Book %10s : %s' % (str(book_id), 'Title Messed Up By Unicode Error'))
+                            logger.debug('Book %10s : %s' % (str(book_id), 'Title Messed Up By Unicode Error'))
 
                     gr_list.append(book_id)
 
@@ -162,8 +164,8 @@ class grauth():
                     total_books += 1
 
                 logger.debug('Found %s books on page %s (total = %s)' % (page_books, current_page, total_books))
-                if (page_books == 0):
-                    break;
+                if page_books == 0:
+                    break
 
             logger.debug('Found %s' % total_books)
             return gr_list
@@ -205,7 +207,8 @@ class grauth():
     #
     # grab id and title from a <book> node
     #
-    def getBookInfo(self, book):
+    @staticmethod
+    def getBookInfo(book):
         book_id = book.getElementsByTagName('id')[0].firstChild.nodeValue
         book_title = book.getElementsByTagName('title')[0].firstChild.nodeValue
         return book_id, book_title
