@@ -26,7 +26,6 @@ import sys
 import threading
 import time
 import webbrowser
-import requests
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
