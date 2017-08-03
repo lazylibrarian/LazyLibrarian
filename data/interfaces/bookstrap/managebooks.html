@@ -11,6 +11,7 @@
           <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
           <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv"><i class="fa fa-download"></i> Import CSV Wishlist</button>
           <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv"><i class="fa fa-upload"></i> Export CSV Wishlist</button>
+          <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads"><i class="fa fa-upload"></i> Goodreads Sync</button>
         </div>
         <div class="clearfix visible-xs"><hr/></div>
         <div class="col-xs-12 col-md-4">
@@ -91,6 +92,21 @@
             $.get('exportCSV', function(data) {
                 bootbox.dialog({
                     title: 'CSV Export Result',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+            });
+        });
+
+        $('#synctogoodreads').on('click', function(e) {
+            $.get('syncToGoodreads', function(data) {
+                bootbox.dialog({
+                    title: 'Goodreads Sync Result',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
                         primary: {
