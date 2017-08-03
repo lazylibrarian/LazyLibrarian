@@ -2188,7 +2188,7 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         self.label_thread('GRSync')
         msg = grsync.sync_to_gr()
-        logger.debug(msg)
+        logger.info(msg.replace('\n', ', '))
         return msg
 
 
