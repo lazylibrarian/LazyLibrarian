@@ -28,7 +28,7 @@ import lazylibrarian
 import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
-    qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology
+    qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
@@ -2182,6 +2182,12 @@ class WebInterface(object):
         if result == '':
             result = 'No downloads'
         return result
+
+    @cherrypy.expose
+    def testGRAuth(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        return grsync.test_auth()
+
 
     # NOTIFIERS #########################################################
 

@@ -64,11 +64,11 @@
 </div>
 <div class="checkbox">
   <%
-                                                if lazylibrarian.CONFIG['HTTPS_ENABLED'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+    if lazylibrarian.CONFIG['HTTPS_ENABLED'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
   <label for="https_enabled" class="control-label">
     <input type="checkbox" id="https_enabled" name="https_enabled" value="1" ${checked} />
     Enable https access to lazylibrarian</label>
@@ -102,11 +102,11 @@
   <select name="displaylength" id="displaylength" class="form-control">
     %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
     <%
-                                                        if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
-                                                            selected = 'selected="selected"'
-                                                        else:
-                                                            selected = ''
-                                                    %>
+        if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
+            selected = 'selected="selected"'
+        else:
+            selected = ''
+    %>
     <option value="${displaylength}" ${selected}>${displaylength}</option>
     %endfor
   </select>
@@ -131,34 +131,45 @@
   <fieldset>
     <legend>Access Control</legend>
     <div class="form-group">
-      <label for="http_user">Username:</label>
+      <label for="http_user">WebServer Username:</label>
       <input type="text" id="http_user" name="http_user" value="${lazylibrarian.CONFIG['HTTP_USER']}" class="form-control" placeholder="Username">
     </div>
     <div class="form-group">
-      <label for="http_pass" class="control-label">Password:</label>
+      <label for="http_pass" class="control-label">Webserver Password:</label>
       <input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" class="form-control" placeholder="Password">
+    </div>
+    <div class="checkbox">
+      <%
+        if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
+      <label for="user_accounts" class="control-label">
+        <input type="checkbox" id="user_accounts" name="user_accounts" value="1" ${checked} />
+        Enable client accounts</label>
     </div>
   </fieldset>
   <fieldset>
     <legend>Startup</legend>
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['LAUNCH_BROWSER'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['LAUNCH_BROWSER'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="launch_browser" class="control-label">
         <input type="checkbox" id="launch_browser" name="launch_browser" value="1" ${checked} />
         Launch browser</label>
     </div>
     <div class="checkbox">
       <%
-                                            if lazylibrarian.CONFIG['API_ENABLED'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['API_ENABLED'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="api_enabled" "title="Allow remote applications to interface with LazyLibrarian">
         <input type="checkbox" id="api_enabled" name="api_enabled" value="1" ${checked} />
         Enable API</label>
@@ -178,33 +189,33 @@
 
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="author_img" class="control-label">
         <input type="checkbox" id="author_img" name="author_img" value="1" ${checked} />
         Show Author Images</label>
     </div>
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['BOOK_IMG'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="book_img" class="control-label">
         <input type="checkbox" id="book_img" name="book_img" value="1" ${checked} />
         Show Book Images</label>
     </div>
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['MAG_IMG'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['MAG_IMG'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="mag_img" class="control-label">
         <input type="checkbox" id="mag_img" name="mag_img" value="1" ${checked} />
         Show Magazine Images</label>
@@ -212,44 +223,44 @@
 
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['SERIES_TAB'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['SERIES_TAB'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="series_tab" class="control-label">
         <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
         Show Series</label>
     </div>
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['MAG_TAB'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['MAG_TAB'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="mag_tab" class="control-label">
         <input type="checkbox" id="mag_tab" name="mag_tab" value="1" ${checked} />
         Show Magazines</label>
     </div>
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['AUDIO_TAB'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['AUDIO_TAB'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="audio_tab" class="control-label">
         <input type="checkbox" id="audio_tab" name="audio_tab" value="1" ${checked} />
         Show AudioBooks</label>
     </div>
     <div class="checkbox">
       <%
-                                                if lazylibrarian.CONFIG['TOGGLES'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                            %>
+        if lazylibrarian.CONFIG['TOGGLES'] == True:
+            checked = 'checked="checked"'
+        else:
+            checked = ''
+      %>
       <label for="toggles" class="control-label">
         <input type="checkbox" id="toggles" name="toggles" value="1" ${checked} />
         Show column toggles</label>
@@ -259,11 +270,11 @@
       <select id="http_look" name="http_look" class="form-control">
         %for http_look in config['http_look_list']:
         <%
-                                                if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
-                                                    selected = 'selected="selected"'
-                                                else:
-                                                    selected = ''
-                                            %>
+        if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
+            selected = 'selected="selected"'
+        else:
+            selected = ''
+    %>
         <option value="${http_look}" ${selected}>${http_look}</option>
         %endfor
       </select>
@@ -303,16 +314,16 @@
           <legend>Book API</legend>
           <div class="form-group">
             <%
-                                                if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                                                    gr_selected = 'selected="selected"'
-                                                else:
-                                                    gr_selected = ''
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                gr_selected = 'selected="selected"'
+            else:
+                gr_selected = ''
 
-                                                if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-                                                    gb_selected = 'selected="selected"'
-                                                else:
-                                                    gb_selected = ''
-                                            %>
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+                gb_selected = 'selected="selected"'
+            else:
+                gb_selected = ''
+            %>
             <label for="book_api" class="control-label">Book Search API</label>
             <select id="book_api" name="book_api" class="form-control">
               <option value = "GoodReads" ${gr_selected}>GoodReads</option>
@@ -322,6 +333,31 @@
           <div class="form-group">
             <label for="gr_api">Goodreads API:</label>
             <input type="text" id="gr_api" name="gr_api" value="${lazylibrarian.CONFIG['GR_API']}" class="form-control" placeholder="Goodreads API">
+            <div class="checkbox">
+              <%
+                if lazylibrarian.CONFIG['GR_SYNC'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <label for="gr_sync" class="control-label">
+                <input type="checkbox" id="gr_sync" name="gr_sync" value="1" ${checked} />
+                Enable GoodReads Sync</label>
+            </div>
+            <fieldset id="grsync_options">
+              <label for="gr_secret">Goodreads Secret:</label>
+              <input type="text" id="gr_secret" name="gr_secret" value="${lazylibrarian.CONFIG['GR_SECRET']}" class="form-control">
+                <!--div class="form-group">
+                  <input type="button" value="Request Authorization" id="grauthStep1" class="btn btn-default" />
+                </div-->
+              <label for="gr_api">Goodreads OAuth Token:</label>
+              <input type="text" id="gr_oauth_token" name="gr_oauth_token" value="${lazylibrarian.CONFIG['GR_OAUTH_TOKEN']}" class="form-control">
+              <label for="gr_secret">Goodreads OAuth Secret:</label>
+              <input type="text" id="gr_oauth_secret" name="gr_oauth_secret" value="${lazylibrarian.CONFIG['GR_OAUTH_SECRET']}" class="form-control">
+                <div class="form-group">
+                  <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
+                </div>
+            </fieldset>
           </div>
           <div class="form-group">
             <label for="gb_api" class="control-label">GoogleBooks API:</label>
@@ -329,11 +365,11 @@
           </div>
           <div class="checkbox">
             <%
-                                            if lazylibrarian.CONFIG['NO_FUTURE'] == True:
-                                                checked = 'checked="checked"'
-                                            else:
-                                                checked = ''
-                                            %>
+            if lazylibrarian.CONFIG['NO_FUTURE'] == True:
+                checked = 'checked="checked"'
+            else:
+                checked = ''
+            %>
             <label for="no_future">
               <input type="checkbox" id="no_future" name="no_future" value="1" ${checked} />
               Ignore books with future publication date</label>
@@ -391,11 +427,11 @@
           <fieldset class="usenet_options">
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
               <label for="nzb_downloader_sabnzbd" class="control-label">
                 <input type="checkbox" id="nzb_downloader_sabnzbd" name="nzb_downloader_sabnzbd" value="1" ${checked} />
                 Use Sabnzbd+</label>
@@ -434,10 +470,6 @@
                 <label for="sab_subdir" class="control-label">SABnzbd SubDir:</label>
                 <input type="text" id="sab_subdir" name="sab_subdir" value="${lazylibrarian.CONFIG['SAB_SUBDIR']}" class="form-control" placeholder="SABnzbd Sub Dir">
               </div>
-              <div class="form-group">
-                <label for="usenet_retention" class="control-label">Retention Max Age:</label>
-                <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention Maximum Age">
-              </div>
               <div class="form-group col-md-6">
                 <label for="testSABnzbd" class="control-label">SABnzbd Connection:</label><br>
                 <button class="button btn btn-sm btn-primary" type="button" value="Test SABnzbd" id="testSABnzbd"><i class="fa fa-list-ul"></i> Test SABnzbd</button>
@@ -447,11 +479,11 @@
             </fieldset>
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
               <label for="nzb_downloader_nzbget" class="control-label">
                 <input type="checkbox" id="nzb_downloader_nzbget" name="nzb_downloader_nzbget" value="1" ${checked} />
                 Use NZBGet</label>
@@ -493,11 +525,11 @@
             </fieldset>
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['USE_SYNOLOGY'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['USE_SYNOLOGY'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
               <label for="use_synology" class="control-label">
                 <input type="checkbox" id="use_synology" name="use_synology" value="1" ${checked} />
                 Use Synology DownloadStation</label>
@@ -528,22 +560,22 @@
               </div>
               <div class="checkbox">
                 <%
-                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
                 <label for="nzb_downloader_synology" class="control-label">
                   <input type="checkbox" id="nzb_downloader_synology" name="nzb_downloader_synology" value="1" ${checked} />
                   Use DownloadStation for usenet</label>
               </div>
               <div class="checkbox">
                 <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
                 <label for="tor_downloader_synology" class="control-label">
                   <input type="checkbox" id="tor_downloader_synology" name="tor_downloader_synology" value="1" ${checked} />
                   Use DownloadStation for torrents</label>
@@ -557,11 +589,11 @@
             </fieldset>
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="nzb_downloader_blackhole" class="control-label">
                 <input type="checkbox" id="nzb_downloader_blackhole" name="nzb_downloader_blackhole" value="1" ${checked} />
                 Use NZB Blackhole</label>
@@ -573,6 +605,10 @@
                 <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" class="form-control" placeholder="NZB Blackhole Directory">
               </div>
             </fieldset>
+              <div class="form-group">
+                <label for="usenet_retention" class="control-label">Retention Max Age:</label>
+                <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention Maximum Age">
+              </div>
           </fieldset>
         </fieldset>
       </div>
@@ -582,11 +618,11 @@
           <fieldset id="torrent_options">
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_DELUGE'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['TOR_DOWNLOADER_DELUGE'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="tor_downloader_deluge" class="control-label">
                 <input type="checkbox" id="tor_downloader_deluge" name="tor_downloader_deluge" value="1" ${checked} />
                 Use Deluge</label>
@@ -626,11 +662,11 @@
             </fieldset>
             <div class="checkbox">
               <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
               <label for="tor_downloader_transmission" class="control-label">
                 <input type="checkbox" id="tor_downloader_transmission" name="tor_downloader_transmission" value="1" ${checked} />
                 Use Transmission</label>
@@ -709,11 +745,11 @@
                 </fieldset>
                 <div class="checkbox">
                   <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
                   <label for="tor_downloader_utorrent" class="control-label">
                     <input type="checkbox" id="tor_downloader_utorrent" name="tor_downloader_utorrent" value="1" ${checked} />
                     Use uTorrent</label>
@@ -793,11 +829,11 @@
                 </fieldset>
                 <div class="checkbox">
                   <%
-                                                if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE'] == True:
-                                                    checked = 'checked="checked"'
-                                                else:
-                                                    checked = ''
-                                                %>
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
                   <label for="tor_downloader_blackhole" class="control-label">
                     <input type="checkbox" id="tor_downloader_blackhole" name="tor_downloader_blackhole" value="1" ${checked} />
                     Use Torrent Blackhole</label>
@@ -810,11 +846,11 @@
                   </div>
                   <div class="checkbox">
                     <%
-                                                    if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] == True:
-                                                        checked = 'checked="checked"'
-                                                    else:
-                                                        checked = ''
-                                                    %>
+                      if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] == True:
+                          checked = 'checked="checked"'
+                      else:
+                          checked = ''
+                    %>
                     <label for="tor_convert_magnet" class="control-label">
                       <input type="checkbox" id="tor_convert_magnet" name="tor_convert_magnet" value="1" ${checked} />
                       Convert magnet links into torrent files</label>
@@ -822,11 +858,11 @@
                 </fieldset>
                   <div class="checkbox">
                     <%
-                                                    if lazylibrarian.CONFIG['PREFER_MAGNET'] == True:
-                                                        checked = 'checked="checked"'
-                                                    else:
-                                                        checked = ''
-                                                    %>
+                    if lazylibrarian.CONFIG['PREFER_MAGNET'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                     <label for="prefer_magnet" class="control-label">
                       <input type="checkbox" id="prefer_magnet" name="prefer_magnet" value="1" ${checked} />
                       Prefer magnet links to torrent files</label>
@@ -838,11 +874,11 @@
                 </div>
                 <div class="checkbox">
                   <%
-                                                    if lazylibrarian.CONFIG['KEEP_SEEDING'] == True:
-                                                        checked = 'checked="checked"'
-                                                    else:
-                                                        checked = ''
-                                                    %>
+                    if lazylibrarian.CONFIG['KEEP_SEEDING'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
                   <label for="keep_seeding" class="control-label">
                     <input type="checkbox" id="keep_seeding" name="keep_seeding" value="1" ${checked} />
                     Keep seeding after processing</label>
@@ -1174,7 +1210,8 @@
               <div class="form-group">
                 <label for="alternate_dir" class="control-label">Alternate Import/Export Folder:</label>
                 <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" class="form-control" placeholder="Alternate Directory">
-                <span class="help-block">Directory for wishlists and manually importing books</span>
+                <span class="help-block">Directory for wishlists and manually importing books<br>
+                <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span>
               </div>
               <div class="form-group">
                 <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
@@ -2277,6 +2314,25 @@
     {
         "use strict";
 
+        if ($("#gr_sync").is(":checked"))
+            {
+                    $("#grsync_options").show();
+            }
+        else
+            {
+                    $("#grsync_options").hide();
+            }
+        $("#gr_sync").click(function(){
+                if ($("#gr_sync").is(":checked"))
+                {
+                        $("#grsync_options").slideDown();
+                }
+                else
+                {
+                        $("#grsync_options").slideUp();
+                }
+        });
+
         if ($("#https_enabled").is(":checked"))
             {
                     $("#https_options").show();
@@ -2988,6 +3044,16 @@
                 {
                         $("#emailoptions").slideUp();
                 }
+        });
+
+        $('#testgrauth').click(function () {
+            $.get("testGRAuth", {},
+                function (data) { window.alert(data) });
+        });
+
+        $('#grauthStep1').click(function () {
+            $.get("grauthStep1", {},
+                function (data) { window.alert(data) });
         });
 
 
