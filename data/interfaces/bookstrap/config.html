@@ -138,7 +138,7 @@
       <label for="http_pass" class="control-label">Webserver Password:</label>
       <input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" class="form-control" placeholder="Password">
     </div>
-    <div class="checkbox">
+    <!--div class="checkbox">
       <%
         if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
             checked = 'checked="checked"'
@@ -148,7 +148,7 @@
       <label for="user_accounts" class="control-label">
         <input type="checkbox" id="user_accounts" name="user_accounts" value="1" ${checked} />
         Enable client accounts</label>
-    </div>
+    </div-->
   </fieldset>
   <fieldset>
     <legend>Startup</legend>
@@ -350,9 +350,9 @@
                 <!--div class="form-group">
                   <input type="button" value="Request Authorization" id="grauthStep1" class="btn btn-default" />
                 </div-->
-              <label for="gr_api">Goodreads OAuth Token:</label>
+              <label for="gr_oauth_token">Goodreads OAuth Token:</label>
               <input type="text" id="gr_oauth_token" name="gr_oauth_token" value="${lazylibrarian.CONFIG['GR_OAUTH_TOKEN']}" class="form-control">
-              <label for="gr_secret">Goodreads OAuth Secret:</label>
+              <label for="gr_oauth_secret">Goodreads OAuth Secret:</label>
               <input type="text" id="gr_oauth_secret" name="gr_oauth_secret" value="${lazylibrarian.CONFIG['GR_OAUTH_SECRET']}" class="form-control">
                 <div class="form-group">
                   <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
@@ -3047,13 +3047,19 @@
         });
 
         $('#testgrauth').click(function () {
-            $.get("testGRAuth", {},
+            var gr_api = $.trim($("#gr_api").val());
+            var gr_secret = $.trim($("#gr_secret").val());
+            var oauth_token = $.trim($("#gr_oauth_token").val());
+            var oauth_secret = $.trim($("#gr_oauth_secret").val());
+            $.get("testGRAuth", {'gr_api': gr_api, 'gr_secret': gr_secret, 'oauth_token': oauth_token, 'oauth_secret': oauth_secret},
                 function (data) { window.alert(data) });
         });
 
         $('#grauthStep1').click(function () {
-            $.get("grauthStep1", {},
-                function (data) { window.alert(data) });
+            $('#grauth-result').html('');
+            $.get("grauthStep1", {}, function (data) { window.open(data); })
+                .done(function () { $('#grauth-result').html('<b>Step1:</b> Confirm Authorization'); });
+            alert($('#grauth-result').html(''))
         });
 
 
