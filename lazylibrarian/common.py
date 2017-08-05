@@ -38,6 +38,7 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
+# noinspection PyShadowingNames
 def error_page_401(status, message, traceback, version):
     """ Custom handler for 401 error """
     title = 'Access denied'
@@ -477,7 +478,7 @@ def saveLog():
 
 def cleanCache():
     """ Remove unused files from the cache - delete if expired or unused.
-        Check JSONCache  WorkCache  XMLCache  SeriesCache Author  Book
+        Check JSONCache  WorkCache  XMLCache  SeriesCache Author  Book  Magazine
         Check covers and authorimages referenced in the database exist and change database entry if missing """
 
     myDB = database.DBConnection()
@@ -573,6 +574,25 @@ def cleanCache():
             else:
                 kept += 1
     msg = "Cleaned %i file%s from SeriesCache, kept %i" % (cleaned, plural(cleaned), kept)
+    result.append(msg)
+    logger.debug(msg)
+
+    cache = os.path.join(lazylibrarian.CACHEDIR, "magazine")
+    # ensure directory is unicode so we get unicode results from listdir
+    if isinstance(cache, str):
+        cache = cache.decode(lazylibrarian.SYS_ENCODING)
+    cleaned = 0
+    kept = 0
+    if os.path.isdir(cache):
+        # we can clear the magazine cache, it gets rebuilt as required
+        for cached_file in os.listdir(cache):
+            target = os.path.join(cache, cached_file)
+            if target.endswith('.jpg'):
+                os.remove(target)
+                cleaned += 1
+            else:
+                kept += 1
+    msg = "Cleaned %i file%s from magazine cache, kept %i" % (cleaned, plural(cleaned), kept)
     result.append(msg)
     logger.debug(msg)
 

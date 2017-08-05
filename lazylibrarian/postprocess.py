@@ -1052,6 +1052,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             # calibre does not like quotes in author names
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')
+            if calibre_dir.endswith('.'):  # calibre replaces trailing dot with underscore eg Jr. becomes Jr_
+                calibre_dir = calibre_dir[:-1] + '_'
             if os.path.isdir(calibre_dir):  # assumed author directory
                 target_dir = os.path.join(calibre_dir, '%s (%s)' % (unaccented(bookname), calibre_id))
                 logger.debug('Calibre trying directory [%s]' % target_dir)

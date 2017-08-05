@@ -573,7 +573,7 @@ class GoogleBooks:
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
-                            cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE',
+                            cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
                             match = myDB.match(cmd, (bookname.replace('"', '""'), authorname.replace('"', '""')))
                             if match:
                                 if match['BookID'] != bookid:  # we have a different book with this author/title already
