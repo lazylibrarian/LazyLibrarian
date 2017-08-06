@@ -326,10 +326,6 @@
                   <input type="text" id="sab_subdir"  name="sab_subdir" value="${lazylibrarian.CONFIG['SAB_SUBDIR']}" size="26">
                 </div>
                 <div class="row">
-                  <label>Retention Max Age:</label>
-                  <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" size="26">
-                </div>
-                <div class="row">
                   <label>SABnzb Connection:</label>
                   <input type="button" value="Test SABnzbd" id="testSABnzbd" style="float:right;">
                 </div>
@@ -445,6 +441,10 @@
                   <label>NZB Blackhole Directory:</label>
                   <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" size="26">
                 </fieldset>
+                <div class="row">
+                  <label>Retention Max Age:</label>
+                  <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" size="26">
+                </div>
               </fieldset>
             </fieldset>
           </td>
@@ -916,7 +916,8 @@
             <label>Alternate Import/Export Folder:</label>
             <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" size="26">
             <BR>
-            <small>Directory for wishlists and manually importing books</small>
+            <small>Directory for wishlists and manually importing books<br>
+            <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span></small>
           </td>
         </tr>
         <tr>
