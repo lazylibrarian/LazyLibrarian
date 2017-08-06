@@ -49,8 +49,8 @@ class grauth:
         if not self.secret:
             return "Invalid or missing GR_SECRET"
 
-        if self.oauth_token and self.oauth_secret:
-            return "Already authorised"
+        #if self.oauth_token and self.oauth_secret:
+        #    return "Already authorised"
 
         request_token_url = '%s/oauth/request_token' % self.url
         authorize_url = '%s/oauth/authorize' % self.url
@@ -100,11 +100,12 @@ class grauth:
         else:
             try:
                 if not self.consumer:
-                    self.consumer = oauth.Consumer(key='%s' % self.key, secret='%s' % self.secret)
+                    self.consumer = oauth.Consumer(key=str(self.key), secret=str(self.secret))
                 if not self.token:
                     self.token = oauth.Token(self.oauth_token, self.oauth_secret)
                 if not self.client:
                     self.client = oauth.Client(self.consumer, self.token)
+
                 self.user_id = self.getUserId()
                 return self.user_id
             except Exception as e:
@@ -124,7 +125,7 @@ class grauth:
             #         add book to list
             #
             if not self.consumer:
-                self.consumer = oauth.Consumer(key='%s' % self.key, secret='%s' % self.secret)
+                self.consumer = oauth.Consumer(key=str(self.key), secret=str(self.secret))
             if not self.token:
                 self.token = oauth.Token(self.oauth_token, self.oauth_secret)
             if not self.client:
