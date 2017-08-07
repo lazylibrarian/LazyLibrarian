@@ -31,7 +31,7 @@ class EmailNotifier:
         pass
 
     @staticmethod
-    def _notify(message, event, force=False, files=None):
+    def _notify(message, event, force=False, files=None, to_addr=None):
 
         # suppress notifications if the notifier is disabled but the notify options are checked
         if not lazylibrarian.CONFIG['USE_EMAIL'] and not force:
@@ -48,7 +48,10 @@ class EmailNotifier:
 
         message['Subject'] = subject
         message['From'] = formataddr(('LazyLibrarian', lazylibrarian.CONFIG['EMAIL_FROM']))
-        message['To'] = lazylibrarian.CONFIG['EMAIL_TO']
+        if to_addr:
+            message['To'] = to_addr
+        else:
+            message['To'] = lazylibrarian.CONFIG['EMAIL_TO']
         message['Date'] = formatdate(localtime=True)
 
         logger.debug('Email notification: %s' % message['Subject'])
@@ -98,6 +101,9 @@ class EmailNotifier:
             #
             # Public functions
             #
+
+    def notify_message(self, subject, message, to_addr):
+        return self._notify(message=message, event=subject, force=True, to_addr=to_addr)
 
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:
