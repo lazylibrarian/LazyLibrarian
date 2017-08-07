@@ -123,7 +123,8 @@ CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM',
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
-                     'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET']
+                     'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
+                     'GR_OWNED', 'GR_WANTED']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -382,6 +383,8 @@ CONFIG_DEFINITIONS = {
     'GR_SECRET': ('str', 'API', ''),  # tied to users own api key
     'GR_OAUTH_TOKEN': ('str', 'API', ''),  # gives access to users bookshelves
     'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
+    'GR_WANTED': ('str', 'API', 'to-read'),  # sync wanted to this shelf
+    'GR_OWNED': ('str', 'API', 'owned'),  # sync open/have to this shelf
     'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own
 }
 
