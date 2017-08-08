@@ -173,6 +173,7 @@ CONFIG_DEFINITIONS = {
     'IMP_AUTOADD_BOOKONLY': ('bool', 'General', 0),
     'IMP_AUTOSEARCH': ('bool', 'General', 0),
     'IMP_CALIBREDB': ('str', 'General', ''),
+    'CALIBRE_SERVER': ('str', 'General', ''),
     'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_CONVERT': ('str', 'General', ''),

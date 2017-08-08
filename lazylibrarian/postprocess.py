@@ -895,6 +895,20 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     if lazylibrarian.CONFIG['IMP_AUTOADD']:
         processAutoAdd(dest_path)
 
+def calibredb(cmd=None, prelib=None, postlib=None):
+    dest_dir = lazylibrarian.DIRECTORY('eBook')
+    dest_url = lazylibrarian.CONFIG('CALIBRE_SERVER')
+    if not dest_url or not dest_url.startswith('http'):
+        dest_url = dest_dir
+    params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
+    if prelib:
+        params.extend(prelib)
+    params.extend(['--with-library', dest_url])
+    if postlib:
+        params.extend(postlib)
+    logger.debug(str(params))
+    return subprocess.check_output(params, stderr=subprocess.STDOUT)
+
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
                        booktype=None):
@@ -962,14 +976,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             else:
                 identifier = "google:%s" % bookid
 
-            params = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                      'add',
-                      '-1',
-                      '--with-library=%s' % dest_dir,
-                      pp_path
-                      ]
-            logger.debug(str(params))
-            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+            res = calibredb('add', '-1', pp_path)
             if not res:
                 return False, 'No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB']
 
@@ -994,58 +1001,23 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 else:
                     processIMG(pp_path, data['BookID'], data['BookImg'], global_name)
                     opfpath, our_opf = processOPF(pp_path, data, global_name, True)
-                    opfparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                 'set_metadata',
-                                 '--with-library',
-                                 dest_dir,
-                                 calibre_id,
-                                 opfpath
-                                ]
-                    logger.debug(str(opfparams))
-                    res = subprocess.check_output(opfparams, stderr=subprocess.STDOUT)
+                    res = calibredb('set_metadata', None, [calibre_id, opfpath])
                     if res:
                         logger.debug(
                             '%s set opf reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             if not our_opf:  # pre-existing opf might not have our preferred authorname/title/identifier
-                authorparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                'set_metadata',
-                                '--field',
-                                'authors:%s' % unaccented(authorname),
-                                '--with-library',
-                                dest_dir,
-                                calibre_id
-                                ]
-                logger.debug(str(authorparams))
-                res = subprocess.check_output(authorparams, stderr=subprocess.STDOUT)
+                res = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], calibre_id)
                 if res:
                     logger.debug(
                         '%s set author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                titleparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                               'set_metadata',
-                               '--field',
-                               'title:%s' % unaccented(bookname),
-                               '--with-library',
-                               dest_dir,
-                               calibre_id
-                               ]
-                logger.debug(str(titleparams))
-                res = subprocess.check_output(titleparams, stderr=subprocess.STDOUT)
+                res = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], calibre_id)
                 if res:
                     logger.debug(
                         '%s set title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                metaparams = [lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                              'set_metadata',
-                              '--field',
-                              'identifiers:%s' % identifier,
-                              '--with-library',
-                              dest_dir,
-                              calibre_id
-                              ]
-                logger.debug(str(metaparams))
-                res = subprocess.check_output(metaparams, stderr=subprocess.STDOUT)
+                res = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], calibre_id)
                 if res:
                     logger.debug(
                         '%s set identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))

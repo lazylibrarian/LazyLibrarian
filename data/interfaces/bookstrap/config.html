@@ -1255,6 +1255,11 @@
                 <span class="help-block">Path to "calibredb" to import books into the library</span>
               </div>
               <div class="form-group">
+                <label for="calibre_server">Calibre Server:</label>
+                <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" class="form-control" placeholder="eg http://my_calibre_server:9000">
+                <span class="help-block">Leave blank to use eBook Library Folder</span>
+              </div>
+              <div class="form-group">
                 <label for="imp_autoadd">Calibre Auto Add Directory:</label>
                 <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
                 <span class="help-block">Directory for a copy to be placed for auto add process</span>

@@ -35,7 +35,8 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
     dbUpdate, csv_file, saveLog
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, cleanName
+from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
+    cleanName, unaccented_str
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -45,6 +46,7 @@ from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.postprocess import calibredb
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -1288,6 +1290,25 @@ class WebInterface(object):
                                         rmtree(os.path.dirname(bookfile), ignore_errors=True)
                                         if bookfile == bookdata['BookFile']:
                                             logger.info(u'eBook %s deleted from disc' % bookname)
+                                            try:
+                                                calibreid = os.path.dirname(bookname)
+                                                if calibreid.endswith(')'):
+                                                    calibreid = calibreid.rsplit('(',1)[1].split(')')[0]
+                                                    if not calibreid or not calibreid.isdigit():
+                                                        calibreid = None
+                                                else:
+                                                    calibreid = None
+                                            except IndexError:
+                                                calibreid = None
+                                            if calibreid:
+                                                res = calibredb('remove', calibreid)
+                                                if not res:
+                                                    logger.debug('No response from %s' %
+                                                                 lazylibrarian.CONFIG['IMP_CALIBREDB'])
+                                                else:
+                                                    logger.debug('%s reports: %s' %
+                                                                (lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                                                                    unaccented_str(res)))
                                         if bookfile == bookdata['AudioFile']:
                                             logger.info(u'AudioBook %s deleted from disc' % bookname)
                                     except Exception as e:

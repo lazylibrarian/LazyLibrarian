@@ -907,7 +907,7 @@
         <tr>
           <td>
             <div>
-              <label>Book Library Folder:</label>
+              <label>eBook Library Folder:</label>
               <input type="text" id="ebook_dir" name="ebook_dir" value="${lazylibrarian.CONFIG['EBOOK_DIR']}" size="26">
             </div>
             <BR>
@@ -990,6 +990,10 @@
             <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
             <BR>
             <small>Path to "calibredb" to import books into the library</small>
+            <label>Calibre Server:</label>
+            <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" size="26">
+            <BR>
+            <small>Leave blank to use eBook Library Folder</small>
             <label>Calibre Auto Add Directory:</label>
             <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" size="26">
             <BR>
