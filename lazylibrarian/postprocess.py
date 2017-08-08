@@ -873,8 +873,8 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     if book_type != 'eBook':  # only do autoadd/img/opf for ebooks
         return
 
-    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-    cmd += 'BookLang,BookPub from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
+    cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
     data = myDB.match(cmd, (bookid,))
     if not data:
         logger.error('processExtras: No data found for bookid %s' % bookid)
@@ -888,7 +888,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     # do we want to create metadata - there may already be one in pp_path, but it was downloaded and might
     # not contain our choice of authorname/title/identifier, so we ignore it and write our own
     if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
-        _ = processOPF(dest_path, data, global_name, True)
+        _ = processOPF(dest_path, data, global_name, overwrite=True)
 
     # If you use auto add by Calibre you need the book in a single directory, not nested
     # So take the files you Copied/Moved to Dest_path and copy/move into Calibre auto add folder.
@@ -924,7 +924,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
-    match = False
+    match = ''
     if booktype == 'ebook' and lazylibrarian.CONFIG['ONE_FORMAT']:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for btype in booktype_list:
@@ -993,8 +993,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
                 # we can pass an opf with all the info, and a cover image
                 myDB = database.DBConnection()
-                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,'
-                cmd += 'BookLang,BookPub from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
+                cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
                 data = myDB.match(cmd, (bookid,))
                 if not data:
                     logger.error('processDestination: No data found for bookid %s' % bookid)
@@ -1243,7 +1243,7 @@ def processMAGOPF(issuefile, title, issue, issueID):
             'Series': title,
             'Series_index': issue
             }
-    _ = processOPF(dest_path, data, global_name, True)
+    _ = processOPF(dest_path, data, global_name, overwrite=True)
 
 def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
@@ -1252,20 +1252,24 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         logger.debug('%s already exists. Did not create one.' % opfpath)
         return opfpath, False
 
-    authorname = data['AuthorName']
     bookid = data['BookID']
-    bookname = data['BookName']
-    bookdesc = data['BookDesc']
-    bookisbn = data['BookIsbn']
-    # bookimg = data['BookImg']
-    bookdate = data['BookDate']
-    booklang = data['BookLang']
-    bookpub = data['BookPub']
-
     if bookid.isdigit():
         scheme = 'GOODREADS'
     else:
         scheme = 'GoogleBooks'
+
+    if 'Series_index' not in data:
+        myDB = database.DBConnection()
+        cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
+        res = myDB.match(cmd, (bookid,))
+        if res:
+            seriesid = res['SeriesID']
+            seriesnum = res['SeriesNum']
+            cmd = 'SELECT SeriesName from series WHERE seriesid=?'
+            res = myDB.match(cmd, (seriesid,))
+            if res:
+                data['Series'] = res['SeriesName']
+                data['Series_index'] = seriesnum
 
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
@@ -1273,19 +1277,19 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         <dc:title>%s</dc:title>\n\
         <creator>%s</creator>\n\
         <dc:language>%s</dc:language>\n\
-        <dc:identifier scheme="%s">%s</dc:identifier>\n' % (bookname, authorname, booklang, scheme, bookid)
+        <dc:identifier scheme="%s">%s</dc:identifier>\n' % (data['BookName'], data['AuthorName'], data['BookLang'], scheme, bookid)
 
-    if bookisbn:
-        opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % bookisbn
+    if 'BookIsbn' in data:
+        opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % data['BookIsbn']
 
-    if bookpub:
-        opfinfo += '        <dc:publisher>%s</dc:publisher>\n' % bookpub
+    if 'BookPub' in data:
+        opfinfo += '        <dc:publisher>%s</dc:publisher>\n' % data['BookPub']
 
-    if bookdate:
-        opfinfo += '        <dc:date>%s</dc:date>\n' % bookdate
+    if 'BookDate' in data:
+        opfinfo += '        <dc:date>%s</dc:date>\n' % data['BookDate']
 
-    if bookdesc:
-        opfinfo += '        <dc:description>%s</dc:description>\n' % bookdesc
+    if 'BookDesc' in data:
+        opfinfo += '        <dc:description>%s</dc:description>\n' % data['BookDesc']
 
     if 'Series' in data:
         opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % data['Series']
