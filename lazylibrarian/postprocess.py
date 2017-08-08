@@ -1258,6 +1258,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     else:
         scheme = 'GoogleBooks'
 
+    seriesname = seriesnum = ''
     if 'Series_index' not in data:
         myDB = database.DBConnection()
         cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
@@ -1268,8 +1269,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
             cmd = 'SELECT SeriesName from series WHERE seriesid=?'
             res = myDB.match(cmd, (seriesid,))
             if res:
-                data['Series'] = res['SeriesName']
-                data['Series_index'] = seriesnum
+                seriesname = res['SeriesName']
 
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
@@ -1291,10 +1291,14 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     if 'BookDesc' in data:
         opfinfo += '        <dc:description>%s</dc:description>\n' % data['BookDesc']
 
-    if 'Series' in data:
+    if seriesname:
+        opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % seriesname
+    elif 'Series' in data:
         opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % data['Series']
 
-    if 'Series_index' in data:
+    if seriesnum:
+        opfinfo += '        <meta content="%s" name="calibre:series_index"/>\n' % seriesnum
+    elif 'Series_index' in data:
         opfinfo += '        <meta content="%s" name="calibre:series_index"/>\n' % data['Series_index']
 
     opfinfo += '        <guide>\n\
