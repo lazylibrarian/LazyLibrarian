@@ -1291,7 +1291,7 @@ class WebInterface(object):
                                         if bookfile == bookdata['BookFile']:
                                             logger.info(u'eBook %s deleted from disc' % bookname)
                                             try:
-                                                calibreid = os.path.dirname(bookname)
+                                                calibreid = os.path.dirname(bookfile)
                                                 if calibreid.endswith(')'):
                                                     calibreid = calibreid.rsplit('(',1)[1].split(')')[0]
                                                     if not calibreid or not calibreid.isdigit():
@@ -1301,7 +1301,7 @@ class WebInterface(object):
                                             except IndexError:
                                                 calibreid = None
                                             if calibreid:
-                                                res = calibredb('remove', calibreid)
+                                                res = calibredb('remove', [calibreid])
                                                 if not res:
                                                     logger.debug('No response from %s' %
                                                                  lazylibrarian.CONFIG['IMP_CALIBREDB'])

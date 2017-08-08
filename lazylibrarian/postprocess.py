@@ -897,7 +897,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
 
 def calibredb(cmd=None, prelib=None, postlib=None):
     dest_dir = lazylibrarian.DIRECTORY('eBook')
-    dest_url = lazylibrarian.CONFIG('CALIBRE_SERVER')
+    dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
     if not dest_url or not dest_url.startswith('http'):
         dest_url = dest_dir
     params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
@@ -976,7 +976,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             else:
                 identifier = "google:%s" % bookid
 
-            res = calibredb('add', '-1', pp_path)
+            res = calibredb('add', ['-1'], [pp_path])
             if not res:
                 return False, 'No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB']
 
@@ -1007,17 +1007,17 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                             '%s set opf reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             if not our_opf:  # pre-existing opf might not have our preferred authorname/title/identifier
-                res = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], calibre_id)
+                res = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
                 if res:
                     logger.debug(
                         '%s set author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                res = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], calibre_id)
+                res = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], [calibre_id])
                 if res:
                     logger.debug(
                         '%s set title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                res = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], calibre_id)
+                res = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], [calibre_id])
                 if res:
                     logger.debug(
                         '%s set identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
