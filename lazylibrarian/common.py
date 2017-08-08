@@ -18,6 +18,7 @@ import os
 import sys
 import platform
 import string
+import random
 import shutil
 import threading
 import time
@@ -37,8 +38,10 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
+def pwd_generator(size=10, chars=string.ascii_letters + string.digits):
+        return ''.join(random.choice(chars) for _ in range(size))
 
-# noinspection PyShadowingNames
+# noinspection PyShadowingNames,PyUnusedLocal
 def error_page_401(status, message, traceback, version):
     """ Custom handler for 401 error """
     title = 'Access denied'

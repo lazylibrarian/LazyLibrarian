@@ -354,6 +354,10 @@
               <input type="text" id="gr_oauth_token" name="gr_oauth_token" value="${lazylibrarian.CONFIG['GR_OAUTH_TOKEN']}" class="form-control">
               <label for="gr_oauth_secret">Goodreads OAuth Secret:</label>
               <input type="text" id="gr_oauth_secret" name="gr_oauth_secret" value="${lazylibrarian.CONFIG['GR_OAUTH_SECRET']}" class="form-control">
+              <label for="gr_wanted">Sync Wanted to Goodreads shelf:</label>
+              <input type="text" id="gr_wanted" name="gr_wanted" value="${lazylibrarian.CONFIG['GR_WANTED']}" class="form-control">
+              <label for="gr_owned">Sync Open/Have to Goodreads shelf:</label>
+              <input type="text" id="gr_owned" name="gr_owned" value="${lazylibrarian.CONFIG['GR_OWNED']}" class="form-control">
                 <div class="form-group">
                   <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
                 </div>
@@ -1249,6 +1253,11 @@
                 <label for="imp_calibredb">Calibredb import program:</label>
                 <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
                 <span class="help-block">Path to "calibredb" to import books into the library</span>
+              </div>
+              <div class="form-group">
+                <label for="calibre_server">Calibre Server:</label>
+                <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" class="form-control" placeholder="eg http://my_calibre_server:9000">
+                <span class="help-block">Leave blank to use eBook Library Folder</span>
               </div>
               <div class="form-group">
                 <label for="imp_autoadd">Calibre Auto Add Directory:</label>

@@ -49,8 +49,8 @@ class grauth:
         if not self.secret:
             return "Invalid or missing GR_SECRET"
 
-        #if self.oauth_token and self.oauth_secret:
-        #    return "Already authorised"
+        if self.oauth_token and self.oauth_secret:
+            return "Already authorised"
 
         request_token_url = '%s/oauth/request_token' % self.url
         authorize_url = '%s/oauth/authorize' % self.url
@@ -239,16 +239,20 @@ def test_auth():
         return "GR Auth Error: %s" % str(e)
     if user_id:
         return "Pass: UserID is %s" % user_id
+
     else:
         return "Failed, check the debug log"
 
 
 def sync_to_gr():
-    to_read_shelf, ll_wanted, moved = grsync('Wanted', 'to-read')
-    to_owned_shelf, ll_have, moved = grsync('Open', 'owned')
-    msg = "%s added to to-read shelf\n" % to_read_shelf
-    msg += "%s added to owned shelf\n" % to_owned_shelf
-    msg += "%s moved to owned shelf\n" % moved
+    to_read_shelf = to_owned_shelf = moved = ll_wanted = ll_have = 0
+    if lazylibrarian.CONFIG['GR_WANTED']:
+         to_read_shelf, ll_wanted, moved = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
+    if lazylibrarian.CONFIG['GR_OWNED']:
+        to_owned_shelf, ll_have, moved = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
+    msg = "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
+    msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
+    msg += "%s moved to %s shelf\n" % (moved, lazylibrarian.CONFIG['GR_OWNED'])
     msg += "%s marked Wanted\n" % ll_wanted
     msg += "%s marked Have" % ll_have
     return msg
