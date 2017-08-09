@@ -540,16 +540,18 @@ class GoogleBooks:
                         # GoodReads sometimes has multiple bookids for the same book (same author/title, different
                         # editions) and sometimes uses the same bookid if the book is the same but the title is
                         # slightly different. Not sure if googlebooks does too, but we only want one...
-                        existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID=?', (bookid,))
+                        existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?', (bookid,))
                         if existing_book:
                             book_status = existing_book['Status']
                             locked = existing_book['Manual']
+                            added = existing_book['BookAdded']
                             if locked is None:
                                 locked = False
                             elif locked.isdigit():
                                 locked = bool(int(locked))
                         else:
                             book_status = bookstatus  # new_book status, or new_author status
+                            added = today()
                             locked = False
 
                         rejected = check_status = False
@@ -616,7 +618,7 @@ class GoogleBooks:
                                     "BookLang": booklang,
                                     "Status": book_status,
                                     "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
-                                    "BookAdded": today()
+                                    "BookAdded": added
                                 }
                                 resultcount += 1
 

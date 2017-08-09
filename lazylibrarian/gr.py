@@ -584,20 +584,23 @@ class GoodReads:
                                 rejected = True
 
                         if check_status or not rejected:
-                            existing_book = myDB.match('SELECT Status,Manual FROM books WHERE BookID=?', (bookid,))
+                            existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?', (bookid,))
                             if existing_book:
                                 book_status = existing_book['Status']
                                 locked = existing_book['Manual']
+                                added = existing_book['BookAdded']
                                 if locked is None:
                                     locked = False
                                 elif locked.isdigit():
                                     locked = bool(int(locked))
                             else:
                                 book_status = bookstatus  # new_book status, or new_author status
+                                added = today()
                                 locked = False
 
                             # Is the book already in the database?
                             # Leave alone if locked or status "ignore"
+                            # don't update 'bookadded' if already there
                             if not locked and book_status != "Ignored":
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
@@ -616,7 +619,7 @@ class GoodReads:
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
                                     "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
-                                    "BookAdded": today()
+                                    "BookAdded": added
                                 }
 
                                 resultsCount += 1
