@@ -324,7 +324,6 @@ def test_auth():
         return "GR Auth Error: %s" % str(e)
     if user_id:
         return "Pass: UserID is %s" % user_id
-
     else:
         return "Failed, check the debug log"
 
