@@ -895,6 +895,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     if lazylibrarian.CONFIG['IMP_AUTOADD']:
         processAutoAdd(dest_path)
 
+
 def calibredb(cmd=None, prelib=None, postlib=None):
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
@@ -907,7 +908,18 @@ def calibredb(cmd=None, prelib=None, postlib=None):
     if postlib:
         params.extend(postlib)
     logger.debug(str(params))
-    return subprocess.check_output(params, stderr=subprocess.STDOUT)
+    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+    if 'Errno 111' in res and dest_url.startswith('http'):
+        # no server running, retry using file
+        params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
+        if prelib:
+            params.extend(prelib)
+        params.extend(['--with-library', dest_dir])
+        if postlib:
+            params.extend(postlib)
+        logger.debug(str(params))
+        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+    return res
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
@@ -1065,7 +1077,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 os.remove(dest_path)
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
-
         try:
             os.makedirs(dest_path)
             setperm(dest_path)
@@ -1260,16 +1271,34 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
     seriesname = seriesnum = ''
     if 'Series_index' not in data:
+        # no series details passed in data dictionary, look them up in db
         myDB = database.DBConnection()
         cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
         res = myDB.match(cmd, (bookid,))
         if res:
             seriesid = res['SeriesID']
-            seriesnum = res['SeriesNum']
+            serieslist = getList(res['SeriesNum'])
+            # might be "Book 3.5" or similar, just get the numeric part
+            while serieslist:
+                seriesnum = serieslist.pop()
+                try:
+                    _ = float(seriesnum)
+                    break
+                except ValueError:
+                    pass
+
+            if not seriesnum:
+                # couldn't figure out number, keep everything we got, could be something like "Book Two"
+                serieslist = res['SeriesNum']
+
             cmd = 'SELECT SeriesName from series WHERE seriesid=?'
             res = myDB.match(cmd, (seriesid,))
             if res:
                 seriesname = res['SeriesName']
+                if not seriesnum:
+                    # add what we got to series name and set seriesnum to 1 so user can sort it out manually
+                    seriesname = seriesname + ' ' + serieslist
+                    seriesnum = 1
 
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
