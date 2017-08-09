@@ -1285,6 +1285,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
                     _ = float(seriesnum)
                     break
                 except ValueError:
+                    seriesnum = ''
                     pass
 
             if not seriesnum:
@@ -1297,7 +1298,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
                 seriesname = res['SeriesName']
                 if not seriesnum:
                     # add what we got to series name and set seriesnum to 1 so user can sort it out manually
-                    seriesname = seriesname + ' ' + serieslist
+                    seriesname = "%s %s" % (seriesname, serieslist)
                     seriesnum = 1
 
     opfinfo = '<?xml version="1.0"  encoding="UTF-8"?>\n\
