@@ -83,6 +83,7 @@ class PushoverNotifier:
         request_status = response.status
         logger.debug("Pushover Response: %s" % request_status)
         logger.debug("Pushover Reason: %s" % response.reason)
+
         if request_status == 200:
             if testMessage:
                 logger.debug(request_body)
@@ -93,7 +94,7 @@ class PushoverNotifier:
             else:
                 return True
         elif 400 <= request_status < 500:
-            logger.error("Pushover request failed: %s" % response.reason)
+            logger.error("Pushover request failed: %s" % str(request_body))
             return False
         else:
             logger.error("Pushover notification failed: %s" % request_status)
