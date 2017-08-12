@@ -1395,7 +1395,7 @@ class WebInterface(object):
     @cherrypy.expose
     def bookWall(self):
         myDB = database.DBConnection()
-        results = myDB.select('SELECT BookFile,BookImg,BookID from books where Status="Open" order by BookAdded DESC')
+        results = myDB.select('SELECT BookFile,BookImg,BookID from books where Status="Open" order by BookLibrary DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("books")
         return serve_template(
@@ -1406,7 +1406,7 @@ class WebInterface(object):
     def audioWall(self):
         myDB = database.DBConnection()
         results = myDB.select(
-            'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by BookAdded DESC')
+            'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by AudioLibrary DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("audio")
         return serve_template(
@@ -2220,9 +2220,20 @@ class WebInterface(object):
         return res
 
     @cherrypy.expose
-    def testGRAuth(self):
+    def testGRAuth(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        return grsync.test_auth()
+        if 'gr_api' in kwargs:
+            lazylibrarian.CONFIG['GR_API'] = kwargs['gr_api']
+        if 'gr_secret' in kwargs:
+            lazylibrarian.CONFIG['GR_SECRET'] = kwargs['gr_secret']
+        if 'gr_oauth_token' in kwargs:
+            lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = kwargs['gr_oauth_token']
+        if 'gr_oauth_secret' in kwargs:
+            lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = kwargs['gr_oauth_secret']
+        res = grsync.test_auth()
+        if res.startswith('Pass:'):
+            lazylibrarian.config_write()
+        return res
 
 
     # NOTIFIERS #########################################################

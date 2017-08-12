@@ -113,7 +113,93 @@ class grauth:
                 return ""
 
 
-    def get_gr_shelf(self, shelf='to-read'):
+    def get_shelf_list(self):
+        if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
+            logger.debug("Goodreads sync error: Please authorise first")
+            return []
+        else:
+            #
+            # loop over each page of shelves
+            #     loop over each shelf
+            #         add shelf to list
+            #
+            if not self.consumer:
+                self.consumer = oauth.Consumer(key=str(self.key), secret=str(self.secret))
+            if not self.token:
+                self.token = oauth.Token(self.oauth_token, self.oauth_secret)
+            if not self.client:
+                self.client = oauth.Client(self.consumer, self.token)
+
+            self.user_id = self.getUserId()
+
+            current_page = 0
+            shelves = []
+
+            while True:
+                page_shelves = 0
+                current_page = current_page + 1
+                time_now = int(time.time())
+                if time_now <= lazylibrarian.LAST_GOODREADS:
+                    time.sleep(1)
+                    lazylibrarian.LAST_GOODREADS = time_now
+
+                shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
+
+                body = urllib.urlencode({})
+                headers = {'content-type': 'application/x-www-form-urlencoded'}
+                request_url = shelf_template.substitute(base=self.url, user_id=self.user_id, page=current_page, key=self.key)
+                response, content = self.client.request(request_url, 'GET', body, headers)
+
+                if response['status'] != '200':
+                    raise Exception('Failure status: %s for page %s' % (response['status'], current_page))
+                xmldoc = xml.dom.minidom.parseString(content)
+
+                shelf_list = xmldoc.getElementsByTagName('shelves')[0]
+                for item in shelf_list.getElementsByTagName('user_shelf'):
+                    shelf_name = item.getElementsByTagName('name')[0].firstChild.nodeValue
+                    shelf_count = item.getElementsByTagName('book_count')[0].firstChild.nodeValue
+                    shelf_exclusive = item.getElementsByTagName('exclusive_flag')[0].firstChild.nodeValue
+                    shelves.append({'name': shelf_name, 'books': shelf_count, 'exclusive': shelf_exclusive})
+
+                    if lazylibrarian.LOGLEVEL > 2:
+                        logger.debug('Shelf %s : %s: %s' % (shelf_name, shelf_count, shelf_exclusive))
+
+                    page_shelves += 1
+
+                logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
+                if page_shelves == 0:
+                    break
+
+            logger.debug('Found %s shelves' % len(shelves))
+            #print shelves
+            return shelves
+
+
+    def create_shelf(self, shelf='lazylibrarian'):
+        if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
+            logger.debug("Goodreads sync error: Please authorise first")
+            return False, 'Unauthorised'
+
+        if not self.consumer:
+            self.consumer = oauth.Consumer(key=str(self.key), secret=str(self.secret))
+        if not self.token:
+            self.token = oauth.Token(self.oauth_token, self.oauth_secret)
+        if not self.client:
+            self.client = oauth.Client(self.consumer, self.token)
+
+        self.user_id = self.getUserId()
+
+        # could also pass [featured] [exclusive_flag] [sortable_flag] all default to False
+        body = urllib.urlencode({'user_shelf[name]': shelf.lower()})
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        response, content = self.client.request('%s/user_shelves.xml' % self.url,'POST', body, headers)
+
+        if response['status'] != '200' and response['status'] != '201':
+            msg = 'Failure status: %s' % response['status']
+            return False, msg
+        return True, ''
+
+    def get_gr_shelf_contents(self, shelf='to-read'):
 
         if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
             logger.debug("Goodreads sync error: Please authorise first")
@@ -140,7 +226,6 @@ class grauth:
 
             while True:
                 current_page = current_page + 1
-
 
                 time_now = int(time.time())
                 if time_now <= lazylibrarian.LAST_GOODREADS:
@@ -239,26 +324,25 @@ def test_auth():
         return "GR Auth Error: %s" % str(e)
     if user_id:
         return "Pass: UserID is %s" % user_id
-
     else:
         return "Failed, check the debug log"
 
 
 def sync_to_gr():
-    to_read_shelf = to_owned_shelf = moved = ll_wanted = ll_have = 0
+    to_read_shelf = to_owned_shelf = ll_wanted = ll_have = 0
     if lazylibrarian.CONFIG['GR_WANTED']:
-         to_read_shelf, ll_wanted, moved = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
+         to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
     if lazylibrarian.CONFIG['GR_OWNED']:
-        to_owned_shelf, ll_have, moved = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
+        to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
     msg = "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
     msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
-    msg += "%s moved to %s shelf\n" % (moved, lazylibrarian.CONFIG['GR_OWNED'])
     msg += "%s marked Wanted\n" % ll_wanted
     msg += "%s marked Have" % ll_have
     return msg
 
 def grsync(status, shelf):
     try:
+        shelf = shelf.lower()
         logger.debug('Syncing %s to %s shelf' % (status, shelf))
         myDB = database.DBConnection()
         cmd = 'select bookid from books where status="%s"' % status
@@ -271,7 +355,21 @@ def grsync(status, shelf):
 
         GA = grauth()
         GR = None
-        gr_shelf = GA.get_gr_shelf(shelf=shelf)
+        shelves = GA.get_shelf_list()
+        found = False
+        for item in shelves:
+            if item['name'] == shelf:
+                found = True
+                break
+        if not found:
+            res, msg = GA.create_shelf(shelf=shelf)
+            if not res:
+                logger.debug("Unable to create shelf %s: %s" % (shelf, msg))
+                return 0,0,0
+            else:
+                logger.debug("Created new goodreads shelf: %s" % shelf)
+
+        gr_shelf = GA.get_gr_shelf_contents(shelf=shelf)
         dstatus = status
         if dstatus == "Open":
             dstatus += "/Have"
@@ -292,7 +390,6 @@ def grsync(status, shelf):
 
         to_shelf = 0
         to_ll = 0
-        moved = 0
         # these need adding to shelf
         if not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
             logger.debug('Not connected to goodreads')
@@ -327,35 +424,7 @@ def grsync(status, shelf):
             result = myDB.match(cmd)
             if result:
                 if result['Status'] in ['Have', 'Open']:  # don't change status if we have it
-                    if shelf == 'to-read':
-
-                        time_now = int(time.time())
-                        if time_now <= lazylibrarian.LAST_GOODREADS:
-                            time.sleep(1)
-                            lazylibrarian.LAST_GOODREADS = time_now
-                        # need to move it from to-read shelf to owned shelf
-                        res, content = GA.BookToList(book, 'to-read', 'remove')
-                        if res:
-                            logger.debug("%10s removed from to-read shelf" % book)
-                            #print content
-                        else:
-                            logger.debug("Failed to remove %s from to-read shelf" % book)
-                            #print content
-
-                        time_now = int(time.time())
-                        if time_now <= lazylibrarian.LAST_GOODREADS:
-                            time.sleep(1)
-                            lazylibrarian.LAST_GOODREADS = time_now
-                        res, content = GA.BookToList(book, 'owned', 'add')
-                        if res:
-                            logger.debug("%10s added to owned shelf" % book)
-                            moved += 1
-                            #print content
-                        else:
-                            logger.debug("Failed to add %s to owned shelf" % book)
-                            #print content
-                    else:
-                        logger.debug("%10s is already marked %s" % (book, result['Status']))
+                    logger.debug("%10s is already marked %s" % (book, result['Status']))
                 elif shelf == 'owned':
                     myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
                 else:
@@ -368,11 +437,20 @@ def grsync(status, shelf):
                 to_ll += 1
 
         logger.debug('Sync %s to %s shelf complete' % (status, shelf))
-        return to_shelf, to_ll, moved
+        return to_shelf, to_ll
 
     except Exception:
         logger.error('Unhandled exception in grsync: %s' % traceback.format_exc())
         return 0,0,0
 
-if __name__ == '__main__':
-  test_auth()
+#if __name__ == '__main__':
+  #lazylibrarian.CONFIG['GR_API'] =
+  #lazylibrarian.CONFIG['GR_SECRET'] =
+  #lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] =
+  #lazylibrarian.CONFIG['GR_OAUTH_SECRET'] =
+  #GA = grauth()
+  #success, msg = GA.create_shelf()
+  #if not success:
+  #  print msg
+  #else:
+  #  print 'ok'
