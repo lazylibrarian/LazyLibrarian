@@ -379,6 +379,11 @@ def unaccented_str(str_or_unicode):
     stripped = ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
     # replace all non-ascii quotes/apostrophes with ascii ones eg "Collector's"
     dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
+    # Other characters not converted by unicodedata.combining
+    # c6 Ae, d0 Eth, d7 multiply, d8 Ostroke, de Thorn, df sharpS
+    dic.update({ u'\xc6': 'A', u'\xd0': 'D', u'\xd7': '*', u'\xd8': 'O', u'\xde': 'P', u'\xdf': 's'})
+    # e6 ae, f0 eth, f7 divide, f8 ostroke, fe thorn
+    dic.update({ u'\xe6': 'a', u'\xf0': 'o', u'\xf7': '/', u'\xf8': 'o', u'\xfe': 'p'})
     stripped = replace_all(stripped, dic)
     # now get rid of any other non-ascii
     return stripped.encode('ASCII', 'ignore')
