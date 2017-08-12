@@ -191,8 +191,6 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
 
                         if not rejected:
-                            control_date = results['IssueDate']
-
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
                             nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
                             # Need to make sure that substrings of magazine titles don't get found
@@ -391,6 +389,7 @@ def search_magazines(mags=None, reset=False):
                             insert_table = "pastissues"
                             insert_status = "Skipped"
 
+                            control_date = results['IssueDate']
                             if control_date is None:  # we haven't got any copies of this magazine yet
                                 # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
                                 # could perhaps calc differently for weekly, biweekly etc
@@ -417,7 +416,7 @@ def search_magazines(mags=None, reset=False):
                                 newdatish = "%s" % newdatish
                                 newdatish = newdatish.zfill(4)  # pad so we sort correctly
                             elif re.match('\d+-\d\d-\d\d', str(control_date)) and \
-                                 re.match('\d+-\d\d-\d\d', str(newdatish)):
+                                    re.match('\d+-\d\d-\d\d', str(newdatish)):
                                 # only grab a copy if it's newer than the most recent we have,
                                 # or newer than a month ago if we have none
                                 comp_date = datecompare(newdatish, control_date)
