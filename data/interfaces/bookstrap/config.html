@@ -1254,11 +1254,32 @@
                 <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
                 <span class="help-block">Path to "calibredb" to import books into the library</span>
               </div>
+              <div class="checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['CALIBRE_USE_SERVER'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <label for="calibre_use_server" class="control-label">
+                    <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value="1" ${checked} />
+                    Use Calibre Content Server</label>
+              </div>
+              <fieldset id="calibre_options">
               <div class="form-group">
                 <label for="calibre_server">Calibre Server:</label>
-                <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" class="form-control" placeholder="eg http://my_calibre_server:9000">
-                <span class="help-block">Leave blank to use eBook Library Folder</span>
+                <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" class="form-control">
+                <span class="help-block">eg http://my_calibre_server:9000</span>
               </div>
+              <div class="form-group">
+                <label for="calibre_user">Calibre Username:</label>
+                <input type="text" id="calibre_user" name="calibre_user" value="${lazylibrarian.CONFIG['CALIBRE_USER']}" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="calibre_pass">Calibre Password:</label>
+                <input type="text" id="calibre_pass" name="calibre_pass" value="${lazylibrarian.CONFIG['CALIBRE_PASS']}" class="form-control">
+              </div>
+              </fieldset>
               <div class="form-group">
                 <label for="imp_autoadd">Calibre Auto Add Directory:</label>
                 <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
@@ -2323,6 +2344,25 @@
     {
         "use strict";
 
+        if ($("#calibre_use_server").is(":checked"))
+            {
+                    $("#calibre_options").show();
+            }
+        else
+            {
+                    $("#calibre_options").hide();
+            }
+        $("#calibre_use_server").click(function(){
+                if ($("#calibre_use_server").is(":checked"))
+                {
+                        $("#calibre_options").slideDown();
+                }
+                else
+                {
+                        $("#calibre_options").slideUp();
+                }
+        });
+
         if ($("#gr_sync").is(":checked"))
             {
                     $("#grsync_options").show();
@@ -2331,6 +2371,7 @@
             {
                     $("#grsync_options").hide();
             }
+
         $("#gr_sync").click(function(){
                 if ($("#gr_sync").is(":checked"))
                 {

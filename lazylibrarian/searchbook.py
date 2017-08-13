@@ -27,6 +27,8 @@ from lazylibrarian.resultlist import findBestResult, downloadResult
 def cron_search_book():
     if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
         search_book()
+    else:
+        logger.debug("SEARCHALLBOOKS is already running")
 
 
 def goodEnough(match):
