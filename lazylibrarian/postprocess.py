@@ -17,10 +17,10 @@ import datetime
 import os
 import platform
 import shutil
-import subprocess
 import threading
 import time
 import traceback
+from subprocess import Popen, PIPE
 
 import lazylibrarian
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
@@ -897,29 +897,57 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
 
 
 def calibredb(cmd=None, prelib=None, postlib=None):
-    dest_dir = lazylibrarian.DIRECTORY('eBook')
-    dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
-    if not dest_url or not dest_url.startswith('http'):
-        dest_url = dest_dir
+    """ calibre-server needs to be started with --enable-auth and needs user/password to add/remove books
+        only basic features are available without auth. calibre_server should look like  http://address:port/#library
+        default library is used if no #library in the url
+        or calibredb can talk to the database file as long as there is no running calibre """
     params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
+    if lazylibrarian.CONFIG['CALIBRE_USE_SERVER']:
+        dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
+        if lazylibrarian.CONFIG['CALIBRE_USER'] and lazylibrarian.CONFIG['CALIBRE_PASS']:
+            params.extend(['--username', lazylibrarian.CONFIG['CALIBRE_USER'],
+                            '--password', lazylibrarian.CONFIG['CALIBRE_PASS']])
+    else:
+        dest_url = lazylibrarian.DIRECTORY('eBook')
+
     if prelib:
         params.extend(prelib)
     params.extend(['--with-library', dest_url])
     if postlib:
         params.extend(postlib)
     logger.debug(str(params))
-    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-    if 'Errno 111' in res and dest_url.startswith('http'):
-        # no server running, retry using file
+    res = err = ''
+    try:
+        p = Popen(params, stdout=PIPE, stderr=PIPE)
+        res, err = p.communicate()
+        rc = p.returncode
+        if rc:
+            if 'Errno 111' in err:
+                logger.debug("calibredb returned %s: Connection refused" % rc)
+            else:
+                logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
+    except Exception as e:
+        logger.debug("calibredb exception: %s" % str(e))
+        rc = 1
+
+    if rc and dest_url.startswith('http'):
+        # might be no server running, retry using file
         params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
         if prelib:
             params.extend(prelib)
-        params.extend(['--with-library', dest_dir])
+        params.extend(['--with-library', lazylibrarian.DIRECTORY('eBook')])
         if postlib:
             params.extend(postlib)
         logger.debug(str(params))
-        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-    return res
+        try:
+            p = Popen(params, stdout=PIPE, stderr=PIPE)
+            res, err = p.communicate()
+            rc = p.returncode
+            if rc:
+                logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
+        except Exception as e:
+            logger.debug("calibredb retry exception: %s" % str(e))
+    return res, err, rc
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
@@ -971,7 +999,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     newbookfile = ''
     if booktype == 'ebook' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('eBook')
-        params = []
         try:
             logger.debug('Importing %s into calibre library' % global_name)
             # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
@@ -988,11 +1015,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             else:
                 identifier = "google:%s" % bookid
 
-            res = calibredb('add', ['-1'], [pp_path])
-            if not res:
-                return False, 'No response from %s' % lazylibrarian.CONFIG['IMP_CALIBREDB']
+            res, err, rc = calibredb('add', ['-1'], [pp_path])
+            if rc or not res:
+                return False, 'calibredb return %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
 
             logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            logger.debug('%s returns: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
             if 'already exist' in res:
                 return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
             if not 'Added book ids' in res:
@@ -1013,24 +1041,24 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 else:
                     processIMG(pp_path, data['BookID'], data['BookImg'], global_name)
                     opfpath, our_opf = processOPF(pp_path, data, global_name, True)
-                    res = calibredb('set_metadata', None, [calibre_id, opfpath])
-                    if res:
+                    res, err, rc = calibredb('set_metadata', None, [calibre_id, opfpath])
+                    if res and not rc:
                         logger.debug(
                             '%s set opf reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             if not our_opf:  # pre-existing opf might not have our preferred authorname/title/identifier
-                res = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
-                if res:
+                res, err, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
+                if res and not rc:
                     logger.debug(
                         '%s set author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                res = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], [calibre_id])
-                if res:
+                res, err, rc = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], [calibre_id])
+                if res and not rc:
                     logger.debug(
                         '%s set title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-                res = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], [calibre_id])
-                if res:
+                res, err, rc = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], [calibre_id])
+                if res and not rc:
                     logger.debug(
                         '%s set identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
@@ -1043,30 +1071,25 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug('Calibre trying directory [%s]' % target_dir)
                 remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 if os.path.isdir(target_dir):
-                    imported = LibraryScan(target_dir, remove=remove)
-                    if imported:
-                        newbookfile = book_file(target_dir, booktype='ebook')
-                        if newbookfile:
-                            setperm(target_dir)
-                            for fname in os.listdir(target_dir):
-                                setperm(os.path.join(target_dir, fname))
+                    _ = LibraryScan(target_dir, remove=remove)
+                    newbookfile = book_file(target_dir, booktype='ebook')
+                    if newbookfile:
+                        setperm(target_dir)
+                        for fname in os.listdir(target_dir):
+                            setperm(os.path.join(target_dir, fname))
                         return True, newbookfile
                     return False, "Failed to find a valid ebook in [%s]" % target_dir
                 else:
-                    imported = LibraryScan(calibre_dir, remove=remove)  # rescan whole authors directory
-                    if imported:
-                        myDB = database.DBConnection()
-                        match = myDB.match('SELECT BookFile FROM books WHERE BookID=?', (bookid,))
-                        if match:
-                            return True, match['BookFile']
+                    _ = LibraryScan(calibre_dir, remove=remove)  # rescan whole authors directory
+                    myDB = database.DBConnection()
+                    match = myDB.match('SELECT BookFile FROM books WHERE BookID=?', (bookid,))
+                    if match:
+                        return True, match['BookFile']
                     return False, 'Failed to find bookfile for %s in database' % bookid
             return False, "Failed to locate calibre author dir [%s]" % calibre_dir
             # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
-        except subprocess.CalledProcessError as e:
-            logger.debug(params)
-            return False, 'calibredb import failed: %s' % e.output
-        except OSError as e:
-            return False, 'calibredb failed, %s' % e.strerror
+        except Exception as e:
+            return False, 'calibredb import failed, %s' % str(e)
     else:
         # we are copying the files ourselves, either it's audiobook, magazine or we don't want to use calibre
         if not os.path.exists(dest_path):

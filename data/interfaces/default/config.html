@@ -990,10 +990,29 @@
             <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
             <BR>
             <small>Path to "calibredb" to import books into the library</small>
-            <label>Calibre Server:</label>
-            <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" size="26">
+            <div class="checkbox">
+            <%
+              if lazylibrarian.CONFIG['CALIBRE_USE_SERVER'] == True:
+                checked = 'checked="checked"'
+              else:
+                checked = ''
+            %>
             <BR>
-            <small>Leave blank to use eBook Library Folder</small>
+            <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value=1 ${checked} />
+            </div>
+            <label>  Use Calibre Content Server</label>
+            <fieldset id="calibre_options">
+                <label>Calibre Server:</label>
+                <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" size="26">
+                <BR>
+                <label>Calibre User:</label>
+                <input type="text" id="calibre_user" name="calibre_user" value="${lazylibrarian.CONFIG['CALIBRE_USER']}" size="26">
+                <BR>
+                <label>Calibre Password:</label>
+                <input type="text" id="calibre_pass" name="calibre_pass" value="${lazylibrarian.CONFIG['CALIBRE_PASS']}" size="26">
+                <BR>
+            </fieldset>
+            <BR>
             <label>Calibre Auto Add Directory:</label>
             <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" size="26">
             <BR>
@@ -1855,6 +1874,26 @@
   <script>
     function initThisPage()
     {
+        if ($("#calibre_use_server").is(":checked"))
+            {
+                    $("#calibre_options").show();
+            }
+            else
+            {
+                    $("#calibre_options").hide();
+            }
+
+        $("#calibre_use_server").click(function(){
+                if ($("#calibre_use_server").is(":checked"))
+                {
+                        $("#calibre_options").slideDown();
+                }
+                else
+                {
+                        $("#calibre_options").slideUp();
+                }
+        });
+
         if ($("#https_enabled").is(":checked"))
             {
                     $("#https_options").show();

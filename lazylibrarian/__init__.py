@@ -173,7 +173,10 @@ CONFIG_DEFINITIONS = {
     'IMP_AUTOADD_BOOKONLY': ('bool', 'General', 0),
     'IMP_AUTOSEARCH': ('bool', 'General', 0),
     'IMP_CALIBREDB': ('str', 'General', ''),
+    'CALIBRE_USE_SERVER': ('bool', 'General', 0),
     'CALIBRE_SERVER': ('str', 'General', ''),
+    'CALIBRE_USER': ('str', 'General', ''),
+    'CALIBRE_PASS': ('str', 'General', ''),
     'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_CONVERT': ('str', 'General', ''),
@@ -763,8 +766,8 @@ def config_write():
         else:
             # keep the old value
             value = CFG.get(section, key.lower())
-            if CONFIG['LOGLEVEL'] > 2:
-                logger.debug("Leaving %s unchanged (%s)" % (key, value))
+            #if CONFIG['LOGLEVEL'] > 2:
+            #    logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
         CFG.set(section, key.lower(), value)
 
