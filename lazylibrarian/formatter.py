@@ -253,7 +253,8 @@ def getList(st):
     # could maybe strip them out?
 
     if st:
-        st = unaccented_str(st)
+        if isinstance(st, unicode):
+            st = st.encode('utf-8')
         lex = shlex.shlex(st)
         lex.whitespace += ',+'
         lex.quotes = ''
@@ -353,6 +354,17 @@ def formatAuthorName(author):
             author = forename + ' ' + surname
 
     return ' '.join(author.split())  # ensure no extra whitespace
+
+
+def surnameFirst(authorname):
+    """ swap authorname round into surname, forenames for calibre sorting"""
+    words = getList(authorname)
+    if len(words) < 2:
+        return authorname
+    res = words.pop()
+    if res.strip('.').lower in getList(lazylibrarian.CONFIG['NAME_POSTFIX']):
+        res = words.pop() + ' ' + res
+    return res + ', ' + ' '.join(words)
 
 
 def cleanName(name, extras=None):

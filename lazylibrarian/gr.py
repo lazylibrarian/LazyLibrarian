@@ -26,7 +26,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
     setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
-    cleanName, is_valid_isbn, formatAuthorName
+    cleanName, is_valid_isbn, formatAuthorName, check_int
 from lib.fuzzywuzzy import fuzz
 
 
@@ -70,6 +70,8 @@ class GoodReads:
                 if rootxml is None:
                     logger.debug("Error requesting results")
                     return
+
+                totalresults = check_int(rootxml.find('search/total-results').text, 0)
 
                 resultxml = rootxml.getiterator('work')
                 loopCount = 1
@@ -181,9 +183,13 @@ class GoodReads:
                         resultcount += 1
 
                     loopCount += 1
+
                     if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < loopCount:
                         resultxml = None
                         logger.warn('Maximum results page search reached, still more results available')
+                    elif totalresults and resultcount >= totalresults:
+                        # fix for goodreads bug on isbn searches
+                        resultxml = None
                     else:
                         URL = set_url + '&page=' + str(loopCount)
                         resultxml = None
@@ -552,6 +558,7 @@ class GoodReads:
                                 #                 (bookname, authorNameResult, aid))
                             if not amatch:
                                 logger.debug('Ignoring %s for %s, wrong author?' % (bookname, authorNameResult))
+                                removedResults += 1
                             rejected = not amatch
 
                         if not rejected:
@@ -738,7 +745,7 @@ class GoodReads:
             logger.debug("Found %s result%s" % (total_count, plural(total_count)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug(
-                "Removed %s bad character or no-name result%s" %
+                "Removed %s incorrect/incomplete result%s" %
                 (removedResults, plural(removedResults)))
             logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
