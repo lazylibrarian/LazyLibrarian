@@ -196,7 +196,7 @@ def search_magazines(mags=None, reset=False):
                             # Need to make sure that substrings of magazine titles don't get found
                             # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
                             # remove extra spaces if they're in a row
-                            if nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
+                            if nzbtitle_formatted and nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
                                 nzbtitle_formatted = nzbtitle_formatted[1:-1]
                             nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
                             nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
