@@ -355,6 +355,18 @@ def formatAuthorName(author):
     return ' '.join(author.split())  # ensure no extra whitespace
 
 
+def surnameFirst(authorname):
+    """ swap authorname round into surname, forenames for calibre sorting"""
+    words = getList(authorname)
+    if len(words) < 2:
+        return authorname
+    res = words.pop()
+    res = res + ','
+    while words:
+        res = res + ' ' + words.pop()
+    return res
+
+
 def cleanName(name, extras=None):
     validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:
