@@ -1363,7 +1363,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     </metadata>\n\
 </package>' % global_name  # file in current directory, not full path
 
-    dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', ',': '', '*': ''}
+    dic = {'...': '', ' & ': ' ', ' = ': ' ', '$': 's', ' + ': ' ', '*': ''}
 
     opfinfo = unaccented_str(replace_all(opfinfo, dic))
 
