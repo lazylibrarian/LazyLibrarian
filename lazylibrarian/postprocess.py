@@ -28,7 +28,7 @@ from lazylibrarian import database, logger, utorrent, transmission, qbittorrent,
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
-    unaccented, getList
+    unaccented, getList, surnameFirst
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -1279,6 +1279,7 @@ def processMAGOPF(issuefile, title, issue, issueID):
             }
     _ = processOPF(dest_path, data, global_name, overwrite=True)
 
+
 def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
     opfpath = os.path.join(dest_path, global_name + '.opf')
@@ -1328,9 +1329,11 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 <package version="2.0" xmlns="http://www.idpf.org/2007/opf" >\n\
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">\n\
         <dc:title>%s</dc:title>\n\
-        <creator>%s</creator>\n\
+        <dc:creator opf:file-as="%s" opf:role="aut">%s</dc:creator>\n\
         <dc:language>%s</dc:language>\n\
-        <dc:identifier scheme="%s">%s</dc:identifier>\n' % (data['BookName'], data['AuthorName'], data['BookLang'], scheme, bookid)
+        <dc:identifier scheme="%s">%s</dc:identifier>\n' % (data['BookName'], surnameFirst(data['AuthorName']),
+                                                            data['AuthorName'], data['BookLang'], scheme, bookid)
+
 
     if 'BookIsbn' in data:
         opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % data['BookIsbn']
