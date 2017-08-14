@@ -1288,6 +1288,12 @@ class WebInterface(object):
                                 if bookfile and os.path.isfile(bookfile):
                                     try:
                                         rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                        deleted = True
+                                    except Exception as e:
+                                        logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
+                                        deleted = False
+
+                                    if deleted:
                                         if bookfile == bookdata['BookFile']:
                                             logger.info(u'eBook %s deleted from disc' % bookname)
                                             try:
@@ -1300,19 +1306,19 @@ class WebInterface(object):
                                                     calibreid = None
                                             except IndexError:
                                                 calibreid = None
+
                                             if calibreid:
-                                                res = calibredb('remove', [calibreid])
-                                                if not res:
-                                                    logger.debug('No response from %s' %
-                                                                 lazylibrarian.CONFIG['IMP_CALIBREDB'])
-                                                else:
+                                                res, err, rc = calibredb('remove', [calibreid], None)
+                                                if res and not rc:
                                                     logger.debug('%s reports: %s' %
                                                                 (lazylibrarian.CONFIG['IMP_CALIBREDB'],
                                                                     unaccented_str(res)))
+                                                else:
+                                                    logger.debug('No response from %s' %
+                                                                 lazylibrarian.CONFIG['IMP_CALIBREDB'])
                                         if bookfile == bookdata['AudioFile']:
                                             logger.info(u'AudioBook %s deleted from disc' % bookname)
-                                    except Exception as e:
-                                        logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
+
 
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
