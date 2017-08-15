@@ -60,7 +60,7 @@ def serve_template(templatename, **kwargs):
         lazylibrarian.CONFIG['HTTP_LOOK'] = 'default'
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
-    _hplookup = TemplateLookup(directories=[template_dir])
+    _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
     try:
         if lazylibrarian.UPDATE_MSG:
             template = _hplookup.get_template("dbupdate.html")
