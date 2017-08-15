@@ -347,12 +347,12 @@ class GoodReads:
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
                 logger.debug("[%s] Now processing books with GoodReads API" % authorname)
-                logger.debug(u"url " + URL)
+                logger.debug("url " + URL)
 
                 authorNameResult = rootxml.find('./author/name').text
                 # Goodreads sometimes puts extra whitespace in the author names!
                 authorNameResult = ' '.join(authorNameResult.split())
-                logger.debug(u"GoodReads author name [%s]" % authorNameResult)
+                logger.debug("GoodReads author name [%s]" % authorNameResult)
                 loopCount = 1
 
                 while resultxml:
@@ -428,7 +428,7 @@ class GoodReads:
                                             bookLanguage = resp  # found a language code
                                             myDB.action('insert into languages values (?, ?)',
                                                         (isbnhead, bookLanguage))
-                                            logger.debug(u"LT language %s: %s" % (isbnhead, bookLanguage))
+                                            logger.debug("LT language %s: %s" % (isbnhead, bookLanguage))
                                     except Exception as e:
                                         logger.error("Error finding LT language result for [%s], %s" % (isbn, str(e)))
 
@@ -438,7 +438,7 @@ class GoodReads:
                                     if book.find(find_field).text:
                                         BOOK_URL = 'http://www.goodreads.com/book/show?id=' + \
                                                    book.find(find_field).text + '&' + urllib.urlencode(self.params)
-                                        logger.debug(u"Book URL: " + BOOK_URL)
+                                        logger.debug("Book URL: " + BOOK_URL)
 
                                         time_now = int(time.time())
                                         if time_now <= lazylibrarian.LAST_GOODREADS:
@@ -486,13 +486,13 @@ class GoodReads:
                                         else:
                                             not_cached += 1
 
-                                        logger.debug(u"GR language: " + bookLanguage)
+                                        logger.debug("GR language: " + bookLanguage)
                                     else:
                                         logger.debug("No %s provided for [%s]" % (find_field, book.find('title').text))
                                         # continue
 
                                 except Exception as e:
-                                    logger.debug(u"Goodreads language search failed: %s" % str(e))
+                                    logger.debug("Goodreads language search failed: %s" % str(e))
 
                             if bookLanguage not in valid_langs:
                                 logger.debug('Skipped %s with language %s' % (book.find('title').text, bookLanguage))
@@ -525,7 +525,7 @@ class GoodReads:
                         check_status = False
 
                         if re.match('[^\w-]', bookname):  # reject books with bad characters in title
-                            logger.debug(u"removed result [" + bookname + "] for bad characters")
+                            logger.debug("removed result [" + bookname + "] for bad characters")
                             removedResults += 1
                             rejected = True
 
@@ -544,8 +544,13 @@ class GoodReads:
                         if not rejected:
                             anames = book.find('authors')
                             amatch = False
+                            alist = ''
                             for aname in anames:
                                 aid = aname.find('id').text
+                                anm = aname.find('name').text
+                                if alist:
+                                    alist += ', '
+                                alist += anm
                                 if aid == authorid:
                                     role = aname.find('role').text
                                     if role is None or 'author' in role.lower() or 'pseudonym' in role.lower():
@@ -557,7 +562,8 @@ class GoodReads:
                                 #    logger.debug('Ignoring %s for %s, authorid %s' %
                                 #                 (bookname, authorNameResult, aid))
                             if not amatch:
-                                logger.debug('Ignoring %s for %s, wrong author?' % (bookname, authorNameResult))
+                                logger.debug('Ignoring %s for %s, wrong author? (got %s)' %
+                                             (bookname, authorNameResult, alist))
                                 removedResults += 1
                             rejected = not amatch
 
@@ -633,13 +639,13 @@ class GoodReads:
                                 updated = False
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                                logger.debug(u"Book found: " + book.find('title').text + " " + pubyear)
+                                logger.debug("Book found: " + book.find('title').text + " " + pubyear)
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
                                     workcover = getBookCover(bookid)
                                     if workcover:
-                                        logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
+                                        logger.debug('Updated cover for %s to %s' % (bookname, workcover))
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
@@ -660,7 +666,7 @@ class GoodReads:
                                     # prefer series info from librarything
                                     seriesdict = getWorkSeries(bookid)
                                     if seriesdict:
-                                        logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                        logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
                                         updated = True
                                     else:
                                         if series:
@@ -680,11 +686,11 @@ class GoodReads:
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
                                 if not existing_book:
-                                    logger.debug(u"[%s] Added book: %s [%s] status %s" %
+                                    logger.debug("[%s] Added book: %s [%s] status %s" %
                                                  (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
                                 elif updated:
-                                    logger.debug(u"[%s] Updated book: %s [%s] status %s" %
+                                    logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                  (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
                             else:
@@ -879,7 +885,7 @@ class GoodReads:
             # try to get a cover from librarything
             workcover = getBookCover(bookid)
             if workcover:
-                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
+                logger.debug('Updated cover for %s to %s' % (bookname, workcover))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
@@ -897,7 +903,7 @@ class GoodReads:
             # prefer series info from librarything
             seriesdict = getWorkSeries(bookid)
             if seriesdict:
-                logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
             else:
                 if series:
                     seriesdict = {cleanName(unaccented(series)): seriesNum}

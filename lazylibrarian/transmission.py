@@ -54,7 +54,7 @@ def addTorrent(link, directory=None):
         else:
             retid = False
 
-        logger.debug(u"Torrent sent to Transmission successfully")
+        logger.debug("Torrent sent to Transmission successfully")
         return retid
 
     else:

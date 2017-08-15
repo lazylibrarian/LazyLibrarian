@@ -129,12 +129,12 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     URL = HOST + "/api?" + urllib.urlencode(params)
 
     # to debug because of api
-    logger.debug(u'Request url for <a href="%s">SABnzbd</a>' % URL)
+    logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
 
     try:
         request = urllib2.urlopen(URL, timeout=30)
     except socket.error as e:
-        logger.error(u"Timeout connecting to SAB with URL: %s : %s" % (URL, str(e)))
+        logger.error("Timeout connecting to SAB with URL: %s : %s" % (URL, str(e)))
         return False
     except (EOFError, IOError, urllib2.URLError) as e:
         if hasattr(e, 'reason'):
@@ -144,11 +144,11 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         else:
             errmsg = str(e)
 
-        logger.error(u"Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
+        logger.error("Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
         return False
 
     except (urllib2.HTTPError, ssl.SSLError) as e:
-        logger.error(u"Invalid SAB host, check your config. Current host: %s : %s" % (HOST, str(e)))
+        logger.error("Invalid SAB host, check your config. Current host: %s : %s" % (HOST, str(e)))
         return False
 
     result = json.loads(request.read())

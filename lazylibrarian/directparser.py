@@ -74,6 +74,10 @@ def GEN(book=None, prov=None):
     if search[0] == '/':
         search = search[1:]
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     page = 1
     results = []
     next_page = True
@@ -107,7 +111,7 @@ def GEN(book=None, prov=None):
         if not success:
             # may return 404 if no results, not really an error
             if '404' in result:
-                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                logger.debug("No results found from %s for %s" % (provider, sterm))
             elif '111' in result:
                 # looks like libgen has ip based access limits
                 logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
@@ -119,7 +123,7 @@ def GEN(book=None, prov=None):
             result = False
 
         if result:
-            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+            logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             try:
                 soup = BeautifulSoup(result)
                 try:
@@ -204,7 +208,7 @@ def GEN(book=None, prov=None):
                         if not success:
                             # may return 404 if no results, not really an error
                             if '404' in bookresult:
-                                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                                logger.debug("No results found from %s for %s" % (provider, sterm))
                             else:
                                 logger.debug(url)
                                 logger.debug('Error fetching link data from %s: %s' % (provider, bookresult))
@@ -250,7 +254,7 @@ def GEN(book=None, prov=None):
                         next_page = True
 
             except Exception as e:
-                logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                 logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
         page += 1
@@ -258,6 +262,5 @@ def GEN(book=None, prov=None):
             logger.warn('Maximum results page search reached, still more results available')
             next_page = False
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
     return results, errmsg

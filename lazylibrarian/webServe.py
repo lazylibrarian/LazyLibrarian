@@ -290,7 +290,7 @@ class WebInterface(object):
                         match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
                         if match:
                             myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
-                            logger.debug(u'Status set to "%s" for "%s"' % (action, match['SeriesName']))
+                            logger.debug('Status set to "%s" for "%s"' % (action, match['SeriesName']))
                             if action in ['Wanted', 'Active']:
                                 threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
             if "redirect" in args:
@@ -557,7 +557,7 @@ class WebInterface(object):
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:
             AuthorName = authorsearch['AuthorName']
-            logger.info(u"%s author: %s" % (status, AuthorName))
+            logger.info("%s author: %s" % (status, AuthorName))
 
             controlValueDict = {'AuthorID': AuthorID}
             newValueDict = {'Status': status}
@@ -593,7 +593,7 @@ class WebInterface(object):
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch['AuthorName']
-            logger.info(u"Removing all references to author: %s" % AuthorName)
+            logger.info("Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID=?', (AuthorID,))
             myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (AuthorID,))
             myDB.action('DELETE from books WHERE AuthorID=?', (AuthorID,))
@@ -646,10 +646,10 @@ class WebInterface(object):
                 try:
                     threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library, AuthorID, remove]).start()
                 except Exception as e:
-                    logger.error(u'Unable to complete the scan: %s' % str(e))
+                    logger.error('Unable to complete the scan: %s' % str(e))
             else:
                 # maybe we don't have any of their books
-                logger.warn(u'Unable to find author directory: %s' % authordir)
+                logger.warn('Unable to find author directory: %s' % authordir)
 
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
@@ -947,11 +947,11 @@ class WebInterface(object):
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
-                logger.debug(u"Searching for book with id: " + books[0]["bookid"])
+                logger.debug("Searching for book with id: " + books[0]["bookid"])
             else:
-                logger.warn(u"Not searching for book, no search methods set, check config.")
+                logger.warn("Not searching for book, no search methods set, check config.")
         else:
-            logger.debug(u"BookSearch called with no books")
+            logger.debug("BookSearch called with no books")
 
     @cherrypy.expose
     def searchForBook(self, bookid=None):
@@ -995,20 +995,20 @@ class WebInterface(object):
                 source = 'AudioBook'
                 bookfile = bookdata["AudioFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.debug(u'Opening %s %s' % (source, bookfile))
+                    logger.debug('Opening %s %s' % (source, bookfile))
                     return serve_file(bookfile, self.mimetype(bookfile), "attachment")
             else:
                 source = 'eBook'
                 bookfile = bookdata["BookFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.debug(u'Opening %s %s' % (source, bookfile))
+                    logger.debug('Opening %s %s' % (source, bookfile))
                     return serve_file(bookfile, self.mimetype(bookfile), "attachment")
 
             authorName = bookdata["AuthorName"]
             bookName = bookdata["BookName"]
-            logger.info(u'Missing %s %s,%s [%s]' % (source, authorName, bookName, bookfile))
+            logger.info('Missing %s %s,%s [%s]' % (source, authorName, bookName, bookfile))
         else:
-            logger.warn(u'Missing bookid: %s' % bookid)
+            logger.warn('Missing bookid: %s' % bookid)
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
@@ -1019,7 +1019,7 @@ class WebInterface(object):
         if data:
             return serve_template(templatename="editauthor.html", title="Edit Author", config=data)
         else:
-            logger.info(u'Missing author %s:' % authorid)
+            logger.info('Missing author %s:' % authorid)
 
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
@@ -1151,7 +1151,7 @@ class WebInterface(object):
             return serve_template(templatename="editbook.html", title="Edit Book",
                                   config=bookdata, seriesdict=seriesdict, authors=authors)
         else:
-            logger.info(u'Missing book %s' % bookid)
+            logger.info('Missing book %s' % bookid)
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
@@ -1270,10 +1270,10 @@ class WebInterface(object):
                             bookname = title['BookName']
                             if library == 'eBook':
                                 myDB.upsert("books", {'Status': action}, {'BookID': bookid})
-                                logger.debug(u'Status set to "%s" for "%s"' % (action, bookname))
+                                logger.debug('Status set to "%s" for "%s"' % (action, bookname))
                             elif library == 'AudioBook':
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
-                                logger.debug(u'AudioStatus set to "%s" for "%s"' % (action, bookname))
+                                logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
                     if action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
@@ -1295,7 +1295,7 @@ class WebInterface(object):
 
                                     if deleted:
                                         if bookfile == bookdata['BookFile']:
-                                            logger.info(u'eBook %s deleted from disc' % bookname)
+                                            logger.info('eBook %s deleted from disc' % bookname)
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
                                                 if calibreid.endswith(')'):
@@ -1317,20 +1317,20 @@ class WebInterface(object):
                                                     logger.debug('No response from %s' %
                                                                  lazylibrarian.CONFIG['IMP_CALIBREDB'])
                                         if bookfile == bookdata['AudioFile']:
-                                            logger.info(u'AudioBook %s deleted from disc' % bookname)
+                                            logger.info('AudioBook %s deleted from disc' % bookname)
 
 
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
                                 if library == 'eBook':
                                     myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
-                                    logger.debug(u'Status set to Ignored for "%s"' % bookname)
+                                    logger.debug('Status set to Ignored for "%s"' % bookname)
                                 else:
                                     myDB.upsert("books", {"AudioStatus": "Ignored"}, {"BookID": bookid})
-                                    logger.debug(u'AudioStatus set to Ignored for "%s"' % bookname)
+                                    logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
                             else:
                                 myDB.action('delete from books where bookid=?', (bookid,))
-                                logger.info(u'Removed "%s" from database' % bookname)
+                                logger.info('Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):
             update_totals(AuthorID)
@@ -1583,7 +1583,7 @@ class WebInterface(object):
         if mag_data:
             IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
-                logger.debug(u'Opening file %s' % IssueFile)
+                logger.debug('Opening file %s' % IssueFile)
                 return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
 
         # or we may just have a title to find magazine in issues table
@@ -1593,10 +1593,10 @@ class WebInterface(object):
         elif len(mag_data) == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:  # we only have one issue, get it
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
-            logger.debug(u'Opening %s - %s' % (bookid, IssueDate))
+            logger.debug('Opening %s - %s' % (bookid, IssueDate))
             return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
         else:  # multiple issues, show a list
-            logger.debug(u"%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
+            logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             raise cherrypy.HTTPRedirect(
                 "issuePage?title=%s" %
                 urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
@@ -1629,7 +1629,7 @@ class WebInterface(object):
                     nzburl = item['NZBurl']
                     if action == 'Remove':
                         myDB.action('DELETE from pastissues WHERE NZBurl=?', (nzburl,))
-                        logger.debug(u'Item %s removed from past issues' % item['NZBtitle'])
+                        logger.debug('Item %s removed from past issues' % item['NZBtitle'])
                         maglist.append({'nzburl': nzburl})
                     elif action == 'Wanted':
                         bookid = item['BookID']
@@ -1661,17 +1661,17 @@ class WebInterface(object):
 
                     elif action in ['Ignored', 'Skipped']:
                         myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
-                        logger.debug(u'Item %s marked %s in past issues' % (item['NZBtitle'], action))
+                        logger.debug('Item %s marked %s in past issues' % (item['NZBtitle'], action))
                         maglist.append({'nzburl': nzburl})
 
         if action == 'Remove':
-            logger.info(u'Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))
+            logger.info('Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))
         else:
-            logger.info(u'Status set to %s for %s past issue%s' % (action, len(maglist), plural(len(maglist))))
+            logger.info('Status set to %s for %s past issue%s' % (action, len(maglist), plural(len(maglist))))
         # start searchthreads
         if action == 'Wanted':
             for items in maglist:
-                logger.debug(u'Snatching %s' % items['nzbtitle'])
+                logger.debug('Snatching %s' % items['nzbtitle'])
                 myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, items['nzburl']))
                 if 'libgen' in items['nzbprov']:
                     snatch = DirectDownloadMethod(
@@ -1713,10 +1713,10 @@ class WebInterface(object):
                     if action == "Delete":
                         result = self.deleteIssue(issue['IssueFile'])
                         if result:
-                            logger.info(u'Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
+                            logger.info('Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
                     if action == "Remove" or action == "Delete":
                         myDB.action('DELETE from issues WHERE IssueID=?', (item,))
-                        logger.info(u'Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
+                        logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
         raise cherrypy.HTTPRedirect("magazines")
 
     @staticmethod
@@ -1755,15 +1755,15 @@ class WebInterface(object):
                     controlValueDict = {"Title": item}
                     newValueDict = {"Status": action}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Status of magazine %s changed to %s' % (item, action))
+                    logger.info('Status of magazine %s changed to %s' % (item, action))
                 if action == "Delete":
                     issues = myDB.select('SELECT IssueFile from issues WHERE Title=?', (item,))
-                    logger.debug(u'Deleting magazine %s from disc' % item)
+                    logger.debug('Deleting magazine %s from disc' % item)
                     issuedir = ''
                     for issue in issues:  # delete all issues of this magazine
                         result = self.deleteIssue(issue['IssueFile'])
                         if result:
-                            logger.debug(u'Issue %s deleted from disc' % issue['IssueFile'])
+                            logger.debug('Issue %s deleted from disc' % issue['IssueFile'])
                             issuedir = os.path.dirname(issue['IssueFile'])
                         else:
                             logger.debug('Failed to delete %s' % (issue['IssueFile']))
@@ -1772,15 +1772,15 @@ class WebInterface(object):
                         # delete this magazines directory if now empty
                         try:
                             os.rmdir(magdir)
-                            logger.debug(u'Magazine directory %s deleted from disc' % magdir)
+                            logger.debug('Magazine directory %s deleted from disc' % magdir)
                         except OSError:
-                            logger.debug(u'Magazine directory %s is not empty' % magdir)
-                    logger.info(u'Magazine %s deleted from disc' % item)
+                            logger.debug('Magazine directory %s is not empty' % magdir)
+                    logger.info('Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
                     myDB.action('DELETE from magazines WHERE Title=?', (item,))
                     myDB.action('DELETE from pastissues WHERE BookID=?', (item,))
                     myDB.action('DELETE from issues WHERE Title=?', (item,))
-                    logger.info(u'Magazine %s removed from database' % item)
+                    logger.info('Magazine %s removed from database' % item)
                 if action == "Reset":
                     controlValueDict = {"Title": item}
                     newValueDict = {
@@ -1790,7 +1790,7 @@ class WebInterface(object):
                         "IssueStatus": "Wanted"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info(u'Magazine %s details reset' % item)
+                    logger.info('Magazine %s details reset' % item)
 
         raise cherrypy.HTTPRedirect("magazines")
 
@@ -1811,11 +1811,11 @@ class WebInterface(object):
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 threading.Thread(target=search_magazines, name='SEARCHMAG', args=[mags, False]).start()
-                logger.debug(u"Searching for magazine with title: %s" % mags[0]["bookid"])
+                logger.debug("Searching for magazine with title: %s" % mags[0]["bookid"])
             else:
-                logger.warn(u"Not searching for magazine, no download methods set, check config")
+                logger.warn("Not searching for magazine, no download methods set, check config")
         else:
-            logger.debug(u"MagazineSearch called with no magazines")
+            logger.debug("MagazineSearch called with no magazines")
 
     @cherrypy.expose
     def addMagazine(self, title=None):
@@ -1913,7 +1913,7 @@ class WebInterface(object):
             try:
                 threading.Thread(target=LibraryScan, name=threadname, args=[None, library, None, remove]).start()
             except Exception as e:
-                logger.error(u'Unable to complete the scan: %s' % str(e))
+                logger.error('Unable to complete the scan: %s' % str(e))
         else:
             logger.debug('%s already running' % threadname)
         if library == 'Audio':
@@ -1926,7 +1926,7 @@ class WebInterface(object):
             try:
                 threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
             except Exception as e:
-                logger.error(u'Unable to complete the scan: %s' % str(e))
+                logger.error('Unable to complete the scan: %s' % str(e))
         else:
             logger.debug('MAGAZINE_SCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
@@ -1938,7 +1938,7 @@ class WebInterface(object):
                 threading.Thread(target=LibraryScan, name='ALT-LIBRARYSCAN',
                                  args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], 'eBook', None, False]).start()
             except Exception as e:
-                logger.error(u'Unable to complete the libraryscan: %s' % str(e))
+                logger.error('Unable to complete the libraryscan: %s' % str(e))
         else:
             logger.debug('ALT-LIBRARYSCAN already running')
         raise cherrypy.HTTPRedirect("manage")
@@ -1950,7 +1950,7 @@ class WebInterface(object):
                 threading.Thread(target=processAlternate, name='IMPORTALT',
                                  args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
-                logger.error(u'Unable to complete the import: %s' % str(e))
+                logger.error('Unable to complete the import: %s' % str(e))
         else:
             logger.debug('IMPORTALT already running')
         raise cherrypy.HTTPRedirect("manage")
@@ -2062,9 +2062,9 @@ class WebInterface(object):
             if lazylibrarian.LOGLEVEL < 2:
                 lazylibrarian.LOGLEVEL += 2
         if lazylibrarian.LOGLEVEL < 2:
-            logger.info(u'Debug log OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
+            logger.info('Debug log OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
         else:
-            logger.info(u'Debug log ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
+            logger.info('Debug log ON, loglevel is %s' % lazylibrarian.LOGLEVEL)
         raise cherrypy.HTTPRedirect("logs")
 
     @cherrypy.expose
@@ -2142,10 +2142,10 @@ class WebInterface(object):
         self.label_thread()
         myDB = database.DBConnection()
         if status == 'all':
-            logger.info(u"Clearing all history")
+            logger.info("Clearing all history")
             myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
         else:
-            logger.info(u"Clearing history where status is %s" % status)
+            logger.info("Clearing history where status is %s" % status)
             myDB.action('DELETE from wanted WHERE Status=?', (status,))
         raise cherrypy.HTTPRedirect("history")
 
@@ -2257,7 +2257,7 @@ class WebInterface(object):
             'Cache-Control'] = "max-age=0,no-cache,no-store"
 
         result = notifiers.twitter_notifier._get_credentials(key)
-        logger.info(u"result: " + str(result))
+        logger.info("result: " + str(result))
         if result:
             return "Key verification successful"
         else:
@@ -2470,7 +2470,7 @@ class WebInterface(object):
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
         else:
-            logger.debug(u"forceSearch called with bad source")
+            logger.debug("forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose

@@ -339,7 +339,7 @@ def GOODREADS(host=None, feednr=None, priority=0):
         data = None
 
     if data:
-        logger.debug(u'Parsing results from %s' % URL)
+        logger.debug('Parsing results from %s' % URL)
         provider = data['feed']['link']
         logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
         for post in data.entries:
@@ -391,7 +391,7 @@ def RSS(host=None, feednr=None, priority=0):
 
     if data:
         # to debug because of api
-        logger.debug(u'Parsing results from %s' % URL)
+        logger.debug('Parsing results from %s' % URL)
         provider = data['feed']['link']
         logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
         for post in data.entries:
@@ -481,6 +481,10 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             host = 'http://' + host
         URL = host + '/api?' + urllib.urlencode(params)
 
+        sterm = book['searchterm']
+        if isinstance(sterm, str):
+            sterm = sterm.decode('utf-8')
+
         rootxml = None
         logger.debug("[NewzNabPlus] URL = %s" % URL)
         result, success = fetchURL(URL)
@@ -498,7 +502,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 
         if rootxml is not None:
             # to debug because of api
-            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (URL, host))
+            logger.debug('Parsing results from <a href="%s">%s</a>' % (URL, host))
 
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
@@ -563,10 +567,10 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                                 logger.debug('%s is too old (%s day%s)' % (thisnzb['nzbtitle'], nzbage, plural(nzbage)))
 
                     except IndexError:
-                        logger.debug('No results from %s for %s' % (host, book['searchterm']))
-                logger.debug(u'Found %s nzb at %s for: %s' % (nzbcount, host, book['searchterm']))
+                        logger.debug('No results from %s for %s' % (host, sterm))
+                logger.debug('Found %s nzb at %s for: %s' % (nzbcount, host, sterm))
         else:
-            logger.debug('No data returned from %s for %s' % (host, book['searchterm']))
+            logger.debug('No data returned from %s for %s' % (host, sterm))
     return results
 
 

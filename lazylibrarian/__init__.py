@@ -1197,7 +1197,7 @@ def daemonize():
 
     if PIDFILE:
         pid = str(os.getpid())
-        logger.debug(u"Writing PID " + pid + " to " + str(PIDFILE))
+        logger.debug("Writing PID " + pid + " to " + str(PIDFILE))
         file(PIDFILE, 'w').write("%s\n" % pid)
 
 
