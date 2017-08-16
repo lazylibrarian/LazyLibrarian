@@ -419,7 +419,7 @@ class GoogleBooks:
                                             if match:
                                                 myDB.action('insert into languages values (?, ?)',
                                                             (isbnhead, booklang))
-                                                logger.debug(u"GB language: " + booklang)
+                                                logger.debug("GB language: " + booklang)
 
                                     if not match:
                                         # try searching librarything for a language code using the isbn
@@ -437,7 +437,7 @@ class GoogleBooks:
                                                 match = True
                                                 myDB.action('insert into languages values (?, ?)',
                                                             (isbnhead, booklang))
-                                                logger.debug(u"LT language: " + booklang)
+                                                logger.debug("LT language: " + booklang)
                                         except Exception as e:
                                             booklang = ""
                                             logger.error("Error finding language: %s" % str(e))
@@ -623,13 +623,13 @@ class GoogleBooks:
                                 resultcount += 1
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                                logger.debug(u"Book found: " + bookname + " " + bookdate)
+                                logger.debug("Book found: " + bookname + " " + bookdate)
                                 updated = False
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from librarything
                                     workcover = getBookCover(bookid)
                                     if workcover:
-                                        logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
+                                        logger.debug('Updated cover for %s to %s' % (bookname, workcover))
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
@@ -649,7 +649,7 @@ class GoogleBooks:
                                 if lazylibrarian.CONFIG['ADD_SERIES']:  # prefer series info from librarything
                                     seriesdict = getWorkSeries(bookid)
                                     if seriesdict:
-                                        logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                                        logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
                                         updated = True
                                     # librarything doesn't have series info. Any in the title?
                                     elif series:
@@ -887,7 +887,7 @@ class GoogleBooks:
             # try to get a cover from librarything
             workcover = getBookCover(bookid)
             if workcover:
-                logger.debug(u'Updated cover for %s to %s' % (bookname, workcover))
+                logger.debug('Updated cover for %s to %s' % (bookname, workcover))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)
@@ -905,7 +905,7 @@ class GoogleBooks:
             # prefer series info from librarything
             seriesdict = getWorkSeries(bookid)
             if seriesdict:
-                logger.debug(u'Updated series: %s [%s]' % (bookid, seriesdict))
+                logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
             else:
                 if series:
                     seriesdict = {cleanName(unaccented(series)): seriesNum}

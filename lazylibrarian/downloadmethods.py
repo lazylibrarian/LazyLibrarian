@@ -98,7 +98,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
                     (Source, downloadID, nzburl))
         return True
     else:
-        logger.error(u'Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
+        logger.error('Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
         myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (nzburl,))
         return False
 
@@ -155,7 +155,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
         return False
 
     if downloadID:
-        logger.debug(u'File %s has been downloaded from %s' % (tor_title, tor_url))
+        logger.debug('File %s has been downloaded from %s' % (tor_title, tor_url))
         if library == 'eBook':
             myDB.action('UPDATE books SET status="Snatched" WHERE BookID=?', (bookid,))
         elif library == 'AudioBook':
@@ -164,7 +164,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
                     (Source, downloadID, full_url))
         return True
     else:
-        logger.error(u'Failed to download file @ <a href="%s">%s</a>' % (full_url, tor_url))
+        logger.error('Failed to download file @ <a href="%s">%s</a>' % (full_url, tor_url))
         myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
         return False
 
@@ -380,7 +380,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (tor_title, full_url))
         return True
     else:
-        logger.error(u'Failed to download torrent from %s, %s' % (Source, tor_url))
+        logger.error('Failed to download torrent from %s, %s' % (Source, tor_url))
         myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
         return False
 

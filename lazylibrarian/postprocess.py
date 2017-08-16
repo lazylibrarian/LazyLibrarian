@@ -392,13 +392,13 @@ def processDir(reset=False):
                     book = highest[2]
                 if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                     mostrecentissue = ''
-                    logger.debug(u'Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
+                    logger.debug('Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
 
                     cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
                     cmd += ' and books.AuthorID = authors.AuthorID'
                     data = myDB.match(cmd, (book['BookID'],))
                     if data:  # it's ebook/audiobook
-                        logger.debug(u'Processing %s %s' % (book_type, book['BookID']))
+                        logger.debug('Processing %s %s' % (book_type, book['BookID']))
                         authorname = data['AuthorName']
                         authorname = ' '.join(authorname.split())  # ensure no extra whitespace
                         bookname = data['BookName']
@@ -420,7 +420,7 @@ def processDir(reset=False):
                     else:
                         data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                         if data:  # it's a magazine
-                            logger.debug(u'Processing magazine %s' % book['BookID'])
+                            logger.debug('Processing magazine %s' % book['BookID'])
                             # AuxInfo was added for magazine release date, normally housed in 'magazines'
                             # but if multiple files are downloading, there will be an error in post-processing
                             # trying to go to the same directory.
@@ -449,7 +449,7 @@ def processDir(reset=False):
                 else:
                     logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
                     if match:
-                        logger.debug(u'Closest match (%s%%): %s' % (match, pp_path))
+                        logger.debug('Closest match (%s%%): %s' % (match, pp_path))
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             for match in matches:
                                 logger.debug('Match: %s%%  %s' % (match[0], match[1]))

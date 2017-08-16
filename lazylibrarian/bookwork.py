@@ -707,9 +707,12 @@ def getBookCover(bookID=None):
             result, success = fetchURL(booklink)
             if success:
                 try:
-                    img = result.split('og:image')[1].split('="')[1].split('"')[0]
+                    img = result.split('id="coverImage"')[1].split('src="')[1].split('"')[0]
                 except IndexError:
-                    img = None
+                    try:
+                        img = result.split('og:image')[1].split('="')[1].split('"')[0]
+                    except IndexError:
+                        img = None
                 if img and img.startswith('http') and 'nocover' not in img and 'nophoto' not in img:
                     time_now = int(time.time())
                     if time_now <= lazylibrarian.LAST_GOODREADS:

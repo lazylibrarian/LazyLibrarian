@@ -95,7 +95,7 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
             Author_match = fuzz.token_set_ratio(author, resultTitle)
             Book_match = fuzz.token_set_ratio(title, resultTitle)
-            logger.debug(u"%s author/book Match: %s/%s %s at %s" %
+            logger.debug("%s author/book Match: %s/%s %s at %s" %
                          (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
 
             rejected = False
@@ -185,10 +185,10 @@ def findBestResult(resultlist, book, searchtype, source):
             dlpriority = highest[4]
 
             if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
-                logger.info(u'Nearest match (%s%%): %s using %s search for %s %s' %
+                logger.info('Nearest match (%s%%): %s using %s search for %s %s' %
                             (score, resultTitle, searchtype, book['authorName'], book['bookName']))
             else:
-                logger.info(u'Best match (%s%%): %s using %s search, %s priority %s' %
+                logger.info('Best match (%s%%): %s using %s search, %s priority %s' %
                             (score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
             return highest
         else:

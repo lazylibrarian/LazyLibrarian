@@ -66,7 +66,7 @@ def search_magazines(mags=None, reset=False):
         # should clear old search results as might not be available any more
         # ie torrent not available, changed providers, out of news server retention etc.
         # Only delete the "skipped" ones, not wanted/snatched/processed/ignored
-        logger.debug(u"Removing old magazine search results")
+        logger.debug("Removing old magazine search results")
         myDB.action('DELETE from pastissues WHERE Status="Skipped"')
 
         logger.info('Searching for %i magazine%s' % (len(searchmags), plural(len(searchmags))))
@@ -76,9 +76,13 @@ def search_magazines(mags=None, reset=False):
             searchterm = searchmag['Regex']
 
             if not searchterm:
-                searchterm = searchmag['Title']
                 dic = {'...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '', ',': '', '*': ''}
-                searchterm = unaccented_str(replace_all(searchterm, dic))
+                # strip accents from the magazine title for easier name-matching
+                searchterm = unaccented_str(searchmag['Title'])
+                if not searchterm:
+                    # unless it's not a latin-1 encodable name
+                    searchterm = searchmag['Title']
+                searchterm = replace_all(searchterm, dic)
                 searchterm = re.sub('[.\-/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
 
             searchlist.append({"bookid": bookid, "searchterm": searchterm})
@@ -162,7 +166,11 @@ def search_magazines(mags=None, reset=False):
                 for nzb in resultlist:
                     total_nzbs += 1
                     bookid = nzb['bookid']
+                    # strip accents from the magazine title for easier name-matching
                     nzbtitle = unaccented_str(nzb['nzbtitle'])
+                    if not nzbtitle:
+                        # unless it's not a latin-1 encodable name
+                        nzbtitle = nzb['nzbtitle']
                     nzbtitle = nzbtitle.replace('"', '').replace("'", "")  # suppress " in titles
                     nzburl = nzb['nzburl']
                     nzbprov = nzb['nzbprov']

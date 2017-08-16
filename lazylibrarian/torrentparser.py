@@ -52,6 +52,10 @@ def TPB(book=None):
         elif book['library'] == 'magazine':
             cat = 0
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     page = 0
     results = []
     minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
@@ -74,7 +78,7 @@ def TPB(book=None):
         if not success:
             # may return 404 if no results, not really an error
             if '404' in result:
-                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                logger.debug("No results found from %s for %s" % (provider, sterm))
             else:
                 logger.debug(searchURL)
                 logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -82,7 +86,7 @@ def TPB(book=None):
             result = False
 
         if result:
-            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+            logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             soup = BeautifulSoup(result)
             # tpb uses a named table
             table = soup.find('table', id='searchResult')
@@ -151,7 +155,7 @@ def TPB(book=None):
                         else:
                             logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
                     except Exception as e:
-                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                         logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
         page += 1
@@ -159,8 +163,7 @@ def TPB(book=None):
             logger.warn('Maximum results page search reached, still more results available')
             next_page = False
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
     return results, errmsg
 
 
@@ -180,11 +183,15 @@ def KAT(book=None):
     }
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     result, success = fetchURL(searchURL)
     if not success:
         # seems KAT returns 404 if no results, not really an error
         if '404' in result:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            logger.debug("No results found from %s for %s" % (provider, sterm))
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -194,7 +201,7 @@ def KAT(book=None):
     results = []
 
     if result:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
         soup = BeautifulSoup(result)
         rows = []
@@ -268,11 +275,10 @@ def KAT(book=None):
                     else:
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
                 except Exception as e:
-                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                     logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
     return results, errmsg
 
 
@@ -284,6 +290,10 @@ def WWT(book=None):
         host = 'http://' + host
 
     providerurl = url_fix(host + "/torrents-search.php")
+
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
 
     cat = 0  # 0=all, 36=ebooks, 52=mags, 56=audiobooks
     if 'library' in book:
@@ -312,7 +322,7 @@ def WWT(book=None):
         if not success:
             # might return 404 if no results, not really an error
             if '404' in result:
-                logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+                logger.debug("No results found from %s for %s" % (provider, sterm))
             else:
                 logger.debug(searchURL)
                 logger.debug('Error fetching data from %s: %s' % (provider, result))
@@ -320,7 +330,7 @@ def WWT(book=None):
             result = False
 
         if result:
-            logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+            logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             soup = BeautifulSoup(result)
 
             try:
@@ -396,15 +406,14 @@ def WWT(book=None):
                         else:
                             logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
                     except Exception as e:
-                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                         logger.debug('%s: %s' % (provider, traceback.format_exc()))
         page += 1
         if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < page:
             logger.warn('Maximum results page search reached, still more results available')
             next_page = False
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
     return results, errmsg
 
 
@@ -424,11 +433,15 @@ def EXTRA(book=None):
     }
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     data, success = fetchURL(searchURL)
     if not success:
         # may return 404 if no results, not really an error
         if '404' in data:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            logger.debug("No results found from %s for %s" % (provider, sterm))
         else:
             logger.debug('Error fetching data from %s: %s' % (provider, data))
             errmsg = data
@@ -439,7 +452,7 @@ def EXTRA(book=None):
 
     minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
         if len(d.entries):
             for item in d.entries:
@@ -478,11 +491,11 @@ def EXTRA(book=None):
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
 
                 except Exception as e:
-                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                     logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
+
     return results, errmsg
 
 
@@ -502,11 +515,15 @@ def ZOO(book=None):
     }
     searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     data, success = fetchURL(searchURL)
     if not success:
         # may return 404 if no results, not really an error
         if '404' in data:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            logger.debug("No results found from %s for %s" % (provider, sterm))
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
@@ -517,7 +534,7 @@ def ZOO(book=None):
 
     minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
         if len(d.entries):
             for item in d.entries:
@@ -559,11 +576,11 @@ def ZOO(book=None):
                         # looks like zooqle has ip based access limits
                         logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
                     else:
-                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                         logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
+
     return results, errmsg
 
 
@@ -580,11 +597,15 @@ def LIME(book=None):
     providerurl = url_fix(host + "/searchrss/other")
     searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     data, success = fetchURL(searchURL)
     if not success:
         # may return 404 if no results, not really an error
         if '404' in data:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            logger.debug("No results found from %s for %s" % (provider, sterm))
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
@@ -595,7 +616,7 @@ def LIME(book=None):
 
     minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
         if len(d.entries):
             for item in d.entries:
@@ -639,11 +660,11 @@ def LIME(book=None):
                         # may have ip based access limits
                         logger.error('Access forbidden. Please wait a while before trying %s again.' % provider)
                     else:
-                        logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                        logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                         logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
+
     return results, errmsg
 
 
@@ -663,11 +684,15 @@ def TDL(book=None):
     }
     searchURL = providerurl + "/rss.xml?%s" % urllib.urlencode(params)
 
+    sterm = book['searchterm']
+    if isinstance(sterm, str):
+        sterm = sterm.decode('utf-8')
+
     data, success = fetchURL(searchURL)
     if not success:
         # may return 404 if no results, not really an error
         if '404' in data:
-            logger.debug(u"No results found from %s for %s" % (provider, book['searchterm']))
+            logger.debug("No results found from %s for %s" % (provider, sterm))
         else:
             logger.debug(searchURL)
             logger.debug('Error fetching data from %s: %s' % (provider, data))
@@ -678,7 +703,7 @@ def TDL(book=None):
 
     minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
     if data:
-        logger.debug(u'Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
+        logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         d = feedparser.parse(data)
         if len(d.entries):
             for item in d.entries:
@@ -718,9 +743,9 @@ def TDL(book=None):
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
 
                 except Exception as e:
-                    logger.error(u"An error occurred in the %s parser: %s" % (provider, str(e)))
+                    logger.error("An error occurred in the %s parser: %s" % (provider, str(e)))
                     logger.debug('%s: %s' % (provider, traceback.format_exc()))
 
-    logger.debug(u"Found %i result%s from %s for %s" %
-                 (len(results), plural(len(results)), provider, book['searchterm']))
+    logger.debug("Found %i result%s from %s for %s" % (len(results), plural(len(results)), provider, sterm))
+
     return results, errmsg
