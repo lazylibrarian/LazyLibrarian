@@ -26,10 +26,10 @@
             % for result in results:
               <% count = count + 1 %>
               %if redirect == 'books':
-                <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a></td>
+                <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&library=eBook" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a></td>
               %else:
                 %if redirect == 'audio':
-                  <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&source=audio" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a></td>
+                  <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&library=AudioBook" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a></td>
                 %else:
                   <td class="bookart text-center"><a href="openMag?bookid=${result['IssueID']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a></td>
                 %endif

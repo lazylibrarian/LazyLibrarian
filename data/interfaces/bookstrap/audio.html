@@ -127,9 +127,9 @@
                     var btn = row[11]
                     if ( btn == 'Open' ) {
                         btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
-                                '&source=audio" target="_self"><i class="fa fa-book"></i>Open</a>'}
+                                '&library=AudioBook" target="_self"><i class="fa fa-book"></i>Open</a>'}
                     else if ( btn == 'Wanted' ) {
-                        btn = '<p><a class="a btn btn-xs btn-danger">Wanted</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
+                        btn = '<p><a class="a btn btn-xs btn-danger">Wanted</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=AudioBook" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
                     else if ( btn == 'Snatched' ) {
                         btn = '<a class="button btn btn-xs btn-info">Snatched</a>'}
                     else if ( btn == 'Have' ) {

@@ -942,19 +942,22 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def startBookSearch(self, books=None):
+    def startBookSearch(self, books=None, library=None):
         if books:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
-                logger.debug("Searching for book with id: " + books[0]["bookid"])
+                booktype = library
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, booktype]).start()
+                if not booktype:
+                    booktype = 'book'  # all types
+                logger.debug("Searching for %s with id: %s" % (booktype, books[0]["bookid"]))
             else:
                 logger.warn("Not searching for book, no search methods set, check config.")
         else:
             logger.debug("BookSearch called with no books")
 
     @cherrypy.expose
-    def searchForBook(self, bookid=None):
+    def searchForBook(self, bookid=None, library=None):
         myDB = database.DBConnection()
         AuthorID = ''
         bookdata = myDB.match('SELECT AuthorID from books WHERE BookID=?', (bookid,))
@@ -963,7 +966,7 @@ class WebInterface(object):
 
             # start searchthreads
             books = [{"bookid": bookid}]
-            self.startBookSearch(books)
+            self.startBookSearch(books, library=library)
 
         if AuthorID:
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
@@ -984,29 +987,28 @@ class WebInterface(object):
         return "application/x-download"
 
     @cherrypy.expose
-    def openBook(self, bookid=None, source=None):
+    def openBook(self, bookid=None, library=None):
         self.label_thread()
         myDB = database.DBConnection()
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
         bookdata = myDB.match(cmd, (bookid,))
         if bookdata:
-            if source == 'audio':
-                source = 'AudioBook'
+            if library == 'AudioBook':
                 bookfile = bookdata["AudioFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.debug('Opening %s %s' % (source, bookfile))
+                    logger.debug('Opening %s %s' % (library, bookfile))
                     return serve_file(bookfile, self.mimetype(bookfile), "attachment")
             else:
-                source = 'eBook'
+                library = 'eBook'
                 bookfile = bookdata["BookFile"]
                 if bookfile and os.path.isfile(bookfile):
-                    logger.debug('Opening %s %s' % (source, bookfile))
+                    logger.debug('Opening %s %s' % (library, bookfile))
                     return serve_file(bookfile, self.mimetype(bookfile), "attachment")
 
             authorName = bookdata["AuthorName"]
             bookName = bookdata["BookName"]
-            logger.info('Missing %s %s,%s [%s]' % (source, authorName, bookName, bookfile))
+            logger.info('Missing %s %s,%s [%s]' % (library, authorName, bookName, bookfile))
         else:
             logger.warn('Missing bookid: %s' % bookid)
 

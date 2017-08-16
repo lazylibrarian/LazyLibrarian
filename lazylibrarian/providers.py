@@ -88,12 +88,12 @@ def get_capabilities(provider):
                 data = ElementTree.fromstring(source_xml)
             except ElementTree.ParseError:
                 data = ''
-                logger.debug(u"Error parsing xml from %s, %s" % (URL, source_xml))
+                logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
         else:
-            logger.debug(u"Error getting xml from %s, %s" % (URL, source_xml))
+            logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
             data = ''
         if len(data):
-            logger.debug(u"Parsing xml for capabilities of %s" % URL)
+            logger.debug("Parsing xml for capabilities of %s" % URL)
 
             #
             # book search isn't mentioned in the caps xml returned by
@@ -177,7 +177,7 @@ def get_capabilities(provider):
             provider['UPDATED'] = today()
             lazylibrarian.config_write()
         else:
-            logger.warn(u"Unable to get capabilities for %s: No data returned" % URL)
+            logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider
 
 
@@ -506,7 +506,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
 
             if rootxml.tag == 'error':
                 errormsg = rootxml.get('description', default='unknown error')
-                logger.error(u"%s - %s" % (host, errormsg))
+                logger.error("%s - %s" % (host, errormsg))
                 # maybe the host doesn't support the search type
                 match = False
                 if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
