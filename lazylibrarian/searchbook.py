@@ -66,14 +66,15 @@ def search_book(books=None, library=None):
         else:
             # The user has added a new book
             for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
-                cmd += 'from books,authors WHERE BookID=? AND books.AuthorID = authors.AuthorID'
-                results = myDB.select(cmd, (book['bookid'],))
-                if results:
-                    for terms in results:
-                        searchbooks.append(terms)
-                else:
-                    logger.debug("SearchBooks - BookID %s is not in the database" % book['bookid'])
+                if not book['bookid'] in ['booklang', 'library', 'ignored']:
+                    cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
+                    cmd += 'from books,authors WHERE BookID=? AND books.AuthorID = authors.AuthorID'
+                    results = myDB.select(cmd, (book['bookid'],))
+                    if results:
+                        for terms in results:
+                            searchbooks.append(terms)
+                    else:
+                        logger.debug("SearchBooks - BookID %s is not in the database" % book['bookid'])
 
         if len(searchbooks) == 0:
             logger.debug("SearchBooks - No books to search for")

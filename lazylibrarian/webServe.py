@@ -946,8 +946,8 @@ class WebInterface(object):
         if books:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, library]).start()
                 booktype = library
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, booktype]).start()
                 if not booktype:
                     booktype = 'book'  # all types
                 logger.debug("Searching for %s with id: %s" % (booktype, books[0]["bookid"]))
@@ -1340,14 +1340,14 @@ class WebInterface(object):
         # start searchthreads
         if action == 'Wanted':
             books = []
-            for bookid in args:
+            for arg in args:
                 # ouch dirty workaround...
-                if not bookid == 'book_table_length':
-                    books.append({"bookid": bookid})
+                if not arg in ['booklang', 'library', 'ignored', 'book_table_length']:
+                    books.append({"bookid": arg})
 
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, library]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
