@@ -14,14 +14,12 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import socket
 import xmlrpclib
 from time import sleep
 
 import lazylibrarian
 from lazylibrarian import logger
-from magnet2torrent import magnet2torrent
 
 
 def getServer():
@@ -65,15 +63,15 @@ def addTorrent(tor_url, hashID):
 
     directory = lazylibrarian.CONFIG['RTORRENT_DIR']
 
-    #if tor_url.startswith('magnet') and directory:
-        # can't send magnets to rtorrent with a directory - not working correctly
-        # convert magnet to torrent instead
-        #tor_name = 'meta-' + hashID + '.torrent'
-        #tor_file = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
-        #torrent = magnet2torrent(tor_url, tor_file)
-        #if torrent is False:
-        #    return False
-        #tor_url = torrent
+    # if tor_url.startswith('magnet') and directory:
+    #    can't send magnets to rtorrent with a directory - not working correctly
+    #    convert magnet to torrent instead
+    #    tor_name = 'meta-' + hashID + '.torrent'
+    #    tor_file = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
+    #    torrent = magnet2torrent(tor_url, tor_file)
+    #    if torrent is False:
+    #       return False
+    #    tor_url = torrent
 
     # socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
 

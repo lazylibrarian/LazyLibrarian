@@ -31,7 +31,7 @@ from lazylibrarian.formatter import check_int
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB(None, cmd="test")
+    test = sendNZB(cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
@@ -40,14 +40,14 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        sendNZB(None, 'GroupFinalDelete', nzbID)
-        return sendNZB(None, 'HistoryFinalDelete', nzbID)
+        sendNZB(cmd='GroupFinalDelete', nzbID=nzbID)
+        return sendNZB(cmd='HistoryFinalDelete', nzbID=nzbID)
     else:
-        sendNZB(None, 'GroupDelete', nzbID)
-        return sendNZB(None, 'HistoryDelete', nzbID)
+        sendNZB(cmd='GroupDelete', nzbID=nzbID)
+        return sendNZB(cmd='HistoryDelete', nzbID=nzbID)
 
 
-def sendNZB(nzb, cmd=None, nzbID=None):
+def sendNZB(nzb=None, cmd=None, nzbID=None):
     # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
     # by setting nzbID and cmd (we currently only use test and delete)
 

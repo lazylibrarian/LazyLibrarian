@@ -766,8 +766,8 @@ def config_write():
         else:
             # keep the old value
             value = CFG.get(section, key.lower())
-            #if CONFIG['LOGLEVEL'] > 2:
-            #    logger.debug("Leaving %s unchanged (%s)" % (key, value))
+            # if CONFIG['LOGLEVEL'] > 2:
+            #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
         CFG.set(section, key.lower(), value)
 
@@ -857,7 +857,7 @@ def config_write():
         with open(CONFIGFILE + '.new', 'wb') as configfile:
             CFG.write(configfile)
     except Exception as e:
-        msg = '{} {} {}'.format('Unable to create new config file:', CONFIGFILE, e.strerror)
+        msg = '{} {} {}'.format('Unable to create new config file:', CONFIGFILE, str(e))
         logger.warn(msg)
         return
     try:

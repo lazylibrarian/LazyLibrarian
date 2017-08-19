@@ -597,7 +597,8 @@ class GoodReads:
                                 rejected = True
 
                         if check_status or not rejected:
-                            existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?', (bookid,))
+                            existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?',
+                                                       (bookid,))
                             if existing_book:
                                 book_status = existing_book['Status']
                                 locked = existing_book['Manual']

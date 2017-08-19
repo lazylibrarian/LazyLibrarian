@@ -38,8 +38,10 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
+
 def pwd_generator(size=10, chars=string.ascii_letters + string.digits):
-        return ''.join(random.choice(chars) for _ in range(size))
+    return ''.join(random.choice(chars) for _ in range(size))
+
 
 # noinspection PyShadowingNames,PyUnusedLocal
 def error_page_401(status, message, traceback, version):
@@ -58,6 +60,7 @@ def error_page_401(status, message, traceback, version):
     </body>
 </html>
 ''' % (title, body)
+
 
 def setperm(file_or_dir):
     """
@@ -116,6 +119,7 @@ def bts_file(search_dir=None):
 
 def csv_file(search_dir=None):
     return any_file(search_dir, '.csv')
+
 
 def jpg_file(search_dir=None):
     return any_file(search_dir, '.jpg')
@@ -370,6 +374,7 @@ def clearLog():
         return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
             lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
 
+
 def reverse_readline(filename, buf_size=8192):
     """a generator that returns the lines of a file in reverse order"""
     with open(filename) as fh:
@@ -427,7 +432,7 @@ def saveLog():
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
     passchars = string.ascii_letters + string.digits + '_/'  # _/ used by slack and googlebooks
     redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ', 'using api [',
-                    'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': '"]
+                  'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': '"]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0

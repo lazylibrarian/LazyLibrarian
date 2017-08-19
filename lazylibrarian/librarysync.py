@@ -241,27 +241,6 @@ def find_book_in_db(author, book):
                 partname_name = a_book['BookName']
                 partname_id = a_book['BookID']
 
-            # if partial == best_partial:
-                # prefer the match closest to the left, ie prefer starting with a match and ignoring the rest
-                # this eliminates most false matches against omnibuses when we want a single book
-                # find the position of the shortest string in the longest
-                # if len(getList(book_lower)) >= len(getList(a_book_lower)):
-                #    match1 = book_lower.find(a_book_lower)
-                # else:
-                #    match1 = a_book_lower.find(book_lower)
-
-                # if len(getList(book_lower)) >= len(getList(partial_name.lower())):
-                #    match2 = book_lower.find(partial_name.lower())
-                # else:
-                #    match2 = partial_name.lower().find(book_lower)
-
-                # if match1 < match2:
-                #    logger.debug("Fuzz left change, prefer [%s] over [%s] for [%s]" %
-                #                (a_book['BookName'], partial_name, book))
-                #    best_partial = partial
-                #    partial_name = a_book['BookName']
-                #    partial_id = a_book['BookID']
-
         if best_ratio > 90:
             logger.debug("Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
             return ratio_id
@@ -408,7 +387,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     d.remove(directory)
                 # ignore directories containing this special file
                 elif os.path.exists(os.path.join(r, directory, '.ll_ignore')):
-                    logger.debug('Found .ll_ignore file in %s' % os.path.join(r,directory))
+                    logger.debug('Found .ll_ignore file in %s' % os.path.join(r, directory))
                     d.remove(directory)
 
             for files in f:
@@ -518,7 +497,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     logger.debug("id3reader error %s" % str(e))
                                     pass
 
-                        #  Failing anything better, just pattern match on filename
+                        # Failing anything better, just pattern match on filename
                         if not match:
                             # might need a different pattern match for audiobooks
                             # as they often seem to have xxChapter-Seriesnum Author Title
@@ -679,8 +658,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                             GR_ID.find_book(bookid)
                                                             if language and language != "Unknown":
                                                                 # set language from book metadata
-                                                                logger.debug("Setting language from metadata %s : %s" % (
-                                                                             booktitle, language))
+                                                                logger.debug(
+                                                                    "Setting language from metadata %s : %s" % (
+                                                                        booktitle, language))
                                                                 myDB.action(
                                                                     'UPDATE books SET BookLang=? WHERE BookID=?',
                                                                     (language, bookid))

@@ -182,10 +182,10 @@
                     { "fnRender": function ( oObj ) {
                         var btn = oObj.aData[11]
                         if ( btn == 'Open' ) {
-                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '" target="_self">Open</a>'}
+                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '&library=eBook" target="_self">Open</a>'}
                         else if ( btn == 'Wanted' ) {
                             btn = '<a class="button red" href="searchForBook?bookid=' + oObj.aData[9] +
-                                    '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'}
+                                    '&library=eBook" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'}
                         else if ( btn == 'Snatched' ) {
                             btn = '<a class="button">Snatched</a>'}
                         else if ( btn == 'Have' ) {
