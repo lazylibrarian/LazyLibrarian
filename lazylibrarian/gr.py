@@ -499,6 +499,9 @@ class GoodReads:
                                 ignored += 1
                                 continue
 
+                        rejected = False
+                        check_status = False
+
                         bookname = book.find('title').text
                         bookid = book.find('id').text
                         bookdesc = book.find('description').text
@@ -507,24 +510,26 @@ class GoodReads:
                         booklink = book.find('link').text
                         bookrate = float(book.find('average_rating').text)
                         bookpages = book.find('num_pages').text
-                        bookname = unaccented(bookname)
-
-                        bookname, booksub = split_title(authorNameResult, bookname)
-
-                        dic = {':': '.', '"': ''}  # do we need to strip apostrophes , '\'': ''}
-                        bookname = replace_all(bookname, dic)
-                        bookname = bookname.strip()  # strip whitespace
-                        booksub = replace_all(booksub, dic)
-                        booksub = booksub.strip()  # strip whitespace
-                        if booksub:
-                            series, seriesNum = bookSeries(booksub)
+                        booksub = series = seriesNum = ''
+                        if not bookname:
+                            logger.debug('Rejecting bookid %s for %s, no bookname' %
+                                         (bookid, authorNameResult))
+                            removedResults += 1
+                            rejected = True
                         else:
-                            series, seriesNum = bookSeries(bookname)
+                            bookname = unaccented(bookname)
+                            bookname, booksub = split_title(authorNameResult, bookname)
+                            dic = {':': '.', '"': ''}  # do we need to strip apostrophes , '\'': ''}
+                            bookname = replace_all(bookname, dic)
+                            bookname = bookname.strip()  # strip whitespace
+                            booksub = replace_all(booksub, dic)
+                            booksub = booksub.strip()  # strip whitespace
+                            if booksub:
+                                series, seriesNum = bookSeries(booksub)
+                            else:
+                                series, seriesNum = bookSeries(bookname)
 
-                        rejected = False
-                        check_status = False
-
-                        if re.match('[^\w-]', bookname):  # reject books with bad characters in title
+                        if not rejected and re.match('[^\w-]', bookname):  # reject books with bad characters in title
                             logger.debug("removed result [" + bookname + "] for bad characters")
                             removedResults += 1
                             rejected = True
@@ -534,12 +539,6 @@ class GoodReads:
                                 logger.debug('Rejecting %s, future publication date %s' % (bookname, pubyear))
                                 removedResults += 1
                                 rejected = True
-
-                        if not rejected and not bookname:
-                            logger.debug('Rejecting bookid %s for %s, no bookname' %
-                                         (bookid, authorNameResult))
-                            removedResults += 1
-                            rejected = True
 
                         if not rejected:
                             anames = book.find('authors')
