@@ -218,7 +218,7 @@ def authorUpdate():
         threading.currentThread().name = "AUTHORUPDATE"
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active"'
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
         cmd += ' and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
