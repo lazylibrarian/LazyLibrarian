@@ -119,7 +119,7 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL']
+                 'TASK_AGE', 'WALL_COLUMNS', 'ADMIN_EMAIL']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -182,7 +182,7 @@ CONFIG_DEFINITIONS = {
     'IMP_CONVERT': ('str', 'General', ''),
     'GIT_PROGRAM': ('str', 'General', ''),
     'CACHE_AGE': ('int', 'General', 30),
-    'TASK_AGE': ('int', 'General', 0),
+    'TASK_AGE': ('int', 'General', 2),
     'GIT_USER': ('str', 'Git', 'dobytang'),
     'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
     'GIT_BRANCH': ('str', 'Git', 'master'),
