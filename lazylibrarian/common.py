@@ -193,8 +193,9 @@ def scheduleJob(action='Start', target=None):
             # Try to get all authors scanned evenly inside the cache age
             minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
             myDB = database.DBConnection()
-            authors = myDB.match(
-                "select count('AuthorID') as counter from Authors where Status='Active' or Status='Loading'")
+            cmd = "select count('AuthorID') as counter from Authors where Status='Active' or Status='Wanted'"
+            cmd += " or Status='Loading'"
+            authors = myDB.match(cmd)
             authcount = authors['counter']
             if not authcount:
                 minutes = 60
@@ -219,7 +220,7 @@ def authorUpdate():
     try:
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-        cmd += ' and DateAdded is not null order by DateAdded ASC'
+        cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
@@ -247,7 +248,8 @@ def authorUpdate():
 def dbUpdate(refresh=False):
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC'
+        cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" or Status="Wanted"'
+        cmd += ' order by DateAdded ASC'
         activeauthors = myDB.select(cmd)
         lazylibrarian.AUTHORS_UPDATE = True
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
@@ -347,7 +349,7 @@ def showJobs():
         result.append(jobinfo)
 
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-    cmd += ' order by DateAdded ASC'
+    cmd += 'or Status="Wanted" order by DateAdded ASC'
     author = myDB.match(cmd)
     dtnow = datetime.datetime.now()
     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
