@@ -383,6 +383,8 @@ def unaccented(str_or_unicode):
 
 
 def unaccented_str(str_or_unicode):
+    if not str_or_unicode:
+        return ''
     try:
         nfkd_form = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
