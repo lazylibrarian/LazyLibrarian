@@ -297,7 +297,7 @@ class GoogleBooks:
             logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
     # noinspection PyUnboundLocalVariable
-    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", refresh=False):
+    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", entrystatus='Active', refresh=False):
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
             # google doesnt like accents in author names
@@ -702,7 +702,7 @@ class GoogleBooks:
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
-                "Status": "Active",
+                "Status": entrystatus,
                 "LastBook": lastbookname,
                 "LastLink": lastbooklink,
                 "LastDate": lastbookdate,
@@ -856,7 +856,7 @@ class GoogleBooks:
                     authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
                     if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS']:
-                        self.get_author_books(AuthorID)
+                        self.get_author_books(AuthorID, entrystatus=lazylibrarian.CONFIG['NEWAUTHOR_STATUS'])
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return

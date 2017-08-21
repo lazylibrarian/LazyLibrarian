@@ -304,7 +304,7 @@ class GoodReads:
             }
         return author_dict
 
-    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", refresh=False):
+    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", entrystatus='Active', refresh=False):
         try:
             api_hits = 0
             gr_lang_hits = 0
@@ -737,7 +737,7 @@ class GoodReads:
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {
-                "Status": "Active",
+                "Status": entrystatus,
                 "LastBook": lastbookname,
                 "LastLink": lastbooklink,
                 "LastDate": lastbookdate,
@@ -843,7 +843,7 @@ class GoodReads:
                     authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
                     if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS']:
-                        self.get_author_books(AuthorID)
+                        self.get_author_books(AuthorID, entrystatus=lazylibrarian.CONFIG['NEWAUTHOR_STATUS'])
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (authorname, bookname))
             return

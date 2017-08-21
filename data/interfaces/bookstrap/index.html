@@ -91,6 +91,7 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
                      { targets: [1], 'render': function(data, type, row) {
                          return '<a href="authorPage?AuthorID=' + row[10] + '">' + data + '</a>';} },
                      { targets: [2], 'render': function(data, type, row) {
+                        if (data == null) {return ''};
                          return '<a href="' + row[7] + '" target="_new">' + data + '</a>';} },
                      { targets: [4], 'render': function(data, type, row) {
                          return row[11];} },

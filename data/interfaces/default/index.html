@@ -63,6 +63,7 @@
                       }
                     },
                     { "fnRender": function ( oObj ) {
+                        if ( oObj.aData[2] == null) {return ''}
                         return '<a href="' + oObj.aData[7] + '" target="_new">' + oObj.aData[2] + '</a>'
                       }
                     },

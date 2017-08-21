@@ -123,20 +123,22 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         match = False
         authorimg = ''
         new_author = not refresh
-        if authorid:
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"Status": "Loading"}
+        entry_status = ''
 
+        if authorid:
             dbauthor = myDB.match("SELECT * from authors WHERE AuthorID=?", (authorid,))
             if not dbauthor:
                 authorname = 'unknown author'
                 logger.debug("Adding new author id %s to database" % authorid)
                 new_author = True
             else:
+                entry_status = dbauthor['Status']
                 authorname = dbauthor['authorname']
                 logger.debug("Updating author %s " % authorname)
                 new_author = False
 
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"Status": "Loading"}
             myDB.upsert("authors", newValueDict, controlValueDict)
 
             GR = GoodReads(authorname)
@@ -182,10 +184,12 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                     "Status": "Loading"
                 }
                 logger.debug("Now adding new author: %s to database" % authorname)
+                entry_status = lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
                 new_author = True
             else:
                 newValueDict = {"Status": "Loading"}
                 logger.debug("Now updating author: %s" % authorname)
+                entry_status = dbauthor['Status']
                 new_author = False
             myDB.upsert("authors", newValueDict, controlValueDict)
 
@@ -249,10 +253,10 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             # process books
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 book_api = GoogleBooks()
-                book_api.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
+                book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
             elif lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 GR = GoodReads(authorname)
-                GR.get_author_books(authorid, authorname, bookstatus, refresh=refresh)
+                GR.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
 
             # update totals works for existing authors only.
             # New authors need their totals updating after libraryscan or import of books.
@@ -268,6 +272,10 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         logger.debug(msg)
         return msg
     except Exception:
+        if authorid and entry_status:
+            controlValueDict = {"AuthorID": authorid}
+            newValueDict = {"Status": entry_status}
+            myDB.upsert("authors", newValueDict, controlValueDict)
         msg = 'Unhandled exception in addAuthorToDB: %s' % traceback.format_exc()
         logger.error(msg)
         return msg
