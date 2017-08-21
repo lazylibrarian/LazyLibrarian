@@ -66,23 +66,23 @@ def search_book(books=None, library=None):
         else:
             # The user has added a new book
             for book in books:
-                cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
-                cmd += 'from books,authors WHERE BookID=? AND books.AuthorID = authors.AuthorID'
-                results = myDB.select(cmd, (book['bookid'],))
-                if results:
-                    for terms in results:
-                        searchbooks.append(terms)
-                else:
-                    logger.debug("SearchBooks - BookID %s is not in the database" % book['bookid'])
+                if not book['bookid'] in ['booklang', 'library', 'ignored']:
+                    cmd = 'SELECT BookID, AuthorName, BookName, BookSub, books.Status, AudioStatus '
+                    cmd += 'from books,authors WHERE BookID=? AND books.AuthorID = authors.AuthorID'
+                    results = myDB.select(cmd, (book['bookid'],))
+                    if results:
+                        for terms in results:
+                            searchbooks.append(terms)
+                    else:
+                        logger.debug("SearchBooks - BookID %s is not in the database" % book['bookid'])
 
         if len(searchbooks) == 0:
             logger.debug("SearchBooks - No books to search for")
             return
 
-        nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
-                     lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
+        nprov = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
 
-        if nproviders == 0:
+        if nprov == 0:
             logger.debug("SearchBooks - No providers to search")
             return
 
@@ -97,7 +97,7 @@ def search_book(books=None, library=None):
             modelist.append('rss')
 
         logger.info('Searching %s provider%s %s for %i book%s' %
-                    (nproviders, plural(nproviders), str(modelist), len(searchbooks), plural(len(searchbooks))))
+                    (nprov, plural(nprov), str(modelist), len(searchbooks), plural(len(searchbooks))))
 
         for searchbook in searchbooks:
             # searchterm is only used for display purposes
@@ -128,8 +128,8 @@ def search_book(books=None, library=None):
         # only get rss results once per run, as they are not search specific
         rss_resultlist = None
         if 'rss' in modelist:
-            rss_resultlist, nproviders = IterateOverRSSSites()
-            if not nproviders:
+            rss_resultlist, nprov = IterateOverRSSSites()
+            if not nprov:
                 modelist.remove('rss')
 
         book_count = 0
@@ -144,20 +144,20 @@ def search_book(books=None, library=None):
 
                 resultlist = None
                 if mode == 'nzb':
-                    resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
-                    if not nproviders:
+                    resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
+                    if not nprov:
                         logger.debug("No active nzb providers found")
                         if 'nzb' in modelist:
                             modelist.remove('nzb')
                 elif mode == 'tor':
-                    resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
-                    if not nproviders:
+                    resultlist, nprov = IterateOverTorrentSites(book, searchtype)
+                    if not nprov:
                         logger.debug("No active tor providers found")
                         if 'tor' in modelist:
                             modelist.remove('tor')
                 elif mode == 'direct':
-                    resultlist, nproviders = IterateOverDirectSites(book, searchtype)
-                    if not nproviders:
+                    resultlist, nprov = IterateOverDirectSites(book, searchtype)
+                    if not nprov:
                         logger.debug("No active direct providers found")
                         if 'direct' in modelist:
                             modelist.remove('direct')
@@ -178,20 +178,20 @@ def search_book(books=None, library=None):
                 if not goodEnough(match) and '(' in book['bookName']:
                     searchtype = 'short' + searchtype
                     if mode == 'nzb':
-                        resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
-                        if not nproviders:
+                        resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
+                        if not nprov:
                             logger.debug("No active nzb providers found")
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                     elif mode == 'tor':
-                        resultlist, nproviders = IterateOverTorrentSites(book, searchtype)
-                        if not nproviders:
+                        resultlist, nprov = IterateOverTorrentSites(book, searchtype)
+                        if not nprov:
                             logger.debug("No active tor providers found")
                             if 'tor' in modelist:
                                 modelist.remove('tor')
                     elif mode == 'direct':
-                        resultlist, nproviders = IterateOverDirectSites(book, searchtype)
-                        if not nproviders:
+                        resultlist, nprov = IterateOverDirectSites(book, searchtype)
+                        if not nprov:
                             logger.debug("No active direct providers found")
                             if 'direct' in modelist:
                                 modelist.remove('direct')
@@ -208,8 +208,8 @@ def search_book(books=None, library=None):
                 if not goodEnough(match):
                     searchtype = 'general'
                     if mode == 'nzb':
-                        resultlist, nproviders = IterateOverNewzNabSites(book, searchtype)
-                        if not nproviders:
+                        resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
+                        if not nprov:
                             logger.debug("No active nzb providers found")
                             modelist.remove('nzb')
                         if resultlist:
@@ -222,7 +222,7 @@ def search_book(books=None, library=None):
                     searchtype = 'shortgeneral'
                     if mode == 'nzb':
                         resultlist, _ = IterateOverNewzNabSites(book, searchtype)
-                        if not nproviders:
+                        if not nprov:
                             logger.debug("No active nzb providers found")
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')

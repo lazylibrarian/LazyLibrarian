@@ -541,7 +541,6 @@ def processDir(reset=False):
                         notify_download("%s %s from %s at %s" %
                                         (book_type, global_name, book['NZBprov'], now()), book['BookID'])
                     else:
-                        #iss_id = create_id("%s %s" % (book['BookID'], book['AuxInfo']))
                         custom_notify_download(iss_id)
                         notify_download("%s %s from %s at %s" %
                                         (book_type, global_name, book['NZBprov'], now()), iss_id)
@@ -643,7 +642,7 @@ def processDir(reset=False):
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
                     if book['Source'] and book['Source'] != 'DIRECT':
                         logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
-                                (book['NZBtitle'], book['Source'].lower(), hours))
+                                    (book['NZBtitle'], book['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
                     if book['BookID'] != 'unknown':
                         if book_type == 'eBook':
@@ -906,7 +905,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
         if lazylibrarian.CONFIG['CALIBRE_USER'] and lazylibrarian.CONFIG['CALIBRE_PASS']:
             params.extend(['--username', lazylibrarian.CONFIG['CALIBRE_USER'],
-                            '--password', lazylibrarian.CONFIG['CALIBRE_PASS']])
+                           '--password', lazylibrarian.CONFIG['CALIBRE_PASS']])
     else:
         dest_url = lazylibrarian.DIRECTORY('eBook')
 
@@ -1023,7 +1022,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('%s returns: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
             if 'already exist' in res:
                 return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
-            if not 'Added book ids' in res:
+            if 'Added book ids' not in res:
                 return False, 'Calibre failed to import %s %s, no added bookids' % (authorname, bookname)
 
             calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]
@@ -1047,7 +1046,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                             '%s set opf reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
             if not our_opf:  # pre-existing opf might not have our preferred authorname/title/identifier
-                res, err, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
+                res, err, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)],
+                                         [calibre_id])
                 if res and not rc:
                     logger.debug(
                         '%s set author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
@@ -1116,8 +1116,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.warn("unexpected unicode conversion copying file to target directory")
                 fname = try_rename(pp_path, fname)
             if is_valid_booktype(fname, booktype=booktype) or \
-                ((fname.lower().endswith(".jpg") or fname.lower().endswith(".opf")) and not
-                lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
+                    ((fname.lower().endswith(".jpg") or
+                     fname.lower().endswith(".opf")) and not
+                     lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
                 logger.debug('Copying %s to directory %s' % (fname, dest_path))
                 try:
                     if booktype == 'audiobook':
@@ -1265,23 +1266,22 @@ def processMAGOPF(issuefile, title, issue, issueID):
     iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
     data = {
-            'AuthorName': title,
-            'BookID': issueID,
-            'BookName': iname,
-            'BookDesc': '',
-            'BookIsbn': '',
-            'BookDate': iss_acquired,
-            'BookLang': 'eng',
-            'BookImg': global_name + '.jpg',
-            'BookPub': '',
-            'Series': title,
-            'Series_index': issue
-            }
+        'AuthorName': title,
+        'BookID': issueID,
+        'BookName': iname,
+        'BookDesc': '',
+        'BookIsbn': '',
+        'BookDate': iss_acquired,
+        'BookLang': 'eng',
+        'BookImg': global_name + '.jpg',
+        'BookPub': '',
+        'Series': title,
+        'Series_index': issue
+    }
     _ = processOPF(dest_path, data, global_name, overwrite=True)
 
 
 def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
-
     opfpath = os.path.join(dest_path, global_name + '.opf')
     if not overwrite and os.path.exists(opfpath):
         logger.debug('%s already exists. Did not create one.' % opfpath)
@@ -1333,7 +1333,6 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         <dc:language>%s</dc:language>\n\
         <dc:identifier scheme="%s">%s</dc:identifier>\n' % (data['BookName'], surnameFirst(data['AuthorName']),
                                                             data['AuthorName'], data['BookLang'], scheme, bookid)
-
 
     if 'BookIsbn' in data:
         opfinfo += '        <dc:identifier scheme="ISBN">%s</dc:identifier>\n' % data['BookIsbn']

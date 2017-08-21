@@ -660,7 +660,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     #           https://www.usenet-crawler.com/details/091c8c0e18ca34201899b91add52e8c0
     #       </guid>
     #       <link>
-    #           https://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4
+    #           https://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509
     #       </link>
     #       <comments>
     # https://www.usenet-crawler.com/details/091c8c0e18ca34201899b91add52e8c0#comments
@@ -668,7 +668,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     #       <pubDate>Fri, 11 Jan 2013 16:49:34 +0100</pubDate>
     #       <category>Books > Ebook</category>
     #       <description>David Gemmell - Troy 03 - Fall of Kings</description>
-    #       <enclosure url="https://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4" length="4909563" type="application/x-nzb"/>
+    #       <enclosure url="https://www.usenet-crawler.com/getnzb/091c8c0e18ca34201899b91add52e8c0.nzb&i=155518&r=78c0>
     #       <newznab:attr name="category" value="7000"/>
     #       <newznab:attr name="category" value="7020"/>
     #       <newznab:attr name="size" value="4909563"/>
@@ -682,7 +682,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     #       https://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18
     #   </guid>
     #   <link>
-    #       https://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4
+    #       https://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb9174
     #   </link>
     #   <comments>
     # https://www.usenet-crawler.com/details/5d7394b2386683d079d8bd8f16652b18#comments
@@ -690,7 +690,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     #   <pubDate>Mon, 27 May 2013 02:12:09 +0200</pubDate>
     #   <category>Books > Ebook</category>
     #   <description>David Gemmell - [Troy 03] - Fall of Kings</description>
-    #   <enclosure url="https://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4" length="4909563" type="application/x-nzb"/>
+    #   <enclosure url="https://www.usenet-crawler.com/getnzb/5d7394b2386683d079d8bd8f16652b18.nzb&i=155518&r=78c05>
     #   <newznab:attr name="category" value="7000"/>
     #   <newznab:attr name="category" value="7020"/>
     #   <newznab:attr name="size" value="4909563"/>
@@ -711,10 +711,16 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     #  <pubDate>Sun, 27 Sep 2015 23:10:56 +0200</pubDate>
     #  <size>24628</size>
     #  <description>Tom Holt - Blonde Bombshell (Dystop; SFX; Humour) ePUB+MOBI</description>
-    #  <link>http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC8xRkRCRTY0NjY3MzhFRUQzQzdGRDkxNUUxMzc2QkEwQTYzMDg4RDRELnRvcnJlbnQ1/t.torrent</link>
+    #  <link>http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJl
+    #  bnRzL2FwaS9kb3dubG9hZC8xRkRCRTY0NjY3MzhFRUQzQzdGRDkxNUUxMzc2QkEwQTYzMDg4RDRELnRvcnJlbnQ1/t.torrent</link>
     #  <category>8000</category>
-    #  <enclosure url="http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC8xRkRCRTY0NjY3MzhFRUQzQzdGRDkxNUUxMzc2QkEwQTYzMDg4RDRELnRvcnJlbnQ1/t.torrent" length="24628" type="application/x-bittorrent" />
-    #  <torznab:attr name="magneturl" value="magnet:?xt=urn:btih:1FDBE6466738EED3C7FD915E1376BA0A63088D4D&amp;dn=Tom+Holt+-+Blonde+Bombshell+(Dystop%3B+SFX%3B+Humour)+ePUB%2BMOBI&amp;tr=udp://open.demonii.com:1337&amp;tr=udp://tracker.coppersurfer.tk:6969&amp;tr=udp://tracker.leechers-paradise.org:6969&amp;tr=udp://exodus.desync.com:6969" />
+    #  <enclosure url="http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV
+    #  0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC8xRkRCRTY0NjY3MzhFRUQzQzdGRDkxNUUxMzc2QkEwQTYzMDg4RDRELnRvcnJlbnQ1/t.torrent"
+    #  length="24628" type="application/x-bittorrent" />
+    #  <torznab:attr name="magneturl" value="magnet:?xt=urn:btih:1FDBE6466738EED3C7FD915E1376BA0A63088D4D&amp;
+    #  dn=Tom+Holt+-+Blonde+Bombshell+(Dystop%3B+SFX%3B+Humour)+ePUB%2BMOBI&amp;tr=udp://open.demonii.com:1337&amp;
+    #  tr=udp://tracker.coppersurfer.tk:6969&amp;tr=udp://tracker.leechers-paradise.org:6969&amp;
+    #  tr=udp://exodus.desync.com:6969" />
     #  <torznab:attr name="seeders" value="1" />
     #  <torznab:attr name="peers" value="2" />
     #  <torznab:attr name="infohash" value="1FDBE6466738EED3C7FD915E1376BA0A63088D4D" />
@@ -729,15 +735,20 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     #  <pubDate>Wed, 04 Mar 2009 01:57:20 +0100</pubDate>
     #  <size>1309195</size>
     #  <description>Linux Format Issue 116 - KDE Issue</description>
-    #  <link>http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC9mM2ZjOGRmNGZkZDg1MDEzMjA3MmE0MzVhN2QxMTJkNmM5ZDc3ZDE2LnRvcnJlbnQ1/t.torrent</link>
-    #  <enclosure url="http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC9mM2ZjOGRmNGZkZDg1MDEzMjA3MmE0MzVhN2QxMTJkNmM5ZDc3ZDE2LnRvcnJlbnQ1/t.torrent" length="1309195" type="application/x-bittorrent" />
-    # <torznab:attr name="magneturl" value="magnet:?xt=urn:btih:f3fc8df4fdd850132072a435a7d112d6c9d77d16&amp;dn=Linux+Format+Issue+116+-+KDE+Issue&amp;tr=udp://open.demonii.com:1337&amp;tr=udp://tracker.coppersurfer.tk:6969&amp;tr=udp://tracker.leechers-paradise.org:6969&amp;tr=udp://exodus.desync.com:6969" />
-    # <torznab:attr name="seeders" value="2" />
-    # <torznab:attr name="peers" value="3" />
-    # <torznab:attr name="infohash" value="f3fc8df4fdd850132072a435a7d112d6c9d77d16" />
-    # <torznab:attr name="minimumratio" value="1" />
-    # <torznab:attr name="minimumseedtime" value="172800" />
-    # </item>
+    #  <link>http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2UubmV0L3R
+    #  vcnJlbnRzL2FwaS9kb3dubG9hZC9mM2ZjOGRmNGZkZDg1MDEzMjA3MmE0MzVhN2QxMTJkNmM5ZDc3ZDE2LnRvcnJlbnQ1/t.torrent</link>
+    #  <enclosure url="http://192.168.2.2:9117/dl/strike/pkl4u83iz41up73m4zsigqsd4zyie50r/aHR0cHM6Ly9nZXRzdHJpa2Uubm
+    #  V0L3RvcnJlbnRzL2FwaS9kb3dubG9hZC9mM2ZjOGRmNGZkZDg1MDEzMjA3MmE0MzVhN2QxMTJkNmM5ZDc3ZDE2LnRvcnJlbnQ1/t.torrent"
+    #  length="1309195" type="application/x-bittorrent" />
+    #  <torznab:attr name="magneturl" value="magnet:?xt=urn:btih:f3fc8df4fdd850132072a435a7d112d6c9d77d16&amp;
+    #  dn=Linux+Format+Issue+116+-+KDE+Issue&amp;tr=udp://open.demonii.com:1337&amp;tr=udp://tracker.coppersurfer.
+    #  tk:6969&amp;tr=udp://tracker.leechers-paradise.org:6969&amp;tr=udp://exodus.desync.com:6969" />
+    #  <torznab:attr name="seeders" value="2" />
+    #  <torznab:attr name="peers" value="3" />
+    #  <torznab:attr name="infohash" value="f3fc8df4fdd850132072a435a7d112d6c9d77d16" />
+    #  <torznab:attr name="minimumratio" value="1" />
+    #  <torznab:attr name="minimumseedtime" value="172800" />
+    #  </item>
     """
 
     nzbtitle = ''

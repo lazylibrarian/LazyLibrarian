@@ -113,7 +113,7 @@ class AndroidPNNotifier:
             else:
                 broadcast = 'N'
 
-        logger.debug(u"ANDROIDPN: Sending notice with details: title=\"%s\", message=\"%s\", username=%s, url=%s, broadcast=%s" %
+        logger.debug('ANDROIDPN: Sending notice: title="%s", message="%s", username=%s, url=%s, broadcast=%s' %
                      (title, message, username, url, broadcast))
 
         if not username or not url:

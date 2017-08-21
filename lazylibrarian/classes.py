@@ -25,7 +25,7 @@ class SearchResult:
     """
 
     def __init__(self):
-        self.provider = -1
+        self.provider = ""
 
         # URL to the NZB/torrent file
         self.url = ""

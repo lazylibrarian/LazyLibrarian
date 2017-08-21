@@ -246,6 +246,7 @@ def create_cover(issuefile=None, refresh=False):
         logger.debug("Failed to copy nocover file, %s" % str(why))
     return
 
+
 def create_id(issuename=None):
     hashID = sha1(issuename).hexdigest()
     # logger.debug('Issue %s Hash: %s' % (issuename, hashID))

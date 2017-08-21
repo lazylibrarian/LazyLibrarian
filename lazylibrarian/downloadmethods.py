@@ -258,7 +258,6 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     logger.debug("Failed to write magnet to file: %s" % (str(e)))
                     logger.debug("Progress: %s" % msg)
                     logger.debug("Filename [%s]" % (repr(tor_path)))
-                    #logger.debug("Failed to write magnet to file %s, %s" % (tor_path, str(e)))
                     return False
         else:
             tor_name += '.torrent'
@@ -280,7 +279,6 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 logger.debug("Failed to write torrent to file: %s" % (str(e)))
                 logger.debug("Progress: %s" % msg)
                 logger.debug("Filename [%s]" % (repr(tor_path)))
-                #logger.debug("Failed to write torrent to file %s, %s" % (repr(tor_path), str(e)))
                 return False
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] and lazylibrarian.CONFIG['UTORRENT_HOST']:

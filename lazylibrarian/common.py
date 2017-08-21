@@ -38,8 +38,10 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
+
 def pwd_generator(size=10, chars=string.ascii_letters + string.digits):
-        return ''.join(random.choice(chars) for _ in range(size))
+    return ''.join(random.choice(chars) for _ in range(size))
+
 
 # noinspection PyShadowingNames,PyUnusedLocal
 def error_page_401(status, message, traceback, version):
@@ -58,6 +60,7 @@ def error_page_401(status, message, traceback, version):
     </body>
 </html>
 ''' % (title, body)
+
 
 def setperm(file_or_dir):
     """
@@ -116,6 +119,7 @@ def bts_file(search_dir=None):
 
 def csv_file(search_dir=None):
     return any_file(search_dir, '.csv')
+
 
 def jpg_file(search_dir=None):
     return any_file(search_dir, '.jpg')
@@ -189,8 +193,9 @@ def scheduleJob(action='Start', target=None):
             # Try to get all authors scanned evenly inside the cache age
             minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
             myDB = database.DBConnection()
-            authors = myDB.match(
-                "select count('AuthorID') as counter from Authors where Status='Active' or Status='Loading'")
+            cmd = "select count('AuthorID') as counter from Authors where Status='Active' or Status='Wanted'"
+            cmd += " or Status='Loading'"
+            authors = myDB.match(cmd)
             authcount = authors['counter']
             if not authcount:
                 minutes = 60
@@ -214,8 +219,8 @@ def authorUpdate():
         threading.currentThread().name = "AUTHORUPDATE"
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active"'
-        cmd += ' and DateAdded is not null order by DateAdded ASC'
+        cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
+        cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
         if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
             dtnow = datetime.datetime.now()
@@ -243,7 +248,8 @@ def authorUpdate():
 def dbUpdate(refresh=False):
     try:
         myDB = database.DBConnection()
-        cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" order by DateAdded ASC'
+        cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" or Status="Wanted"'
+        cmd += ' order by DateAdded ASC'
         activeauthors = myDB.select(cmd)
         lazylibrarian.AUTHORS_UPDATE = True
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
@@ -343,7 +349,7 @@ def showJobs():
         result.append(jobinfo)
 
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-    cmd += ' order by DateAdded ASC'
+    cmd += 'or Status="Wanted" order by DateAdded ASC'
     author = myDB.match(cmd)
     dtnow = datetime.datetime.now()
     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
@@ -369,6 +375,7 @@ def clearLog():
         lazylibrarian.LOGLIST = []
         return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
             lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
+
 
 def reverse_readline(filename, buf_size=8192):
     """a generator that returns the lines of a file in reverse order"""
@@ -427,7 +434,7 @@ def saveLog():
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
     passchars = string.ascii_letters + string.digits + '_/'  # _/ used by slack and googlebooks
     redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ', 'using api [',
-                    'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': '"]
+                  'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': '"]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0

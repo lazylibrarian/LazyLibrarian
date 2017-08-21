@@ -530,39 +530,40 @@ class GoogleBooks:
                         except KeyError:
                             bookdesc = ""
 
-                        bookname = item['volumeInfo']['title']
-                        bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
-
-                        booklink = item['volumeInfo']['canonicalVolumeLink']
-                        bookrate = float(bookrate)
-                        bookid = item['id']
-
-                        # GoodReads sometimes has multiple bookids for the same book (same author/title, different
-                        # editions) and sometimes uses the same bookid if the book is the same but the title is
-                        # slightly different. Not sure if googlebooks does too, but we only want one...
-                        existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?', (bookid,))
-                        if existing_book:
-                            book_status = existing_book['Status']
-                            locked = existing_book['Manual']
-                            added = existing_book['BookAdded']
-                            if locked is None:
-                                locked = False
-                            elif locked.isdigit():
-                                locked = bool(int(locked))
-                        else:
-                            book_status = bookstatus  # new_book status, or new_author status
-                            added = today()
-                            locked = False
-
                         rejected = check_status = False
 
-                        if re.match('[^\w-]', bookname):  # remove books with bad characters in title
-                            logger.debug("[%s] removed book for bad characters" % bookname)
+                        bookname = item['volumeInfo']['title']
+
+                        if not bookname:
+                            logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
                             removedResults += 1
                             rejected = True
+                        else:
+                            bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
+                            booklink = item['volumeInfo']['canonicalVolumeLink']
+                            bookrate = float(bookrate)
+                            bookid = item['id']
 
-                        if not rejected and not bookname:
-                            logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
+                            # GoodReads sometimes has multiple bookids for the same book (same author/title, different
+                            # editions) and sometimes uses the same bookid if the book is the same but the title is
+                            # slightly different. Not sure if googlebooks does too, but we only want one...
+                            existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?',
+                                                       (bookid,))
+                            if existing_book:
+                                book_status = existing_book['Status']
+                                locked = existing_book['Manual']
+                                added = existing_book['BookAdded']
+                                if locked is None:
+                                    locked = False
+                                elif locked.isdigit():
+                                    locked = bool(int(locked))
+                            else:
+                                book_status = bookstatus  # new_book status, or new_author status
+                                added = today()
+                                locked = False
+
+                        if not rejected and re.match('[^\w-]', bookname):  # remove books with bad characters in title
+                            logger.debug("[%s] removed book for bad characters" % bookname)
                             removedResults += 1
                             rejected = True
 

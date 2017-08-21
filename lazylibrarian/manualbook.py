@@ -58,25 +58,24 @@ def searchItem(item=None, bookid=None, cat=None):
             logger.debug('Forcing general search')
             cat = 'general'
 
-    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + \
-                 lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
-    logger.debug('Searching %s provider%s (%s) for %s' % (nproviders, plural(nproviders), cat, searchterm))
+    nprov = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
+    logger.debug('Searching %s provider%s (%s) for %s' % (nprov, plural(nprov), cat, searchterm))
 
     if lazylibrarian.USE_NZB():
-        resultlist, nproviders = IterateOverNewzNabSites(book, cat)
-        if nproviders:
+        resultlist, nprov = IterateOverNewzNabSites(book, cat)
+        if nprov:
             results += resultlist
     if lazylibrarian.USE_TOR():
-        resultlist, nproviders = IterateOverTorrentSites(book, cat)
-        if nproviders:
+        resultlist, nprov = IterateOverTorrentSites(book, cat)
+        if nprov:
             results += resultlist
     if lazylibrarian.USE_DIRECT():
-        resultlist, nproviders = IterateOverDirectSites(book, cat)
-        if nproviders:
+        resultlist, nprov = IterateOverDirectSites(book, cat)
+        if nprov:
             results += resultlist
     if lazylibrarian.USE_RSS():
-        resultlist, nproviders = IterateOverRSSSites()
-        if nproviders:
+        resultlist, nprov = IterateOverRSSSites()
+        if nprov:
             results += resultlist
 
     # reprocess to get consistent results
@@ -129,7 +128,7 @@ def searchItem(item=None, bookid=None, cat=None):
             if score >= 40:  # ignore wildly wrong results?
                 if not url.startswith('magnet'):
                     if not mode == 'torznab' and not mode == 'direct':  # what is this split for??
-                            url = url.split('?')[0]
+                        url = url.split('?')[0]
                 result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
                           'url': urllib.quote_plus(url), 'mode': mode}
 

@@ -171,6 +171,7 @@ class Api(object):
         self.kwargs = kwargs
         self.data = 'OK'
 
+    @property
     def fetchData(self):
 
         threadname = threading.currentThread().name
@@ -492,9 +493,9 @@ class Api(object):
 
     @staticmethod
     def _forceLibraryScan(**kwargs):
-        startdir=None
-        authid=None
-        remove=False
+        startdir = None
+        authid = None
+        remove = False
         if 'remove' in kwargs:
             remove = True
         if 'dir' in kwargs:
@@ -504,13 +505,14 @@ class Api(object):
         if 'wait' in kwargs:
             LibraryScan(startdir=startdir, library='eBook', authid=authid, remove=remove)
         else:
-            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[startdir, 'eBook', authid, remove]).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN',
+                             args=[startdir, 'eBook', authid, remove]).start()
 
     @staticmethod
     def _forceAudioBookScan(**kwargs):
-        startdir=None
-        authid=None
-        remove=False
+        startdir = None
+        authid = None
+        remove = False
         if 'remove' in kwargs:
             remove = True
         if 'dir' in kwargs:
@@ -520,7 +522,8 @@ class Api(object):
         if 'wait' in kwargs:
             LibraryScan(startdir=startdir, library='audio', authid=authid, remove=remove)
         else:
-            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN', args=[startdir, 'audio', authid, remove]).start()
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN',
+                             args=[startdir, 'audio', authid, remove]).start()
 
     @staticmethod
     def _forceMagazineScan(**kwargs):
@@ -723,7 +726,7 @@ class Api(object):
         else:
             library = None
 
-        if lazylibrarian.USE_NZB()or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_book(books=books, library=library)
             else:

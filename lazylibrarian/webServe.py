@@ -81,6 +81,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def home(self):
+        self.label_thread('WEBSERVER')
         title = 'Authors'
         if lazylibrarian.IGNORED_AUTHORS:
             title = 'Ignored Authors'
@@ -116,7 +117,7 @@ class WebInterface(object):
                 havebooks = check_int(arow[7], 0)
                 totalbooks = check_int(arow[8], 0)
                 if totalbooks:
-                    percent = (havebooks*100.0)/totalbooks
+                    percent = (havebooks * 100.0) / totalbooks
                 else:
                     percent = 0
                 if percent > 100:
@@ -133,14 +134,14 @@ class WebInterface(object):
                 nrow.append(percent)  # convert have/total into a float
                 nrow.extend(arow[4:])
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
-                    bar =  '<div class="progress-container %s">' % css
+                    bar = '<div class="progress-container %s">' % css
                     bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
                     bar += '%s/%s</span></div>' % (havebooks, totalbooks)
                 else:
                     bar = '<div class="progress center-block" style="width: 150px;">'
                     bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
                     bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
-                            percent, percent)
+                        percent, percent)
                     bar += '<span class="sr-only">%s%% Complete</span>' % percent
                     bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (havebooks, totalbooks)
                 nrow.append(bar)
@@ -169,11 +170,11 @@ class WebInterface(object):
 
     @staticmethod
     def label_thread(name=None):
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            if name:
-                threading.currentThread().name = name
-            else:
+        if name:
+            threading.currentThread().name = name
+        else:
+            threadname = threading.currentThread().name
+            if "Thread-" in threadname:
                 threading.currentThread().name = "WEBSERVER"
 
     # SERIES ############################################################
@@ -242,6 +243,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def series(self, AuthorID=None, whichStatus=None):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         title = "Series"
         if AuthorID:
@@ -253,6 +255,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         cmd = 'SELECT SeriesName,series.SeriesID,AuthorName,seriesauthors.AuthorID'
         cmd += ' from series,authors,seriesauthors'
@@ -280,7 +283,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def markSeries(self, action=None, **args):
-        self.label_thread()
         myDB = database.DBConnection()
         if action:
             for seriesid in args:
@@ -302,7 +304,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def config(self):
-        self.label_thread()
+        self.label_thread('CONFIG')
         http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
@@ -342,7 +344,6 @@ class WebInterface(object):
         # print len(kwargs)
         # for arg in kwargs:
         #    print arg
-        self.label_thread()
 
         # first the non-config options
         if 'current_tab' in kwargs:
@@ -394,7 +395,7 @@ class WebInterface(object):
                 # eg "Elle Quebec" where we might have e-acute stored as utf-8
                 # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
                 # otherwise the comparison fails, but sometimes accented characters won't
-                # fit latin-1 but fit utf-8 gow can we tell ???
+                # fit latin-1 but fit utf-8 how can we tell ???
                 if isinstance(title, str):
                     try:
                         title = title.encode('latin-1')
@@ -489,8 +490,6 @@ class WebInterface(object):
             if interface != 'default':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'rss[%i][dlpriority]' % count, 0), 0)
-            # lazylibrarian.RSS_PROV[count]['USER'] = kwargs.get('rss[%i][user]' % count, '')
-            # lazylibrarian.RSS_PROV[count]['PASS'] = kwargs.get('rss[%i][pass]' % count, '')
             count += 1
 
         lazylibrarian.config_write()
@@ -502,6 +501,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def search(self, name):
+        self.label_thread('SEARCH')
         if name is None or not name:
             raise cherrypy.HTTPRedirect("home")
 
@@ -527,6 +527,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def authorPage(self, AuthorID, BookLang=None, library='eBook', Ignored=False):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         if Ignored:
             languages = myDB.select(
@@ -551,7 +552,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def setAuthor(self, AuthorID, status):
-        self.label_thread()
 
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
@@ -587,8 +587,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def removeAuthor(self, AuthorID):
-        self.label_thread()
-
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to remove an author while they are still loading
@@ -601,8 +599,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def refreshAuthor(self, AuthorID):
-        self.label_thread()
-
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
@@ -614,8 +610,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def libraryScanAuthor(self, AuthorID, **kwargs):
-        self.label_thread()
-
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
         if authorsearch:  # to stop error if try to refresh an author while they are still loading
@@ -644,7 +638,8 @@ class WebInterface(object):
             if os.path.isdir(authordir):
                 remove = bool(lazylibrarian.CONFIG['FULL_SCAN'])
                 try:
-                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN', args=[authordir, library, AuthorID, remove]).start()
+                    threading.Thread(target=LibraryScan, name='AUTHOR_SCAN',
+                                     args=[authordir, library, AuthorID, remove]).start()
                 except Exception as e:
                     logger.error('Unable to complete the scan: %s' % str(e))
             else:
@@ -668,7 +663,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def toggleAuth(self):
-        self.label_thread()
         if lazylibrarian.IGNORED_AUTHORS:  # show ignored ones, or active ones
             lazylibrarian.IGNORED_AUTHORS = False
         else:
@@ -679,7 +673,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def booksearch(self, author=None, title=None, bookid=None, action=None):
-        self.label_thread()
+        self.label_thread('BOOKSEARCH')
         if '_title' in action:
             searchterm = title
         elif '_author' in action:
@@ -710,7 +704,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def snatchBook(self, bookid=None, mode=None, provider=None, url=None, size=None, library=None):
-        self.label_thread()
         logger.debug("snatch bookid %s mode=%s from %s url=[%s]" % (bookid, mode, provider, url))
         myDB = database.DBConnection()
         bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID=?', (bookid,))
@@ -749,6 +742,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def audio(self, BookLang=None):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         if BookLang == '':
             BookLang = None
@@ -759,6 +753,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def books(self, BookLang=None):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         if BookLang == '' or BookLang == 'None':
             BookLang = None
@@ -872,6 +867,7 @@ class WebInterface(object):
 
                 if row[10] and len(row[10]) > 4:  # is there a workpage link
                     worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
+
                 editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
 
                 if 'goodreads' in row[9]:
@@ -946,8 +942,8 @@ class WebInterface(object):
         if books:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, library]).start()
                 booktype = library
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, booktype]).start()
                 if not booktype:
                     booktype = 'book'  # all types
                 logger.debug("Searching for %s with id: %s" % (booktype, books[0]["bookid"]))
@@ -1014,7 +1010,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
-
+        self.label_thread('EDIT_AUTHOR')
         myDB = database.DBConnection()
 
         data = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
@@ -1025,8 +1021,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
-        self.label_thread()
-
         myDB = database.DBConnection()
         if authorid:
             authdata = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
@@ -1139,7 +1133,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def editBook(self, bookid=None):
-
+        self.label_thread('EDIT_BOOK')
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
@@ -1251,7 +1245,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
-        self.label_thread()
         if 'library' in args:
             library = args['library']
         else:
@@ -1301,7 +1294,7 @@ class WebInterface(object):
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
                                                 if calibreid.endswith(')'):
-                                                    calibreid = calibreid.rsplit('(',1)[1].split(')')[0]
+                                                    calibreid = calibreid.rsplit('(', 1)[1].split(')')[0]
                                                     if not calibreid or not calibreid.isdigit():
                                                         calibreid = None
                                                 else:
@@ -1313,14 +1306,13 @@ class WebInterface(object):
                                                 res, err, rc = calibredb('remove', [calibreid], None)
                                                 if res and not rc:
                                                     logger.debug('%s reports: %s' %
-                                                                (lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                                                    unaccented_str(res)))
+                                                                 (lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                                                                  unaccented_str(res)))
                                                 else:
                                                     logger.debug('No response from %s' %
                                                                  lazylibrarian.CONFIG['IMP_CALIBREDB'])
                                         if bookfile == bookdata['AudioFile']:
                                             logger.info('AudioBook %s deleted from disc' % bookname)
-
 
                             authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
@@ -1340,14 +1332,14 @@ class WebInterface(object):
         # start searchthreads
         if action == 'Wanted':
             books = []
-            for bookid in args:
+            for arg in args:
                 # ouch dirty workaround...
-                if not bookid == 'book_table_length':
-                    books.append({"bookid": bookid})
+                if arg not in ['booklang', 'library', 'ignored', 'book_table_length']:
+                    books.append({"bookid": arg})
 
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books]).start()
+                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, library]).start()
 
         if redirect == "author":
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
@@ -1362,6 +1354,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def magWall(self, title=None):
+        self.label_thread('MAGWALL')
         myDB = database.DBConnection()
         cmd = 'SELECT IssueFile,IssueID from issues'
         args = None
@@ -1402,6 +1395,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookWall(self):
+        self.label_thread('BOOKWALL')
         myDB = database.DBConnection()
         results = myDB.select('SELECT BookFile,BookImg,BookID from books where Status="Open" order by BookLibrary DESC')
         if not len(results):
@@ -1412,6 +1406,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def audioWall(self):
+        self.label_thread('AUDIOWALL')
         myDB = database.DBConnection()
         results = myDB.select(
             'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by AudioLibrary DESC')
@@ -1442,6 +1437,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def magazines(self):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
 
         magazines = myDB.select('SELECT * from magazines ORDER by Title')
@@ -1479,6 +1475,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def issuePage(self, title):
+        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
 
         issues = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
@@ -1520,6 +1517,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
+        self.label_thread('WEBSERVER')
         if whichStatus is None:
             whichStatus = "Skipped"
         return serve_template(
@@ -1576,8 +1574,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def openMag(self, bookid=None):
-        self.label_thread()
-
         bookid = urllib.unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
@@ -1605,8 +1601,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def markPastIssues(self, action=None, **args):
-        self.label_thread()
-
         myDB = database.DBConnection()
         maglist = []
         for nzburl in args:
@@ -1704,8 +1698,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def markIssues(self, action=None, **args):
-        self.label_thread()
-
         myDB = database.DBConnection()
         for item in args:
             # ouch dirty workaround...
@@ -1745,8 +1737,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def markMagazines(self, action=None, **args):
-        self.label_thread()
-
         myDB = database.DBConnection()
         for item in args:
             if isinstance(item, str):
@@ -1821,7 +1811,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def addMagazine(self, title=None):
-        self.label_thread()
         myDB = database.DBConnection()
         if title is None or not title:
             raise cherrypy.HTTPRedirect("magazines")
@@ -1856,7 +1845,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def checkForUpdates(self):
-        self.label_thread()
+        self.label_thread('UPDATES')
         versioncheck.checkForUpdates()
         if lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
             if lazylibrarian.COMMIT_LIST:
@@ -1896,6 +1885,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def update(self):
+        self.label_thread('UPDATE')
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
@@ -1993,6 +1983,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def shutdown(self):
+        self.label_thread('SHUTDOWN')
         lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
@@ -2001,6 +1992,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def restart(self):
+        self.label_thread('RESTART')
         lazylibrarian.SIGNAL = 'restart'
         message = 'reopening ...'
         return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Reopen library",
@@ -2019,14 +2011,12 @@ class WebInterface(object):
 
     @cherrypy.expose
     def restart_Jobs(self):
-        self.label_thread()
         restartJobs(start='Restart')
         # and list the new run-times in the log
         return self.show_Jobs()
 
     @cherrypy.expose
     def stop_Jobs(self):
-        self.label_thread()
         restartJobs(start='Stop')
         # and list the new run-times in the log
         return self.show_Jobs()
@@ -2036,7 +2026,6 @@ class WebInterface(object):
     @cherrypy.expose
     def clearLog(self):
         # Clear the log
-        self.label_thread()
         result = clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
@@ -2044,7 +2033,6 @@ class WebInterface(object):
     @cherrypy.expose
     def saveLog(self):
         # Save the debug log to a zipfile
-        self.label_thread()
         result = saveLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
@@ -2056,7 +2044,6 @@ class WebInterface(object):
         # 1 normal
         # 2 debug
         # >2 extra debugging
-        self.label_thread()
 
         if lazylibrarian.LOGLEVEL > 1:
             lazylibrarian.LOGLEVEL -= 2
@@ -2071,6 +2058,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def logs(self):
+        self.label_thread('LOGS')
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
 
     # noinspection PyUnusedLocal
@@ -2103,15 +2091,8 @@ class WebInterface(object):
     # HISTORY ###########################################################
 
     @cherrypy.expose
-    def showHistory(self):
-        self.label_thread()
-        message = self.showdownloads()
-        message = message.replace('\n', '<br>')
-        return serve_template(templatename="shutdown.html", title="Download Count", prefix='', message=message, timer=0)
-
-    @cherrypy.expose
     def history(self):
-        self.label_thread()
+        self.label_thread('HISTORY')
         myDB = database.DBConnection()
         # wanted status holds snatched processed for all, plus skipped and
         # ignored for magazine back issues
@@ -2141,7 +2122,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def clearhistory(self, status=None):
-        self.label_thread()
         myDB = database.DBConnection()
         if status == 'all':
             logger.info("Clearing all history")
@@ -2242,7 +2222,6 @@ class WebInterface(object):
         if res.startswith('Pass:'):
             lazylibrarian.config_write()
         return res
-
 
     # NOTIFIERS #########################################################
 
@@ -2440,7 +2419,7 @@ class WebInterface(object):
         from lazylibrarian.api import Api
         a = Api()
         a.checkParams(**kwargs)
-        return a.fetchData()
+        return a.fetchData
 
     @cherrypy.expose
     def generateAPI(self):
@@ -2579,7 +2558,6 @@ class WebInterface(object):
             lazylibrarian.CONFIG['NZBGET_CATEGORY'] = kwargs['cat']
         if 'pri' in kwargs:
             lazylibrarian.CONFIG['NZBGET_PRIORITY'] = check_int(kwargs['pri'], 0)
-
         msg = nzbget.checkLink()
         if 'success' in msg:
             lazylibrarian.config_write()

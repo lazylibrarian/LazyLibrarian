@@ -27,8 +27,8 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
 
-class grauth:
 
+class grauth:
     def __init__(self):
         self.key = lazylibrarian.CONFIG['GR_API']
         self.secret = lazylibrarian.CONFIG['GR_SECRET']
@@ -41,7 +41,6 @@ class grauth:
         self.user_id = None
         self.oauth = None
         self.request_token = None
-
 
     def goodreads_oauth1(self):
         if self.key == 'ckvsiSDsuqh7omh74ZZ6Q':
@@ -87,10 +86,9 @@ class grauth:
         self.oauth_token = access_token['oauth_token']
         self.oauth_secret = access_token['oauth_token_secret']
         return {'gr_oauth_token': self.oauth_token, 'gr_oauth_secret': self.oauth_secret}
-        #lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = self.oauth_token
-        #lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = self.oauth_secret
-        #lazylibrarian.config_write()
-
+        # lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = self.oauth_token
+        # lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = self.oauth_secret
+        # lazylibrarian.config_write()
 
     def get_user_id(self):
 
@@ -111,7 +109,6 @@ class grauth:
             except Exception as e:
                 logger.debug("Unable to get UserID: %s" % str(e))
                 return ""
-
 
     def get_shelf_list(self):
         if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
@@ -147,7 +144,8 @@ class grauth:
 
                 body = urllib.urlencode({})
                 headers = {'content-type': 'application/x-www-form-urlencoded'}
-                request_url = shelf_template.substitute(base=self.url, user_id=self.user_id, page=current_page, key=self.key)
+                request_url = shelf_template.substitute(base=self.url, user_id=self.user_id, page=current_page,
+                                                        key=self.key)
                 response, content = self.client.request(request_url, 'GET', body, headers)
 
                 if response['status'] != '200':
@@ -171,9 +169,8 @@ class grauth:
                     break
 
             logger.debug('Found %s shelves' % len(shelves))
-            #print shelves
+            # print shelves
             return shelves
-
 
     def create_shelf(self, shelf='lazylibrarian'):
         if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
@@ -192,7 +189,7 @@ class grauth:
         # could also pass [featured] [exclusive_flag] [sortable_flag] all default to False
         body = urllib.urlencode({'user_shelf[name]': shelf.lower()})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, content = self.client.request('%s/user_shelves.xml' % self.url,'POST', body, headers)
+        response, content = self.client.request('%s/user_shelves.xml' % self.url, 'POST', body, headers)
 
         if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
@@ -236,7 +233,7 @@ class grauth:
 
                 page_books = 0
                 for book in xmldoc.getElementsByTagName('book'):
-                    book_id , book_title = self.getBookInfo(book)
+                    book_id, book_title = self.getBookInfo(book)
 
                     if lazylibrarian.LOGLEVEL > 2:
                         try:
@@ -256,14 +253,13 @@ class grauth:
             logger.debug('Found %s' % total_books)
             return gr_list
 
-
     #############################
     #
     # who are we?
     #
     def getUserId(self):
 
-        response, content = self.client.request('%s/api/auth_user' % self.url,'GET')
+        response, content = self.client.request('%s/api/auth_user' % self.url, 'GET')
         if response['status'] != '200':
             raise Exception('Cannot fetch resource: %s' % response['status'])
 
@@ -271,23 +267,22 @@ class grauth:
         self.user_id = userxml.getElementsByTagName('user')[0].attributes['id'].value
         return str(self.user_id)
 
-
     #############################
     #
     # fetch xml for a page of books on a shelf
     #
     def getShelfBooks(self, page, shelf_name):
-
-        owned_template = Template('${base}/review/list?format=xml&v=2&id=${user_id}&sort=author&order=a&key=${key}&page=${page}&per_page=100&shelf=${shelf_name}')
-
+        data = '${base}/review/list?format=xml&v=2&id=${user_id}&sort=author&order=a'
+        data += '&key=${key}&page=${page}&per_page=100&shelf=${shelf_name}'
+        owned_template = Template(data)
         body = urllib.urlencode({})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        request_url = owned_template.substitute(base=self.url, user_id=self.user_id, page=page, key=self.key, shelf_name=shelf_name)
+        request_url = owned_template.substitute(base=self.url, user_id=self.user_id, page=page, key=self.key,
+                                                shelf_name=shelf_name)
         response, content = self.client.request(request_url, 'GET', body, headers)
         if response['status'] != '200':
             raise Exception('Failure status: %s for page ' % response['status'] + page)
         return content
-
 
     #############################
     #
@@ -299,22 +294,21 @@ class grauth:
         book_title = book.getElementsByTagName('title')[0].firstChild.nodeValue
         return book_id, book_title
 
-
     def BookToList(self, book_id, shelf_name, action='add'):
         if action == 'remove':
             body = urllib.urlencode({'name': shelf_name, 'book_id': book_id, 'a': 'remove'})
         else:
             body = urllib.urlencode({'name': shelf_name, 'book_id': book_id})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, content = self.client.request('%s/shelf/add_to_shelf.xml' % self.url,'POST', body, headers)
+        response, content = self.client.request('%s/shelf/add_to_shelf.xml' % self.url, 'POST', body, headers)
 
         if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
             return False, msg
         return True, content
 
+        #############################
 
-    #############################
 
 def test_auth():
     GA = grauth()
@@ -331,7 +325,7 @@ def test_auth():
 def sync_to_gr():
     to_read_shelf = to_owned_shelf = ll_wanted = ll_have = 0
     if lazylibrarian.CONFIG['GR_WANTED']:
-         to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
+        to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
     if lazylibrarian.CONFIG['GR_OWNED']:
         to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
     msg = "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
@@ -339,6 +333,7 @@ def sync_to_gr():
     msg += "%s marked Wanted\n" % ll_wanted
     msg += "%s marked Have" % ll_have
     return msg
+
 
 def grsync(status, shelf):
     try:
@@ -365,7 +360,7 @@ def grsync(status, shelf):
             res, msg = GA.create_shelf(shelf=shelf)
             if not res:
                 logger.debug("Unable to create shelf %s: %s" % (shelf, msg))
-                return 0,0,0
+                return 0, 0, 0
             else:
                 logger.debug("Created new goodreads shelf: %s" % shelf)
 
@@ -376,8 +371,8 @@ def grsync(status, shelf):
 
         logger.debug("There are %s %s books, %s books on goodreads %s shelf" %
                      (len(ll_list), dstatus, len(gr_shelf), shelf))
-        #print ll_list
-        #print gr_shelf
+        # print ll_list
+        # print gr_shelf
 
         not_on_shelf = []
         not_in_ll = []
@@ -395,7 +390,7 @@ def grsync(status, shelf):
             logger.debug('Not connected to goodreads')
         else:
             for book in not_on_shelf:
-                #print "%s is not on shelf" % book
+                # print "%s is not on shelf" % book
                 time_now = int(time.time())
                 if time_now <= lazylibrarian.LAST_GOODREADS:
                     time.sleep(1)
@@ -409,17 +404,17 @@ def grsync(status, shelf):
                 if res:
                     logger.debug("%10s added to %s shelf" % (book, shelf))
                     to_shelf += 1
-                    #print content
+                    # print content
                 else:
                     logger.debug("Failed to add %s to %s shelf" % (book, shelf))
-                    #print content
+                    # print content
 
         # "to-read" books need adding to lazylibrarian as "wanted" if not already Open/Have,
         # if they are already Open/Have, remove from goodreads to-read shelf, add to owned shelf
         # "owned" need adding as "Have" as librarysync will pick up "Open" ones or change Have to Open
 
         for book in not_in_ll:
-            #print "%s is not marked %s" % (book, status)
+            # print "%s is not marked %s" % (book, status)
             cmd = 'select Status from books where bookid="%s"' % book
             result = myDB.match(cmd)
             if result:
@@ -441,16 +436,4 @@ def grsync(status, shelf):
 
     except Exception:
         logger.error('Unhandled exception in grsync: %s' % traceback.format_exc())
-        return 0,0,0
-
-#if __name__ == '__main__':
-  #lazylibrarian.CONFIG['GR_API'] =
-  #lazylibrarian.CONFIG['GR_SECRET'] =
-  #lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] =
-  #lazylibrarian.CONFIG['GR_OAUTH_SECRET'] =
-  #GA = grauth()
-  #success, msg = GA.create_shelf()
-  #if not success:
-  #  print msg
-  #else:
-  #  print 'ok'
+        return 0, 0, 0
