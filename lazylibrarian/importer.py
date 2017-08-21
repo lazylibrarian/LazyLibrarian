@@ -272,10 +272,6 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
         logger.debug(msg)
         return msg
     except Exception:
-        if authorid and entry_status:
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"Status": entry_status}
-            myDB.upsert("authors", newValueDict, controlValueDict)
         msg = 'Unhandled exception in addAuthorToDB: %s' % traceback.format_exc()
         logger.error(msg)
         return msg

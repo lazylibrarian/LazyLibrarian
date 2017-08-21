@@ -297,7 +297,8 @@ class GoogleBooks:
             logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
     # noinspection PyUnboundLocalVariable
-    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", entrystatus='Active', refresh=False):
+    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped",
+                         entrystatus='Active', refresh=False):
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
             # google doesnt like accents in author names
