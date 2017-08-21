@@ -951,7 +951,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
                        booktype=None):
-    """ Copy book/mag and associated files into target directory
+    """ Copy/move book/mag and associated files into target directory
         Return True, full_path_to_book  or False, error_message"""
 
     if not bookname:
@@ -963,27 +963,21 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if isinstance(pp_path, str):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
-    match = ''
+    bestmatch = ''
     if booktype == 'ebook' and lazylibrarian.CONFIG['ONE_FORMAT']:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for btype in booktype_list:
-            if not match:
+            if not bestmatch:
                 for fname in os.listdir(pp_path):
                     extn = os.path.splitext(fname)[1].lstrip('.')
                     if extn and extn.lower() == btype:
-                        match = btype
+                        bestmatch = btype
                         break
-        if match:
-            logger.debug('One format import, best match = %s' % match)
-            for fname in os.listdir(pp_path):
-                if is_valid_booktype(fname, booktype=booktype) and not fname.endswith(match):
-                    try:
-                        logger.debug('Deleting %s' % os.path.splitext(fname)[1])
-                        os.remove(os.path.join(pp_path, fname))
-                    except OSError as why:
-                        logger.debug('Unable to delete %s: %s' % (fname, why.strerror))
-
+    if bestmatch:
+        match = bestmatch
+        logger.debug('One format import, best match = %s' % bestmatch)
     else:  # mag or audiobook or multi-format book
+        match = False
         for fname in os.listdir(pp_path):
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
@@ -1004,10 +998,17 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # and ignores opf data if there is data embedded in the book file
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(pp_path):
-                filename, extn = os.path.splitext(fname)
-                # calibre does not like quotes in author names
-                shutil.move(os.path.join(pp_path, filename + extn), os.path.join(
-                    pp_path, global_name.replace('"', '_') + extn))
+                if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
+                    logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
+                else:
+                    filename, extn = os.path.splitext(fname)
+                    # calibre does not like quotes in author names
+                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                        shutil.copyfile(os.path.join(pp_path, filename + extn), os.path.join(
+                            pp_path, global_name.replace('"', '_') + extn))
+                    else:
+                        shutil.move(os.path.join(pp_path, filename + extn), os.path.join(
+                            pp_path, global_name.replace('"', '_') + extn))
 
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
@@ -1115,27 +1116,34 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.warn("unexpected unicode conversion copying file to target directory")
                 fname = try_rename(pp_path, fname)
-            if is_valid_booktype(fname, booktype=booktype) or \
-                    ((fname.lower().endswith(".jpg") or
-                     fname.lower().endswith(".opf")) and not
-                     lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
-                logger.debug('Copying %s to directory %s' % (fname, dest_path))
-                try:
-                    if booktype == 'audiobook':
-                        destfile = os.path.join(dest_path, fname)  # don't rename, just copy it
-                    else:
-                        # for ebooks, the book, jpg, opf all have the same basename
-                        destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
-                    shutil.copyfile(os.path.join(pp_path, fname), destfile)
-                    setperm(destfile)
-                    if is_valid_booktype(destfile, booktype=booktype):
-                        newbookfile = destfile
-                        if booktype == 'audiobook' and '01' in destfile:
-                            firstfile = destfile
-                except Exception as why:
-                    return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
+            if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
+                logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
             else:
-                logger.debug('Ignoring unwanted file: %s' % fname)
+                if is_valid_booktype(fname, booktype=booktype) or \
+                        ((fname.lower().endswith(".jpg") or
+                         fname.lower().endswith(".opf")) and not
+                         lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
+                    logger.debug('Copying %s to directory %s' % (fname, dest_path))
+                    try:
+                        if booktype == 'audiobook':
+                            destfile = os.path.join(dest_path, fname)  # don't rename, just copy it
+                        else:
+                            # for ebooks, the book, jpg, opf all have the same basename
+                            destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
+
+                        if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                            shutil.copyfile(os.path.join(pp_path, fname), destfile)
+                        else:
+                            shutil.move(os.path.join(pp_path, fname), destfile)
+                        setperm(destfile)
+                        if is_valid_booktype(destfile, booktype=booktype):
+                            newbookfile = destfile
+                            if booktype == 'audiobook' and '01' in destfile:
+                                firstfile = destfile
+                    except Exception as why:
+                        return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
+                else:
+                    logger.debug('Ignoring unwanted file: %s' % fname)
 
         # for ebooks, prefer the first book_type found in ebook_type list
         if booktype == 'ebook':
