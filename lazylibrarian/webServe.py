@@ -762,6 +762,7 @@ class WebInterface(object):
                               languages=languages, booklang=BookLang)
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def getBooks(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
@@ -772,9 +773,13 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-        cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
-        cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
+        cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
+        cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary, '
+        cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^")'
+        cmd += ' FROM books, authors'
+        cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
+        cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
+        cmd += ' WHERE books.AuthorID = authors.AuthorID'
 
         status_type = 'books.status'
         args = []
@@ -808,6 +813,9 @@ class WebInterface(object):
             if 'booklang' in kwargs and kwargs['booklang'] != '' and kwargs['booklang'] != 'None':
                 cmd += ' and BOOKLANG=?'
                 args.append(kwargs['booklang'])
+
+        cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
+        cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
 
         rowlist = myDB.select(cmd, tuple(args))
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
@@ -883,19 +891,19 @@ class WebInterface(object):
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
-                              row[6], row[15], row[14]])
+                              row[6], row[15], row[14], row[16]])
                 else:
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                              row[6], row[13], row[5]])
+                              row[6], row[13], row[5], row[16]])
             rows = d
 
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
                   }
-        s = simplejson.dumps(mydict)
+        # s = simplejson.dumps(mydict)
         # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-        return s
+        return mydict
 
     @staticmethod
     def natural_sort(lst, key=lambda s: s, reverse=False):
