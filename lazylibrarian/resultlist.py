@@ -51,7 +51,7 @@ def findBestResult(resultlist, book, searchtype, source):
     """ resultlist: collated results from search providers
         book:       the book we want to find
         searchtype: book, magazine, shortbook, audiobook etc.
-        source:     nzb, tor, rss
+        source:     nzb, tor, rss, direct
         return:     highest scoring match, or None if no match
     """
     try:
@@ -84,7 +84,7 @@ def findBestResult(resultlist, book, searchtype, source):
 
         if source == 'nzb':
             prefix = 'nzb'
-        else:  # rss returns same names as torrents
+        else:  # rss and libgen return same names as torrents
             prefix = 'tor_'
 
         logger.debug('Searching %s %s results for best %s match' % (len(resultlist), source, auxinfo))
@@ -112,8 +112,8 @@ def findBestResult(resultlist, book, searchtype, source):
                     rejected = True
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):
-                    rejected = True
-                    logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))
+                rejected = True
+                logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))
 
             if not rejected:
                 for word in reject_list:
@@ -127,8 +127,8 @@ def findBestResult(resultlist, book, searchtype, source):
             size = round(float(size_temp) / 1048576, 2)
 
             if not rejected and maxsize and size > maxsize:
-                    rejected = True
-                    logger.debug("Rejecting %s, too large" % resultTitle)
+                rejected = True
+                logger.debug("Rejecting %s, too large" % resultTitle)
 
             if not rejected and minsize and size < minsize:
                 rejected = True
@@ -164,16 +164,25 @@ def findBestResult(resultlist, book, searchtype, source):
                     wordlist = getList(resultTitle.lower())
                 words = [x for x in wordlist if x not in getList(author.lower())]
                 words = [x for x in words if x not in getList(title.lower())]
-                booktypes = ''
+                typelist = ''
+
                 if newValueDict['AuxInfo'] == 'eBook':
                     words = [x for x in words if x not in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
-                    booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['EBOOK_TYPE'])]
+                    typelist = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
                 elif newValueDict['AuxInfo'] == 'AudioBook':
                     words = [x for x in words if x not in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
-                    booktypes = [x for x in wordlist if x in getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])]
+                    typelist = getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])
                 score -= len(words)
                 # prioritise titles that include the ebook types we want
-                score += len(booktypes)
+                # add more points for booktypes nearer the left in the list
+                # eg if epub, mobi, pdf  add 3 points if epub found, 2 for mobi, 1 for pdf
+                booktypes = [x for x in wordlist if x in typelist]
+                if booktypes:
+                    typelist = typelist.reverse()
+                    for item in booktypes:
+                        for i in [i for i, x in enumerate(typelist) if x == item]:
+                            score += i + 1
+                # score += len(booktypes)
                 matches.append([score, resultTitle, newValueDict, controlValueDict, res['priority']])
 
         if matches:

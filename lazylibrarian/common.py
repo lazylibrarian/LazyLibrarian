@@ -194,7 +194,7 @@ def scheduleJob(action='Start', target=None):
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.grsync.sync_to_gr,
                     hours=int(lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
-                logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+                logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
         elif 'authorUpdate' in target and int(lazylibrarian.CONFIG['CACHE_AGE']):
             # Try to get all authors scanned evenly inside the cache age
             minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
