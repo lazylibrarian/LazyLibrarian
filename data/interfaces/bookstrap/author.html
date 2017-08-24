@@ -213,6 +213,16 @@
                         'render': function(data, type, row) {
                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                     { targets: [2], class: "hidden" },
+                    { targets: [4], 'render': function(data, type, row){
+                        if (row[12] === null ) { return data; }
+                        var series = row[12].split('^');
+                        var output = [];
+                        for (var index=0; index < series.length; ++index) {
+                            var link_data = series[index].split("~");
+                            output.push('<a href=seriesMembers?seriesid=' + link_data[0] + '>' + link_data[1] + '</a>')
+                        }
+                        return output.join('<br>');
+                    }},
                     { targets: [5], 'render': function(data, type, row) {
                         return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
                     { targets: [7], 'render': function(data, type, row) {
