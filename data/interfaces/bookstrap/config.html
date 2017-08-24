@@ -29,9 +29,7 @@
                     <li role="presentation" id="8" aria-controls="filters"><a role="tab" data-toggle="tab" aria-controls="filters" href="#filters">Filters</a></li>
                 </ul>
 
-
                 <div class="tab-content">
-
                     <div role="tabpanel" class="tab-pane" id="webinterface">
                         <div class="configtable">
                             <div class="row">
@@ -358,9 +356,16 @@
               <input type="text" id="gr_wanted" name="gr_wanted" value="${lazylibrarian.CONFIG['GR_WANTED']}" class="form-control">
               <label for="gr_owned">Sync Open/Have to Goodreads shelf:</label>
               <input type="text" id="gr_owned" name="gr_owned" value="${lazylibrarian.CONFIG['GR_OWNED']}" class="form-control">
-                <div class="form-group">
-                  <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
+              <div class="form-group">
+                <label for="goodreads_interval" class="control-label">Goodreads Sync Interval:</label>
+                <div class="input-group">
+                  <input type="text" id="goodreads_interval" name="goodreads_interval" value="${lazylibrarian.CONFIG['GOODREADS_INTERVAL']}" class="form-control" placeholder="Goodreads Sync interval (hours)" >
+                  <span class="input-group-addon">Hours</span>
                 </div>
+              </div>
+              <div class="form-group">
+                <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
+              </div>
             </fieldset>
           </div>
           <div class="form-group">
@@ -3231,7 +3236,6 @@
             var tabnum = $(this).attr('id');    // store current tab for python
             $("#current_tab").val(tabnum);
         });
-
 
     } // End Init
 

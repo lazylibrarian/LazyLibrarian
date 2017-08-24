@@ -189,6 +189,12 @@ def scheduleJob(action='Start', target=None):
                 lazylibrarian.versioncheck.checkForUpdates,
                 hours=int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
             logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+        elif 'syncToGoodreads' in target and lazylibrarian.CONFIG['GR_SYNC']:
+            if int(lazylibrarian.CONFIG['GOODREADS_INTERVAL']):
+                lazylibrarian.SCHED.add_interval_job(
+                    lazylibrarian.grsync.sync_to_gr,
+                    hours=int(lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
+                logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
         elif 'authorUpdate' in target and int(lazylibrarian.CONFIG['CACHE_AGE']):
             # Try to get all authors scanned evenly inside the cache age
             minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
@@ -274,6 +280,7 @@ def restartJobs(start='Restart'):
     scheduleJob(start, 'search_magazines')
     scheduleJob(start, 'checkForUpdates')
     scheduleJob(start, 'authorUpdate')
+    scheduleJob(start, 'syncToGoodreads')
 
 
 def ensureRunning(jobname):
@@ -339,6 +346,8 @@ def showJobs():
             jobname = "Process downloads"
         elif "authorUpdate" in job:
             jobname = "Update authors"
+        elif "sync_to_gr" in job:
+            jobname = "Goodreads Sync"
         else:
             jobname = job.split(' ')[0].split('.')[2]
 
