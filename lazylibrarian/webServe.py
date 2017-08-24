@@ -897,7 +897,7 @@ class WebInterface(object):
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
-                  }
+                 }
         return mydict
 
     @staticmethod

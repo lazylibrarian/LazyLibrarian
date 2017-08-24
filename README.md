@@ -24,7 +24,7 @@ Right now it's capable of the following:
 * AutoAdd feature for book management tools like Calibre which must have books in flattened directory structure, or use calibre to import your books into an existing calibre library
 * LazyLibrarian can also be used to search for and download magazines, and monitor for new issues
 
-##Screenshots
+## Screenshots
 <img src="http://i.imgur.com/O8awy.png" width="600">
 <img src="http://i.imgur.com/fr0yE.png" width="600">
 <img src="http://i.imgur.com/AOgh1.png" width="600">
@@ -77,5 +77,6 @@ The snap package is confined to users home directory, so all books and downloads
 AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
 
 ## Docker packages
-x64 version here  : https://hub.docker.com/r/linuxserver/lazylibrarian/  
-armhf version here: https://hub.docker.com/r/lsioarmhf/lazylibrarian/
+armhf version here : https://hub.docker.com/r/lsioarmhf/lazylibrarian/
+x64 version here   : https://hub.docker.com/r/linuxserver/lazylibrarian/  
+with calibredb here: https://hub.docker.com/r/thraxis/lazylibrarian-calibre/
