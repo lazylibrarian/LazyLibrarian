@@ -259,7 +259,8 @@ class WebInterface(object):
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         cmd += ' and series.SeriesID=?'
         series = myDB.match(cmd, (seriesid,))
-        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
+        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID,'
+        cmd += 'BookLink,WorkPage'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
         cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
