@@ -25,7 +25,6 @@ from shutil import copyfile, rmtree
 
 import cherrypy
 import lazylibrarian
-import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
@@ -89,6 +88,7 @@ class WebInterface(object):
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def getIndex(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
@@ -163,10 +163,7 @@ class WebInterface(object):
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
                   }
-        s = simplejson.dumps(mydict)
-        # if lazylibrarian.LOGLEVEL > 2:
-        #    logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-        return s
+        return mydict
 
     @staticmethod
     def label_thread(name=None):
@@ -179,6 +176,7 @@ class WebInterface(object):
 
     # SERIES ############################################################
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def getSeries(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         iDisplayStart = int(iDisplayStart)
@@ -238,8 +236,7 @@ class WebInterface(object):
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
                   }
-        s = simplejson.dumps(mydict)
-        return s
+        return mydict
 
     @cherrypy.expose
     def series(self, AuthorID=None, whichStatus=None):
@@ -900,9 +897,7 @@ class WebInterface(object):
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
-                  }
-        # s = simplejson.dumps(mydict)
-        # print ("Getbooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                 }
         return mydict
 
     @staticmethod
@@ -1532,6 +1527,7 @@ class WebInterface(object):
             templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus)
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         myDB = database.DBConnection()
@@ -1577,8 +1573,7 @@ class WebInterface(object):
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
                   }
-        s = simplejson.dumps(mydict)
-        return s
+        return mydict
 
     @cherrypy.expose
     def openMag(self, bookid=None):
@@ -2071,6 +2066,7 @@ class WebInterface(object):
 
     # noinspection PyUnusedLocal
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
         iDisplayStart = int(iDisplayStart)
@@ -2093,8 +2089,7 @@ class WebInterface(object):
                   'iTotalRecords': len(lazylibrarian.LOGLIST),
                   'aaData': rows,
                   }
-        s = simplejson.dumps(mydict)
-        return s
+        return mydict
 
     # HISTORY ###########################################################
 
