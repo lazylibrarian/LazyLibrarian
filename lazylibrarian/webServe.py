@@ -607,6 +607,44 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
+    def followAuthor(self, AuthorID):
+        # empty GRfollow is not-yet-used, zero means manually unfollowed so sync leaves it alone
+        myDB = database.DBConnection()
+        authorsearch = myDB.match('SELECT AuthorName, GRfollow from authors WHERE AuthorID=?', (AuthorID,))
+        if authorsearch:
+            if authorsearch['GRfollow'] and authorsearch['GRfollow'] != '0':
+                logger.warn("Already Following %s" % authorsearch['AuthorName'])
+            else:
+                msg = grsync.grfollow(AuthorID, True)
+                if msg.startswith('Unable'):
+                    logger.warn(msg)
+                else:
+                    logger.info(msg)
+                    followid = msg.split("followid=")[1]
+                    myDB.action("UPDATE authors SET GRfollow=? WHERE AuthorID=?", (followid, AuthorID))
+        else:
+            logger.error("Invalid authorid to follow (%s)" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+
+    @cherrypy.expose
+    def unfollowAuthor(self, AuthorID):
+        myDB = database.DBConnection()
+        authorsearch = myDB.match('SELECT AuthorName, GRfollow from authors WHERE AuthorID=?', (AuthorID,))
+        if authorsearch:
+            if not authorsearch['GRfollow'] or authorsearch['GRfollow'] == '0':
+                logger.warn("Not Following %s" % authorsearch['AuthorName'])
+            else:
+                msg = grsync.grfollow(AuthorID, False)
+                if msg.startswith('Unable'):
+                    logger.warn(msg)
+                else:
+                    myDB.action("UPDATE authors SET GRfollow='0' WHERE AuthorID=?", (AuthorID,))
+                    logger.info(msg)
+        else:
+            logger.error("Invalid authorid to unfollow (%s)" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+
+    @cherrypy.expose
     def libraryScanAuthor(self, AuthorID, **kwargs):
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))

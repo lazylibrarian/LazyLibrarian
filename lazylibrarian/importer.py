@@ -23,6 +23,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getAuthorImage
 from lazylibrarian.cache import cache_img
 from lazylibrarian.formatter import today, unaccented, formatAuthorName
+from lazylibrarian.grsync import grfollow
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -262,6 +263,17 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             # New authors need their totals updating after libraryscan or import of books.
             if not new_author:
                 update_totals(authorid)
+
+            if newauthor and lazylibrarian.CONFIG['GR_FOLLOWNEW']:
+                res = grfollow(authorid, True)
+                if res.startswith('Unable'):
+                    logger.warn(res)
+                try:
+                    followid = res.split("followid=")[1]
+                    logger.debug('%s marked followed' % authorname)
+                except IndexError:
+                    followid = ''
+                myDB.action('UPDATE authors SET GRfollow=? WHERE AuthorID=?', (followid, authorid))
         else:
             # if we're not loading any books, mark author as ignored
             controlValueDict = {"AuthorID": authorid}

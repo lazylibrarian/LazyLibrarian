@@ -70,8 +70,9 @@ def upgrade_needed():
     # 19 add seriesdisplay to book table
     # 20 add booklibrary date to book table
     # 21 add audiofile audiolibrary date and audiostatus to books table
+    # 22 add goodreads "follow" to author table
 
-    db_current_version = 21
+    db_current_version = 22
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -126,7 +127,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, \
                 AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, \
                 LastLink Text, LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, \
-                AuthorDeath TEXT, UnignoredBooks INTEGER, Manual TEXT)')
+                AuthorDeath TEXT, UnignoredBooks INTEGER, Manual TEXT, GRfollow TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, \
                 BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
@@ -311,7 +312,7 @@ def dbupgrade(db_current_version):
 
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
-                                    db_v21
+                                    db_v21, db_v22
                                     ]
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index+2 <= db_current_version:
@@ -894,3 +895,11 @@ def db_v21(myDB, upgradelog):
                         (1, download['NZBprov']))
 
     upgradelog.write("%s v21: complete\n" % time.ctime())
+
+
+def db_v22(myDB, upgradelog):
+    if not has_column(myDB, "authors", "GRfollow"):
+        lazylibrarian.UPDATE_MSG = 'Adding Goodreads Follow support to author table'
+        upgradelog.write("%s v22: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE authors ADD COLUMN GRfollow TEXT')
+    upgradelog.write("%s v22: complete\n" % time.ctime())

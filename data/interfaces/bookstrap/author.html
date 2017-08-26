@@ -28,6 +28,17 @@
             %if showseries >= 1:
             <a href="series?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Series</a>
             %endif
+            %if lazylibrarian.CONFIG['GR_FOLLOW'] == True:
+              %if author['GRfollow']:
+                %if author['GRfollow'] != '0':
+                <a href="unfollowAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-check"></i> Following</a>
+                %else:
+                <a href="followAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-times"></i> Not Following</a>
+                %endif
+              %else:
+                <a href="followAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-times"></i> Not Following</a>
+              %endif
+            %endif
             <div class="form-group pull-right">
             %if len(types) > 1:
               <label for="chooselib"><small>&nbsp;Library</small></label>
