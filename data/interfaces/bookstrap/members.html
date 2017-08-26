@@ -62,7 +62,11 @@
           <tr>
             <td class="select"><input type="checkbox" name="${result['BookID']}" /></td>
             <td class="bookart text-center hidden-xs"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
-            <td class="bookname">${result['BookName']}</td>
+            <td class="bookname">${result['BookName']}<br>
+              <a href="${result['BookLink']}" target="_new"><small><i>GoodReads</i></small></a>&nbsp;
+              <a href="${result['WorkPage']}" target="_new"><small><i>LibraryThing</i></small></a>&nbsp;
+              <a href="editBook?bookid=${result['BookID']}" target="_new"><small><i>Manual</i></small></a>
+            </td>
             %if multi == "True":
             <td class="authorname">${result['AuthorName']}</td>
             %else:
