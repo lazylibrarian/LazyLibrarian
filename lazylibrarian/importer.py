@@ -264,7 +264,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             if not new_author:
                 update_totals(authorid)
 
-            if newauthor and lazylibrarian.CONFIG['GR_FOLLOWNEW']:
+            if new_author and lazylibrarian.CONFIG['GR_FOLLOWNEW']:
                 res = grfollow(authorid, True)
                 if res.startswith('Unable'):
                     logger.warn(res)
