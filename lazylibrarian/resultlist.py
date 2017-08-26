@@ -178,7 +178,7 @@ def findBestResult(resultlist, book, searchtype, source):
                 # eg if epub, mobi, pdf  add 3 points if epub found, 2 for mobi, 1 for pdf
                 booktypes = [x for x in wordlist if x in typelist]
                 if booktypes:
-                    typelist = typelist.reverse()
+                    typelist = list(reversed(typelist))
                     for item in booktypes:
                         for i in [i for i, x in enumerate(typelist) if x == item]:
                             score += i + 1
