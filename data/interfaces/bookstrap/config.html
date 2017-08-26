@@ -363,6 +363,28 @@
                   <span class="input-group-addon">Hours</span>
                 </div>
               </div>
+              <div class="checkbox">
+                <%
+                  if lazylibrarian.CONFIG['GR_FOLLOW'] == True:
+                      checked = 'checked="checked"'
+                  else:
+                      checked = ''
+                %>
+                <label for="gr_follow" class="control-label">
+                  <input type="checkbox" id="gr_follow" name="gr_follow" value="1" ${checked} />
+                  Enable manual Follow/Unfollow authors on GoodReads</label>
+              </div>
+              <div class="checkbox">
+                <%
+                  if lazylibrarian.CONFIG['GR_FOLLOWNEW'] == True:
+                      checked = 'checked="checked"'
+                  else:
+                      checked = ''
+                %>
+                <label for="gr_follownew" class="control-label">
+                  <input type="checkbox" id="gr_follownew" name="gr_follownew" value="1" ${checked} />
+                  Follow all new authors on GoodReads</label>
+              </div>
               <div class="form-group">
                 <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
               </div>

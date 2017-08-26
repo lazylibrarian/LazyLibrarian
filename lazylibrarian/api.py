@@ -28,9 +28,10 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today, formatAuthorName
+from lazylibrarian.formatter import today, formatAuthorName, check_int, plural
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.grsync import grfollow
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
@@ -119,7 +120,10 @@ cmd_dict = {'help': 'list available commands. ' +
             'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
-            'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory'
+            'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory',
+            'grFollow': '&id Follow an author on goodreads',
+            'grFollowAll': 'Follow all lazylibrarian authors on goodreads',
+            'grUnfollow': '&id Unfollow an author on goodreads',
             }
 
 
@@ -705,6 +709,53 @@ class Api(object):
             self.id = kwargs['id']
         try:
             self.data = addAuthorToDB(refresh=False, authorid=self.id)
+        except Exception as e:
+            self.data = str(e)
+
+    def _grFollowAll(self):
+        myDB = database.DBConnection()
+        cmd = 'SELECT AuthorName,AuthorID,GRfollow FROM authors where '
+        cmd += 'Status="Active" or Status="Wanted" or Status="Loading"'
+        authors = myDB.select(cmd)
+        count = 0
+        for author in authors:
+            followid = check_int(author['GRfollow'], 0)
+            if followid > 0:
+                logger.debug('%s is already followed' % author['AuthorName'])
+            elif author['GRfollow'] == "0":
+                logger.debug('%s is manually unfollowed' % author['AuthorName'])
+            else:
+                res = grfollow(author['AuthorID'], True)
+                if res.startswith('Unable'):
+                    logger.warn(res)
+                try:
+                    followid = res.split("followid=")[1]
+                    logger.debug('%s marked followed' % author['AuthorName'])
+                    count += 1
+                except IndexError:
+                    followid = ''
+                myDB.action('UPDATE authors SET GRfollow=? WHERE AuthorID=?', (followid, author['AuthorID']))
+        self.data = "Added follow to %s author%s" % (count, plural(count))
+
+    def _grFollow(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        try:
+            self.data = grfollow(authorid=self.id, follow=True)
+        except Exception as e:
+            self.data = str(e)
+
+    def _grUnfollow(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        try:
+            self.data = grfollow(authorid=self.id, follow=False)
         except Exception as e:
             self.data = str(e)
 

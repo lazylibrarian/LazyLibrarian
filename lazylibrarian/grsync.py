@@ -77,7 +77,11 @@ class grauth:
         access_token_url = '%s/oauth/access_token' % self.url
 
         client = oauth.Client(self.consumer, self.token)
-        response, content = client.request(access_token_url, 'POST')
+        try:
+            response, content = client.request(access_token_url, 'POST')
+        except Exception as e:
+            return "Exception in client.request: %s" % str(e)
+
         if response['status'] != '200':
             raise Exception('Invalid response: %s' % response['status'])
 
@@ -86,9 +90,6 @@ class grauth:
         self.oauth_token = access_token['oauth_token']
         self.oauth_secret = access_token['oauth_token_secret']
         return {'gr_oauth_token': self.oauth_token, 'gr_oauth_secret': self.oauth_secret}
-        # lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = self.oauth_token
-        # lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = self.oauth_secret
-        # lazylibrarian.config_write()
 
     def get_user_id(self):
 
@@ -135,18 +136,19 @@ class grauth:
             while True:
                 page_shelves = 0
                 current_page = current_page + 1
-                time_now = int(time.time())
-                if time_now <= lazylibrarian.LAST_GOODREADS:
-                    time.sleep(1)
-                    lazylibrarian.LAST_GOODREADS = time_now
-
                 shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
-
                 body = urllib.urlencode({})
                 headers = {'content-type': 'application/x-www-form-urlencoded'}
                 request_url = shelf_template.substitute(base=self.url, user_id=self.user_id, page=current_page,
                                                         key=self.key)
-                response, content = self.client.request(request_url, 'GET', body, headers)
+                time_now = int(time.time())
+                if time_now <= lazylibrarian.LAST_GOODREADS:
+                    time.sleep(1)
+                    lazylibrarian.LAST_GOODREADS = time_now
+                try:
+                    response, content = self.client.request(request_url, 'GET', body, headers)
+                except Exception as e:
+                    return "Exception in client.request: %s" % str(e)
 
                 if response['status'] != '200':
                     raise Exception('Failure status: %s for page %s' % (response['status'], current_page))
@@ -164,13 +166,60 @@ class grauth:
 
                     page_shelves += 1
 
-                logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
-                if page_shelves == 0:
-                    break
+                if lazylibrarian.LOGLEVEL > 2:
+                    logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
+                    if page_shelves == 0:
+                        break
 
             logger.debug('Found %s shelves' % len(shelves))
             # print shelves
             return shelves
+
+    def follow_author(self, authorid=None, follow=True):
+        if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
+            logger.debug("Goodreads follow error: Please authorise first")
+            return False, 'Unauthorised'
+
+        if not self.consumer:
+            self.consumer = oauth.Consumer(key=str(self.key), secret=str(self.secret))
+        if not self.token:
+            self.token = oauth.Token(self.oauth_token, self.oauth_secret)
+        if not self.client:
+            self.client = oauth.Client(self.consumer, self.token)
+
+        self.user_id = self.getUserId()
+
+        # follow http://www.goodreads.com/author_followings?id=AUTHOR_ID&format=xml
+        # unfollow http://www.goodreads.com/author_followings/AUTHOR_FOLLOWING_ID?format=xml
+        time_now = int(time.time())
+        if time_now <= lazylibrarian.LAST_GOODREADS:
+            time.sleep(1)
+            lazylibrarian.LAST_GOODREADS = time_now
+
+        if follow:
+            body = urllib.urlencode({'id': authorid, 'format': 'xml'})
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            try:
+                response, content = self.client.request('%s/author_followings' % self.url, 'POST', body, headers)
+            except Exception as e:
+                return False, "Exception in client.request: %s" % str(e)
+        else:
+            body = urllib.urlencode({'format': 'xml'})
+            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            try:
+                response, content = self.client.request('%s/author_followings/%s' % (self.url, authorid),
+                                                        'DELETE', body, headers)
+            except Exception as e:
+                return False, "Exception in client.request: %s" % str(e)
+
+        if follow and response['status'] == '422':
+            return True, 'Already following'
+
+        if response['status'].startswith('2'):
+            if follow:
+                return True, content.split('<id>')[1].split('</id>')[0]
+            return True, ''
+        return False, 'Failure status: %s' % response['status']
 
     def create_shelf(self, shelf='lazylibrarian'):
         if not self.key or not self.secret or not self.oauth_token or not self.oauth_secret:
@@ -189,7 +238,14 @@ class grauth:
         # could also pass [featured] [exclusive_flag] [sortable_flag] all default to False
         body = urllib.urlencode({'user_shelf[name]': shelf.lower()})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, content = self.client.request('%s/user_shelves.xml' % self.url, 'POST', body, headers)
+        time_now = int(time.time())
+        if time_now <= lazylibrarian.LAST_GOODREADS:
+            time.sleep(1)
+            lazylibrarian.LAST_GOODREADS = time_now
+        try:
+            response, content = self.client.request('%s/user_shelves.xml' % self.url, 'POST', body, headers)
+        except Exception as e:
+            return False, "Exception in client.request: %s" % str(e)
 
         if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
@@ -246,7 +302,8 @@ class grauth:
                     page_books += 1
                     total_books += 1
 
-                logger.debug('Found %s books on page %s (total = %s)' % (page_books, current_page, total_books))
+                if lazylibrarian.LOGLEVEL > 2:
+                    logger.debug('Found %s books on page %s (total = %s)' % (page_books, current_page, total_books))
                 if page_books == 0:
                     break
 
@@ -258,8 +315,14 @@ class grauth:
     # who are we?
     #
     def getUserId(self):
-
-        response, content = self.client.request('%s/api/auth_user' % self.url, 'GET')
+        time_now = int(time.time())
+        if time_now <= lazylibrarian.LAST_GOODREADS:
+            time.sleep(1)
+            lazylibrarian.LAST_GOODREADS = time_now
+        try:
+            response, content = self.client.request('%s/api/auth_user' % self.url, 'GET')
+        except Exception as e:
+            return "Exception in client.request: %s" % str(e)
         if response['status'] != '200':
             raise Exception('Cannot fetch resource: %s' % response['status'])
 
@@ -279,7 +342,14 @@ class grauth:
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         request_url = owned_template.substitute(base=self.url, user_id=self.user_id, page=page, key=self.key,
                                                 shelf_name=shelf_name)
-        response, content = self.client.request(request_url, 'GET', body, headers)
+        time_now = int(time.time())
+        if time_now <= lazylibrarian.LAST_GOODREADS:
+            time.sleep(1)
+            lazylibrarian.LAST_GOODREADS = time_now
+        try:
+            response, content = self.client.request(request_url, 'GET', body, headers)
+        except Exception as e:
+            return "Exception in client.request: %s" % str(e)
         if response['status'] != '200':
             raise Exception('Failure status: %s for page ' % response['status'] + page)
         return content
@@ -300,7 +370,14 @@ class grauth:
         else:
             body = urllib.urlencode({'name': shelf_name, 'book_id': book_id})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        response, content = self.client.request('%s/shelf/add_to_shelf.xml' % self.url, 'POST', body, headers)
+        time_now = int(time.time())
+        if time_now <= lazylibrarian.LAST_GOODREADS:
+            time.sleep(1)
+            lazylibrarian.LAST_GOODREADS = time_now
+        try:
+            response, content = self.client.request('%s/shelf/add_to_shelf.xml' % self.url, 'POST', body, headers)
+        except Exception as e:
+            return False, "Exception in client.request: %s" % str(e)
 
         if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
@@ -332,13 +409,40 @@ def sync_to_gr():
     msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
     msg += "%s marked Wanted\n" % ll_wanted
     msg += "%s marked Have" % ll_have
+    logger.info(msg)
     return msg
+
+
+def grfollow(authorid, follow=True):
+    myDB = database.DBConnection()
+    match = myDB.match('SELECT AuthorName,GRfollow from authors WHERE authorid=?', (authorid,))
+    if match:
+        if follow:
+            action = 'Follow'
+            aname = match['AuthorName']
+            actionid = authorid
+        else:
+            action = 'Unfollow'
+            aname = authorid
+            actionid = match['GRfollow']
+
+        GA = grauth()
+        res, msg = GA.follow_author(actionid, follow)
+        if res:
+            if follow:
+                return "%s author %s, followid=%s" % (action, aname, msg)
+            else:
+                return "%s author %s" % (action, aname)
+        else:
+            return "Unable to %s %s: %s" % (action, authorid, msg)
+    else:
+        return "Unable to (un)follow %s, invalid authorid" % authorid
 
 
 def grsync(status, shelf):
     try:
         shelf = shelf.lower()
-        logger.debug('Syncing %s to %s shelf' % (status, shelf))
+        logger.info('Syncing %s to %s shelf' % (status, shelf))
         myDB = database.DBConnection()
         cmd = 'select bookid from books where status="%s"' % status
         if status == 'Open':
@@ -369,8 +473,8 @@ def grsync(status, shelf):
         if dstatus == "Open":
             dstatus += "/Have"
 
-        logger.debug("There are %s %s books, %s books on goodreads %s shelf" %
-                     (len(ll_list), dstatus, len(gr_shelf), shelf))
+        logger.info("There are %s %s books, %s books on goodreads %s shelf" %
+                    (len(ll_list), dstatus, len(gr_shelf), shelf))
         # print ll_list
         # print gr_shelf
 
@@ -402,15 +506,15 @@ def grsync(status, shelf):
                     res = None
 
                 if res:
-                    logger.debug("%10s added to %s shelf" % (book, shelf))
-                    to_shelf += 1
-                    # print content
+                    if lazylibrarian.LOGLEVEL > 2:
+                        logger.debug("%10s added to %s shelf" % (book, shelf))
+                        to_shelf += 1
+                        # print content
                 else:
                     logger.debug("Failed to add %s to %s shelf" % (book, shelf))
                     # print content
 
         # "to-read" books need adding to lazylibrarian as "wanted" if not already Open/Have,
-        # if they are already Open/Have, remove from goodreads to-read shelf, add to owned shelf
         # "owned" need adding as "Have" as librarysync will pick up "Open" ones or change Have to Open
 
         for book in not_in_ll:

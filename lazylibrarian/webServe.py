@@ -259,7 +259,8 @@ class WebInterface(object):
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         cmd += ' and series.SeriesID=?'
         series = myDB.match(cmd, (seriesid,))
-        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID'
+        cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID,'
+        cmd += 'BookLink,WorkPage'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
         cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
@@ -606,6 +607,44 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
+    def followAuthor(self, AuthorID):
+        # empty GRfollow is not-yet-used, zero means manually unfollowed so sync leaves it alone
+        myDB = database.DBConnection()
+        authorsearch = myDB.match('SELECT AuthorName, GRfollow from authors WHERE AuthorID=?', (AuthorID,))
+        if authorsearch:
+            if authorsearch['GRfollow'] and authorsearch['GRfollow'] != '0':
+                logger.warn("Already Following %s" % authorsearch['AuthorName'])
+            else:
+                msg = grsync.grfollow(AuthorID, True)
+                if msg.startswith('Unable'):
+                    logger.warn(msg)
+                else:
+                    logger.info(msg)
+                    followid = msg.split("followid=")[1]
+                    myDB.action("UPDATE authors SET GRfollow=? WHERE AuthorID=?", (followid, AuthorID))
+        else:
+            logger.error("Invalid authorid to follow (%s)" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+
+    @cherrypy.expose
+    def unfollowAuthor(self, AuthorID):
+        myDB = database.DBConnection()
+        authorsearch = myDB.match('SELECT AuthorName, GRfollow from authors WHERE AuthorID=?', (AuthorID,))
+        if authorsearch:
+            if not authorsearch['GRfollow'] or authorsearch['GRfollow'] == '0':
+                logger.warn("Not Following %s" % authorsearch['AuthorName'])
+            else:
+                msg = grsync.grfollow(AuthorID, False)
+                if msg.startswith('Unable'):
+                    logger.warn(msg)
+                else:
+                    myDB.action("UPDATE authors SET GRfollow='0' WHERE AuthorID=?", (AuthorID,))
+                    logger.info(msg)
+        else:
+            logger.error("Invalid authorid to unfollow (%s)" % AuthorID)
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+
+    @cherrypy.expose
     def libraryScanAuthor(self, AuthorID, **kwargs):
         myDB = database.DBConnection()
         authorsearch = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
@@ -772,12 +811,13 @@ class WebInterface(object):
 
         cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
         cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary, '
-        cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^")'
+        cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
         cmd += ' FROM books, authors'
         cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
         cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
         cmd += ' WHERE books.AuthorID = authors.AuthorID'
 
+        library = None
         status_type = 'books.status'
         args = []
         if kwargs['source'] == "Manage":
@@ -825,7 +865,27 @@ class WebInterface(object):
                 rows.append(list(row))  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+                if library is not None:
+                    if library == 'AudioBook':
+                        searchFields = ['BookImg', 'AuthorName', 'BookName', 'BookRate', 'BookDate', 'AudioStatus',
+                                        'BookID', 'BookLang', 'BookSub', 'BookLink', 'WorkPage', 'AuthorID',
+                                        'SeriesDisplay', 'AudioLibrary']
+                    else:
+                        searchFields = ['BookImg', 'AuthorName', 'BookName', 'BookRate', 'BookDate', 'Status',
+                                        'BookID', 'BookLang', 'BookSub', 'BookLink', 'WorkPage', 'AuthorID',
+                                        'SeriesDisplay', 'BookLibrary']
+
+                    filtered = list()
+                    for row in rowlist:
+                        _dict = dict(row)
+                        for key in searchFields:
+                            if sSearch.lower() in str(_dict.get(key, '')).lower():
+                                filtered.append(list(row))
+                                break
+
+                else:
+                    filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+
             else:
                 filtered = rows
 
