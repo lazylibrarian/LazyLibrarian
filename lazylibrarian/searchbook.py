@@ -211,7 +211,8 @@ def search_book(books=None, library=None):
                         resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
                             logger.debug("No active nzb providers found")
-                            modelist.remove('nzb')
+                            if 'nzb' in modelist:
+                                modelist.remove('nzb')
                         if resultlist:
                             match = findBestResult(resultlist, book, searchtype, mode)
                         else:
