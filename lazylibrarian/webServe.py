@@ -505,10 +505,10 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
 
-        authorsearch = myDB.select("SELECT AuthorName from authors")
+        authorids = myDB.select("SELECT AuthorID from authors")
         authorlist = []
-        for item in authorsearch:
-            authorlist.append(item['AuthorName'])
+        for item in authorids:
+            authorlist.append(item['AuthorID'])
 
         booksearch = myDB.select("SELECT Status,BookID from books")
         booklist = []
@@ -517,8 +517,7 @@ class WebInterface(object):
 
         searchresults = search_for(name)
         return serve_template(templatename="searchresults.html", title='Search Results: "' +
-                                                                       name + '"', searchresults=searchresults,
-                              authorlist=authorlist,
+                              name + '"', searchresults=searchresults, authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
