@@ -174,14 +174,6 @@
 <%def name="headIncludes()">
   %if author['Status'] == 'Loading':
   <meta http-equiv="refresh" content="12">
-  <script type="text/javascript">
-    $(document).ready(function () {
-                /// bootbox.dialog({
-                ///    title: "Getting Author's Books",
-                ///    message: '<pre>'+'Please wait...'+'</pre>',
-                /// });
-    });
-  </script>
   %endif
 </%def>
 <%def name="javascriptIncludes()">

@@ -59,7 +59,7 @@
                     else:
                         starimg = '0-stars.png'
 
-                    if authorlist and result['authorname'] in authorlist:
+                    if authorlist and result['authorid'] in authorlist:
                         destination = "authorPage?AuthorID="+result['authorid']
                         value = "Have Author"
                         but_class = "btn-info"
