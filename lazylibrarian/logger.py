@@ -16,6 +16,7 @@
 import logging
 import os
 import threading
+import inspect
 from logging import handlers
 
 import lazylibrarian
@@ -74,15 +75,26 @@ class RotatingLogger(object):
 
         threadname = threading.currentThread().getName()
 
+        # Get the frame data of the method that made the original logger call
+        if len(inspect.stack()) > 2:
+            frame = inspect.getframeinfo(inspect.stack()[2][0])
+            program = os.path.basename(frame.filename)
+            method = frame.function
+            lineno = frame.lineno
+        else:
+            program = ""
+            method = ""
+            lineno = ""
+
         # Ensure messages are correctly encoded as some author names contain accents and the web page doesnt like them
         message = formatter.safe_unicode(message).encode(lazylibrarian.SYS_ENCODING)
         if level != 'DEBUG' or lazylibrarian.LOGLEVEL >= 2:
             # Limit the size of the "in-memory" log, as gets slow if too long
-            lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))
+            lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, threadname, program, method, lineno, message))
             if len(lazylibrarian.LOGLIST) > lazylibrarian.CONFIG['LOGLIMIT']:
                 del lazylibrarian.LOGLIST[-1]
 
-        message = "%s : %s" % (threadname, message)
+        message = "%s : %s:%s:%s : %s" % (threadname, program, method, lineno, message)
 
         if level == 'DEBUG':
             logger.debug(message)
