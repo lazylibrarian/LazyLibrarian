@@ -31,13 +31,15 @@
   <table class="display" id="log_table">
     <thead>
       <tr>
-          <th class="timestamp">Timestamp</th>
-          <th class="level">Level</th>
-          <th class="thead">Thread</th>
-          <th class="file">File</th>
-          <th class="method">Method</th>
-          <th class="lineno">Line No</th>
-          <th class="message">Message</th>
+        <th id="timestamp">Timestamp</th>
+        <th id="level">Level</th>
+          %if lazylibrarian.LOGLEVEL >= 2:
+            <th class="thead">Thread</th>
+            <th class="file">File</th>
+            <th class="method">Method</th>
+            <th class="lineno">Line No</th>
+          %endif
+        <th id="message">Message</th>
       </tr>
     </thead>
   </table>
@@ -87,6 +89,12 @@
                     {
                         $('td', nRow).eq(0).addClass('hidden');
                     }
+                    %if lazylibrarian.LOGLEVEL < 3:
+                        $('td', nRow).eq(2).addClass("hidden");
+                        $('td', nRow).eq(3).addClass("hidden");
+                        $('td', nRow).eq(4).addClass("hidden");
+                        $('td', nRow).eq(5).addClass("hidden");
+                    %endif
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {

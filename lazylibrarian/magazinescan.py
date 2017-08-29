@@ -321,7 +321,7 @@ def magazineScan():
         match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
         date_pattern = re.compile(match, re.VERBOSE)
 
-        for dirname, dirnames, filenames in os.walk(mag_path):
+        for dirname, dirnames, filenames in os.walk(str(mag_path)):
             for fname in filenames[:]:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
