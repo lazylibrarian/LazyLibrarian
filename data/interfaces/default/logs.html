@@ -31,9 +31,13 @@
   <table class="display" id="log_table">
     <thead>
       <tr>
-        <th id="timestamp">Timestamp</th>
-        <th id="level">Level</th>
-        <th id="message">Message</th>
+          <th class="timestamp">Timestamp</th>
+          <th class="level">Level</th>
+          <th class="thead">Thread</th>
+          <th class="file">File</th>
+          <th class="method">Method</th>
+          <th class="lineno">Line No</th>
+          <th class="message">Message</th>
       </tr>
     </thead>
   </table>
@@ -51,6 +55,10 @@
         var oTable = $('#log_table').dataTable(
             {
                 "bAutoWidth": false,
+                "aoColumnDefs": [
+                    { "sWidth": "3%", "aTargets": [ 0,1,2,3,4,5 ] },
+                    { "sWidth": "60%", "aTargets": [ 6 ] }
+                ],
                 "oLanguage": {
                     "sSearch":"",
                     "sLengthMenu":"Show _MENU_ rows per page",
