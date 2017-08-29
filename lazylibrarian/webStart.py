@@ -23,7 +23,6 @@ from lazylibrarian.webServe import WebInterface
 
 
 def initialize(options=None):
-
     if options is None:
         options = {}
     https_enabled = options['https_enabled']

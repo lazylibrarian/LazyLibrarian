@@ -321,7 +321,15 @@ def magazineScan():
         match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
         date_pattern = re.compile(match, re.VERBOSE)
 
-        for dirname, dirnames, filenames in os.walk(str(mag_path)):
+        # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
+        # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
+        if isinstance(mag_path, unicode):
+            try:
+                mag_path = mag_path.encode('ASCII')
+            except UnicodeEncodeError:
+                logger.debug('Unicode error converting %s' % repr(mag_path))
+
+        for dirname, dirnames, filenames in os.walk(mag_path):
             for fname in filenames[:]:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
