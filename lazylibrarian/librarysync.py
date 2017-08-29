@@ -379,7 +379,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)") + '\.[' + booktypes + ']'
         pattern = re.compile(matchString, re.VERBOSE)
 
-        for r, d, f in os.walk(startdir):
+        # ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
+        # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
+        for r, d, f in os.walk(str(startdir)):
             for directory in d:
                 # prevent magazine being scanned
                 if directory.startswith("_") or directory.startswith("."):
