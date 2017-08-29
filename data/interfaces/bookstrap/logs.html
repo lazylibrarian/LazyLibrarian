@@ -24,7 +24,7 @@
   %if lazylibrarian.CONFIG['TOGGLES'] == True:
   Toggle: <a class="toggle-vis" data-column="0">Timestamp</a>
         - <a class="toggle-vis" data-column="1">Level</a>
-        %if int(lazylibrarian.LOGLEVEL) >= 2:
+        %if lazylibrarian.LOGLEVEL >= 2:
           - <a class="toggle-vis" data-column="2">Thread</a>
           - <a class="toggle-vis" data-column="3">File</a>
           - <a class="toggle-vis" data-column="4">Method</a>
