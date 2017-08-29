@@ -24,11 +24,13 @@
   %if lazylibrarian.CONFIG['TOGGLES'] == True:
   Toggle: <a class="toggle-vis" data-column="0">Timestamp</a>
         - <a class="toggle-vis" data-column="1">Level</a>
-        - <a class="toggle-vis" data-column="2">Thread</a>
-        - <a class="toggle-vis" data-column="3">File</a>
-        - <a class="toggle-vis" data-column="4">Method</a>
-        - <a class="toggle-vis" data-column="5">Line No</a>
-        - <a class="toggle-vis" data-column="6">Message</a>
+        %if lazylibrarian.LOGLEVEL >= 2:
+          - <a class="toggle-vis" data-column="2">Thread</a>
+          - <a class="toggle-vis" data-column="3">File</a>
+          - <a class="toggle-vis" data-column="4">Method</a>
+          - <a class="toggle-vis" data-column="5">Line No</a>
+        %endif:
+
   %endif
   <div align="center">Refresh rate:
     <select id="refreshrate" class="button btn btn-sm btn-primary" onchange="setRefresh()">
@@ -46,10 +48,12 @@
         <tr>
           <th class="timestamp">Timestamp</th>
           <th class="level">Level</th>
-          <th class="thead">Thread</th>
-          <th class="file">File</th>
-          <th class="method">Method</th>
-          <th class="lineno">Line No</th>
+          %if lazylibrarian.LOGLEVEL >= 2:
+            <th class="thead">Thread</th>
+            <th class="file">File</th>
+            <th class="method">Method</th>
+            <th class="lineno">Line No</th>
+          %endif
           <th class="message">Message</th>
         </tr>
       </thead>
@@ -63,7 +67,11 @@
     $(document).ready(function() {
         var oTable = $('#log_table').DataTable({
                 "bAutoWidth": false,
-                "stateSave": true,
+                "aoColumnDefs": [
+                    { "sWidth": "3%", "aTargets": [ 0,1,2,3,4,5 ] },
+                    { "sWidth": "60%", "aTargets": [ 6 ] }
+                ],
+                 "stateSave": true,
                 "order": [[ 0, 'desc' ]],
                 "oLanguage": {
                     "sSearch":"Filter: ",
@@ -86,6 +94,12 @@
                     } else {
                         $('td', nRow).closest('tr').addClass("text-info");
                     }
+                    %if lazylibrarian.LOGLEVEL < 3:
+                        $('td', nRow).eq(2).addClass("hidden");
+                        $('td', nRow).eq(3).addClass("hidden");
+                        $('td', nRow).eq(4).addClass("hidden");
+                        $('td', nRow).eq(5).addClass("hidden");
+                    %endif
                     // hide timestamp on smallest devices
                     //$('td', nRow).eq(0).addClass('hidden-xs');
                     return nRow;
