@@ -58,8 +58,13 @@
             {
                 "bAutoWidth": false,
                 "aoColumnDefs": [
+                    %if lazylibrarian.LOGLEVEL < 3:
+                    { "sWidth": "3%", "aTargets": [ 0,1 ] },
+                    { "sWidth": "60%", "aTargets": [ 6 ] }
+                    %else:
                     { "sWidth": "3%", "aTargets": [ 0,1,2,3,4,5 ] },
                     { "sWidth": "60%", "aTargets": [ 6 ] }
+                    %endif
                 ],
                 "oLanguage": {
                     "sSearch":"",
