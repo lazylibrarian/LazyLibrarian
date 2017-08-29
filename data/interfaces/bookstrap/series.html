@@ -45,7 +45,7 @@
     </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
-    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a> - <a class="toggle-vis" data-column="4">Select</a>
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a>
     %endif
   </form>
   <br>
@@ -58,7 +58,6 @@
             <th class="authorname">Author</th>
             <th class="series">Series Name</th>
             <th class="status text-center">Status</th>
-            <th class="stars text-center">Select</th>
           </tr>
         </thead>
       </table>
@@ -91,8 +90,8 @@
                     { targets: [0], 'render': function(data, type, row) {
                         return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
                     },
-                    { targets: [4], 'render': function(data, type, row) {
-                        return '<a class="b btn btn-xs btn-success" href="seriesMembers?seriesid=' + row[5] + '" title="Select"><i class="fa"></i>Show</a>';}
+                    { targets: [2], 'render': function(data, type, row) {
+                        return '<a href="seriesMembers?seriesid=' + row[5] + '" target="_new">' + row[2] + '</a>';}
                     }
                     ],
                 "oLanguage": {
@@ -112,7 +111,7 @@
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $('td', nRow).eq(0).addClass("text-center");
                     $('td', nRow).eq(3).addClass("text-center");
-                    $('td', nRow).eq(4).addClass("text-center");
+                    //$('td', nRow).eq(4).addClass("text-center");
                     // hide author,status on small devices
                     //$('td', nRow).eq(1).addClass('hidden-xs');
                     //$('td', nRow).eq(3).addClass('hidden-xs');

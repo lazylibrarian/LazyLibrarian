@@ -54,7 +54,6 @@
             %endif
             <th class="date col-xs-1 text-center">Num</th>
             <th class="status text-center">Status</th>
-            <th class="stars text-center no-sort">Edit Details</th>
           </tr>
         </thead>
         <tbody>
@@ -73,8 +72,13 @@
             <td class="authorname hidden">${result['AuthorName']}</td>
             %endif
             <td class="date text-center">${result['SeriesNum']}</td>
+            %if result['Status'] == 'Open':
+            <td class="status text-center">
+            <a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['BookID']}&library=eBook"
+            target="_self"><i class="fa fa-book"></i>Open</a></td>
+            %else:
             <td class="status text-center">${result['Status']}</td>
-            <td class="stars text-center"><a class="b btn btn-xs btn-success" href="editBook?bookid=${result['BookID']}" title="Select"><i class="fa fa-book"></i> Edit</a></p>
+            %endif
           </td>
         </tr>
         %endfor
