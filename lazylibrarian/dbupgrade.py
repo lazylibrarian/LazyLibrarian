@@ -315,7 +315,7 @@ def dbupgrade(db_current_version):
                                     db_v21, db_v22
                                     ]
                 for index, upgrade_function in enumerate(upgradefunctions):
-                    if index+2 <= db_current_version:
+                    if index + 2 <= db_current_version:
                         upgrade_function(myDB, upgradelog)
 
                 # Now do any non-version-specific tidying
@@ -849,26 +849,26 @@ def db_v20(myDB, upgradelog):
         lazylibrarian.UPDATE_MSG = 'Adding BookLibrary to book table'
         upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('ALTER TABLE books ADD COLUMN BookLibrary TEXT')
-    else:
+
         lazylibrarian.UPDATE_MSG = 'Updating BookLibrary dates'
         upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-    books = myDB.select('SELECT BookID,BookFile from books')
-    cnt = 0
-    mod = 0
-    if books:
-        tot = len(books)
-        for book in books:
-            cnt += 1
-            lazylibrarian.UPDATE_MSG = "Updating BookLibrary date: %s of %s" % (cnt, tot)
-            if book['BookFile'] and os.path.isfile(book['BookFile']):
-                mod += 1
-                t = os.path.getctime(book['BookFile'])
-                filedate = datetime.datetime.utcfromtimestamp(int(t)).strftime("%Y-%m-%d %H:%M:%S")
-                myDB.action('UPDATE books SET BookLibrary=? WHERE BookID=?',
-                            (filedate, book['BookID']))
+        books = myDB.select('SELECT BookID,BookFile from books')
+        cnt = 0
+        mod = 0
+        if books:
+            tot = len(books)
+            for book in books:
+                cnt += 1
+                lazylibrarian.UPDATE_MSG = "Updating BookLibrary date: %s of %s" % (cnt, tot)
+                if book['BookFile'] and os.path.isfile(book['BookFile']):
+                    mod += 1
+                    t = os.path.getctime(book['BookFile'])
+                    filedate = datetime.datetime.utcfromtimestamp(int(t)).strftime("%Y-%m-%d %H:%M:%S")
+                    myDB.action('UPDATE books SET BookLibrary=? WHERE BookID=?',
+                                (filedate, book['BookID']))
 
-        lazylibrarian.UPDATE_MSG = 'Adding BookLibrary date complete, %s/%s books' % (mod, cnt)
-        upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+            lazylibrarian.UPDATE_MSG = 'Adding BookLibrary date complete, %s/%s books' % (mod, cnt)
+            upgradelog.write("%s v20: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
     upgradelog.write("%s v20: complete\n" % time.ctime())
 
 
@@ -880,20 +880,19 @@ def db_v21(myDB, upgradelog):
         myDB.action('ALTER TABLE books ADD COLUMN AudioLibrary TEXT')
         myDB.action('ALTER TABLE books ADD COLUMN AudioStatus TEXT')
         myDB.action('UPDATE books SET AudioStatus="Skipped"')
-    lazylibrarian.UPDATE_MSG = 'Creating downloads table'
-    upgradelog.write("%s v21: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-    myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
-    downloads = myDB.select('SELECT NZBprov from wanted WHERE Status="Processed"')
-    for download in downloads:
-        entry = myDB.match('SELECT Count FROM downloads where Provider=?', (download['NZBprov'],))
-        if entry:
-            counter = int(entry['Count'])
-            myDB.action('UPDATE downloads SET Count=? WHERE Provider=?',
-                        (counter + 1, download['NZBprov']))
-        else:
-            myDB.action('INSERT into downloads (Count, Provider) VALUES  (?, ?)',
-                        (1, download['NZBprov']))
-
+        lazylibrarian.UPDATE_MSG = 'Creating downloads table'
+        upgradelog.write("%s v21: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
+        downloads = myDB.select('SELECT NZBprov from wanted WHERE Status="Processed"')
+        for download in downloads:
+            entry = myDB.match('SELECT Count FROM downloads where Provider=?', (download['NZBprov'],))
+            if entry:
+                counter = int(entry['Count'])
+                myDB.action('UPDATE downloads SET Count=? WHERE Provider=?',
+                            (counter + 1, download['NZBprov']))
+            else:
+                myDB.action('INSERT into downloads (Count, Provider) VALUES  (?, ?)',
+                            (1, download['NZBprov']))
     upgradelog.write("%s v21: complete\n" % time.ctime())
 
 

@@ -43,12 +43,15 @@ def fetchURL(URL, headers=None, retry=True):
             request.add_header(item, headers[item])
     try:
         resp = urllib2.urlopen(request, timeout=30)
+
         if str(resp.getcode()).startswith("2"):  # (200 OK etc)
             try:
                 result = resp.read()
             except socket.error as e:
                 return str(e), False
             return result, True
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug(resp.info())
         return str(resp.getcode()), False
     except socket.timeout as e:
         if not retry:
