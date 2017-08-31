@@ -388,8 +388,8 @@ CONFIG_DEFINITIONS = {
     'GR_SECRET': ('str', 'API', ''),  # tied to users own api key
     'GR_OAUTH_TOKEN': ('str', 'API', ''),  # gives access to users bookshelves
     'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
-    'GR_WANTED': ('str', 'API', 'to-read'),  # sync wanted to this shelf
-    'GR_OWNED': ('str', 'API', 'owned'),  # sync open/have to this shelf
+    'GR_WANTED': ('str', 'API', ''),  # sync wanted to this shelf
+    'GR_OWNED': ('str', 'API', ''),  # sync open/have to this shelf
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
     'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own
