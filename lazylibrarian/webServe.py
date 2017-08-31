@@ -2106,7 +2106,7 @@ class WebInterface(object):
         # 1 normal
         # 2 debug
         # >2 extra debugging
-
+        label_thread('LOGS')
         if lazylibrarian.LOGLEVEL > 1:
             lazylibrarian.LOGLEVEL -= 2
         else:
