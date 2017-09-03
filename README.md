@@ -77,6 +77,6 @@ The snap package is confined to users home directory, so all books and downloads
 AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
 
 ## Docker packages
-armhf version here : https://hub.docker.com/r/lsioarmhf/lazylibrarian/
-x64 version here   : https://hub.docker.com/r/linuxserver/lazylibrarian/  
+armhf version here : https://hub.docker.com/r/lsioarmhf/lazylibrarian/  
+x64 version here   : https://hub.docker.com/r/linuxserver/lazylibrarian/    
 with calibredb here: https://hub.docker.com/r/thraxis/lazylibrarian-calibre/
