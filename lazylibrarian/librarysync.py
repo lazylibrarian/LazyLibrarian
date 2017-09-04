@@ -741,7 +741,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             book_filename = os.path.join(r, files)
                                             # link to the first part of multi-part audiobooks
                                             for fname in os.listdir(r):
-                                                if is_valid_booktype(fname, booktype='audiobook') and '01' in fname:
+                                                if is_valid_booktype(fname, booktype='audiobook') and \
+                                                        ('01' in fname or ' 1.' in fname):
                                                     book_filename = os.path.join(r, fname)
                                                     break
 

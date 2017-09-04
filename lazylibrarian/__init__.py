@@ -750,6 +750,8 @@ def config_read(reloaded=False):
 def config_write():
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL
 
+    myDB = database.DBConnection()
+
     interface = CFG.get('General', 'http_look')
 
     for key in CONFIG_DEFINITIONS.keys():
@@ -835,7 +837,6 @@ def config_write():
         CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
     add_rss_slot()
 
-    myDB = database.DBConnection()
     series_list = myDB.select('SELECT SeriesID from series')
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
