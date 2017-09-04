@@ -27,7 +27,7 @@ import lib.zipfile as zipfile
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare
+from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -160,44 +160,44 @@ def scheduleJob(action='Start', target=None):
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
-        if 'processDir' in target and int(lazylibrarian.CONFIG['SCAN_INTERVAL']):
+        if 'processDir' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir,
-                minutes=int(lazylibrarian.CONFIG['SCAN_INTERVAL']))
+                minutes=check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0))
             logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
-        elif 'search_magazines' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
+        elif 'search_magazines' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines,
-                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                    minutes=check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
-        elif 'search_book' in target and int(lazylibrarian.CONFIG['SEARCH_INTERVAL']):
+        elif 'search_book' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchbook.cron_search_book,
-                    minutes=int(lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                    minutes=check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
-        elif 'search_rss_book' in target and int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']):
+        elif 'search_rss_book' in target and check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0):
             if lazylibrarian.USE_RSS():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchrss.search_rss_book,
-                    minutes=int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+                    minutes=check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0))
                 logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
-        elif 'checkForUpdates' in target and int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']):
+        elif 'checkForUpdates' in target and check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.versioncheck.checkForUpdates,
-                hours=int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+                hours=check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0))
             logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
         elif 'syncToGoodreads' in target and lazylibrarian.CONFIG['GR_SYNC']:
-            if int(lazylibrarian.CONFIG['GOODREADS_INTERVAL']):
+            if check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0):
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.grsync.sync_to_gr,
-                    hours=int(lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
+                    hours=check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0))
                 logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
-        elif 'authorUpdate' in target and int(lazylibrarian.CONFIG['CACHE_AGE']):
+        elif 'authorUpdate' in target and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
             # Try to get all authors scanned evenly inside the cache age
-            minutes = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60
+            minutes = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0) * 24 * 60
             myDB = database.DBConnection()
             cmd = "select count('AuthorID') as counter from Authors where Status='Active' or Status='Wanted'"
             cmd += " or Status='Loading'"
@@ -228,11 +228,11 @@ def authorUpdate():
         cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
         cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
         author = myDB.match(cmd)
-        if author and int(lazylibrarian.CONFIG['CACHE_AGE']):
+        if author and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
             dtnow = datetime.datetime.now()
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
             msg = 'Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff))
-            if diff > int(lazylibrarian.CONFIG['CACHE_AGE']):
+            if diff > check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
                 logger.debug(msg)
@@ -241,7 +241,7 @@ def authorUpdate():
             else:
                 # don't nag. Show info message no more than every 12 hrs, debug message otherwise
                 timenow = int(time.time())
-                if int(lazylibrarian.AUTHORUPDATE_MSG) + 43200 < timenow:
+                if check_int(lazylibrarian.AUTHORUPDATE_MSG, 0) + 43200 < timenow:
                     logger.info(msg)
                     lazylibrarian.AUTHORUPDATE_MSG = timenow
                 else:
@@ -325,8 +325,9 @@ def checkRunningJobs():
 
 
 def showJobs():
-    result = ["Cache %i hit%s, %i miss" % (int(lazylibrarian.CACHE_HIT),
-                                           plural(int(lazylibrarian.CACHE_HIT)), int(lazylibrarian.CACHE_MISS))]
+    result = ["Cache %i hit%s, %i miss" % (check_int(lazylibrarian.CACHE_HIT, 0),
+                                           plural(check_int(lazylibrarian.CACHE_HIT, 0)),
+                                           check_int(lazylibrarian.CACHE_MISS, 0))]
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
