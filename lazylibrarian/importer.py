@@ -251,13 +251,15 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             else:
                 bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
 
+            if entry_status not in ['Active', 'Wanted', 'Ignored', 'Paused']:
+                entry_status = 'Active'  # default for invalid/unknown or "loading"
             # process books
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 book_api = GoogleBooks()
                 book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
             elif lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                GR = GoodReads(authorname)
-                GR.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
+                book_api = GoodReads(authorname)
+                book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
 
             # update totals works for existing authors only.
             # New authors need their totals updating after libraryscan or import of books.
@@ -276,12 +278,14 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 myDB.action('UPDATE authors SET GRfollow=? WHERE AuthorID=?', (followid, authorid))
         else:
             # if we're not loading any books, mark author as ignored
-            controlValueDict = {"AuthorID": authorid}
-            newValueDict = {"Status": "Ignored"}
-            myDB.upsert("authors", newValueDict, controlValueDict)
+            entry_status = 'Ignored'
 
-        msg = "[%s] Author update complete" % authorname
-        logger.debug(msg)
+        controlValueDict = {"AuthorID": authorid}
+        newValueDict = {"Status": entry_status}
+        myDB.upsert("authors", newValueDict, controlValueDict)
+
+        msg = "[%s] Author update complete, status %s" % (authorname, entry_status)
+        logger.info(msg)
         return msg
     except Exception:
         msg = 'Unhandled exception in addAuthorToDB: %s' % traceback.format_exc()

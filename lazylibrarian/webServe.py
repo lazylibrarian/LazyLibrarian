@@ -52,6 +52,7 @@ from mako.lookup import TemplateLookup
 
 
 def serve_template(templatename, **kwargs):
+    threading.currentThread().name = "WEBSERVER"
     interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
     template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
     if not os.path.isdir(template_dir):
@@ -80,7 +81,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def home(self):
-        self.label_thread('WEBSERVER')
         title = 'Authors'
         if lazylibrarian.IGNORED_AUTHORS:
             title = 'Ignored Authors'
@@ -240,7 +240,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def series(self, AuthorID=None, whichStatus=None):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         title = "Series"
         if AuthorID:
@@ -252,7 +251,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def seriesMembers(self, seriesid):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         cmd = 'SELECT SeriesName,series.SeriesID,AuthorName,seriesauthors.AuthorID'
         cmd += ' from series,authors,seriesauthors'
@@ -524,7 +522,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def authorPage(self, AuthorID, BookLang=None, library='eBook', Ignored=False):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         if Ignored:
             languages = myDB.select(
@@ -777,7 +774,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def audio(self, BookLang=None):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         if BookLang == '':
             BookLang = None
@@ -788,7 +784,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def books(self, BookLang=None):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
         if BookLang == '' or BookLang == 'None':
             BookLang = None
@@ -956,7 +951,7 @@ class WebInterface(object):
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
-                 }
+                  }
         return mydict
 
     @staticmethod
@@ -1499,7 +1494,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def magazines(self):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
 
         magazines = myDB.select('SELECT * from magazines ORDER by Title')
@@ -1537,7 +1531,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def issuePage(self, title):
-        self.label_thread('WEBSERVER')
         myDB = database.DBConnection()
 
         issues = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
@@ -1579,7 +1572,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
-        self.label_thread('WEBSERVER')
         if whichStatus is None:
             whichStatus = "Skipped"
         return serve_template(
@@ -1947,7 +1939,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def update(self):
-        self.label_thread('UPDATE')
+        self.label_thread('UPDATING')
         logger.debug('(webServe-Update) - Performing update')
         lazylibrarian.SIGNAL = 'update'
         message = 'Updating...'
@@ -2034,6 +2026,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def exportCSV(self):
+        self.label_thread('EXPORTCSV')
         message = export_CSV(lazylibrarian.CONFIG['ALTERNATE_DIR'])
         message = message.replace('\n', '<br>')
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
@@ -2095,6 +2088,7 @@ class WebInterface(object):
     @cherrypy.expose
     def saveLog(self):
         # Save the debug log to a zipfile
+        self.label_thread('SAVELOG')
         result = saveLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
@@ -2106,7 +2100,7 @@ class WebInterface(object):
         # 1 normal
         # 2 debug
         # >2 extra debugging
-        label_thread('LOGS')
+        self.label_thread()
         if lazylibrarian.LOGLEVEL > 1:
             lazylibrarian.LOGLEVEL -= 2
         else:
@@ -2120,7 +2114,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def logs(self):
-        self.label_thread('LOGS')
         return serve_template(templatename="logs.html", title="Log", lineList=[])  # lazylibrarian.LOGLIST)
 
     # noinspection PyUnusedLocal
@@ -2154,7 +2147,6 @@ class WebInterface(object):
 
     @cherrypy.expose
     def history(self):
-        self.label_thread('HISTORY')
         myDB = database.DBConnection()
         # wanted status holds snatched processed for all, plus skipped and
         # ignored for magazine back issues

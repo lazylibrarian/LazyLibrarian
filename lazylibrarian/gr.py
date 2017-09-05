@@ -553,14 +553,15 @@ class GoodReads:
                                 alist += anm
                                 if aid == authorid:
                                     role = aname.find('role').text
-                                    if role is None or 'author' in role.lower() or 'pseudonym' in role.lower():
+                                    if role is None or 'author' in role.lower() \
+                                            or 'pseudonym' in role.lower() or 'pen name' in role.lower():
                                         amatch = True
                                     else:
                                         logger.debug('Ignoring %s for %s, role is %s' %
                                                      (bookname, authorNameResult, role))
-                                # else: # multiple authors or wrong author
-                                #    logger.debug('Ignoring %s for %s, authorid %s' %
-                                #                 (bookname, authorNameResult, aid))
+                                        # else: # multiple authors or wrong author
+                                        #    logger.debug('Ignoring %s for %s, authorid %s' %
+                                        #                 (bookname, authorNameResult, aid))
                             if not amatch:
                                 logger.debug('Ignoring %s for %s, wrong author? (got %s)' %
                                              (bookname, authorNameResult, alist))
