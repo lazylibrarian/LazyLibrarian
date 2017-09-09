@@ -33,14 +33,14 @@ class RotatingLogger(object):
         self.consolehandler = None
 
     def stopLogger(self):
-        l = logging.getLogger('lazylibrarian')
-        l.removeHandler(self.filehandler)
-        l.removeHandler(self.consolehandler)
+        lg = logging.getLogger('lazylibrarian')
+        lg.removeHandler(self.filehandler)
+        lg.removeHandler(self.consolehandler)
 
     def initLogger(self, loglevel=1):
 
-        l = logging.getLogger('lazylibrarian')
-        l.setLevel(logging.DEBUG)
+        lg = logging.getLogger('lazylibrarian')
+        lg.setLevel(logging.DEBUG)
 
         self.filename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], self.filename)
 
@@ -54,7 +54,7 @@ class RotatingLogger(object):
         fileformatter = logging.Formatter('%(asctime)s - %(levelname)-7s :: %(message)s', '%d-%b-%Y %H:%M:%S')
 
         filehandler.setFormatter(fileformatter)
-        l.addHandler(filehandler)
+        lg.addHandler(filehandler)
         self.filehandler = filehandler
 
         if loglevel:
@@ -65,7 +65,7 @@ class RotatingLogger(object):
                 consolehandler.setLevel(logging.DEBUG)
             consoleformatter = logging.Formatter('%(asctime)s - %(levelname)s :: %(message)s', '%d-%b-%Y %H:%M:%S')
             consolehandler.setFormatter(consoleformatter)
-            l.addHandler(consolehandler)
+            lg.addHandler(consolehandler)
             self.consolehandler = consolehandler
 
     @staticmethod
@@ -104,6 +104,7 @@ class RotatingLogger(object):
             logger.warn(message)
         else:
             logger.error(message)
+
 
 lazylibrarian_log = RotatingLogger('lazylibrarian.log')
 

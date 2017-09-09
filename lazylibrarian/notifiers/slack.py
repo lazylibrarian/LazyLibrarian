@@ -95,4 +95,5 @@ class SlackNotifier:
         return self._notify(message="This is a test notification from LazyLibrarian",
                             event=title, force=True)
 
+
 notifier = SlackNotifier

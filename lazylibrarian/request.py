@@ -67,7 +67,7 @@ def request_response(url, method="get", auto_raise=True,
             if response.status_code not in whitelist_status_code:
                 try:
                     response.raise_for_status()
-                except:
+                except Exception:
                     logger.debug(
                         "Response status code %d is not white "
                         "listed, raised exception" % response.status_code)

@@ -7,6 +7,7 @@
     <div id="subhead_container" class="row">
       <form action="search" method="get">
         <div id="subhead_menu"  class="col-xs-12 col-md-8">
+          %if perm&lazylibrarian.perm_force:
           <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
           <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
           <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv"><i class="fa fa-download"></i> Import CSV Wishlist</button>
@@ -14,8 +15,10 @@
           %if lazylibrarian.CONFIG['GR_SYNC'] == True:
             <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads"><i class="fa fa-upload"></i> Goodreads Sync</button>
         %endif
+        %endif
         </div>
         <div class="clearfix visible-xs"><hr/></div>
+        %if perm&lazylibrarian.perm_search:
         <div class="col-xs-12 col-md-4">
         <div class="form-group">
           <label class="sr-only">Search</label>
@@ -27,6 +30,7 @@
           </div>
         </div>
         </div>
+        %endif
       </form>
     </div>
 </%def>
@@ -68,6 +72,7 @@
         </thead>
       </table>
     </div>
+    %if perm&lazylibrarian.perm_status:
     <div class="form-group">
       <label for="markBooks" class="control-label">Change selected books to: </label>
       <select id="markBooks" class="markBooks form-control input-sm" name="action">
@@ -77,6 +82,7 @@
       </select>
     </div>
     <input type="submit" class="markBooks btn btn-sm btn-default" value="Go">
+    %endif
   </form>
   <p>&nbsp;</p>
 </%def>

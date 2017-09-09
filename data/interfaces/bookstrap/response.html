@@ -1,0 +1,50 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<div>
+    <input type="hidden" name="title" id="title" value="${title}">
+    <input type="hidden" name="prefix" id="prefix" value="${prefix}">
+    <input type="hidden" name="message" id="message" value="${message}">
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+    $(document).ready(function()
+    {
+        var title = $('#title').val();
+        var prefix = $('#prefix').val();
+        var message = $('#message').val();
+        bootbox.dialog({
+            title: title,
+            message: '<pre>'+prefix+' '+message+'</pre>',
+            buttons: {
+                primary: {
+                    label: "Close",
+                    className: 'btn-primary',
+                    callback: function(result){ window.history.back() }
+                }
+            }
+        });
+    });
+
+      $(function(){
+          var countdown = ${timer};
+          if (countdown > 0) {
+            setInterval(function() {
+                  countdown--;
+                  if (countdown <= 0) {
+                      //window.location = 'index';
+                      window.history.back()
+                  }
+            }, 1000);
+          }
+      });
+    </script>
+</%def>

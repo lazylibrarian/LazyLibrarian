@@ -23,7 +23,7 @@ from lazylibrarian import logger, common, formatter
 # parse_qsl moved to urlparse module in v2.6
 try:
     from urlparse import parse_qsl  # @UnusedImport
-except:
+except Exception:
     # noinspection PyDeprecation
     from cgi import parse_qsl  # @Reimport
 
@@ -133,5 +133,6 @@ class TwitterNotifier:
             return False
 
         return self._send_tweet(prefix + ": " + message)
+
 
 notifier = TwitterNotifier

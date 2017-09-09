@@ -78,6 +78,7 @@ TORZNAB_PROV = []
 RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
 PROVIDER_BLOCKLIST = []
+USER_BLOCKLIST = []
 SHOW_MAGS = 1
 SHOW_SERIES = 1
 SHOW_AUDIO = 0
@@ -86,6 +87,26 @@ EBOOK_UPDATE = 0
 AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
+
+# user permissions
+perm_config = 1 << 0  # 1 access to config page
+perm_logs = 1 << 1  # 2 access to logs
+perm_history = 1 << 2  # 4 access to history
+perm_managebooks = 1 << 3  # 8 access to manage page
+perm_magazines = 1 << 4  # 16 access to magazines/issues/pastissues
+perm_audio = 1 << 5  # 32 access to audiobooks page
+perm_ebook = 1 << 6  # 64 can access ebooks page
+perm_series = 1 << 7  # 128 access to series/seriesmembers
+perm_edit = 1 << 8  # 256 can edit book or author details
+perm_search = 1 << 9  # 512 can search goodreads/googlebooks for books/authors
+perm_status = 1 << 10  # 1024 can change book status (wanted/skipped etc)
+perm_force = 1 << 11  # 2048 can use background tasks (refresh authors/libraryscan/postprocess/searchtasks)
+perm_download = 1 << 12  # 4096 can download existing books/mags
+
+perm_authorbooks = perm_audio + perm_ebook
+perm_guest = perm_download + perm_series + perm_ebook + perm_audio + perm_magazines
+perm_friend = perm_guest + perm_search + perm_status
+perm_admin = 65535
 
 # Shared dictionaries
 isbn_979_dict = {
@@ -482,10 +503,10 @@ def initialize():
                         CONFIG['LOGDIR'], str(e))
 
         # Start the logger, silence console logging if we need to
-        CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9, log=False)
+        CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
         if LOGLEVEL == 1:  # default if no debug or quiet on cmdline
             if CFGLOGLEVEL == 9:  # default value if none in config
-                LOGLEVEL = 2  # If not set in Config or cmdline, then lets set to DEBUG
+                LOGLEVEL = 1  # If not set in Config or cmdline, then lets set to NORMAL
             else:
                 LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
@@ -762,7 +783,7 @@ def config_write():
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
-                LOGLEVEL = check_int(value, 2)
+                LOGLEVEL = check_int(value, 1)
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                          'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)

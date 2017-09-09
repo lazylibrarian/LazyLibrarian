@@ -13,6 +13,7 @@
         %endif
         </div>
         <div class="clearfix visible-xs"><hr/></div>
+        %if perm&lazylibrarian.perm_search:
         <div class="col-xs-12 col-md-4">
         <div class="form-group">
           <label class="sr-only">Search</label>
@@ -24,6 +25,7 @@
           </div>
         </div>
         </div>
+        %endif
       </form>
     </div>
 </%def>
@@ -54,7 +56,11 @@
       <table class="display table table-striped table-hover table-bordered" id="book_table">
         <thead>
           <tr>
+            %if perm&lazylibrarian.perm_status:
             <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            %else:
+            <td class="hidden"></td>
+            %endif
             <th class="authorname">Author</th>
             <th class="series">Series Name</th>
             <th class="status text-center">Status</th>
@@ -62,6 +68,7 @@
         </thead>
       </table>
     </div>
+    %if perm&lazylibrarian.perm_status:
     <div class="form-group">
       <label for="markSeries" class="control-label">Change selected series to: </label>
       <select id="markSeries" class="markSeries form-control input-sm" name="action">
@@ -71,6 +78,7 @@
       </select>
     </div>
     <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">
+    %endif
   </form>
   <p>&nbsp;</p>
 </%def>
@@ -109,7 +117,11 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    %if perm&lazylibrarian.perm_status:
                     $('td', nRow).eq(0).addClass("text-center");
+                    %else:
+                    $('td', nRow).eq(0).addClass("hidden");
+                    %endif
                     $('td', nRow).eq(3).addClass("text-center");
                     //$('td', nRow).eq(4).addClass("text-center");
                     // hide author,status on small devices

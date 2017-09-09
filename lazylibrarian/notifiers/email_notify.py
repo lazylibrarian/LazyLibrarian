@@ -149,4 +149,5 @@ class EmailNotifier:
                 return self.notify_download(title=title, bookid=data['bookid'], force=True)
         return self.notify_download(title=title, bookid=None, force=True)
 
+
 notifier = EmailNotifier
