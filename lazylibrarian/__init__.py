@@ -503,10 +503,10 @@ def initialize():
                         CONFIG['LOGDIR'], str(e))
 
         # Start the logger, silence console logging if we need to
-        CFGLOGLEVEL = check_setting('int', 'General', 'loglevel', 9, log=False)
+        CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
         if LOGLEVEL == 1:  # default if no debug or quiet on cmdline
             if CFGLOGLEVEL == 9:  # default value if none in config
-                LOGLEVEL = 2  # If not set in Config or cmdline, then lets set to DEBUG
+                LOGLEVEL = 1  # If not set in Config or cmdline, then lets set to NORMAL
             else:
                 LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
@@ -783,7 +783,7 @@ def config_write():
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
-                LOGLEVEL = check_int(value, 2)
+                LOGLEVEL = check_int(value, 1)
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                          'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
