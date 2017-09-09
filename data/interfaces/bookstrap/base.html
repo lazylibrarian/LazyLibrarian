@@ -79,14 +79,44 @@
             <div class="collapse navbar-collapse" id="MainNav">
               <ul class="nav navbar-nav">
                 <!--li><a href="home" class="navbarele">Authors</a></li-->
+                %if perm > 0:
+                  %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
+                    <li><a href="logout" class="navbarele" id="logout">Logout</a></li>
+                    %if perm&lazylibrarian.perm_config == 0:
+                      <li><a href="profile" class="navbarele" id="profile">User</a></li>
+                    %endif
+                  %endif
+                %endif
+                % if perm&lazylibrarian.perm_ebook:
                 <li><a id="books" href="books" class="navbarele">eBooks</a></li>
-                <li><a id="series" href="series" class="navbarele">Series</a></li>
-                <li><a id="audio" href="audio" class="navbarele">AudioBooks</a></li>
-                <li><a id="magazines" href="magazines" class="navbarele">Magazines</a></li>
-                <li><a href="manage" class="navbarele">Manage</a></li>
-                <li><a href="history" class="navbarele">History</a></li>
-                <li><a href="logs" class="navbarele">Logs</a></li>
-                <li><a href="config" class="navbarcfg"><i class="fa fa-cog"></i> Config</a></li>
+                %endif
+                % if lazylibrarian.SHOW_SERIES != 0:
+                  %if perm&lazylibrarian.perm_series:
+                  <li><a id="series" href="series" class="navbarele">Series</a></li>
+                  % endif
+                % endif
+                % if lazylibrarian.SHOW_AUDIO != 0:
+                  %if perm&lazylibrarian.perm_audio:
+                  <li><a id="audio" href="audio" class="navbarele">AudioBooks</a></li>
+                  % endif
+                % endif
+                % if lazylibrarian.SHOW_MAGS != 0:
+                  %if perm&lazylibrarian.perm_magazines:
+                  <li><a id="magazines" href="magazines" class="navbarele">Magazines</a></li>
+                  % endif
+                % endif
+                %if perm&lazylibrarian.perm_managebooks:
+                  <li><a id="manage" href="manage" class="navbarele">Manage</a></li>
+                % endif
+                %if perm&lazylibrarian.perm_history:
+                  <li><a id="history" href="history" class="navbarele">History</a></li>
+                % endif
+                %if perm&lazylibrarian.perm_logs:
+                  <li><a id="logs" href="logs" class="navbarele">Logs</a></li>
+                % endif
+                %if perm&lazylibrarian.perm_config:
+                  <li><a id="config" href="config" class="navbarcfg"><i class="fa fa-cog"></i> Config</a></li>
+                % endif
               </ul>
             </div>
           </div>
@@ -103,15 +133,6 @@
     </div>
     <script type="text/javascript">
       msg = '';
-      % if lazylibrarian.SHOW_SERIES == 0:
-        $('#series').addClass("hidden");
-      % endif
-      % if lazylibrarian.SHOW_MAGS == 0:
-          $('#magazines').addClass("hidden");
-      % endif
-      % if lazylibrarian.SHOW_AUDIO == 0:
-          $('#audio').addClass("hidden");
-      % endif
       % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
           title = 'LazyLibrarian Update'
           % if not lazylibrarian.CONFIG['CURRENT_VERSION']:

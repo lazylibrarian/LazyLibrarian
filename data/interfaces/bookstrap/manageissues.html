@@ -44,7 +44,8 @@
         </tr>
       </thead>
     </table>
-    <p>
+      %if perm%lazylibrarian.perm_status:
+      <p>
       <div class="form-group">
         <label class="control-label">Change selected magazines to:</label>
         <select class="form-control input-sm" name="action">
@@ -57,6 +58,7 @@
       </div>
       <button type="submit" class="btn btn-sm btn-default" id="markPastIssues" value="Go">Go</button>
     </p>
+    %endif
   </form>
 </%def>
 <%def name="headIncludes()">

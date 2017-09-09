@@ -25,13 +25,14 @@ from shutil import copyfile, rmtree
 
 import cherrypy
 import lazylibrarian
+import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    dbUpdate, csv_file, saveLog
+    dbUpdate, csv_file, saveLog, pwd_generator, pwd_check, isValidEmail
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
@@ -64,11 +65,76 @@ def serve_template(templatename, **kwargs):
     try:
         if lazylibrarian.UPDATE_MSG:
             template = _hplookup.get_template("dbupdate.html")
-            return template.render(message="Database upgrade in progress, please wait...",
+            return template.render(perm=0, message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
-        else:
+
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             template = _hplookup.get_template(templatename)
-            return template.render(**kwargs)
+            return template.render(perm=65535, **kwargs)
+
+        username = ''  # anyone logged in yet?
+        perm = 0
+
+        cookie = cherrypy.request.cookie
+        if lazylibrarian.LOGLEVEL > 4:
+            for name in cookie.keys():
+                logger.debug("name: %s, value: %s" % (name, cookie[name].value))
+                for item in cookie[name].keys():
+                    logger.debug("item: %s, value: %s" % (item, cookie[name][item]))
+
+        if cookie and 'll_uid' in cookie.keys():
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+            if res:
+                perm = check_int(res['Perms'], 0)
+                username = res['UserName']
+
+        if perm == 0 and templatename != "register.html" and templatename != "response.html":
+            templatename = "login.html"
+        elif templatename == 'config.html' and not perm & lazylibrarian.perm_config:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename == 'logs.html' and not perm & lazylibrarian.perm_logs:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename == 'history.html' and not perm & lazylibrarian.perm_history:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename == 'managebooks.html' and not perm & lazylibrarian.perm_managebooks:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename == 'books.html' and not perm & lazylibrarian.perm_ebook:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename == 'author.html' and not perm & lazylibrarian.perm_ebook \
+                and not perm & lazylibrarian.perm_audio:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename in ['magazines.html', 'issues.html', 'manageissues.html'] \
+                and not perm & lazylibrarian.perm_magazines:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename == 'audio.html' and not perm & lazylibrarian.perm_audio:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename in ['series.html', 'members.html'] and not perm & lazylibrarian.perm_series:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename in ['editauthor.html', 'editbook.html'] and not perm & lazylibrarian.perm_edit:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+        elif templatename in ['manualsearch.html', 'searchresults.html'] and not perm & lazylibrarian.perm_search:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
+
+        if lazylibrarian.LOGLEVEL > 3:
+            logger.debug("User %s: %s %s" % (username, perm, templatename))
+
+        template = _hplookup.get_template(templatename)
+        if templatename == "login.html":
+            return template.render(perm=0, title="Redirected")
+        else:
+            return template.render(perm=perm, **kwargs)
     except Exception:
         return exceptions.html_error_template().render()
 
@@ -84,6 +150,17 @@ class WebInterface(object):
         title = 'Authors'
         if lazylibrarian.IGNORED_AUTHORS:
             title = 'Ignored Authors'
+        return serve_template(templatename="index.html", title=title, authors=[])
+
+    @cherrypy.expose
+    def profile(self):
+        title = 'User Profile'
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            myDB = database.DBConnection()
+            user = myDB.match('SELECT UserName,Name,Email from users where UserID=?', (cookie['ll_uid'].value,))
+            if user:
+                return serve_template(templatename="profile.html", title=title, user=user)
         return serve_template(templatename="index.html", title=title, authors=[])
 
     # noinspection PyUnusedLocal
@@ -173,6 +250,318 @@ class WebInterface(object):
             threadname = threading.currentThread().name
             if "Thread-" in threadname:
                 threading.currentThread().name = "WEBSERVER"
+
+    # USERS ############################################################
+
+    @cherrypy.expose
+    def logout(self):
+        cherrypy.response.cookie['ll_uid'] = ''
+        cherrypy.response.cookie['ll_uid']['expires'] = 0
+        # cherrypy.lib.sessions.expire()
+        raise cherrypy.HTTPRedirect("home")
+
+    @cherrypy.expose
+    def user_register(self):
+        self.label_thread("REGISTER")
+        return serve_template(templatename="register.html", title="User Registration / Contact form")
+
+    @cherrypy.expose
+    def user_update(self, **kwargs):
+        if 'password' in kwargs and 'password2' in kwargs and kwargs['password']:
+            if kwargs['password'] != kwargs['password2']:
+                return "Passwords do not match"
+        if kwargs['password']:
+            if not pwd_check(kwargs['password']):
+                return "Password must be at least 8 digits long\nand not contain spaces"
+
+        changes = ''
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            userid = cookie['ll_uid'].value
+            myDB = database.DBConnection()
+            user = myDB.match('SELECT UserName,Name,Email,Password from users where UserID=?', (userid,))
+            if user:
+                if kwargs['username'] and user['UserName'] != kwargs['username']:
+                    # if username changed, must not have same username as another user
+                    match = myDB.match('SELECT UserName from users where UserName=?', (kwargs['username'],))
+                    if match:
+                        return "Unable to change username: already exists"
+                    else:
+                        changes += ' username'
+                        myDB.action('UPDATE users SET UserName=? WHERE UserID=?', (kwargs['username'], userid))
+
+                if kwargs['fullname'] and user['Name'] != kwargs['fullname']:
+                    changes += ' name'
+                    myDB.action('UPDATE users SET Name=? WHERE UserID=?', (kwargs['fullname'], userid))
+
+                if kwargs['email'] and user['Email'] != kwargs['email']:
+                    changes += ' email'
+                    myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
+
+                if kwargs['password']:
+                    pwd = hashlib.md5(kwargs['password']).hexdigest()
+                    if pwd != user['password']:
+                        changes += ' password'
+                        myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
+            if changes:
+                return 'Updated user details:%s' % changes
+        return "No changes made"
+
+    @cherrypy.expose
+    def user_login(self, **kwargs):
+        # anti-phishing
+        # block ip address if over 5 failed usernames in a row.
+        # dont count attempts older than 24 hrs
+        self.label_thread("LOGIN")
+        limit = int(time.time()) - 1 * 60 * 60
+        lazylibrarian.USER_BLOCKLIST[:] = [x for x in lazylibrarian.USER_BLOCKLIST if x[1] > limit]
+        remote_ip = cherrypy.request.remote.ip
+        cnt = 0
+        for item in lazylibrarian.USER_BLOCKLIST:
+            if item[0] == remote_ip:
+                cnt += 1
+        if cnt >= 5:
+            msg = "IP address [%s] is blocked" % remote_ip
+            logger.warn(msg)
+            return msg
+
+        myDB = database.DBConnection()
+        # is it a retry login (failed user/pass)
+        cookie = cherrypy.request.cookie
+        if not cookie or 'll_uid' not in cookie.keys():
+            cherrypy.response.cookie['ll_uid'] = ''
+        username = password = res = pwd = ''
+        if 'username' in kwargs:
+            username = kwargs['username']
+        if 'password' in kwargs:
+            password = kwargs['password']
+        if username and password:
+            pwd = hashlib.md5(password).hexdigest()
+            res = myDB.match('SELECT UserID, Password from users where username=?', (username,))
+        if res and pwd == res['Password']:
+            cherrypy.response.cookie['ll_uid'] = res['UserID']
+            if 'remember' in kwargs:
+                cherrypy.response.cookie['ll_uid']['Max-Age'] = '86400'
+
+            # successfully logged in, clear any failed attempts
+            lazylibrarian.USER_BLOCKLIST[:] = [x for x in lazylibrarian.USER_BLOCKLIST if not x[0] == username]
+            logger.debug("User %s logged in" % username)
+            return ''
+        elif res:
+            # anti-phishing. Block user if 3 failed passwords in a row.
+            cnt = 0
+            for item in lazylibrarian.USER_BLOCKLIST:
+                if item[0] == username:
+                    cnt += 1
+            if cnt >= 2:
+                msg = "Too many failed attempts. Reset password or retry after 1 hour"
+            else:
+                lazylibrarian.USER_BLOCKLIST.append((username, int(time.time())))
+                msg = "Wrong password entered. You have %s attempt%s left" % (2 - cnt, plural(2 - cnt))
+            logger.warn("Failed login: %s: %s" % (username, lazylibrarian.LOGIN_MSG))
+        else:
+            # invalid or missing username, or valid user but missing password
+            msg = "Invalid user or password."
+            lazylibrarian.USER_BLOCKLIST.append((remote_ip, int(time.time())))
+        return msg
+
+    @cherrypy.expose
+    def user_contact(self, **kwargs):
+        self.label_thread('USERCONTACT')
+        remote_ip = cherrypy.request.remote.ip
+        msg = 'IP: %s\n' % remote_ip
+        for item in kwargs:
+            if kwargs[item]:
+                line = "%s: %s\n" % (item, unaccented(kwargs[item]))
+            else:
+                line = "%s: \n" % item
+            msg += line
+        if 'email' in kwargs and kwargs['email']:
+            result = notifiers.email_notifier.notify_message('Message from LazyLibrarian User',
+                                                             msg, lazylibrarian.CONFIG['ADMIN_EMAIL'])
+            if result:
+                return "Message sent to admin, you will receive a reply by email"
+            else:
+                logger.error("Unable to send message to admin: %s" % msg)
+                return "Message not sent, please try again later"
+        else:
+            return "No message sent, no return email address"
+
+    @cherrypy.expose
+    def userAdmin(self):
+        self.label_thread('USERADMIN')
+        myDB = database.DBConnection()
+        title = "Manage User Accounts"
+        users = myDB.select('SELECT UserID, UserName, Name, Email, Perms from users')
+        return serve_template(templatename="users.html", title=title, users=users)
+
+    @cherrypy.expose
+    def admin_delete(self, **kwargs):
+        myDB = database.DBConnection()
+        user = kwargs['user']
+        if user:
+            match = myDB.match('SELECT Perms from users where UserName=?', (user,))
+            if match:
+                perm = check_int(match['Perms'], 0)
+                if perm & 1:
+                    count = 0
+                    perms = myDB.select('SELECT Perms from users')
+                    for item in perms:
+                        val = check_int(item['Perms'], 0)
+                        if val & 1:
+                            count += 1
+                    if count < 2:
+                        return "Unable to delete last administrator"
+                myDB.action('DELETE from users WHERE UserName=?', (user,))
+                return "User %s deleted" % user
+            return "User not found"
+        return "No user!"
+
+    @cherrypy.expose
+    def admin_userdata(self, **kwargs):
+        myDB = database.DBConnection()
+        match = myDB.match('SELECT * from users where UserName=?', (kwargs['user'],))
+        if match:
+            return simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'], })
+        return simplejson.dumps({'email': '', 'name': '', 'perms': '0', })
+
+    @cherrypy.expose
+    def admin_users(self, **kwargs):
+        myDB = database.DBConnection()
+        user = kwargs['user']
+        new_user = not user
+
+        if new_user:
+            msg = "New user NOT added: "
+            if not kwargs['username']:
+                return msg + "No username given"
+            else:
+                # new user must not have same username as an existing one
+                match = myDB.match('SELECT UserName from users where UserName=?', (kwargs['username'],))
+                if match:
+                    return msg + "Username already exists"
+
+            if not kwargs['fullname']:
+                return msg + "No fullname given"
+
+            if not kwargs['email']:
+                return msg + "No email given"
+
+            if not isValidEmail(kwargs['email']):
+                return msg + "Invalid email given"
+
+            perms = check_int(kwargs['perms'], 0)
+            if not perms:
+                return msg + "No permissions or invalid permissions given"
+            if not kwargs['password']:
+                return msg + "No password given"
+
+            if perms == lazylibrarian.perm_admin:
+                perm_msg = 'ADMIN'
+            elif perms == lazylibrarian.perm_friend:
+                perm_msg = 'Friend'
+            elif perms == lazylibrarian.perm_guest:
+                perm_msg = 'Guest'
+            else:
+                perm_msg = 'Custom %s' % perms
+
+            msg_template = "Your lazylibrarian username is {username}\n"
+            msg_template += "Your password is {password}\n"
+            msg_template += "You can log in to lazylibrarian and change these to something more memorable\n"
+            msg_template += "You have been given {permission} access\n"
+            msg = msg_template.replace('{username}', kwargs['username']).replace(
+                '{password}', kwargs['password']).replace(
+                '{permission}', perm_msg)
+
+            result = notifiers.email_notifier.notify_message('LazyLibrarian New Account', msg, kwargs['email'])
+
+            if result:
+                cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
+                myDB.action(cmd, (pwd_generator(), kwargs['username'], kwargs['fullname'],
+                                  hashlib.md5(kwargs['password']).hexdigest(), kwargs['email'], perms))
+                msg = "New user added: %s: %s" % (kwargs['username'], perm_msg)
+                msg += "<br>Email sent to %s" % kwargs['email']
+            else:
+                msg = "New user NOT added"
+                msg += "<br>Failed to send email to %s" % kwargs['email']
+            return msg
+
+        else:
+            if user != kwargs['username']:
+                # if username changed, must not have same username as another user
+                match = myDB.match('SELECT UserName from users where UserName=?', (kwargs['username'],))
+                if match:
+                    return "Username already exists"
+
+            changes = ''
+            details = myDB.match('SELECT UserID,Name,Email,Password,Perms from users where UserName=?', (user,))
+            if details:
+                userid = details['UserID']
+                if kwargs['username'] and kwargs['username'] != user:
+                    changes += ' username'
+                    myDB.action('UPDATE users SET UserName=? WHERE UserID=?', (kwargs['username'], userid))
+
+                if kwargs['fullname'] and details['Name'] != kwargs['fullname']:
+                    changes += ' name'
+                    myDB.action('UPDATE users SET Name=? WHERE UserID=?', (kwargs['fullname'], userid))
+
+                if kwargs['email'] and details['Email'] != kwargs['email']:
+                    if not isValidEmail(kwargs['email']):
+                        return "Invalid email given"
+                    changes += ' email'
+                    myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
+
+                if kwargs['password']:
+                    pwd = hashlib.md5(kwargs['password']).hexdigest()
+                    if pwd != details['Password']:
+                        changes += ' password'
+                        myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
+                if changes:
+                    return 'Updated user details:%s' % changes
+            return "No changes made"
+
+    @cherrypy.expose
+    def password_reset(self, **kwargs):
+        self.label_thread('PASSWORD_RESET')
+        res = ''
+        remote_ip = cherrypy.request.remote.ip
+        myDB = database.DBConnection()
+        if 'username' in kwargs and kwargs['username']:
+            logger.debug("Reset password request from %s, IP:%s" % (kwargs['username'], remote_ip))
+            res = myDB.match('SELECT UserID,Email from users where username=?', (kwargs['username'],))
+            if res:
+                if 'email' in kwargs and kwargs['email']:
+                    if res['Email']:
+                        if kwargs['email'] == res['Email']:
+                            msg = ''
+                        else:
+                            msg = 'Email does not match our records'
+                    else:
+                        msg = 'No email address registered'
+                else:
+                    msg = 'No email address supplied'
+            else:
+                msg = "Unknown username"
+        else:
+            msg = "Who are you?"
+
+        if res and not msg:
+            new_pwd = pwd_generator()
+            msg = "Your new password is %s" % new_pwd
+            result = notifiers.email_notifier.notify_message('LazyLibrarian New Password', msg, res['Email'])
+            if result:
+                pwd = hashlib.md5(new_pwd).hexdigest()
+                myDB.action("UPDATE users SET Password=? WHERE UserID=?", (pwd, res['UserID']))
+                return "Password reset, check your email"
+            else:
+                msg = "Failed to send email to [%s]" % res['Email']
+        msg = "Password not reset: %s" % msg
+        logger.error("%s IP:%s" % (msg, remote_ip))
+        return msg
+
+    @cherrypy.expose
+    def generatepwd(self):
+        return pwd_generator()
 
     # SERIES ############################################################
     @cherrypy.expose
@@ -341,6 +730,31 @@ class WebInterface(object):
         # for arg in kwargs:
         #    print arg
 
+        myDB = database.DBConnection()
+        adminmsg = ''
+        if 'user_accounts' in kwargs:
+            if kwargs['user_accounts'] and not lazylibrarian.CFG.get('General', 'user_accounts'):
+                # we just turned user_accounts on, check it's set up ok
+                email = ''
+                if 'admin_email' in kwargs and kwargs['admin_email']:
+                    email = kwargs['admin_email']
+                elif lazylibrarian.CFG.get('General', 'admin_email'):
+                    email = lazylibrarian.CFG.get('General', 'admin_email')
+                else:
+                    adminmsg += 'Please set a contact email so users can make requests<br>'
+
+                if email and not isValidEmail(email):
+                    adminmsg += 'Contact email looks invalid, please check<br>'
+
+                if lazylibrarian.CFG.get('General', 'http_user'):
+                    adminmsg += 'Please remove WEBSERVER USER as user accounts are active<br>'
+
+                admin = myDB.match('SELECT password from users where name="admin"')
+                if admin:
+                    if admin['password'] == hashlib.md5('admin').hexdigest():
+                        adminmsg += "The default admin user is 'admin' and password is 'admin'<br>"
+                        adminmsg += "This is insecure, please change it on Config -> User Admin<br>"
+
         # first the non-config options
         if 'current_tab' in kwargs:
             lazylibrarian.CURRENT_TAB = kwargs['current_tab']
@@ -378,7 +792,6 @@ class WebInterface(object):
                     # print "No entry for str " + key
                     lazylibrarian.CONFIG[key] = ''
 
-        myDB = database.DBConnection()
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
 
         if magazines:
@@ -490,6 +903,10 @@ class WebInterface(object):
 
         lazylibrarian.config_write()
         checkRunningJobs()
+
+        if adminmsg:
+            return serve_template(templatename="response.html", prefix="",
+                                  title="User Accounts", message=adminmsg, timer=0)
 
         raise cherrypy.HTTPRedirect("config")
 
@@ -799,6 +1216,13 @@ class WebInterface(object):
         #     print arg, kwargs[arg]
 
         myDB = database.DBConnection()
+        perm = 0
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+            if res:
+                perm = check_int(res['Perms'], 0)
+
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
@@ -937,7 +1361,9 @@ class WebInterface(object):
                     title = '%s<br><small><i>%s</i></small>' % (row[2], row[8])
                 else:
                     title = row[2]
-                title = title + '<br>' + sitelink + '&nbsp;' + worklink + '&nbsp;' + editpage
+                title = title + '<br>' + sitelink + '&nbsp;' + worklink
+                if perm & lazylibrarian.perm_edit:
+                    title = title + '&nbsp;' + editpage
 
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
@@ -1040,30 +1466,98 @@ class WebInterface(object):
         return "application/x-download"
 
     @cherrypy.expose
-    def openBook(self, bookid=None, library=None):
-        self.label_thread()
+    def requestBook(self, **kwargs):
+        self.label_thread('REQUEST_BOOK')
+        prefix = ''
+        title = 'Request Error'
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT Name,UserName,UserID,Email from users where UserID=?', (cookie['ll_uid'].value,))
+            if res:
+                cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
+                cmd += ' and books.AuthorID = authors.AuthorID'
+                bookdata = myDB.match(cmd, (kwargs['bookid'],))
+                kwargs.update(bookdata)
+                kwargs.update(res)
+                kwargs.update({'message': 'Request to Download'})
+
+                remote_ip = cherrypy.request.remote.ip
+                msg = 'IP: %s\n' % remote_ip
+                for item in kwargs:
+                    if kwargs[item]:
+                        line = "%s: %s\n" % (item, unaccented(kwargs[item]))
+                    else:
+                        line = "%s: \n" % item
+                    msg += line
+                if 'library' in kwargs and kwargs['library']:
+                    booktype = kwargs['library']
+                else:
+                    booktype = 'book'
+
+                title = "%s: %s" % (booktype, bookdata['BookName'])
+
+                if 'email' in kwargs and kwargs['email']:
+                    result = notifiers.email_notifier.notify_message('Request from LazyLibrarian User',
+                                                                     msg, lazylibrarian.CONFIG['ADMIN_EMAIL'])
+                    if result:
+                        prefix = "Message sent"
+                        msg = "You will receive a reply by email"
+                    else:
+                        logger.error("Unable to send message to: %s" % msg)
+                        prefix = "Message not sent"
+                        msg = "Please try again later"
+                else:
+                    prefix = "Unable to send message"
+                    msg = "No email address supplied"
+            else:
+                msg = "Unknown user"
+        else:
+            msg = "Nobody logged in?"
+
+        if prefix == "Message sent":
+            timer = 5
+        else:
+            timer = 0
+        return serve_template(templatename="response.html", prefix=prefix,
+                              title=title, message=msg, timer=timer)
+
+    @cherrypy.expose
+    def openBook(self, bookid=None, library=None, redirect=None):
+        self.label_thread('OPEN_BOOK')
+        # we need to check the user priveleges and see if they can download the book
         myDB = database.DBConnection()
+        perm = 0
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+            if res:
+                perm = check_int(res['Perms'], 0)
+
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
         bookdata = myDB.match(cmd, (bookid,))
-        if bookdata:
-            if library == 'AudioBook':
-                bookfile = bookdata["AudioFile"]
-                if bookfile and os.path.isfile(bookfile):
-                    logger.debug('Opening %s %s' % (library, bookfile))
-                    return serve_file(bookfile, self.mimetype(bookfile), "attachment")
-            else:
-                library = 'eBook'
-                bookfile = bookdata["BookFile"]
-                if bookfile and os.path.isfile(bookfile):
-                    logger.debug('Opening %s %s' % (library, bookfile))
-                    return serve_file(bookfile, self.mimetype(bookfile), "attachment")
-
-            authorName = bookdata["AuthorName"]
-            bookName = bookdata["BookName"]
-            logger.info('Missing %s %s,%s [%s]' % (library, authorName, bookName, bookfile))
-        else:
+        if not bookdata:
             logger.warn('Missing bookid: %s' % bookid)
+        else:
+            if perm & lazylibrarian.perm_download:
+                authorName = bookdata["AuthorName"]
+                bookName = bookdata["BookName"]
+                if library == 'AudioBook':
+                    bookfile = bookdata["AudioFile"]
+                    if bookfile and os.path.isfile(bookfile):
+                        logger.debug('Opening %s %s' % (library, bookfile))
+                        return serve_file(bookfile, self.mimetype(bookfile), "attachment")
+                else:
+                    library = 'eBook'
+                    bookfile = bookdata["BookFile"]
+                    if bookfile and os.path.isfile(bookfile):
+                        logger.debug('Opening %s %s' % (library, bookfile))
+                        return serve_file(bookfile, self.mimetype(bookfile), "attachment")
+
+                logger.info('Missing %s %s, %s [%s]' % (library, authorName, bookName, bookfile))
+            else:
+                return self.requestBook(library=library, bookid=bookid, redirect=redirect)
 
     @cherrypy.expose
     def editAuthor(self, authorid=None):
@@ -1908,7 +2402,7 @@ class WebInterface(object):
                 message = message + '<br><small>' + messages
             else:
                 message = "up to date"
-            return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ',
+            return serve_template(templatename="response.html", prefix='LazyLibrarian is ',
                                   title="Version Check", message=message, timer=5)
 
         elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
@@ -1924,7 +2418,7 @@ class WebInterface(object):
             messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
                 lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits", prefix='LazyLibrarian is ',
+            return serve_template(templatename="response.html", title="Commits", prefix='LazyLibrarian is ',
                                   message=message, timer=15)
 
             # raise cherrypy.HTTPRedirect("config")

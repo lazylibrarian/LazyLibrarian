@@ -1,0 +1,95 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<h1>LazyLibrarian User Login</h1>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6 col-sm-offset-3">
+      <h4 class="">Already have an account? Please log in.</h4>
+    </div>
+    <div class="col-sm-6 col-sm-offset-3">
+      <div class="login-container">
+        <div class="form-group col-md-12">
+          <label for="username">Username</label>
+          <input id="username" type="username" class="form-control" name="username" value="">
+        </div>
+        <div class="form-group col-md-12">
+          <label for="password">Password</label>
+          <div class="">
+            <input id="password" type="password" class="form-control" name="password">
+          </div>
+        </div>
+        <div class="col-md-12">
+          <button value="login" name="login" id="login" class="btn btn-primary btn-block btn-lg btn-inverse">Login</button>
+        </div>
+        <div class="col-sm-6 col-sm-offset-3">
+          <h4 id="message">${lazylibrarian.LOGIN_MSG}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-sm-offset-3">
+      <button class="pull-left button btn btn-sm btn-primary" type="button" value="pwd" name="pwd" id="pwd">Reset Password</button>
+      %if lazylibrarian.CONFIG['ADMIN_EMAIL'] != '':
+        <a href="user_register" class="pull-right button btn btn-sm btn-primary">Register</a>
+      %endif
+    </div>
+  </div>
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+  <script type="text/javascript">
+    $(document).ready(function()
+    {
+        $('#login').on('click', function(e) {
+            var password = $.trim($("#password").val());
+            var username = $.trim($("#username").val());
+            $.get('user_login', {'username': username, 'password': password},
+                function(data) {
+                if (data){
+                bootbox.dialog({
+                    title: 'User Login',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+                }
+                else { window.location = 'index'; }
+            });
+        });
+        $('#pwd').on('click', function(e) {
+            bootbox.prompt({
+                title: "Please enter your email address for confirmation",
+                inputType: 'email',
+                callback: function (result) {
+                    var email = result;
+                    var username = $.trim($("#username").val());
+                    $.get('password_reset', {'username': username, 'email': email},
+                        function(data) {
+                        bootbox.dialog({
+                            title: 'Password Reset',
+                            message: '<pre>'+data+'</pre>',
+                            buttons: {
+                                primary: {
+                                    label: "Close",
+                                    className: 'btn-primary'
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+        });
+    });
+  </script>
+</%def>

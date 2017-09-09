@@ -285,7 +285,7 @@ def processDir(reset=False):
                     else:
                         book_type = 'Magazine'
 
-                logger.info('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
+                logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
                 for fname in downloads:
                     if isinstance(fname, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:

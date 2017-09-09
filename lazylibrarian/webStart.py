@@ -59,9 +59,10 @@ def initialize(options=None):
 
     conf = {
         '/': {
-            'tools.staticdir.on': True,
-            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
-            'tools.proxy.on': options['http_proxy']
+            # 'tools.staticdir.on': True,
+            # 'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
+            'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
+            'tools.proxy.on': options['http_proxy']  # pay attention to X-Forwarded-Proto header
         },
         '/interfaces': {
             'tools.staticdir.on': True,
@@ -85,7 +86,8 @@ def initialize(options=None):
         },
         '/favicon.ico': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': "images/favicon.ico"
+            # 'tools.staticfile.filename': "images/favicon.ico"
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'images', 'favicon.ico')
         }
     }
 

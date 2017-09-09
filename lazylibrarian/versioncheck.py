@@ -100,7 +100,7 @@ def getInstallType():
     # FUTURE:   Add a version number string in this file too?
     try:
         install = version.LAZYLIBRARIAN_VERSION.lower()
-    except:
+    except Exception:
         install = 'unknown'
 
     if install in ['windows', 'win32build']:
