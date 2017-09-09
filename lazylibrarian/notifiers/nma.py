@@ -66,4 +66,5 @@ class NMA_Notifier:
     def update_library(self, showName=None):
         pass
 
+
 notifier = NMA_Notifier

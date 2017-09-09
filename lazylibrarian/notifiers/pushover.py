@@ -142,4 +142,5 @@ class PushoverNotifier:
     def update_library(self, showName=None):
         pass
 
+
 notifier = PushoverNotifier

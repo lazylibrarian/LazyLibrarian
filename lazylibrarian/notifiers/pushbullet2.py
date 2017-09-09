@@ -152,7 +152,7 @@ class PushBullet:
                 import magic
                 file_type = magic.from_buffer(fobj.read(1024))
                 fobj.seek(0)
-            except:
+            except Exception:
                 file_type = ""
 
         data = {"file_name": file_name,

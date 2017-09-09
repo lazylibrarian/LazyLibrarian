@@ -101,4 +101,5 @@ class PushbulletNotifier:
     def update_library(self, showName=None):
         pass
 
+
 notifier = PushbulletNotifier
