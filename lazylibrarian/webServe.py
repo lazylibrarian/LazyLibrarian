@@ -32,7 +32,7 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    dbUpdate, csv_file, saveLog, pwd_generator, pwd_check, isValidEmail
+    aaUpdate, csv_file, saveLog, pwd_generator, pwd_check, isValidEmail
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
@@ -2426,7 +2426,7 @@ class WebInterface(object):
     @cherrypy.expose
     def forceUpdate(self):
         if 'AAUPDATE' not in [n.name for n in [t for t in threading.enumerate()]]:
-            threading.Thread(target=dbUpdate, name='AAUPDATE', args=[False]).start()
+            threading.Thread(target=aaUpdate, name='AAUPDATE', args=[False]).start()
         else:
             logger.debug('AAUPDATE already running')
         raise cherrypy.HTTPRedirect("home")

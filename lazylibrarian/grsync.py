@@ -16,6 +16,7 @@
 # based on code found in https://gist.github.com/gpiancastelli/537923 by Giulio Piancastelli
 
 import traceback
+import threading
 import lib.oauth2 as oauth
 import urllib
 import urlparse
@@ -397,6 +398,14 @@ def test_auth():
         return "Pass: UserID is %s" % user_id
     else:
         return "Failed, check the debug log"
+
+
+def cron_sync_to_gr():
+    if 'GRSync' not in [n.name for n in [t for t in threading.enumerate()]]:
+        threading.currentThread().name = 'GRSync'
+        _ = sync_to_gr()
+    else:
+        logger.debug("GRSync is already running")
 
 
 def sync_to_gr():
