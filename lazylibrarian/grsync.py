@@ -413,7 +413,7 @@ def sync_to_gr():
         msg += "%s marked Owned from GoodReads\n" % ll_have
     else:
         msg += "Sync Owned books is disabled\n"
-    logger.info(msg)
+    logger.info(msg.strip('\n').replace('\n', ', '))
     return msg
 
 

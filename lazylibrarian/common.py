@@ -302,7 +302,7 @@ def scheduleJob(action='Start', target=None):
         elif 'syncToGoodreads' in target and lazylibrarian.CONFIG['GR_SYNC']:
             if check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0):
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.grsync.sync_to_gr,
+                    lazylibrarian.grsync.cron_sync_to_gr,
                     hours=check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0))
                 logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
         elif 'authorUpdate' in target and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
@@ -361,7 +361,7 @@ def authorUpdate():
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
 
 
-def dbUpdate(refresh=False):
+def aaUpdate(refresh=False):
     try:
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" or Status="Wanted"'
@@ -375,12 +375,13 @@ def dbUpdate(refresh=False):
             lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
         lazylibrarian.AUTHORS_UPDATE = False
-        return 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))
+        msg = 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))
+        logger.debug(msg)
     except Exception:
         lazylibrarian.AUTHORS_UPDATE = False
-        msg = 'Unhandled exception in dbUpdate: %s' % traceback.format_exc()
+        msg = 'Unhandled exception in aaUpdate: %s' % traceback.format_exc()
         logger.error(msg)
-        return msg
+    return msg
 
 
 def restartJobs(start='Restart'):
