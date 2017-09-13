@@ -444,7 +444,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
         try:
             my_val = CFG.getboolean(cfg_name, item_name)
         except ConfigParser.Error:
-            my_val = str(def_val)
+            my_val = bool(def_val)
         except Exception as e:
             logger.warn('Invalid bool for %s: %s, using default %s' % (cfg_name, item_name, bool(def_val)))
             logger.debug(str(e))
