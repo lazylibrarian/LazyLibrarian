@@ -74,7 +74,7 @@ def pwd_check(password):
 # noinspection PyShadowingNames,PyUnusedLocal
 def error_page_401(status, message, traceback, version):
     """ Custom handler for 401 error """
-    title = 'Access denied'
+    title = "I'm not getting out of bed"
     body = 'Error %s: You need to provide a valid username and password.' % status
     return r'''
 <html>
