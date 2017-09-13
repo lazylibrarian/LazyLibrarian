@@ -16,6 +16,7 @@
 # based on code found in https://gist.github.com/gpiancastelli/537923 by Giulio Piancastelli
 
 import traceback
+import threading
 import lib.oauth2 as oauth
 import urllib
 import urlparse
@@ -399,6 +400,14 @@ def test_auth():
         return "Failed, check the debug log"
 
 
+def cron_sync_to_gr():
+    if 'GRSync' not in [n.name for n in [t for t in threading.enumerate()]]:
+        threading.currentThread().name = 'GRSync'
+        _ = sync_to_gr()
+    else:
+        logger.debug("GRSync is already running")
+
+
 def sync_to_gr():
     msg = ''
     if lazylibrarian.CONFIG['GR_WANTED']:
@@ -413,7 +422,7 @@ def sync_to_gr():
         msg += "%s marked Owned from GoodReads\n" % ll_have
     else:
         msg += "Sync Owned books is disabled\n"
-    logger.info(msg)
+    logger.info(msg.strip('\n').replace('\n', ', '))
     return msg
 
 

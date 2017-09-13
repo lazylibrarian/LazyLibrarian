@@ -10,10 +10,13 @@
           %if perm&lazylibrarian.perm_force:
           <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
           <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
-          <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv"><i class="fa fa-download"></i> Import CSV Wishlist</button>
-          <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv"><i class="fa fa-upload"></i> Export CSV Wishlist</button>
+          <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">
+          <i class="fa fa-download"></i> Import CSV Wishlist</button>
+          <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv">
+          <i class="fa fa-upload"></i> Export CSV Wishlist</button>
           %if lazylibrarian.CONFIG['GR_SYNC'] == True:
-            <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads"><i class="fa fa-upload"></i> Goodreads Sync</button>
+            <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads">
+            <i class="fa fa-upload"></i> Goodreads Sync</button>
         %endif
         %endif
         </div>

@@ -26,7 +26,7 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
     getBookAuthors, setAllBookAuthors
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, dbUpdate, setperm
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today, formatAuthorName, check_int, plural
 from lazylibrarian.gb import GoogleBooks
@@ -465,9 +465,9 @@ class Api(object):
         if 'refresh' in kwargs:
             refresh = True
         if 'wait' in kwargs:
-            self.data = dbUpdate(refresh=refresh)
+            self.data = aaUpdate(refresh=refresh)
         else:
-            threading.Thread(target=dbUpdate, name='API-DBUPDATE', args=[refresh]).start()
+            threading.Thread(target=aaUpdate, name='API-AAUPDATE', args=[refresh]).start()
 
     def _forceMagSearch(self, **kwargs):
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
