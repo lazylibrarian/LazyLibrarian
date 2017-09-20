@@ -434,7 +434,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
             my_val = CFG.getint(cfg_name, item_name)
         except ConfigParser.Error:
             # no such item, might be a new entry
-            my_val = str(def_val)
+            my_val = int(def_val)
         except Exception as e:
             logger.warn('Invalid int for %s: %s, using default %s' % (cfg_name, item_name, int(def_val)))
             logger.debug(str(e))

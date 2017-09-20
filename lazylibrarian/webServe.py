@@ -70,7 +70,7 @@ def serve_template(templatename, **kwargs):
 
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             template = _hplookup.get_template(templatename)
-            return template.render(perm=65535, **kwargs)
+            return template.render(perm=lazylibrarian.perm_admin, **kwargs)
 
         username = ''  # anyone logged in yet?
         perm = 0
@@ -1216,12 +1216,15 @@ class WebInterface(object):
         #     print arg, kwargs[arg]
 
         myDB = database.DBConnection()
-        perm = 0
-        cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
-            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
-            if res:
-                perm = check_int(res['Perms'], 0)
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            perm = lazylibrarian.perm_admin
+        else:
+            perm = 0
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in cookie.keys():
+                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+                if res:
+                    perm = check_int(res['Perms'], 0)
 
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1527,12 +1530,15 @@ class WebInterface(object):
         self.label_thread('OPEN_BOOK')
         # we need to check the user priveleges and see if they can download the book
         myDB = database.DBConnection()
-        perm = 0
-        cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
-            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
-            if res:
-                perm = check_int(res['Perms'], 0)
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            perm = lazylibrarian.perm_admin
+        else:
+            perm = 0
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in cookie.keys():
+                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+                if res:
+                    perm = check_int(res['Perms'], 0)
 
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
