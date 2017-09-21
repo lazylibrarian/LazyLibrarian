@@ -1297,8 +1297,6 @@
                 </div>
               </div>
             </fieldset>
-          </td>
-          <td>
             <fieldset>
               <h3>Pushover</h3>
               <div class="row checkbox">
@@ -1463,6 +1461,54 @@
                 </div>
                 <div class="row">
                   <input type="button" value="Test Prowl" id="testProwl">
+                </div>
+              </div>
+            </fieldset>
+          </td>
+          <td>
+            <fieldset>
+              <BR>
+              <h3>Telegram</h3>
+              <div class="checkbox row">
+                <%
+                    if lazylibrarian.CONFIG['USE_TELEGRAM'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_telegram" id="telegram" value="1" ${checked} /><label>Enable Telegram</label>
+              </div>
+              <div id="telegramoptions">
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TELEGRAM_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="telegram_onsnatch" name="telegram_onsnatch" value="1" ${checked} /><label>Notify on snatch?</label>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TELEGRAM_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="telegram_ondownload" name="telegram_ondownload" value="1" ${checked} /><label>Notify on download?</label>
+                </div>
+                <div class="row">
+                  <label>Telegram Token</label>
+                  <input type="text" id="telegram_token" name="telegram_token" value="${lazylibrarian.CONFIG['TELEGRAM_TOKEN']}" size="26">
+                  <br>
+                </div>
+                <div class="row">
+                  <label>Telegram UserID</label>
+                  <input type="text" id="telegram_userid" name="telegram_userid" value="${lazylibrarian.CONFIG['TELEGRAM_USERID']}" size="26">
+                  <br>
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Telegram" id="testTelegram">
                 </div>
               </div>
             </fieldset>
@@ -2346,6 +2392,26 @@
                     }
             });
 
+            if ($("#telegram").is(":checked"))
+                    {
+                            $("#telegramoptions").show();
+                    }
+            else
+                    {
+                            $("#prowloptions").hide();
+                    }
+
+            $("#telegram").click(function(){
+                    if ($("#telegram").is(":checked"))
+                    {
+                            $("#telegramoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#telegramoptions").slideUp();
+                    }
+            });
+
         $('#generateAPI').click(function () {
             $.get("generateAPI",
                 function (data) { });
@@ -2522,6 +2588,13 @@
             var priority = $.trim($("#prowl_priority").val());
             $.get("testProwl", {'apikey': apikey, 'priority': priority},
                 function (data) { alert(data); });
+        });
+
+        $('#testTelegram').click(function () {
+            var token = $.trim($("#telegram_token").val());
+            var userid = $.trim($("#telegram_userid").val());
+            $.get("testTelegram", {'token': token, 'userid': userid},
+                function (data) { window.alert(data) });
         });
 
         $('#testNMA').click(function () {

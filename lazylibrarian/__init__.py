@@ -373,6 +373,11 @@ CONFIG_DEFINITIONS = {
     'ANDROIDPN_URL': ('str', 'AndroidPN', ''),
     'ANDROIDPN_USERNAME': ('str', 'AndroidPN', ''),
     'ANDROIDPN_BROADCAST': ('bool', 'AndroidPN', 0),
+    'USE_TELEGRAM': ('bool', 'Telegram', 0),
+    'TELEGRAM_TOKEN': ('str', 'Telegram', ''),
+    'TELEGRAM_USERID': ('str', 'Telegram', ''),
+    'TELEGRAM_ONSNATCH': ('bool', 'Telegram', 0),
+    'TELEGRAM_ONDOWNLOAD': ('bool', 'Telegram', 0),
     'USE_PROWL': ('bool', 'Prowl', 0),
     'PROWL_APIKEY': ('str', 'Prowl', ''),
     'PROWL_PRIORITY': ('int', 'Prowl', 0),
@@ -769,8 +774,10 @@ def config_read(reloaded=False):
 
 
 def config_write():
-    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL
+    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
+            TORZNAB_PROV, RSS_PROV
 
+    threading.currentThread().name = "CONFIG_WRITE"
     myDB = database.DBConnection()
 
     interface = CFG.get('General', 'http_look')
@@ -802,10 +809,25 @@ def config_write():
         if key not in CONFIG_DEFINITIONS.keys():
             logger.warn('Unsaved config key: %s' % key)
 
+    new_list = []
+    # strip out any empty slots
     for provider in NEWZNAB_PROV:
+        if provider['HOST']:
+            new_list.append(provider)
+
+    # renumber the items
+    for index,item in enumerate(new_list):
+        item['NAME'] = 'Newznab%i' % index
+
+    #delete the old entries
+    sections = CFG.sections()
+    for item in sections:
+        if item.startswith('Newznab'):
+            CFG.remove_section(item)
+
+    for provider in new_list:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        oldprovider = check_setting('str', provider['NAME'], 'HOST', '', log=False)
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
         CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
@@ -817,19 +839,31 @@ def config_write():
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
         CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-        if provider['HOST'] == oldprovider:
-            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
-        else:
-            logger.debug('Reset %s as provider changed' % provider['NAME'])
-            CFG.set(provider['NAME'], 'UPDATED', '')
-            CFG.set(provider['NAME'], 'MANUAL', False)
+        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+
+    NEWZNAB_PROV = new_list
     add_newz_slot()
     #
+    new_list = []
+    # strip out any empty slots
     for provider in TORZNAB_PROV:
+        if provider['HOST']:
+            new_list.append(provider)
+
+    # renumber the items
+    for index,item in enumerate(new_list):
+        item['NAME'] = 'Torznab%i' % index
+
+    # strip out the old config entries
+    sections = CFG.sections()
+    for item in sections:
+        if item.startswith('Torznab'):
+            CFG.remove_section(item)
+
+    for provider in new_list:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        oldprovider = check_setting('str', provider['NAME'], 'HOST', '', log=False)
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'API', provider['API'])
         CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
@@ -841,23 +875,37 @@ def config_write():
         CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
         CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
         CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-        if provider['HOST'] == oldprovider:
-            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
-        else:
-            logger.debug('Reset %s as provider changed' % provider['NAME'])
-            CFG.set(provider['NAME'], 'UPDATED', '')
-            CFG.set(provider['NAME'], 'MANUAL', False)
+        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
 
+    TORZNAB_PROV = new_list
     add_torz_slot()
     #
+    new_list = []
+    # strip out any empty slots
     for provider in RSS_PROV:
+        if provider['HOST']:
+            new_list.append(provider)
+
+    # renumber the items
+    for index,item in enumerate(new_list):
+        item['NAME'] = 'RSS_%i' % index
+
+    # strip out the old config entries
+    sections = CFG.sections()
+    for item in sections:
+        if item.startswith('RSS_'):
+            CFG.remove_section(item)
+
+    for provider in new_list:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-    add_rss_slot()
 
+    RSS_PROV = new_list
+    add_rss_slot()
+    #
     series_list = myDB.select('SELECT SeriesID from series')
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:

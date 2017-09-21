@@ -2876,6 +2876,21 @@ class WebInterface(object):
             return "Pushover notification failed"
 
     @cherrypy.expose
+    def testTelegram(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['TELEGRAM_TOKEN'] = kwargs['token']
+        if 'userid' in kwargs:
+            lazylibrarian.CONFIG['TELEGRAM_USERID'] = kwargs['userid']
+
+        result = notifiers.telegram_notifier.test_notify()
+        if result:
+            lazylibrarian.config_write()
+            return "Test Telegram notice sent successfully"
+        else:
+            return "Test Telegram notice failed"
+
+    @cherrypy.expose
     def testProwl(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         if 'apikey' in kwargs:

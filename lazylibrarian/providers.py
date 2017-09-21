@@ -220,19 +220,25 @@ def IterateOverNewzNabSites(book=None, searchType=None):
     providers = 0
 
     for provider in lazylibrarian.NEWZNAB_PROV:
-        if provider['ENABLED'] and not ProviderIsBlocked(provider['HOST']):
-            provider = get_capabilities(provider)
-            providers += 1
-            logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
-            resultslist += NewzNabPlus(book, provider, searchType, "nzb")
+        if provider['ENABLED']:
+            if ProviderIsBlocked(provider['HOST']):
+                logger.debug('[IterateOverNewzNabSites] - %s is BLOCKED' % provider['HOST'])
+            else:
+                provider = get_capabilities(provider)
+                providers += 1
+                logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
+                resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
-        if provider['ENABLED'] and not ProviderIsBlocked(provider['HOST']):
-            provider = get_capabilities(provider)
-            providers += 1
-            logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
-            resultslist += NewzNabPlus(book, provider,
-                                       searchType, "torznab")
+        if provider['ENABLED']:
+            if ProviderIsBlocked(provider['HOST']):
+                logger.debug('[IterateOverNewzNabSites] - %s is BLOCKED' % provider['HOST'])
+            else:
+                provider = get_capabilities(provider)
+                providers += 1
+                logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
+                resultslist += NewzNabPlus(book, provider, searchType, "torznab")
+
     return resultslist, providers
 
 
@@ -244,32 +250,35 @@ def IterateOverTorrentSites(book=None, searchType=None):
         book['searchterm'] = authorname + ' ' + bookname
 
     for prov in ['KAT', 'WWT', 'TPB', 'ZOO', 'TDL', 'LIME']:
-        if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
-            logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
-            if prov == 'KAT':
-                results, error = KAT(book)
-            elif prov == 'WWT':
-                results, error = WWT(book)
-            elif prov == 'TPB':
-                results, error = TPB(book)
-            elif prov == 'ZOO':
-                results, error = ZOO(book)
-            # elif prov == 'EXTRA':
-            #    results, error = EXTRA(book)
-            elif prov == 'TDL':
-                results, error = TDL(book)
-            elif prov == 'LIME':
-                results, error = LIME(book)
+        if lazylibrarian.CONFIG[prov]:
+            if ProviderIsBlocked(prov):
+                logger.debug('[IterateOverTorrentSites] - %s is BLOCKED' % lazylibrarian.CONFIG[prov + '_HOST'])
             else:
-                results = ''
-                error = ''
-                logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
+                logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
+                if prov == 'KAT':
+                    results, error = KAT(book)
+                elif prov == 'WWT':
+                    results, error = WWT(book)
+                elif prov == 'TPB':
+                    results, error = TPB(book)
+                elif prov == 'ZOO':
+                    results, error = ZOO(book)
+                # elif prov == 'EXTRA':
+                #    results, error = EXTRA(book)
+                elif prov == 'TDL':
+                    results, error = TDL(book)
+                elif prov == 'LIME':
+                    results, error = LIME(book)
+                else:
+                    results = ''
+                    error = ''
+                    logger.error('IterateOverTorrentSites called with unknown provider [%s]' % prov)
 
-            if error:
-                BlockProvider(prov, error)
-            else:
-                resultslist += results
-                providers += 1
+                if error:
+                    BlockProvider(prov, error)
+                else:
+                    resultslist += results
+                    providers += 1
 
     return resultslist, providers
 
@@ -282,15 +291,19 @@ def IterateOverDirectSites(book=None, searchType=None):
         book['searchterm'] = authorname + ' ' + bookname
 
     for prov in ['GEN', 'GEN2']:
-        if lazylibrarian.CONFIG[prov] and not ProviderIsBlocked(prov):
-            logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
-                         lazylibrarian.CONFIG[prov + '_SEARCH']))
-            results, error = GEN(book, prov)
-            if error:
-                BlockProvider(prov, error)
+        if lazylibrarian.CONFIG[prov]:
+            if ProviderIsBlocked(prov):
+                logger.debug('[IterateOverDirectSites] - %s %s is BLOCKED' % (lazylibrarian.CONFIG[prov + '_HOST'],
+                             lazylibrarian.CONFIG[prov + '_SEARCH']))
             else:
-                resultslist += results
-                providers += 1
+                logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
+                             lazylibrarian.CONFIG[prov + '_SEARCH']))
+                results, error = GEN(book, prov)
+                if error:
+                    BlockProvider(prov, error)
+                else:
+                    resultslist += results
+                    providers += 1
 
     return resultslist, providers
 
@@ -299,11 +312,14 @@ def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and 'goodreads' not in provider['HOST'] \
-                and 'list_rss' not in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
-            providers += 1
-            logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
-            resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+        if provider['ENABLED'] and 'goodreads' not in provider['HOST'] and 'list_rss' not in provider['HOST']:
+            if ProviderIsBlocked(provider['HOST']):
+                logger.debug('[IterateOverRSSSites] - %s is BLOCKED' % provider['HOST'])
+            else:
+                providers += 1
+                logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
+                resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+
     return resultslist, providers
 
 
@@ -311,11 +327,14 @@ def IterateOverGoodReads():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and 'goodreads' in provider['HOST'] \
-                and 'list_rss' in provider['HOST'] and not ProviderIsBlocked(provider['HOST']):
-            providers += 1
-            logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
-            resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+        if provider['ENABLED'] and 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
+            if ProviderIsBlocked(provider['HOST']):
+                logger.debug('[IterateOverGoodReads] - %s is BLOCKED' % provider['HOST'])
+            else:
+                providers += 1
+                logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
+                resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+
     return resultslist, providers
 
 

@@ -1685,8 +1685,6 @@
                     </div>
                   </fieldset>
                 </div>
-              </div>
-              <div class="col-md-6">
                 <div class="checkbox">
                   <%
                     if lazylibrarian.CONFIG['USE_PUSHOVER'] == True:
@@ -1872,6 +1870,57 @@
                     </div>
                     <div class="form-group">
                       <input type="button" value="Test Prowl" id="testProwl" class="btn btn-default" />
+                    </div>
+                  </fieldset>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['USE_TELEGRAM'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <label for="use_telegram" class="control-label">
+                    <input type="checkbox" name="use_telegram" id="use_telegram" value="1" ${checked} />
+                    Enable Telegram</label>
+                </div>
+                <div id="telegramoptions">
+                  <fieldset>
+                    <legend>Telegram</legend>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['TELEGRAM_ONSNATCH'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                      <label for="telegram_onsnatch" class="control-label">
+                        <input type="checkbox" id="telegram_onsnatch" name="telegram_onsnatch" value="1" ${checked} />
+                        Notify on snatch?</label>
+                    </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['TELEGRAM_ONDOWNLOAD'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                      <label for="telegram_ondownload" class="control-label">
+                        <input type="checkbox" id="telegram_ondownload" name="telegram_ondownload" value="1" ${checked} />
+                        Notify on download?</label>
+                    </div>
+                    <div class="form-group">
+                      <label for="telegram_token" class="control-label">Telegram Token</label>
+                      <input type="text" id="telegram_token" name="telegram_token" value="${lazylibrarian.CONFIG['TELEGRAM_TOKEN']}" class="form-control" placeholder="Telegram Token">
+                    </div>
+                    <div class="form-group">
+                      <label for="telegram_userid" class="control-label">Telegram UserID</label>
+                      <input type="text" id="telegram_userid" name="telegram_userid" value="${lazylibrarian.CONFIG['TELEGRAM_USERID']}" class="form-control" placeholder="Telegram UserID">
+                    </div>
+                    <div class="form-group">
+                      <input type="button" value="Test Telegram" id="testTelegram" class="btn btn-default" />
                     </div>
                   </fieldset>
                 </div>
@@ -3066,6 +3115,26 @@
                             $("#prowloptions").hide();
                     }
 
+            $("#use_telegram").click(function(){
+                    if ($("#use_telegram").is(":checked"))
+                    {
+                            $("#telegramoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#telegramoptions").slideUp();
+                    }
+            });
+
+            if ($("#use_telegram").is(":checked"))
+                    {
+                            $("#telegramoptions").show();
+                    }
+            else
+                    {
+                            $("#telegramoptions").hide();
+                    }
+
         if ($("#use_slack").is(":checked"))
                 {
                         $("#slackoptions").show();
@@ -3187,6 +3256,13 @@
             var apikey = $.trim($("#prowl_apikey").val());
             var priority = $.trim($("#prowl_priority").val());
             $.get("testProwl", {'apikey': apikey, 'priority': priority},
+                function (data) { window.alert(data) });
+        });
+
+        $('#testTelegram').click(function () {
+            var token = $.trim($("#telegram_token").val());
+            var userid = $.trim($("#telegram_userid").val());
+            $.get("testTelegram", {'token': token, 'userid': userid},
                 function (data) { window.alert(data) });
         });
 
