@@ -748,24 +748,12 @@ def config_read(reloaded=False):
         SHOW_AUDIO = 1
     else:
         SHOW_AUDIO = 0
-    # Suppress images if disabled
-    if CONFIG['BOOK_IMG']:
-        CONFIG['BOOK_IMG'] = 1
-    else:
-        CONFIG['BOOK_IMG'] = 0
-    if CONFIG['MAG_IMG']:
-        CONFIG['MAG_IMG'] = 1
-    else:
-        CONFIG['MAG_IMG'] = 0
-    if CONFIG['AUTHOR_IMG']:
-        CONFIG['AUTHOR_IMG'] = 1
-    else:
-        CONFIG['AUTHOR_IMG'] = 0
-    # Suppress column toggles if user doesn't want them
-    if CONFIG['TOGGLES']:
-        CONFIG['TOGGLES'] = 1
-    else:
-        CONFIG['TOGGLES'] = 0
+
+    for item in ['BOOK_IMG', 'MAG_IMG', 'AUTHOR_IMG', 'TOGGLES']:
+        if CONFIG[item]:
+            CONFIG[item] = 1
+        else:
+            CONFIG[item] = 0
 
     if reloaded:
         logger.info('Config file reloaded')
@@ -775,7 +763,7 @@ def config_read(reloaded=False):
 
 def config_write():
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
-            TORZNAB_PROV, RSS_PROV
+        TORZNAB_PROV, RSS_PROV
 
     threading.currentThread().name = "CONFIG_WRITE"
     myDB = database.DBConnection()
@@ -817,10 +805,10 @@ def config_write():
                 new_list.append(provider)
 
         # renumber the items
-        for index,item in enumerate(new_list):
+        for index, item in enumerate(new_list):
             item['NAME'] = '%s%i' % (entry[1], index)
 
-        #delete the old entries
+        # delete the old entries
         sections = CFG.sections()
         for item in sections:
             if item.startswith(entry[1]):
@@ -857,7 +845,7 @@ def config_write():
             new_list.append(provider)
 
     # renumber the items
-    for index,item in enumerate(new_list):
+    for index, item in enumerate(new_list):
         item['NAME'] = 'RSS_%i' % index
 
     # strip out the old config entries
@@ -886,12 +874,11 @@ def config_write():
     if not CONFIG['MAG_TAB']:
         SHOW_MAGS = 0
 
-    if CONFIG['AUDIO_TAB']:
+    if CONFIG['HTTP_LOOK'] == 'default':
+        SHOW_AUDIO = 0
+    elif CONFIG['AUDIO_TAB']:
         SHOW_AUDIO = 1
     else:
-        SHOW_AUDIO = 0
-
-    if CONFIG['HTTP_LOOK'] == 'default':
         SHOW_AUDIO = 0
 
     msg = None
@@ -927,77 +914,58 @@ def config_write():
 
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
-
     if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
-        newz_name = 'Newznab%i' % count
-        check_section(newz_name)
-        CFG.set(newz_name, 'ENABLED', 0)
-        CFG.set(newz_name, 'HOST', '')
-        CFG.set(newz_name, 'API', '')
-        CFG.set(newz_name, 'GENERALSEARCH', 'search')
-        CFG.set(newz_name, 'BOOKSEARCH', 'book')
-        CFG.set(newz_name, 'MAGSEARCH', '')
-        CFG.set(newz_name, 'AUDIOSEARCH', '')
-        CFG.set(newz_name, 'BOOKCAT', '7000,7020')
-        CFG.set(newz_name, 'MAGCAT', '7010')
-        CFG.set(newz_name, 'AUDIOCAT', '3030')
-        CFG.set(newz_name, 'EXTENDED', '1')
-        CFG.set(newz_name, 'UPDATED', '')
-        CFG.set(newz_name, 'MANUAL', 0)
-        CFG.set(newz_name, 'DLPRIORITY', 0)
+        prov_name = 'Newznab%i' % count
+        empty = {"NAME": prov_name,
+                 "ENABLED": 0,
+                 "HOST": '',
+                 "API": '',
+                 "GENERALSEARCH": 'search',
+                 "BOOKSEARCH": 'book',
+                 "MAGSEARCH": '',
+                 "AUDIOSEARCH": '',
+                 "BOOKCAT": '7000,7020',
+                 "MAGCAT": '7010',
+                 "AUDIOCAT": '3030',
+                 "EXTENDED": '1',
+                 "UPDATED": '',
+                 "MANUAL": 0,
+                 "DLPRIORITY": 0
+                 }
+        NEWZNAB_PROV.append(empty)
 
-        NEWZNAB_PROV.append({"NAME": newz_name,
-                             "ENABLED": 0,
-                             "HOST": '',
-                             "API": '',
-                             "GENERALSEARCH": 'search',
-                             "BOOKSEARCH": 'book',
-                             "MAGSEARCH": '',
-                             "AUDIOSEARCH": '',
-                             "BOOKCAT": '7000,7020',
-                             "MAGCAT": '7010',
-                             "AUDIOCAT": '3030',
-                             "EXTENDED": '1',
-                             "UPDATED": '',
-                             "MANUAL": 0,
-                             "DLPRIORITY": 0
-                             })
+        check_section(prov_name)
+        for item in empty:
+            if item != 'NAME':
+                CFG.set(prov_name, item, empty[item])
 
 
 def add_torz_slot():
     count = len(TORZNAB_PROV)
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
-        torz_name = 'Torznab%i' % count
-        check_section(torz_name)
-        CFG.set(torz_name, 'ENABLED', 0)
-        CFG.set(torz_name, 'HOST', '')
-        CFG.set(torz_name, 'API', '')
-        CFG.set(torz_name, 'GENERALSEARCH', 'search')
-        CFG.set(torz_name, 'BOOKSEARCH', 'book')
-        CFG.set(torz_name, 'MAGSEARCH', '')
-        CFG.set(torz_name, 'AUDIOSEARCH', '')
-        CFG.set(torz_name, 'BOOKCAT', '8000,8010')
-        CFG.set(torz_name, 'MAGCAT', '8030')
-        CFG.set(torz_name, 'EXTENDED', '1')
-        CFG.set(torz_name, 'UPDATED', '')
-        CFG.set(torz_name, 'MANUAL', 0)
-        CFG.set(torz_name, 'DLPRIORITY', 0)
-        TORZNAB_PROV.append({"NAME": torz_name,
-                             "ENABLED": 0,
-                             "HOST": '',
-                             "API": '',
-                             "GENERALSEARCH": 'search',
-                             "BOOKSEARCH": 'book',
-                             "MAGSEARCH": '',
-                             "AUDIOSEARCH": '',
-                             "BOOKCAT": '8000,8010',
-                             "MAGCAT": '8030',
-                             "AUDIOCAT": '8030',
-                             "EXTENDED": '1',
-                             "UPDATED": '',
-                             "MANUAL": 0,
-                             "DLPRIORITY": 0
-                             })
+        prov_name = 'Torznab%i' % count
+        empty = {"NAME": prov_name,
+                 "ENABLED": 0,
+                 "HOST": '',
+                 "API": '',
+                 "GENERALSEARCH": 'search',
+                 "BOOKSEARCH": 'book',
+                 "MAGSEARCH": '',
+                 "AUDIOSEARCH": '',
+                 "BOOKCAT": '8000,8010',
+                 "MAGCAT": '8030',
+                 "AUDIOCAT": '8030',
+                 "EXTENDED": '1',
+                 "UPDATED": '',
+                 "MANUAL": 0,
+                 "DLPRIORITY": 0
+                 }
+        TORZNAB_PROV.append(empty)
+
+        check_section(prov_name)
+        for item in empty:
+            if item != 'NAME':
+                CFG.set(prov_name, item, empty[item])
 
 
 def DIRECTORY(dirname):
