@@ -809,78 +809,47 @@ def config_write():
         if key not in CONFIG_DEFINITIONS.keys():
             logger.warn('Unsaved config key: %s' % key)
 
-    new_list = []
-    # strip out any empty slots
-    for provider in NEWZNAB_PROV:
-        if provider['HOST']:
-            new_list.append(provider)
+    for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
+        new_list = []
+        # strip out any empty slots
+        for provider in entry[0]:
+            if provider['HOST']:
+                new_list.append(provider)
 
-    # renumber the items
-    for index,item in enumerate(new_list):
-        item['NAME'] = 'Newznab%i' % index
+        # renumber the items
+        for index,item in enumerate(new_list):
+            item['NAME'] = '%s%i' % (entry[1], index)
 
-    #delete the old entries
-    sections = CFG.sections()
-    for item in sections:
-        if item.startswith('Newznab'):
-            CFG.remove_section(item)
+        #delete the old entries
+        sections = CFG.sections()
+        for item in sections:
+            if item.startswith(entry[1]):
+                CFG.remove_section(item)
 
-    for provider in new_list:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'API', provider['API'])
-        CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
-        CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
-        CFG.set(provider['NAME'], 'AUDIOSEARCH', provider['AUDIOSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
-        CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
-        CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
-        CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+        for provider in new_list:
+            check_section(provider['NAME'])
+            CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+            CFG.set(provider['NAME'], 'HOST', provider['HOST'])
+            CFG.set(provider['NAME'], 'API', provider['API'])
+            CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
+            CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
+            CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
+            CFG.set(provider['NAME'], 'AUDIOSEARCH', provider['AUDIOSEARCH'])
+            CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
+            CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
+            CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
+            CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
+            CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
+            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
+            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
 
-    NEWZNAB_PROV = new_list
-    add_newz_slot()
-    #
-    new_list = []
-    # strip out any empty slots
-    for provider in TORZNAB_PROV:
-        if provider['HOST']:
-            new_list.append(provider)
+        if entry[1] == 'Newznab':
+            NEWZNAB_PROV = new_list
+            add_newz_slot()
+        else:
+            TORZNAB_PROV = new_list
+            add_torz_slot()
 
-    # renumber the items
-    for index,item in enumerate(new_list):
-        item['NAME'] = 'Torznab%i' % index
-
-    # strip out the old config entries
-    sections = CFG.sections()
-    for item in sections:
-        if item.startswith('Torznab'):
-            CFG.remove_section(item)
-
-    for provider in new_list:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'API', provider['API'])
-        CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
-        CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
-        CFG.set(provider['NAME'], 'AUDIOSEARCH', provider['AUDIOSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
-        CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
-        CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
-        CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-        CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-        CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
-
-    TORZNAB_PROV = new_list
-    add_torz_slot()
-    #
     new_list = []
     # strip out any empty slots
     for provider in RSS_PROV:
@@ -958,10 +927,11 @@ def config_write():
 
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
+
     if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
         newz_name = 'Newznab%i' % count
         check_section(newz_name)
-        CFG.set(newz_name, 'ENABLED', False)
+        CFG.set(newz_name, 'ENABLED', 0)
         CFG.set(newz_name, 'HOST', '')
         CFG.set(newz_name, 'API', '')
         CFG.set(newz_name, 'GENERALSEARCH', 'search')
@@ -973,7 +943,7 @@ def add_newz_slot():
         CFG.set(newz_name, 'AUDIOCAT', '3030')
         CFG.set(newz_name, 'EXTENDED', '1')
         CFG.set(newz_name, 'UPDATED', '')
-        CFG.set(newz_name, 'MANUAL', False)
+        CFG.set(newz_name, 'MANUAL', 0)
         CFG.set(newz_name, 'DLPRIORITY', 0)
 
         NEWZNAB_PROV.append({"NAME": newz_name,
@@ -999,18 +969,18 @@ def add_torz_slot():
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
         torz_name = 'Torznab%i' % count
         check_section(torz_name)
-        CFG.set(torz_name, 'ENABLED', False)
+        CFG.set(torz_name, 'ENABLED', 0)
         CFG.set(torz_name, 'HOST', '')
         CFG.set(torz_name, 'API', '')
         CFG.set(torz_name, 'GENERALSEARCH', 'search')
         CFG.set(torz_name, 'BOOKSEARCH', 'book')
         CFG.set(torz_name, 'MAGSEARCH', '')
         CFG.set(torz_name, 'AUDIOSEARCH', '')
-        CFG.set(torz_name, 'BOOKCAT', '7000,7020')
-        CFG.set(torz_name, 'MAGCAT', '7010')
+        CFG.set(torz_name, 'BOOKCAT', '8000,8010')
+        CFG.set(torz_name, 'MAGCAT', '8030')
         CFG.set(torz_name, 'EXTENDED', '1')
         CFG.set(torz_name, 'UPDATED', '')
-        CFG.set(torz_name, 'MANUAL', False)
+        CFG.set(torz_name, 'MANUAL', 0)
         CFG.set(torz_name, 'DLPRIORITY', 0)
         TORZNAB_PROV.append({"NAME": torz_name,
                              "ENABLED": 0,
