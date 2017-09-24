@@ -39,6 +39,7 @@ from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.searchrss import search_rss_book
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -65,6 +66,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
+            'forceRSSSearch': '[&wait] search all entries in rss wishlists',
             'forceProcess': 'process books/mags in download dir',
             'pauseAuthor': '&id= pause author by AuthorID',
             'resumeAuthor': '&id= resume author by AuthorID',
@@ -477,6 +479,15 @@ class Api(object):
                 threading.Thread(target=search_magazines, name='API-SEARCHMAGS', args=[None, True]).start()
         else:
             self.data = 'No search methods set, check config'
+
+    def _forceRSSSearch(self, **kwargs):
+        if lazylibrarian.USE_RSS():
+            if 'wait' in kwargs:
+                search_rss_book()
+            else:
+                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[]).start()
+        else:
+            self.data = 'No rss wishlists set, check config'
 
     def _forceBookSearch(self, **kwargs):
         if 'type' in kwargs:

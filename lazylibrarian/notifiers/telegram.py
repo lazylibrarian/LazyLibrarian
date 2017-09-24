@@ -32,6 +32,8 @@ class Telegram_Notifier:
         # Send message to user using Telegram's Bot API
         try:
             url = TELEGRAM_API % (telegram_token, "sendMessage")
+            logger.debug(url)
+            logger.debug(payload)
             response = requests.request('POST', url, data=payload)
         except Exception, e:
             logger.warn(u'Telegram notify failed: ' + str(e))

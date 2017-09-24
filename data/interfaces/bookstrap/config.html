@@ -907,7 +907,7 @@
         <div role="tabpanel" class="tab-pane" id="providers">
           <div class="configtable">
             <div class="row">
-              <div class="col-md-4 usenet_providers">
+              <div class="usenet_providers">
                 <fieldset>
                   <legend>Newznab Providers</legend>
                   %for provider in lazylibrarian.NEWZNAB_PROV:
@@ -916,7 +916,7 @@
                       if provider['ENABLED'] == True:
                           checked = 'checked="checked"'
                     %>
-                  <div class="form-group">
+                  <div class="col-md-4 form-group">
                     <div class="input-group">
                       <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
                       <span class="input-group-addon">
@@ -934,7 +934,7 @@
                   %endfor
                 </fieldset>
               </div>
-              <div class="col-md-4 torznab_providers">
+              <div class="torznab_providers">
                 <fieldset>
                   <legend>Torznab Providers</legend>
                   %for provider in lazylibrarian.TORZNAB_PROV:
@@ -943,7 +943,7 @@
                       if provider['ENABLED'] == True:
                         checked = 'checked="checked"'
                     %>
-                  <div class="form-group">
+                  <div class="col-md-4 form-group">
                     <div class="input-group">
                       <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
                       <span class="input-group-addon">
@@ -961,31 +961,29 @@
                   %endfor
                 </fieldset>
               </div>
-              <div class="col-md-4 rss_providers">
+              <div class="rss_providers">
                 <fieldset>
                   <legend>RSS Providers</legend>
-                  <div id="rss_options">
-                    %for provider in lazylibrarian.RSS_PROV:
-                    <%
-                        checked = ''
-                        if provider['ENABLED'] == True:
-                            checked = 'checked="checked"'
-                      %>
-                    <div class="form-group">
-                      <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
-                      <div class="input-group">
-                        <span class="input-group-addon">
-                          <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />
-                        </span>
-                        <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
-                      </div>
-                      <div class="input-group">
-                        <span class="input-group-addon">Priority</span>
-                        <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
-                      </div>
+                  %for provider in lazylibrarian.RSS_PROV:
+                  <%
+                   checked = ''
+                   if provider['ENABLED'] == True:
+                       checked = 'checked="checked"'
+                  %>
+                  <div class="col-md-4 form-group">
+                    <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
+                    <div class="input-group">
+                      <span class="input-group-addon">
+                        <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />
+                      </span>
+                      <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
                     </div>
-                    %endfor
+                    <div class="input-group">
+                      <span class="input-group-addon">Priority</span>
+                      <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                    </div>
                   </div>
+                  %endfor
                 </fieldset>
                 <div class="torrent_providers">
                   <fieldset>
@@ -996,7 +994,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="kat_host" class="sr-only">KAT Host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1015,7 +1013,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="wwt_host" class="sr-only">WWT Host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1034,7 +1032,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="tpb_host" class="sr-only">TPB Host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1053,7 +1051,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="zoo_host" class="sr-only">zooqle host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1072,7 +1070,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="tdl_host" class="sr-only">torrentdownload host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1091,7 +1089,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="lime_host" class="sr-only">limetorrent host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1115,7 +1113,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="gen_host" class="sr-only">libgen host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1142,7 +1140,7 @@
                       else:
                         checked = ''
                     %>
-                    <div class="form-group">
+                    <div class="col-md-4 form-group">
                       <label for="gen2_host" class="sr-only">libgen host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
@@ -1165,11 +1163,11 @@
                     </div>
                   </fieldset>
                 </div>
-                <button class="button btn btn-sm btn-primary" type="button" value="showblocked" id="showblocked"> Blocked Providers</button>
-                <br>
-                <br>
               </div>
             </div>
+            <button class="button btn btn-sm btn-warning btn-primary" type="button" value="showblocked" id="showblocked"> Blocked Providers</button>
+            <br>
+            <br>
           </div>
         </div>
         <div role="tabpanel" class="tab-pane" id="searchprocessing">
@@ -1913,11 +1911,12 @@
                     </div>
                     <div class="form-group">
                       <label for="telegram_token" class="control-label">Telegram Token</label>
-                      <input type="text" id="telegram_token" name="telegram_token" value="${lazylibrarian.CONFIG['TELEGRAM_TOKEN']}" class="form-control" placeholder="Telegram Token">
+                      <input type="text" id="telegram_token" name="telegram_token" value="${lazylibrarian.CONFIG['TELEGRAM_TOKEN']}" class="form-control" placeholder="Telegram Token"><small>Contact <a href="http://telegram.me/BotFather">@BotFather</a> to create a bot and get its token
+                      <br>After creating the bot, send it a message from telegram to activate it</small>
                     </div>
                     <div class="form-group">
                       <label for="telegram_userid" class="control-label">Telegram UserID</label>
-                      <input type="text" id="telegram_userid" name="telegram_userid" value="${lazylibrarian.CONFIG['TELEGRAM_USERID']}" class="form-control" placeholder="Telegram UserID">
+                      <input type="text" id="telegram_userid" name="telegram_userid" value="${lazylibrarian.CONFIG['TELEGRAM_USERID']}" class="form-control" placeholder="Telegram UserID"><small>Contact <a href="http://telegram.me/myidbot">@myidbot</a> to get your user ID</small>
                     </div>
                     <div class="form-group">
                       <input type="button" value="Test Telegram" id="testTelegram" class="btn btn-default" />

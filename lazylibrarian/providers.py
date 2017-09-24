@@ -323,19 +323,70 @@ def IterateOverRSSSites():
     return resultslist, providers
 
 
-def IterateOverGoodReads():
+def IterateOverWishLists():
+    # Two types of wishlists handled
+    # GoodReads rss feeds
+    # GoodReads Listopia html pages
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
         if provider['ENABLED'] and 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
             if ProviderIsBlocked(provider['HOST']):
-                logger.debug('[IterateOverGoodReads] - %s is BLOCKED' % provider['HOST'])
+                logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
             else:
                 providers += 1
-                logger.debug('[IterateOverGoodReads] - %s' % provider['HOST'])
+                logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
                 resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+        elif provider['ENABLED'] and 'goodreads' in provider['HOST'] and '/list/show/' in provider['HOST']:
+            if ProviderIsBlocked(provider['HOST']):
+                logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
+            else:
+                providers += 1
+                logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
+                resultslist += LISTOPIA(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
 
     return resultslist, providers
+
+
+def LISTOPIA(host=None, feednr=None, priority=0):
+    """
+    Goodreads Listopia query function, return all the results in a list
+    """
+    results = []
+
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    URL = host
+
+    result, success = fetchURL(URL)
+    if not success:
+        logger.error('Error fetching data from %s: %s' % (host, result))
+        return results
+
+    if result:
+        logger.debug('Parsing results from %s' % URL)
+        data = result.split('<td valign="top" class="number">')
+        for entry in data[1:]:
+            try:
+                # index = entry.split('<')[0]
+                title = entry.split('<a title="') [1].split('"')[0]
+                book_id = entry.split('data-resource-id="')[1].split('"')[0]
+                author_name = entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0]
+                results.append({
+                    'rss_prov': host.split('/list/show/')[1],
+                    'rss_feed': feednr,
+                    'rss_title': title,
+                    'rss_author': author_name,
+                    'rss_bookid': book_id,
+                    'rss_isbn': '',
+                    'priority': priority
+                })
+            except IndexError:
+                pass
+    else:
+        logger.debug('No data returned from %s' % host)
+    return results
 
 
 def GOODREADS(host=None, feednr=None, priority=0):
@@ -355,7 +406,7 @@ def GOODREADS(host=None, feednr=None, priority=0):
         data = feedparser.parse(result)
     else:
         logger.error('Error fetching data from %s: %s' % (host, result))
-        data = None
+        return results
 
     if data:
         logger.debug('Parsing results from %s' % URL)

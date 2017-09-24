@@ -831,7 +831,7 @@ class GoodReads:
                                  (author['authorname'], AuthorID, match['AuthorID']))
                     AuthorID = match['AuthorID']  # we have a different authorid for that authorname
                 else:  # no author but request to add book, add author with newauthor status
-                    # User hit "add book" button from a search
+                    # User hit "add book" button from a search, or a wishlist import
                     controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
                         "AuthorName": author['authorname'],
@@ -844,6 +844,7 @@ class GoodReads:
                     }
                     authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
+
                     if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS']:
                         self.get_author_books(AuthorID, entrystatus=lazylibrarian.CONFIG['NEWAUTHOR_STATUS'])
         else:

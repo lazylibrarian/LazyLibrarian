@@ -22,7 +22,7 @@ from lazylibrarian.common import scheduleJob
 from lazylibrarian.csvfile import finditem
 from lazylibrarian.formatter import plural, unaccented, formatAuthorName
 from lazylibrarian.importer import import_book, search_for
-from lazylibrarian.providers import IterateOverRSSSites, IterateOverGoodReads
+from lazylibrarian.providers import IterateOverRSSSites, IterateOverWishLists
 from lazylibrarian.resultlist import processResultList
 
 
@@ -51,17 +51,18 @@ def search_rss_book(books=None, library=None):
 
         myDB = database.DBConnection()
 
-        resultlist, wishproviders = IterateOverGoodReads()
+        resultlist, wishproviders = IterateOverWishLists()
+        new_books = 0
         if not wishproviders:
-            logger.debug('No rss wishlists are set')
+            logger.debug('No wishlists are set')
         else:
             # for each item in resultlist, add to database if necessary, and mark as wanted
+            logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
             for book in resultlist:
-                # we get rss_author, rss_title, rss_isbn, rss_bookid (goodreads bookid)
+                # we get rss_author, rss_title, maybe rss_isbn, rss_bookid (goodreads bookid)
                 # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
                 # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
-                logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
-                if book['rss_bookid'] and lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and book['rss_bookid']:
                     bookmatch = myDB.match('select Status,BookName from books where bookid=?', (book['rss_bookid'],))
                     if bookmatch:
                         bookstatus = bookmatch['Status']
@@ -73,8 +74,10 @@ def search_rss_book(books=None, library=None):
                             controlValueDict = {"BookID": book['rss_bookid']}
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
+                            new_books += 1
                     else:
                         import_book(book['rss_bookid'])
+                        new_books += 1
                 else:
                     item = {}
                     headers = []
@@ -99,6 +102,7 @@ def search_rss_book(books=None, library=None):
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
+                            new_books += 1
                     else:  # not in database yet
                         results = ''
                         if book['rss_isbn']:
@@ -109,6 +113,7 @@ def search_rss_book(books=None, library=None):
                                 logger.info("Found (%s%%) %s: %s" %
                                             (result['isbn_fuzz'], result['authorname'], result['bookname']))
                                 import_book(result['bookid'])
+                                new_books += 1
                                 bookmatch = True
                         if not results:
                             searchterm = "%s <ll> %s" % (item['Title'], formatAuthorName(book['rss_author']))
@@ -120,6 +125,7 @@ def search_rss_book(books=None, library=None):
                                 logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
                                                                           result['authorname'], result['bookname']))
                                 import_book(result['bookid'])
+                                new_books += 1
                                 bookmatch = True
 
                     if not bookmatch:
@@ -134,6 +140,8 @@ def search_rss_book(books=None, library=None):
                             msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
                                                                         result['authorname'], result['bookname'])
                             logger.warn(msg)
+        if new_books:
+            logger.info("Wishlist marked %s book%s as Wanted" % (new_books, plural(new_books)))
 
         searchbooks = []
         if books is None:
