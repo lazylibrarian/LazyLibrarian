@@ -1871,9 +1871,12 @@ class WebInterface(object):
                                         if bookfile == bookdata['AudioFile']:
                                             logger.info('AudioBook %s deleted from disc' % bookname)
 
-                            authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
+                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
-                                if library == 'eBook':
+                                if authorcheck['Status'] not in ['Active', 'Wanted']:
+                                    myDB.action('delete from books where bookid=?', (bookid,))
+                                    logger.info('Removed "%s" from database' % bookname)
+                                elif library == 'eBook':
                                     myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                     logger.debug('Status set to Ignored for "%s"' % bookname)
                                 else:
