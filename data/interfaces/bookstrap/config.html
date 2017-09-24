@@ -2188,9 +2188,10 @@
         </div>
         <div role="tabpanel" class="tab-pane" id="capabilities">
           <div class="configtable">
+              <div>
+              You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
+              </div>
             <div class="row">
-              <div class="col-md-6">
-            You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
                 %for provider in lazylibrarian.NEWZNAB_PROV:
                 <%
                   if provider['HOST'] == "":
@@ -2198,6 +2199,7 @@
                   else:
                     hidden = ''
                 %>
+                <div class="col-md-6">
                 <legend ${hidden}>${provider['HOST']}</legend>
                 <div class="checkbox">
                   <%
@@ -2244,7 +2246,10 @@
                   <label for="newznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="newznab[${loop.index}][audiocat]" name="newznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
+                </div>
                 %endfor
+            </div>
+            <div class="row">
                 %for provider in lazylibrarian.TORZNAB_PROV:
                 <%
                     if provider['HOST'] == "":
@@ -2252,6 +2257,7 @@
                     else:
                         hidden = ''
                 %>
+                <div class="col-md-6">
                 <legend ${hidden}>${provider['HOST']}</legend>
                 <div class="checkbox">
                   <%
@@ -2298,15 +2304,15 @@
                   <label for="torznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="torznab[${loop.index}][audiocat]" name="torznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
-                %endfor
               </div>
+            %endfor
             </div>
           </div>
         </div>
         <div role="tabpanel" class="tab-pane" id="filters">
           <div class="configtable">
             <div class="row">
-              <div class="col-md-6">
+                <div class="col-md-6">
                 <legend>Book Reject List</legend>
                 <span class="help-block">Default: audiobook, mp3</span>
                 <div class="form-group">
@@ -2315,20 +2321,8 @@
                     Search results with any of these words in the title will be ignored<br/>
                   </span>
                 </div>
-                <legend>Book Size Limits</legend>
-                <span class="help-block">Default: 0</span>
-                <div class="form-group">
-                  <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
-                  <span class="help-block">Book maximum size (Mb):<br/>
-                    Search results larger than this will be rejected, set to 0 to disable<br/>
-                  </span>
                 </div>
-                <div class="form-group">
-                  <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
-                  <span class="help-block">Book minimum size (Mb):<br/>
-                    Search results smaller than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                <div class="col-md-6">
                 <legend>AudioBook Reject List</legend>
                 <span class="help-block">Default: epub, mobi</span>
                 <div class="form-group">
@@ -2337,44 +2331,67 @@
                     Search results with any of these words in the title will be ignored<br/>
                   </span>
                 </div>
+                </div>
+                <legend>Book Size Limits</legend>
+                <div class="col-md-6">
+                <div class="form-group">
+                  <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
+                  <span class="help-block">Book maximum size (Mb):<br/>
+                    Search results larger than this will be rejected, set to 0 to disable<br/>
+                  </span>
+                </div>
+                </div>
+                <div class="col-md-6">
+                <div class="form-group">
+                  <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
+                  <span class="help-block">Book minimum size (Mb):<br/>
+                    Search results smaller than this will be rejected, set to 0 to disable<br/>
+                  </span>
+                </div>
+                </div>
                 <legend>AudioBook Size Limits</legend>
-                <span class="help-block">Default: 0</span>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
                   <span class="help-block">AudioBook maximum size (Mb):<br/>
                     Search results larger than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
+                </div>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
                   <span class="help-block">AudioBook minimum size (Mb):<br/>
                     Search results smaller than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
+                </div>
                 <legend>Magazine Size Limits</legend>
-                <span class="help-block">Default: 0</span>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
                   <span class="help-block">Magazine maximum size (Mb):<br/>
                     Search results larger than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
+                </div>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
                   <span class="help-block">Magazine minimum size (Mb):<br/>
                     Search results smaller than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
-              </div>
-              <div class="col-md-6">
+                </div>
                 <legend>Magazine Reject Lists</legend>
                 <span class="help-block">Default: None</span>
                 %for mag in config['magazines_list']:
+                <div class="col-md-6">
                 <label>${mag['Title']}</label>
                 <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" class="form-control" placeholder="Reject word list">
                 <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
+                </div>
                 %endfor
-              </div>
             </div>
           </div>
         </div>
