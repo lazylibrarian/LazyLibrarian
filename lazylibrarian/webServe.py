@@ -1871,9 +1871,12 @@ class WebInterface(object):
                                         if bookfile == bookdata['AudioFile']:
                                             logger.info('AudioBook %s deleted from disc' % bookname)
 
-                            authorcheck = myDB.match('SELECT AuthorID from authors WHERE AuthorID=?', (AuthorID,))
+                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
-                                if library == 'eBook':
+                                if authorcheck['Status'] not in ['Active', 'Wanted']:
+                                    myDB.action('delete from books where bookid=?', (bookid,))
+                                    logger.info('Removed "%s" from database' % bookname)
+                                elif library == 'eBook':
                                     myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                     logger.debug('Status set to Ignored for "%s"' % bookname)
                                 else:
@@ -2874,6 +2877,21 @@ class WebInterface(object):
             return "Pushover notification successful,\n%s" % result
         else:
             return "Pushover notification failed"
+
+    @cherrypy.expose
+    def testTelegram(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'token' in kwargs:
+            lazylibrarian.CONFIG['TELEGRAM_TOKEN'] = kwargs['token']
+        if 'userid' in kwargs:
+            lazylibrarian.CONFIG['TELEGRAM_USERID'] = kwargs['userid']
+
+        result = notifiers.telegram_notifier.test_notify()
+        if result:
+            lazylibrarian.config_write()
+            return "Test Telegram notice sent successfully"
+        else:
+            return "Test Telegram notice failed"
 
     @cherrypy.expose
     def testProwl(self, **kwargs):

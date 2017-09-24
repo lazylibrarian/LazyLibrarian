@@ -26,6 +26,7 @@ import pushbullet
 import pushover
 import slack
 import tweet
+import telegram
 from lazylibrarian import logger
 
 # online
@@ -38,6 +39,7 @@ prowl_notifier = prowl.Prowl_Notifier()
 nma_notifier = nma.NMA_Notifier()
 slack_notifier = slack.SlackNotifier()
 email_notifier = email_notify.EmailNotifier()
+telegram_notifier = telegram.Telegram_Notifier()
 #
 custom_notifier = custom_notify.CustomNotifier()
 
@@ -50,7 +52,8 @@ notifiers = [
     prowl_notifier,
     nma_notifier,
     slack_notifier,
-    email_notifier
+    email_notifier,
+    telegram_notifier
 ]
 
 

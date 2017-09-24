@@ -72,11 +72,13 @@ class DBConnection:
                     if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug('Suppressed [%s] %s' % (query, e.message))
+                            logger.debug("Suppressed args: [%s]" % str(args))
                         self.connection.commit()
                         break
                     else:
                         logger.error('Database Integrity error: %s' % e)
                         logger.error("Failed query: [%s]" % query)
+                        logger.error("Failed args: [%s]" % str(args))
                         raise
 
                 except sqlite3.DatabaseError as e:
@@ -121,7 +123,11 @@ class DBConnection:
 
         self.action(query, valueDict.values() + keyDict.values())
 
+        # This version of upsert is not thread safe, each action() is thread safe,
+        # but it's possible for another thread to jump in between the
+        # UPDATE and INSERT statements so we use suppress=unique to log any conflicts
+
         if self.connection.total_changes == changesBefore:
             query = "INSERT INTO " + tableName + " (" + ", ".join(valueDict.keys() + keyDict.keys()) + ")" + \
                     " VALUES (" + ", ".join(["?"] * len(valueDict.keys() + keyDict.keys())) + ")"
-            self.action(query, valueDict.values() + keyDict.values())
+            self.action(query, valueDict.values() + keyDict.values(), suppress="UNIQUE")
