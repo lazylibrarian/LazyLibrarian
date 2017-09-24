@@ -832,6 +832,9 @@ class GoodReads:
                     AuthorID = match['AuthorID']  # we have a different authorid for that authorname
                 else:  # no author but request to add book, add author with newauthor status
                     # User hit "add book" button from a search, or a wishlist import
+                    newauthor_status = 'Active'
+                    if lazylibrarian.CONFIG['NEWAUTHOR_STATUS'] in ['Skipped', 'Ignored']:
+                        newauthor_status = 'Paused'
                     controlValueDict = {"AuthorID": AuthorID}
                     newValueDict = {
                         "AuthorName": author['authorname'],
@@ -840,7 +843,7 @@ class GoodReads:
                         "AuthorBorn": author['authorborn'],
                         "AuthorDeath": author['authordeath'],
                         "DateAdded": today(),
-                        "Status": lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
+                        "Status": newauthor_status
                     }
                     authorname = author['authorname']
                     myDB.upsert("authors", newValueDict, controlValueDict)
