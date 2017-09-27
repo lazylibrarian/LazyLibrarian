@@ -182,6 +182,7 @@ CONFIG_DEFINITIONS = {
     'MAG_TAB': ('bool', 'General', 1),
     'AUDIO_TAB': ('bool', 'General', 1),
     'TOGGLES': ('bool', 'General', 1),
+    'DEFINITE_SORT': ('bool', 'General', 0),
     'LAUNCH_BROWSER': ('bool', 'General', 1),
     'API_ENABLED': ('bool', 'General', 0),
     'API_KEY': ('str', 'General', ''),

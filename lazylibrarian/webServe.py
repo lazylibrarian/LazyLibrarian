@@ -1281,9 +1281,17 @@ class WebInterface(object):
         rows = []
         filtered = []
         if len(rowlist):
-            # the masterlist to be filled with the row data
-            for row in rowlist:  # iterate through the sqlite3.Row objects
-                rows.append(list(row))  # add each rowlist to the masterlist
+            if lazylibrarian.CONFIG['DEFINITE_SORT']:
+                for row in rowlist:  # iterate through the sqlite3.Row objects
+                    entry = list(row)
+                    if entry[2].startswith('The '):
+                        entry[2] = entry[2][4:] + ', The'
+                    elif entry[2].startswith('A '):
+                        entry[2] = entry[2][2:] + ', A'
+                    rows.append(entry)  # add each rowlist to the masterlist
+            else:
+                for row in rowlist:
+                    rows.append(list(row))
 
             if sSearch:
                 if library is not None:
@@ -1360,10 +1368,9 @@ class WebInterface(object):
                     sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
                 elif 'google' in row[9]:
                     sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
+                title = row[2]
                 if row[8]:  # is there a sub-title
-                    title = '%s<br><small><i>%s</i></small>' % (row[2], row[8])
-                else:
-                    title = row[2]
+                    title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                 title = title + '<br>' + sitelink + '&nbsp;' + worklink
                 if perm & lazylibrarian.perm_edit:
                     title = title + '&nbsp;' + editpage
