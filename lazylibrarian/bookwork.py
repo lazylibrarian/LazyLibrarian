@@ -21,8 +21,48 @@ import urllib
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
-from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName
+from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, is_valid_booktype
 from lib.fuzzywuzzy import fuzz
+
+
+def forceRename(bookid):
+    myDB = database.DBConnection()
+    cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
+    exists = myDB.match(cmd, (bookid,))
+    if exists:
+        f = exists['BookFile']
+        r = os.path.dirname(f)
+        try:
+            calibreid = r.rsplit('(', 1)[1].split(')')[0]
+            if not calibreid.isdigit():
+                calibreid = ''
+        except IndexError:
+                calibreid = ''
+
+        if calibreid:
+            msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
+            logger.debug(msg)
+        else:
+            book_basename, extn = os.path.splitext(os.path.basename(f))
+            new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
+            new_basename = new_basename.replace('$Author', exists['AuthorName']).replace('$Title', exists['BookName'])
+            if book_basename != new_basename:
+                f = os.path.join(r, new_basename + extn)
+                # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
+                for fname in os.listdir(r):
+                    extn = ''
+                    if is_valid_booktype(fname, booktype='ebook'):
+                        extn = os.path.splitext(fname)[1]
+                    elif fname.endswith('.opf') and not fname =='metadata.opf':
+                        extn = '.opf'
+                    elif fname.endswith('.jpg') and not fname =='cover.jpg':
+                        extn = '.jpg'
+                    if extn:
+                        ofname = os.path.join(r,fname)
+                        nfname = os.path.join(r, new_basename + extn)
+                        logger.debug("AutoRename %s to %s" % (ofname, nfname))
+                        shutil.move(ofname, nfname)
+        return f
 
 
 def setAllBookAuthors():

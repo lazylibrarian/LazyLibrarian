@@ -17,14 +17,14 @@ import os
 import re
 import traceback
 import urllib
-from shutil import copyfile
+import shutil
 from xml.etree import ElementTree
 
 import lazylibrarian
 import lib.zipfile as zipfile
 import lib.id3reader as id3reader
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages
+from lazylibrarian.bookwork import setWorkPages, forceRename
 from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
@@ -709,48 +709,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
+
+                                            if lazylibrarian.CONFIG['IMP_RENAME']:
+                                                book_filename = forceRename(bookid)
+
                                             book_basename = os.path.splitext(book_filename)[0]
-
-                                            rename_existing = lazylibrarian.CONFIG['IMP_RENAME']
-                                            try:
-                                                calibreid = r.rsplit('(', 1)[1].split(')')[0]
-                                                if not calibreid.isdigit():
-                                                    calibreid = ''
-                                            except IndexError:
-                                                calibreid = ''
-
-                                            if rename_existing:
-                                                if calibreid:
-                                                    calibredir = os.path.basename(r)
-                                                    msg = '[%s] looks like a calibre directory: not renaming book' \
-                                                            % calibredir
-                                                    logger.debug(msg)
-                                                    rename_existing = False
-                                                else:
-                                                    new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
-                                                    new_basename = new_basename.replace('$Author',
-                                                                        check_status['AuthorName']).replace('$Title',
-                                                                        check_status['BookName'])
-                                                    new_basename = os.path.join(r, new_basename)
-                                                    if book_basename != new_basename:
-                                                        book_basename = new_basename
-                                                        extn = os.path.splitext(files)[1]
-                                                        book_filename = os.path.join(r, book_basename + extn)
-                                                        # only rename bookname.type, bookname.jpg, bookname.opf
-                                                        # not cover.jpg or metadata.opf
-                                                        for fname in os.listdir(r):
-                                                            extn = ''
-                                                            if is_valid_booktype(fname, booktype='ebook'):
-                                                                extn = os.path.splitext(fname)[1]
-                                                            elif fname.endswith('.opf') and not fname =='metadata.opf':
-                                                                extn = '.opf'
-                                                            elif fname.endswith('.jpg') and not fname =='cover.jpg':
-                                                                extn = '.jpg'
-                                                            if extn:
-                                                                ofname = os.path.join(r,fname)
-                                                                nfname = os.path.join(r, book_basename + extn)
-                                                                logger.debug("AutoRename %s to %s" % (ofname, nfname))
-                                                                os.rename(ofname, nfname)
 
                                             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
                                             for book_type in booktype_list:
@@ -813,7 +776,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             if os.path.isfile(coverimg):
                                                 cachedir = lazylibrarian.CACHEDIR
                                                 cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
-                                                copyfile(coverimg, cacheimg)
+                                                shutil.copyfile(coverimg, cacheimg)
                                 else:
                                     if library == 'eBook':
                                         logger.warn(
