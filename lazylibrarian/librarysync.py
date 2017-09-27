@@ -512,17 +512,21 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             # but hopefully the tags will get there first...
                             match = pattern.match(files)
                             if match:
-                                author = match.group("author")
-                                book = match.group("book")
-                                if not author or not book:
-                                    match = False
+                                try:
+                                    author = match.group("author")
+                                except IndexError:
+                                    author = ''
+                                try:
+                                    book = match.group("book")
+                                except IndexError:
+                                    book = ''
+
                                 if isinstance(book, str):
                                     book = book.decode(lazylibrarian.SYS_ENCODING)
                                 if isinstance(author, str):
                                     author = author.decode(lazylibrarian.SYS_ENCODING)
-                                if match:
-                                    if len(book) <= 2 or len(author) <= 2:
-                                        match = False
+                                if len(book) <= 2 or len(author) <= 2:
+                                    match = False
                             if not match:
                                 logger.debug("Pattern match failed [%s]" % files)
 
@@ -706,6 +710,48 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
                                             book_basename = os.path.splitext(book_filename)[0]
+
+                                            rename_existing = lazylibrarian.CONFIG['IMP_RENAME']
+                                            try:
+                                                calibreid = r.rsplit('(', 1)[1].split(')')[0]
+                                                if not calibreid.isdigit():
+                                                    calibreid = ''
+                                            except IndexError:
+                                                calibreid = ''
+
+                                            if rename_existing:
+                                                if calibreid:
+                                                    calibredir = os.path.basename(r)
+                                                    msg = '[%s] looks like a calibre directory: not renaming book' \
+                                                            % calibredir
+                                                    logger.debug(msg)
+                                                    rename_existing = False
+                                                else:
+                                                    new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
+                                                    new_basename = new_basename.replace('$Author',
+                                                                        check_status['AuthorName']).replace('$Title',
+                                                                        check_status['BookName'])
+                                                    new_basename = os.path.join(r, new_basename)
+                                                    if book_basename != new_basename:
+                                                        book_basename = new_basename
+                                                        extn = os.path.splitext(files)[1]
+                                                        book_filename = os.path.join(r, book_basename + extn)
+                                                        # only rename bookname.type, bookname.jpg, bookname.opf
+                                                        # not cover.jpg or metadata.opf
+                                                        for fname in os.listdir(r):
+                                                            extn = ''
+                                                            if is_valid_booktype(fname, booktype='ebook'):
+                                                                extn = os.path.splitext(fname)[1]
+                                                            elif fname.endswith('.opf') and not fname =='metadata.opf':
+                                                                extn = '.opf'
+                                                            elif fname.endswith('.jpg') and not fname =='cover.jpg':
+                                                                extn = '.jpg'
+                                                            if extn:
+                                                                ofname = os.path.join(r,fname)
+                                                                nfname = os.path.join(r, book_basename + extn)
+                                                                logger.debug("AutoRename %s to %s" % (ofname, nfname))
+                                                                os.rename(ofname, nfname)
+
                                             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
                                             for book_type in booktype_list:
                                                 preferred_type = "%s.%s" % (book_basename, book_type)

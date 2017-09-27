@@ -986,8 +986,14 @@
                       </span>
                       <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
                     </div>
+                      <%
+                        if '/list/show/' in provider['HOST']:
+                          label = 'Pages'
+                        else:
+                          label = 'Priority'
+                      %>
                     <div class="input-group">
-                      <span class="input-group-addon">Priority</span>
+                      <span class="input-group-addon">${label}</span>
                       <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                     </div>
                   </div>
@@ -1506,6 +1512,18 @@
                       <input type="checkbox" id="imp_singlebook" name="imp_singlebook" value="1" ${checked} />
                       One book per directory</label>
                     <span class="help-block">This imports one book per directory, tick if you keep multiple formats of the same book in the same directory</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['IMP_RENAME'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="imp_rename" class="control-label">
+                      <input type="checkbox" id="imp_rename" name="imp_rename" value="1" ${checked} />
+                      Rename existing books</label>
+                    <span class="help-block">This renames existing books to match eBook Filename Pattern</span>
                   </div>
                   <div class="checkbox">
                     <%

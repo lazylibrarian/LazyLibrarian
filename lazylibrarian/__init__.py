@@ -200,6 +200,7 @@ CONFIG_DEFINITIONS = {
     'CALIBRE_PASS': ('str', 'General', ''),
     'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
+    'IMP_RENAME': ('bool', 'General', 0),
     'IMP_CONVERT': ('str', 'General', ''),
     'GIT_PROGRAM': ('str', 'General', ''),
     'CACHE_AGE': ('int', 'General', 30),
