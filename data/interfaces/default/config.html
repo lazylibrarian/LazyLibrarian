@@ -179,6 +179,24 @@
   <input type="checkbox" id="mag_tab" name="mag_tab" value=1 ${checked} />
   <label>  Show Magazines</label>
   <br>
+  <%
+    if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="sort_definite" name="sort_definite" value=1 ${checked} />
+  <label>  Show titles ignoring definite article (The, A)</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['SORT_SURNAME'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="sort_surname" name="sort_surname" value=1 ${checked} />
+  <label>  Show author surname first</label>
+  <br>
   <h5>Interface: <select name="http_look" style="float:right;"></h5>
     %for http_look in config['http_look_list']:
     <%
@@ -990,6 +1008,7 @@
             <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
             <BR>
             <small>Path to "calibredb" to import books into the library</small>
+
             <div class="checkbox">
             <%
               if lazylibrarian.CONFIG['CALIBRE_USE_SERVER'] == True:
@@ -999,8 +1018,8 @@
             %>
             <BR>
             <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value=1 ${checked} />
-            </div>
             <label>  Use Calibre Content Server</label>
+            </div>
             <fieldset id="calibre_options">
                 <label>Calibre Server:</label>
                 <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" size="26">
@@ -1013,6 +1032,10 @@
                 <BR>
             </fieldset>
             <BR>
+          </td>
+        </tr>
+        <tr>
+          <td>
             <label>Calibre Auto Add Directory:</label>
             <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" size="26">
             <BR>
@@ -1024,9 +1047,10 @@
                     else:
                         checked = ''
                     %>
-              <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value=1 ${checked} /><label>Autoadd eBook only</label>
+              <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value=1 ${checked} />
+              <label> Autoadd eBook only</label>
               <BR>
-              <small>Only add eBook, not opf or jpg</small>
+              <small> Only add eBook, not opf or jpg</small>
             </div>
             <div>
               <%
@@ -1035,7 +1059,8 @@
                     else:
                         checked = ''
                     %>
-              <label>Full Scan:</label><input type="checkbox" name="full_scan" id="fullscan" value=1 ${checked} />
+              <input type="checkbox" name="full_scan" id="fullscan" value=1 ${checked} />
+              <label> Full Scan</label>
               <br>
               <small>This will remove entries if ebooks are not found in the download location</small>
             </div>
@@ -1058,11 +1083,28 @@
                     else:
                         checked = ''
                     %>
-              <label>One book per directory:</label><input type="checkbox" id="imp_singlebook" name="imp_singlebook" value=1 ${checked} />
+              <input type="checkbox" id="imp_singlebook" name="imp_singlebook" value=1 ${checked} />
+              <label> One book per directory</label>
               <br>
               <small>This imports one book per directory, tick if you keep multiple formats of the same book in the same directory</small>
             </div>
           </td>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_RENAME'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_rename" name="imp_rename" value=1 ${checked} />
+              <label> Rename existing books</label>
+              <br>
+              <small>This renames existing books to match eBook Filename Pattern</small>
+            </div>
+          </td>
+        </tr>
+        <tr>
           <td>
             <div>
               <%
@@ -1071,10 +1113,13 @@
                     else:
                         checked = ''
                     %>
-              <label>Add Authors:</label><input type="checkbox" id="add_author" name="add_author" value=1 ${checked} />
+              <input type="checkbox" id="add_author" name="add_author" value=1 ${checked} />
+              <label> Add Authors</label>
               <br>
               <small>This will allow new authors to be added</small>
             </div>
+          </td>
+          <td>
             <div>
               <%
                     if lazylibrarian.CONFIG['ADD_SERIES'] == True:
@@ -1082,10 +1127,15 @@
                     else:
                         checked = ''
                     %>
-              <label>Add Series:</label><input type="checkbox" id="add_series" name="add_series" value=1 ${checked} />
+              <input type="checkbox" id="add_series" name="add_series" value=1 ${checked} />
+              <label> Add Series</label>
               <br>
               <small>This will allow new series info to be added</small>
             </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
             <div>
               <%
                     if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
@@ -1093,7 +1143,8 @@
                     else:
                         checked = ''
                     %>
-              <label>Search when Added:</label><input type="checkbox" id="imp_autosearch" name="imp_autosearch" value=1 ${checked} />
+              <input type="checkbox" id="imp_autosearch" name="imp_autosearch" value=1 ${checked} />
+              <label> Search when Added</label>
               <br>
               <small>This will auto search for books/mags as soon as you add them to the database.<br>
                 Leave unticked to search for them later</small>

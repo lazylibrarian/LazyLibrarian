@@ -17,14 +17,14 @@ import os
 import re
 import traceback
 import urllib
-from shutil import copyfile
+import shutil
 from xml.etree import ElementTree
 
 import lazylibrarian
 import lib.zipfile as zipfile
 import lib.id3reader as id3reader
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages
+from lazylibrarian.bookwork import setWorkPages, forceRename
 from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
@@ -512,17 +512,21 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             # but hopefully the tags will get there first...
                             match = pattern.match(files)
                             if match:
-                                author = match.group("author")
-                                book = match.group("book")
-                                if not author or not book:
-                                    match = False
+                                try:
+                                    author = match.group("author")
+                                except IndexError:
+                                    author = ''
+                                try:
+                                    book = match.group("book")
+                                except IndexError:
+                                    book = ''
+
                                 if isinstance(book, str):
                                     book = book.decode(lazylibrarian.SYS_ENCODING)
                                 if isinstance(author, str):
                                     author = author.decode(lazylibrarian.SYS_ENCODING)
-                                if match:
-                                    if len(book) <= 2 or len(author) <= 2:
-                                        match = False
+                                if len(book) <= 2 or len(author) <= 2:
+                                    match = False
                             if not match:
                                 logger.debug("Pattern match failed [%s]" % files)
 
@@ -705,7 +709,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
+
+                                            if lazylibrarian.CONFIG['IMP_RENAME']:
+                                                book_filename = forceRename(bookid)
+
                                             book_basename = os.path.splitext(book_filename)[0]
+
                                             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
                                             for book_type in booktype_list:
                                                 preferred_type = "%s.%s" % (book_basename, book_type)
@@ -767,7 +776,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             if os.path.isfile(coverimg):
                                                 cachedir = lazylibrarian.CACHEDIR
                                                 cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
-                                                copyfile(coverimg, cacheimg)
+                                                shutil.copyfile(coverimg, cacheimg)
                                 else:
                                     if library == 'eBook':
                                         logger.warn(

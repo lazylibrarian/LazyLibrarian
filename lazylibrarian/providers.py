@@ -294,10 +294,10 @@ def IterateOverDirectSites(book=None, searchType=None):
         if lazylibrarian.CONFIG[prov]:
             if ProviderIsBlocked(prov):
                 logger.debug('[IterateOverDirectSites] - %s %s is BLOCKED' % (lazylibrarian.CONFIG[prov + '_HOST'],
-                             lazylibrarian.CONFIG[prov + '_SEARCH']))
+                                                                              lazylibrarian.CONFIG[prov + '_SEARCH']))
             else:
                 logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
-                             lazylibrarian.CONFIG[prov + '_SEARCH']))
+                                                                   lazylibrarian.CONFIG[prov + '_SEARCH']))
                 results, error = GEN(book, prov)
                 if error:
                     BlockProvider(prov, error)
@@ -353,39 +353,55 @@ def LISTOPIA(host=None, feednr=None, priority=0):
     Goodreads Listopia query function, return all the results in a list
     """
     results = []
+    maxpage = priority
 
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    URL = host
+    page = 0
+    next_page = True
 
-    result, success = fetchURL(URL)
-    if not success:
-        logger.error('Error fetching data from %s: %s' % (host, result))
-        return results
+    while next_page:
+        URL = host
+        if page:
+            URL = "%s?page=%i" % (host, page)
 
-    if result:
-        logger.debug('Parsing results from %s' % URL)
-        data = result.split('<td valign="top" class="number">')
-        for entry in data[1:]:
-            try:
-                # index = entry.split('<')[0]
-                title = entry.split('<a title="') [1].split('"')[0]
-                book_id = entry.split('data-resource-id="')[1].split('"')[0]
-                author_name = entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0]
-                results.append({
-                    'rss_prov': host.split('/list/show/')[1],
-                    'rss_feed': feednr,
-                    'rss_title': title,
-                    'rss_author': author_name,
-                    'rss_bookid': book_id,
-                    'rss_isbn': '',
-                    'priority': priority
-                })
-            except IndexError:
-                pass
-    else:
-        logger.debug('No data returned from %s' % host)
+        result, success = fetchURL(URL)
+        next_page = False
+
+        if not success:
+            logger.error('Error fetching data from %s: %s' % (URL, result))
+        elif result:
+            logger.debug('Parsing results from %s' % URL)
+            data = result.split('<td valign="top" class="number">')
+            for entry in data[1:]:
+                try:
+                    # index = entry.split('<')[0]
+                    title = entry.split('<a title="')[1].split('"')[0]
+                    book_id = entry.split('data-resource-id="')[1].split('"')[0]
+                    author_name = entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0]
+                    results.append({
+                        'rss_prov': host.split('/list/show/')[1],
+                        'rss_feed': feednr,
+                        'rss_title': title,
+                        'rss_author': author_name,
+                        'rss_bookid': book_id,
+                        'rss_isbn': '',
+                        'priority': priority
+                    })
+                    next_page = True
+                except IndexError:
+                    pass
+        else:
+            logger.debug('No data returned from %s' % URL)
+
+        page += 1
+        if maxpage:
+            if page >= maxpage:
+                logger.warn('Maximum results page reached, still more results available')
+                next_page = False
+
+    logger.debug("Found %i result%s from %s" % (len(results), plural(len(results)), host))
     return results
 
 

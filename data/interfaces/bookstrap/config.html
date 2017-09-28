@@ -267,6 +267,28 @@
                         <input type="checkbox" id="toggles" name="toggles" value="1" ${checked} />
                         Show column toggles</label>
                     </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="sort_definite" class="control-label">
+                        <input type="checkbox" id="sort_definite" name="sort_definite" value="1" ${checked} />
+                        Show titles ignoring definite article (The, A)</label>
+                    </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['SORT_SURNAME'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="sort_surname" class="control-label">
+                        <input type="checkbox" id="sort_surname" name="sort_surname" value="1" ${checked} />
+                        Show author surname first</label>
+                    </div>
                     <div class="form-group">
                       <label for="http_look">Interface:</label>
                       <select id="http_look" name="http_look" class="form-control">
@@ -311,7 +333,7 @@
           <div role="tabpanel" class="tab-pane" id="importoptions">
             <div class="configtable">
               <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-4">
                 <fieldset>
                   <legend>Book API</legend>
                   <div class="form-group">
@@ -385,26 +407,28 @@
                       Ignore books with future publication date</label>
                   </div>
                 </fieldset>
+              </div>
+              <div class="col-md-4">
                 <fieldset>
                   <legend>File Formats</legend>
                   <div class="form-group">
                     <label for="ebook_type" class="control-label">eBooks:</label>
                     <input type="text" id="ebook_type" name="ebook_type" value="${lazylibrarian.CONFIG['EBOOK_TYPE']}" class="form-control" placeholder="eBook file formats">
-                    <span class="help-block">Comma separated file extensions. Default: epub, mobi, pdf</span>
+                    <span class="help-block">Comma separated file extensions</span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_type" class="control-label">AudioBooks:</label>
                     <input type="text" id="ebook_type" name="audiobook_type" value="${lazylibrarian.CONFIG['AUDIOBOOK_TYPE']}" class="form-control" placeholder="AudioBook file formats">
-                    <span class="help-block">Comma separated file extensions. Default: mp3</span>
+                    <span class="help-block">Comma separated file extensions</span>
                   </div>
                   <div class="form-group">
                     <label for="mag_type" class="control-label">Magazines:</label>
                     <input type="text" id="mag_type" name="mag_type" value="${lazylibrarian.CONFIG['MAG_TYPE']}" class="form-control"       placeholder="Magazine file formats">
-                    <span class="help-block">Comma separated file extensions. Default: pdf</span>
+                    <span class="help-block">Comma separated file extensions</span>
                   </div>
                 </fieldset>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <fieldset>
                   <legend>Language</legend>
                   <div class="form-group">
@@ -421,7 +445,7 @@
                     <input type="text" id="imp_monthlang" name="imp_monthlang" value="${lazylibrarian.CONFIG['IMP_MONTHLANG']}" class="form-control" placeholder="Languages for month names">
                     <span class="help-block">Comma separated language codes for magazine issues:<br/>
                       e.g: fr_FR.utf8, es_ES.utf8<br/>
-                      Default: blank, English month names are preloaded   Changes to this setting require a restart</span>
+                      English month names are preloaded   Changes to this setting require a restart</span>
                   </div>
                 </fieldset>
               </div>
@@ -909,7 +933,9 @@
             <div class="row">
               <div class="usenet_providers">
                 <fieldset>
+                  <div class="col-md-12">
                   <legend>Newznab Providers</legend>
+                  </div>
                   %for provider in lazylibrarian.NEWZNAB_PROV:
                   <%
                       checked = ''
@@ -936,7 +962,9 @@
               </div>
               <div class="torznab_providers">
                 <fieldset>
+                  <div class="col-md-12">
                   <legend>Torznab Providers</legend>
+                  </div>
                   %for provider in lazylibrarian.TORZNAB_PROV:
                   <%
                       checked = ''
@@ -963,7 +991,9 @@
               </div>
               <div class="rss_providers">
                 <fieldset>
+                  <div class="col-md-12">
                   <legend>RSS Providers</legend>
+                  </div>
                   %for provider in lazylibrarian.RSS_PROV:
                   <%
                    checked = ''
@@ -978,8 +1008,14 @@
                       </span>
                       <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
                     </div>
+                      <%
+                        if '/list/show/' in provider['HOST']:
+                          label = 'Pages'
+                        else:
+                          label = 'Priority'
+                      %>
                     <div class="input-group">
-                      <span class="input-group-addon">Priority</span>
+                      <span class="input-group-addon">${label}</span>
                       <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                     </div>
                   </div>
@@ -987,7 +1023,9 @@
                 </fieldset>
                 <div class="torrent_providers">
                   <fieldset>
+                    <div class="col-md-12">
                     <legend>Torrent Providers</legend>
+                    </div>
                     <%
                       if lazylibrarian.CONFIG['KAT'] == True:
                         checked = 'checked="checked"'
@@ -1106,7 +1144,9 @@
                 </div>
                 <div class="direct_providers">
                   <fieldset>
+                    <div class="col-md-12">
                     <legend>Direct Download Providers</legend>
+                    </div>
                     <%
                       if lazylibrarian.CONFIG['GEN'] == True:
                         checked = 'checked="checked"'
@@ -1173,7 +1213,7 @@
         <div role="tabpanel" class="tab-pane" id="searchprocessing">
           <div class="configtable">
             <div class="row">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <fieldset>
                   <legend>Intervals</legend>
                   <div class="form-group">
@@ -1206,6 +1246,130 @@
                   </div>
                   <div class="help-block">Changes to the scan intervals only take effect when the jobs are restarted</div>
                 </fieldset>
+                <legend>Status</legend>
+                  <div class="form-group">
+                    <label for="notfound_status">Missing Book Status:</label>
+                    <select id="notfound_status" name="notfound_status" class="form-control">
+                      %for nf_status in config['status_list']:
+                      <%
+                            selected = ''
+                            if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
+                                    selected = 'selected="selected"'
+                        %>
+                      <option value="${nf_status}" ${selected}>${nf_status}</option>
+                      %endfor
+                    </select>
+                    <span class="help-block">Status for missing/deleted ebooks</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="newbook_status">New Book Status:</label>
+                    <select id="newbook_status" name="newbook_status" class="form-control">
+                      %for nb_status in config['status_list']:
+                      <%
+                            selected = ''
+                            if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
+                                    selected = 'selected="selected"'
+                        %>
+                      <option value="${nb_status}" ${selected}>${nb_status}</option>
+                      %endfor
+                    </select>
+                    <span class="help-block">Status for new ebooks by existing authors</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="newaudio_status">New AudioBook Status:</label>
+                    <select id="newaudio_status" name="newaudio_status" class="form-control">
+                      %for nb_status in config['status_list']:
+                      <%
+                            selected = ''
+                            if nb_status == lazylibrarian.CONFIG['NEWAUDIO_STATUS']:
+                                selected = 'selected="selected"'
+                        %>
+                      <option value="${nb_status}" ${selected}>${nb_status}</option>
+                      %endfor
+                    </select>
+                    <span class="help-block">Status for new audiobooks by existing authors</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="newauthor_status">New Authors Book Status:</label>
+                    <select id="newauthor_status" name="newauthor_status" class="form-control">
+                      %for na_status in config['status_list']:
+                      <%
+                        selected = ''
+                        if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
+                            selected = 'selected="selected"'
+                      %>
+                      <option value="${na_status}" ${selected}>${na_status}</option>
+                      %endfor
+                    </select>
+                    <span class="help-block">Status for ebooks by new authors</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="newauthor_books" class="control-label">
+                      <input type="checkbox" id="newauthor_books" name="newauthor_books" value="1" ${checked} />
+                      Include other books by new authors</label>
+                    <span class="help-block">This will include details for other books by new authors found in wishlists or csv files,<br>
+                      or when manually importing a book by a new author</span>
+                  </div>
+                </fieldset>
+                <legend>Calibre</legend>
+                  <fieldset>
+                  <div class="form-group">
+                    <label for="imp_calibredb">Calibredb import program:</label>
+                    <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
+                    <span class="help-block">Path to "calibredb" to import books into the library</span>
+                  </div>
+                  <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['CALIBRE_USE_SERVER'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="calibre_use_server" class="control-label">
+                        <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value="1" ${checked} />
+                        Use Calibre Content Server</label>
+                  </div>
+                  <fieldset id="calibre_options">
+                  <div class="form-group">
+                    <label for="calibre_server">Calibre Server:</label>
+                    <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" class="form-control">
+                    <span class="help-block">eg http://my_calibre_server:9000</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="calibre_user">Calibre Username:</label>
+                    <input type="text" id="calibre_user" name="calibre_user" value="${lazylibrarian.CONFIG['CALIBRE_USER']}" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label for="calibre_pass">Calibre Password:</label>
+                    <input type="text" id="calibre_pass" name="calibre_pass" value="${lazylibrarian.CONFIG['CALIBRE_PASS']}" class="form-control">
+                  </div>
+                  </fieldset>
+                  <fieldset>
+                  <div class="form-group">
+                    <label for="imp_autoadd">Calibre Auto Add Directory:</label>
+                    <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
+                    <span class="help-block">Directory for a copy to be placed for auto add process</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="imp_autoadd_bookonly">
+                      <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value="1" ${checked} />
+                      Only add eBook, not opf or jpg</label>
+                  </div>
+                  </fieldset>
+              </div>
+              <div class="col-md-4">
                 <fieldset>
                   <legend>Folders</legend>
                   <div class="form-group">
@@ -1255,53 +1419,6 @@
                       Only import one format of an ebook if multiple formats downloaded</label>
                   </div>
                   <div class="form-group">
-                    <label for="imp_calibredb">Calibredb import program:</label>
-                    <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
-                    <span class="help-block">Path to "calibredb" to import books into the library</span>
-                  </div>
-                  <div class="checkbox">
-                      <%
-                        if lazylibrarian.CONFIG['CALIBRE_USE_SERVER'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                      %>
-                      <label for="calibre_use_server" class="control-label">
-                        <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value="1" ${checked} />
-                        Use Calibre Content Server</label>
-                  </div>
-                  <fieldset id="calibre_options">
-                  <div class="form-group">
-                    <label for="calibre_server">Calibre Server:</label>
-                    <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" class="form-control">
-                    <span class="help-block">eg http://my_calibre_server:9000</span>
-                  </div>
-                  <div class="form-group">
-                    <label for="calibre_user">Calibre Username:</label>
-                    <input type="text" id="calibre_user" name="calibre_user" value="${lazylibrarian.CONFIG['CALIBRE_USER']}" class="form-control">
-                  </div>
-                  <div class="form-group">
-                    <label for="calibre_pass">Calibre Password:</label>
-                    <input type="text" id="calibre_pass" name="calibre_pass" value="${lazylibrarian.CONFIG['CALIBRE_PASS']}" class="form-control">
-                  </div>
-                  </fieldset>
-                  <div class="form-group">
-                    <label for="imp_autoadd">Calibre Auto Add Directory:</label>
-                    <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
-                    <span class="help-block">Directory for a copy to be placed for auto add process</span>
-                  </div>
-                  <div class="checkbox">
-                    <%
-                        if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                    %>
-                    <label for="imp_autoadd_bookonly">
-                      <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value="1" ${checked} />
-                      Only add eBook, not opf or jpg</label>
-                  </div>
-                  <div class="form-group">
                     <label for="mag_dest_folder">Magazine Foldername Pattern:</label>
                     <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" class="form-control" placeholder="Magazines Destination Folder">
                   </div>
@@ -1337,7 +1454,7 @@
                   </div>
                 </fieldset>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <fieldset>
                   <legend>Miscellaneous</legend>
                   <div class="form-group">
@@ -1420,6 +1537,18 @@
                   </div>
                   <div class="checkbox">
                     <%
+                        if lazylibrarian.CONFIG['IMP_RENAME'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="imp_rename" class="control-label">
+                      <input type="checkbox" id="imp_rename" name="imp_rename" value="1" ${checked} />
+                      Rename existing books</label>
+                    <span class="help-block">This renames existing books to match eBook Filename Pattern</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
                         if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
                             checked = 'checked="checked"'
                         else:
@@ -1455,83 +1584,13 @@
                     <span class="help-block">This will auto search for books/mags as soon as you add them to the database.<br>
                       Leave unticked to search for them later.</span>
                   </div>
-                  <div class="form-group">
-                    <label for="notfound_status">Missing Book Status:</label>
-                    <select id="notfound_status" name="notfound_status" class="form-control">
-                      %for nf_status in config['status_list']:
-                      <%
-                            selected = ''
-                            if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
-                                    selected = 'selected="selected"'
-                        %>
-                      <option value="${nf_status}" ${selected}>${nf_status}</option>
-                      %endfor
-                    </select>
-                    <span class="help-block">Status for missing/deleted ebooks</span>
-                  </div>
-                  <div class="form-group">
-                    <label for="newbook_status">New Book Status:</label>
-                    <select id="newbook_status" name="newbook_status" class="form-control">
-                      %for nb_status in config['status_list']:
-                      <%
-                            selected = ''
-                            if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
-                                    selected = 'selected="selected"'
-                        %>
-                      <option value="${nb_status}" ${selected}>${nb_status}</option>
-                      %endfor
-                    </select>
-                    <span class="help-block">Status for new ebooks by existing authors</span>
-                  </div>
-                  <div class="form-group">
-                    <label for="newaudio_status">New AudioBook Status:</label>
-                    <select id="newaudio_status" name="newaudio_status" class="form-control">
-                      %for nb_status in config['status_list']:
-                      <%
-                            selected = ''
-                            if nb_status == lazylibrarian.CONFIG['NEWAUDIO_STATUS']:
-                                selected = 'selected="selected"'
-                        %>
-                      <option value="${nb_status}" ${selected}>${nb_status}</option>
-                      %endfor
-                    </select>
-                    <span class="help-block">Status for new audiobooks by existing authors</span>
-                  </div>
-                  <div class="form-group">
-                    <label for="newauthor_status">New Authors Book Status:</label>
-                    <select id="newauthor_status" name="newauthor_status" class="form-control">
-                      %for na_status in config['status_list']:
-                      <%
-                        selected = ''
-                        if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
-                            selected = 'selected="selected"'
-                      %>
-                      <option value="${na_status}" ${selected}>${na_status}</option>
-                      %endfor
-                    </select>
-                    <span class="help-block">Status for ebooks by new authors</span>
-                  </div>
-                  <div class="checkbox">
-                    <%
-                        if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                        %>
-                    <label for="newauthor_books" class="control-label">
-                      <input type="checkbox" id="newauthor_books" name="newauthor_books" value="1" ${checked} />
-                      Include other books by new authors</label>
-                    <span class="help-block">This will include details for other books by new authors found in wishlists or csv files,<br>
-                      or when manually importing a book by a new author</span>
-                  </div>
-                </fieldset>
-                <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
-                <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
-                <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
-                <br>
-                <br>
               </div>
             </div>
+            <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
+            <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
+            <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
+            <br>
+            <br>
           </div>
         </div>
         <div role="tabpanel" class="tab-pane" id="notifications">
@@ -2188,9 +2247,10 @@
         </div>
         <div role="tabpanel" class="tab-pane" id="capabilities">
           <div class="configtable">
+              <div>
+              You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
+              </div>
             <div class="row">
-              <div class="col-md-6">
-            You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
                 %for provider in lazylibrarian.NEWZNAB_PROV:
                 <%
                   if provider['HOST'] == "":
@@ -2198,6 +2258,7 @@
                   else:
                     hidden = ''
                 %>
+                <div class="col-md-6">
                 <legend ${hidden}>${provider['HOST']}</legend>
                 <div class="checkbox">
                   <%
@@ -2244,7 +2305,10 @@
                   <label for="newznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="newznab[${loop.index}][audiocat]" name="newznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
+                </div>
                 %endfor
+            </div>
+            <div class="row">
                 %for provider in lazylibrarian.TORZNAB_PROV:
                 <%
                     if provider['HOST'] == "":
@@ -2252,6 +2316,7 @@
                     else:
                         hidden = ''
                 %>
+                <div class="col-md-6">
                 <legend ${hidden}>${provider['HOST']}</legend>
                 <div class="checkbox">
                   <%
@@ -2298,83 +2363,100 @@
                   <label for="torznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="torznab[${loop.index}][audiocat]" name="torznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
-                %endfor
               </div>
+            %endfor
             </div>
           </div>
         </div>
         <div role="tabpanel" class="tab-pane" id="filters">
           <div class="configtable">
             <div class="row">
-              <div class="col-md-6">
+                <div class="col-md-6">
                 <legend>Book Reject List</legend>
-                <span class="help-block">Default: audiobook, mp3</span>
                 <div class="form-group">
                   <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.CONFIG['REJECT_WORDS']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
                     Search results with any of these words in the title will be ignored<br/>
                   </span>
                 </div>
-                <legend>Book Size Limits</legend>
-                <span class="help-block">Default: 0</span>
-                <div class="form-group">
-                  <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
-                  <span class="help-block">Book maximum size (Mb):<br/>
-                    Search results larger than this will be rejected, set to 0 to disable<br/>
-                  </span>
                 </div>
-                <div class="form-group">
-                  <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
-                  <span class="help-block">Book minimum size (Mb):<br/>
-                    Search results smaller than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                <div class="col-md-6">
                 <legend>AudioBook Reject List</legend>
-                <span class="help-block">Default: epub, mobi</span>
                 <div class="form-group">
                   <input type="text" id="reject_audio" name="reject_audio" value="${lazylibrarian.CONFIG['REJECT_AUDIO']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
                     Search results with any of these words in the title will be ignored<br/>
                   </span>
                 </div>
+                </div>
+                <div class="col-md-12">
+                <legend>Book Size Limits</legend>
+                </div>
+                <div class="col-md-6">
+                <div class="form-group">
+                  <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
+                  <span class="help-block">Book maximum size (Mb):<br/>
+                    Search results larger than this will be rejected, set to 0 to disable<br/>
+                  </span>
+                </div>
+                </div>
+                <div class="col-md-6">
+                <div class="form-group">
+                  <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
+                  <span class="help-block">Book minimum size (Mb):<br/>
+                    Search results smaller than this will be rejected, set to 0 to disable<br/>
+                  </span>
+                </div>
+                </div>
+                <div class="col-md-12">
                 <legend>AudioBook Size Limits</legend>
-                <span class="help-block">Default: 0</span>
+                </div>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
                   <span class="help-block">AudioBook maximum size (Mb):<br/>
                     Search results larger than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
+                </div>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
                   <span class="help-block">AudioBook minimum size (Mb):<br/>
                     Search results smaller than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
+                </div>
+                <div class="col-md-12">
                 <legend>Magazine Size Limits</legend>
-                <span class="help-block">Default: 0</span>
+                </div>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
                   <span class="help-block">Magazine maximum size (Mb):<br/>
                     Search results larger than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
+                </div>
+                <div class="col-md-6">
                 <div class="form-group">
                   <input type="text" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
                   <span class="help-block">Magazine minimum size (Mb):<br/>
                     Search results smaller than this will be rejected, set to 0 to disable<br/>
                   </span>
                 </div>
-              </div>
-              <div class="col-md-6">
+                </div>
+                <div class="col-md-12">
                 <legend>Magazine Reject Lists</legend>
-                <span class="help-block">Default: None</span>
+                </div>
                 %for mag in config['magazines_list']:
+                <div class="col-md-6">
                 <label>${mag['Title']}</label>
                 <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" class="form-control" placeholder="Reject word list">
                 <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
+                </div>
                 %endfor
-              </div>
+                <br>
             </div>
           </div>
         </div>
