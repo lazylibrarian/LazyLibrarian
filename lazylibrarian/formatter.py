@@ -251,17 +251,11 @@ def getList(st):
     # split a string into a list on whitespace or plus or comma
     # quotes treated as part of word in case unpaired
     # could maybe strip them out?
-
+    # This method uses string.translate which is 20x faster than the shlex we used before
     if st:
         if isinstance(st, unicode):
             st = st.encode('utf-8')
-        #lex = shlex.shlex(st)
-        #lex.whitespace += ',+'
-        #lex.quotes = ''
-        #lex.whitespace_split = True
-        #return list(lex)
-        trans = string.maketrans(',+', '  ')
-        return translate(st, trans).split()
+        return string.translate(st, string.maketrans(',+', '  ')).split()
     return []
 
 

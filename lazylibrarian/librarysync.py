@@ -749,11 +749,15 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
                                             # link to the first part of multi-part audiobooks
-                                            for fname in os.listdir(r):
-                                                if is_valid_booktype(fname, booktype='audiobook') and \
-                                                        ('01' in fname or ' 1.' in fname):
-                                                    book_filename = os.path.join(r, fname)
+                                            tokmatch = False
+                                            for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
+                                                if tokmatch:
                                                     break
+                                                for f in os.listdir(r):
+                                                    if is_valid_booktype(f, booktype='audiobook') and token in f:
+                                                        book_filename = os.path.join(r, f)
+                                                        tokmatch = True
+                                                        break
 
                                             if not check_status['AudioFile']:  # no previous location
                                                 myDB.action('UPDATE books set AudioFile=? where BookID=?',
