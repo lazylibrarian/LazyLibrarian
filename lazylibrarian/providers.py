@@ -294,10 +294,10 @@ def IterateOverDirectSites(book=None, searchType=None):
         if lazylibrarian.CONFIG[prov]:
             if ProviderIsBlocked(prov):
                 logger.debug('[IterateOverDirectSites] - %s %s is BLOCKED' % (lazylibrarian.CONFIG[prov + '_HOST'],
-                             lazylibrarian.CONFIG[prov + '_SEARCH']))
+                                                                              lazylibrarian.CONFIG[prov + '_SEARCH']))
             else:
                 logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
-                             lazylibrarian.CONFIG[prov + '_SEARCH']))
+                                                                   lazylibrarian.CONFIG[prov + '_SEARCH']))
                 results, error = GEN(book, prov)
                 if error:
                     BlockProvider(prov, error)
@@ -377,7 +377,7 @@ def LISTOPIA(host=None, feednr=None, priority=0):
             for entry in data[1:]:
                 try:
                     # index = entry.split('<')[0]
-                    title = entry.split('<a title="') [1].split('"')[0]
+                    title = entry.split('<a title="')[1].split('"')[0]
                     book_id = entry.split('data-resource-id="')[1].split('"')[0]
                     author_name = entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0]
                     results.append({

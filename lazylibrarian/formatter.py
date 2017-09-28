@@ -357,15 +357,19 @@ def formatAuthorName(author):
 
 
 def sortDefinite(title):
+    if not title:
+        return ''
     if title.startswith('The '):
         return title[4:] + ', The'
     if title.startswith('A '):
-        return title[2][2:] + ', A'
+        return title[2:] + ', A'
     return title
 
 
 def surnameFirst(authorname):
     """ swap authorname round into surname, forenames for calibre sorting"""
+    if not authorname:
+        return ''
     words = getList(authorname)
     if len(words) < 2:
         return authorname

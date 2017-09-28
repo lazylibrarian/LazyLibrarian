@@ -37,7 +37,7 @@ def forceRename(bookid):
             if not calibreid.isdigit():
                 calibreid = ''
         except IndexError:
-                calibreid = ''
+            calibreid = ''
 
         if calibreid:
             msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
@@ -53,12 +53,12 @@ def forceRename(bookid):
                     extn = ''
                     if is_valid_booktype(fname, booktype='ebook'):
                         extn = os.path.splitext(fname)[1]
-                    elif fname.endswith('.opf') and not fname =='metadata.opf':
+                    elif fname.endswith('.opf') and not fname == 'metadata.opf':
                         extn = '.opf'
-                    elif fname.endswith('.jpg') and not fname =='cover.jpg':
+                    elif fname.endswith('.jpg') and not fname == 'cover.jpg':
                         extn = '.jpg'
                     if extn:
-                        ofname = os.path.join(r,fname)
+                        ofname = os.path.join(r, fname)
                         nfname = os.path.join(r, new_basename + extn)
                         logger.debug("AutoRename %s to %s" % (ofname, nfname))
                         shutil.move(ofname, nfname)
