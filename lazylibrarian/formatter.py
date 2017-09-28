@@ -16,7 +16,7 @@
 import datetime
 import os
 import re
-import shlex
+#import shlex
 import string
 import time
 import unicodedata
@@ -219,7 +219,7 @@ def is_valid_isbn(isbn):
     Return True if parameter looks like a valid isbn
     either 13 digits, 10 digits, or 9 digits followed by 'x'
     """
-    isbn = re.sub('[- ]', '', isbn)
+    isbn = isbn.replace('-', '').replace(' ', '')
     if len(isbn) == 13:
         if isbn.isdigit():
             return True
@@ -255,11 +255,13 @@ def getList(st):
     if st:
         if isinstance(st, unicode):
             st = st.encode('utf-8')
-        lex = shlex.shlex(st)
-        lex.whitespace += ',+'
-        lex.quotes = ''
-        lex.whitespace_split = True
-        return list(lex)
+        #lex = shlex.shlex(st)
+        #lex.whitespace += ',+'
+        #lex.quotes = ''
+        #lex.whitespace_split = True
+        #return list(lex)
+        trans = string.maketrans(',+', '  ')
+        return translate(st, trans).split()
     return []
 
 
@@ -359,15 +361,15 @@ def formatAuthorName(author):
 def sortDefinite(title):
     if not title:
         return ''
-    if title.startswith('The '):
+    if title[:4] == 'The ':
         return title[4:] + ', The'
-    if title.startswith('A '):
+    if title[2:] == 'A ':
         return title[2:] + ', A'
     return title
 
 
 def surnameFirst(authorname):
-    """ swap authorname round into surname, forenames for calibre sorting"""
+    """ swap authorname round into surname, forenames for display and sorting"""
     if not authorname:
         return ''
     words = getList(authorname)
