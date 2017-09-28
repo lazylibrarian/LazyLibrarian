@@ -269,14 +269,25 @@
                     </div>
                     <div class="checkbox">
                       <%
-                        if lazylibrarian.CONFIG['DEFINITE_SORT'] == True:
+                        if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
                             checked = 'checked="checked"'
                         else:
                             checked = ''
                       %>
-                      <label for="definite_sort" class="control-label">
-                        <input type="checkbox" id="definite_sort" name="definite_sort" value="1" ${checked} />
-                        Titles ignore definite article (The, A)</label>
+                      <label for="sort_definite" class="control-label">
+                        <input type="checkbox" id="sort_definite" name="sort_definite" value="1" ${checked} />
+                        Show titles ignoring definite article (The, A)</label>
+                    </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['SORT_SURNAME'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="sort_surname" class="control-label">
+                        <input type="checkbox" id="sort_surname" name="sort_surname" value="1" ${checked} />
+                        Show author surname first</label>
                     </div>
                     <div class="form-group">
                       <label for="http_look">Interface:</label>

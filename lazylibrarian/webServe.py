@@ -36,7 +36,7 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
-    cleanName, unaccented_str
+    cleanName, unaccented_str, surnameFirst, sortDefinite
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -190,6 +190,10 @@ class WebInterface(object):
         if len(rowlist):
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 arow = list(row)
+                if lazylibrarian.CONFIG['SORT_SURNAME']:
+                    arow[1] = surnameFirst(arow[1])
+                if lazylibrarian.CONFIG['SORT_DEFINITE']:
+                    arow[2] = sortDefinite(arow[2])
                 nrow = arow[:4]
                 havebooks = check_int(arow[7], 0)
                 totalbooks = check_int(arow[8], 0)
@@ -607,7 +611,11 @@ class WebInterface(object):
         if len(rowlist):
             # the masterlist to be filled with the row data
             for row in rowlist:  # iterate through the sqlite3.Row objects
-                rows.append(list(row))  # add the rowlist to the masterlist
+                entry = list(row)
+                if lazylibrarian.CONFIG['SORT_SURNAME']:
+                    entry[1] = surnameFirst(entry[1])
+                rows.append(entry)  # add the rowlist to the masterlist
+
             if sSearch:
                 filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
             else:
@@ -1281,17 +1289,13 @@ class WebInterface(object):
         rows = []
         filtered = []
         if len(rowlist):
-            if lazylibrarian.CONFIG['DEFINITE_SORT']:
-                for row in rowlist:  # iterate through the sqlite3.Row objects
-                    entry = list(row)
-                    if entry[2].startswith('The '):
-                        entry[2] = entry[2][4:] + ', The'
-                    elif entry[2].startswith('A '):
-                        entry[2] = entry[2][2:] + ', A'
-                    rows.append(entry)  # add each rowlist to the masterlist
-            else:
-                for row in rowlist:
-                    rows.append(list(row))
+            for row in rowlist:  # iterate through the sqlite3.Row objects
+                entry = list(row)
+                if lazylibrarian.CONFIG['SORT_SURNAME']:
+                    entry[1] = surnameFirst(entry[1])
+                if lazylibrarian.CONFIG['SORT_DEFINITE']:
+                    entry[2] = sortDefinite(entry[2])
+                rows.append(entry)  # add each rowlist to the masterlist
 
             if sSearch:
                 if library is not None:

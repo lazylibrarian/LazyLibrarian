@@ -356,6 +356,14 @@ def formatAuthorName(author):
     return ' '.join(author.split())  # ensure no extra whitespace
 
 
+def sortDefinite(title):
+    if title.startswith('The '):
+        return title[4:] + ', The'
+    if title.startswith('A '):
+        return title[2][2:] + ', A'
+    return title
+
+
 def surnameFirst(authorname):
     """ swap authorname round into surname, forenames for calibre sorting"""
     words = getList(authorname)

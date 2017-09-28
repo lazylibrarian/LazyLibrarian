@@ -180,13 +180,22 @@
   <label>  Show Magazines</label>
   <br>
   <%
-    if lazylibrarian.CONFIG['DEFINITE_SORT'] == True:
+    if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
         checked = 'checked="checked"'
     else:
         checked = ''
   %>
-  <input type="checkbox" id="definite_sort" name="definite_sort" value=1 ${checked} />
-  <label>  Titles ignore definite article (The, A)</label>
+  <input type="checkbox" id="sort_definite" name="sort_definite" value=1 ${checked} />
+  <label>  Show titles ignoring definite article (The, A)</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['SORT_SURNAME'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="sort_surname" name="sort_surname" value=1 ${checked} />
+  <label>  Show author surname first</label>
   <br>
   <h5>Interface: <select name="http_look" style="float:right;"></h5>
     %for http_look in config['http_look_list']:
