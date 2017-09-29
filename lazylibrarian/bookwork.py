@@ -22,14 +22,14 @@ import lib.id3reader as id3reader
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
-from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, is_valid_booktype
+from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, is_valid_booktype, check_int
 from lib.fuzzywuzzy import fuzz
 
 
 def audioRename(bookid):
-    for item in  ['$Part', '$Title']
-    if item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
-        return "Unable to rename, check AUDIOBOOK_DEST_FILE"
+    for item in  ['$Part', '$Title']:
+        if item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
+            return "Unable to rename, check AUDIOBOOK_DEST_FILE"
 
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,AudioFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -125,12 +125,11 @@ def audioRename(bookid):
 
     for part in parts:
         o = os.path.join(r, part[3])
-         $Title $Part $Total
         pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
         pattern = pattern.replace('$Author', author).replace('$Title', book).replace(
                                 '$Part', part[0].zfill(len(str(len(parts))))).replace(
                                 '$Total', str(len(parts)))
-        n = os.path.join(r, pattern + os.path.splitext(part[3])[1]))
+        n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
         if int(part[0]) == 1:
             book_filename = n
         if o != n:
