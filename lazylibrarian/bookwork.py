@@ -130,8 +130,8 @@ def audioRename(bookid):
                                 '$Part', part[0].zfill(len(str(len(parts))))).replace(
                                 '$Total', str(len(parts)))
         n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
-        if int(part[0]) == 1:
-            book_filename = n
+        #if int(part[0]) == 1:
+        #    book_filename = n
         if o != n:
            logger.debug('%s: Rename [%s] to [%s]' % (exists['BookName'], o, n))
     return book_filename
