@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
-    getBookAuthors, setAllBookAuthors
+    getBookAuthors, setAllBookAuthors, renameAudio
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -126,6 +126,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'grFollow': '&id Follow an author on goodreads',
             'grFollowAll': 'Follow all lazylibrarian authors on goodreads',
             'grUnfollow': '&id Unfollow an author on goodreads',
+            'renameAudio': '&id Rename an audiobook using configured pattern',
             }
 
 
@@ -227,6 +228,14 @@ class Api(object):
 
     def _showMonths(self):
         self.data = lazylibrarian.MONTHNAMES
+
+    def _renameAudio(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = renameAudio(kwargs['id'])
 
     @staticmethod
     def _dumpMonths():

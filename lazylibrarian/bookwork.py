@@ -17,6 +17,7 @@ import os
 import shutil
 import time
 import urllib
+import lib.id3reader as id3reader
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -25,7 +26,119 @@ from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented,
 from lib.fuzzywuzzy import fuzz
 
 
-def forceRename(bookid):
+def audioRename(bookid):
+    for item in  ['$Part', '$Title']
+    if item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
+        return "Unable to rename, check AUDIOBOOK_DEST_FILE"
+
+    myDB = database.DBConnection()
+    cmd = 'select AuthorName,BookName,AudioFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
+    exists = myDB.match(cmd, (bookid,))
+    if exists:
+        book_filename = exists['AudioFile']
+        r = os.path.dirname(book_filename)
+
+    cnt = 0
+    parts = []
+    author = book = track = ''
+    for f in os.listdir(r):
+        if is_valid_booktype(f, booktype='audiobook'):
+            cnt += 1
+            try:
+                id3r = id3reader.Reader(os.path.join(r, f))
+                author = id3r.getValue('performer')
+                book = id3r.getValue('album')
+                track = id3r.getValue('track')
+                parts.append([track, book, author, f])
+            except Exception as e:
+                logger.debug("id3reader error %s" % str(e))
+                pass
+
+    logger.debug("%s found %s files" % (exists['BookName'], cnt))
+
+    if cnt != len(parts):
+        logger.debug("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
+        return book_filename
+
+    if '/' in track:
+        a, b = track.split('/')
+        if check_int(b, 0) and check_int(b, 0) != cnt:
+            logger.debug("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))
+            return book_filename
+
+    for part in parts:
+        if part[1] != book:
+            logger.debug("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
+            return book_filename
+        if part[2] != author:
+            logger.debug("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
+            return book_filename
+
+    for part in parts:
+        if '/' in part[0]:
+            part[0] = part[0].split('/')[0]
+    if check_int(parts[0][0], 0) == 0:
+        tokmatch = ''
+        # try to extract part information from filename. Search for token style of part 1 in this order...
+        for token in ['001.', '01.', '1.', ' 01 ', '01']:
+            if tokmatch:
+                break
+            for part in parts:
+                if token in part[3]:
+                   tokmatch = token
+                   break
+        if tokmatch:  # we know the numbering style, look for the other parts
+            cnt = 0
+            while cnt < len(parts):
+                cnt += 1
+                if tokmatch == '001.':
+                    pattern = '%s.' % str(cnt).zfill(3)
+                elif tokmatch == '01.':
+                    pattern = '%s.' % str(cnt).zfill(2)
+                elif tokmatch == '1.':
+                    pattern = '%s.' % str(cnt)
+                elif tokmatch == ' 01 ':
+                    pattern = ' %s ' % str(cnt).zfill(2)
+                else:
+                    pattern = '%s' % str(cnt).zfill(2)
+
+                for part in parts:
+                    if pattern in part[3]:
+                        part[0] = str(cnt)
+                        break
+
+    cnt = 0
+    found = True
+    while found and cnt < len(parts):
+        found = False
+        cnt += 1
+        for part in parts:
+            trk = check_int(part[0], 0)
+            if trk == cnt:
+                found = True
+                break
+        if not found:
+            logger.debug("%s: No part %i found" % (exists['BookName'], cnt))
+            return book_filename
+
+    # if we get here, looks like we have all the parts needed to rename properly
+
+    for part in parts:
+        o = os.path.join(r, part[3])
+         $Title $Part $Total
+        pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
+        pattern = pattern.replace('$Author', author).replace('$Title', book).replace(
+                                '$Part', part[0].zfill(len(str(len(parts))))).replace(
+                                '$Total', str(len(parts)))
+        n = os.path.join(r, pattern + os.path.splitext(part[3])[1]))
+        if int(part[0]) == 1:
+            book_filename = n
+        if o != n:
+           logger.debug('%s: Rename [%s] to [%s]' % (exists['BookName'], o, n))
+    return book_filename
+
+
+def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
     exists = myDB.match(cmd, (bookid,))

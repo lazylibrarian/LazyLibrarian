@@ -1396,6 +1396,12 @@
                     <span class="help-block">Options include $Author, $Title, any string.<br/>
                       Current limitation: each title has to be in unique subfolder</span>
                   </div>
+                  <div class="form-group">
+                    <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
+                    <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
+                    <span class="help-block">Options include $Author, $Title, $Part, $Total, any string.<br/>
+                      Current limitation: Has to include $Title and $Part</span>
+                  </div>
                   <div class="checkbox">
                     <%
                         if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:

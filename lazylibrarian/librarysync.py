@@ -24,7 +24,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 import lib.id3reader as id3reader
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages, forceRename
+from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
@@ -498,7 +498,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 try:
                                     id3r = id3reader.Reader(filename)
                                     author = id3r.getValue('performer')
-                                    book = id3r.getValue('title')
+                                    book = id3r.getValue('album')
                                     if author and book:
                                         match = True
                                 except Exception as e:
@@ -711,7 +711,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             book_filename = os.path.join(r, files)
 
                                             if lazylibrarian.CONFIG['IMP_RENAME']:
-                                                book_filename = forceRename(bookid)
+                                                book_filename = bookRename(bookid)
 
                                             book_basename = os.path.splitext(book_filename)[0]
 
@@ -749,15 +749,19 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
                                             # link to the first part of multi-part audiobooks
-                                            tokmatch = False
+                                            tokmatch = ''
                                             for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
                                                 if tokmatch:
                                                     break
                                                 for f in os.listdir(r):
                                                     if is_valid_booktype(f, booktype='audiobook') and token in f:
                                                         book_filename = os.path.join(r, f)
-                                                        tokmatch = True
+                                                        tokmatch = token
                                                         break
+
+                                            if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and \
+                                                lazylibrarian.CONFIG['IMP_RENAME']:
+                                                    book_filename = audioRename(bookid)
 
                                             if not check_status['AudioFile']:  # no previous location
                                                 myDB.action('UPDATE books set AudioFile=? where BookID=?',
