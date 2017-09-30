@@ -387,6 +387,10 @@
                         </div>
                       </div>
                       <div class="form-group">
+                        <input type="button" value="Request oAuth1" id="grauthStep1" class="btn btn-default" />
+                        <input type="button" value="Request oAuth2" id="grauthStep2" class="btn btn-default" />
+                      </div>
+                      <div class="form-group">
                         <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
                       </div>
                     </fieldset>
@@ -3292,10 +3296,15 @@
         });
 
         $('#grauthStep1').click(function () {
-            $('#grauth-result').html('');
-            $.get("grauthStep1", {}, function (data) { window.open(data); })
-                .done(function () { $('#grauth-result').html('<b>Step1:</b> Confirm Authorization'); });
-            alert($('#grauth-result').html(''))
+            $.get("grauthStep1", {},
+                function (data) {
+                if ( data.substr(0, 4) == 'http') { window.alert("A new page will open to authorise lazylibrarian. Follow the prompts, then go back to LazyLibrarian and request oAuth2"); window.open(data); }
+                else { window.alert(data) } })
+        });
+
+        $('#grauthStep2').click(function () {
+            $.get("grauthStep2", {},
+                function (data) { window.alert(data); window.location.reload(false); })
         });
 
 

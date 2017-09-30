@@ -22,14 +22,16 @@ import lib.id3reader as id3reader
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
-from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, is_valid_booktype, check_int
+from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
+    is_valid_booktype, check_int
 from lib.fuzzywuzzy import fuzz
 
 
 def audioRename(bookid):
-    for item in  ['$Part', '$Title']:
+    for item in ['$Part', '$Title']:
         if item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
-            return "Unable to rename, check AUDIOBOOK_DEST_FILE"
+            logger.error("Unable to audioRename, check AUDIOBOOK_DEST_FILE")
+            return ''
 
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,AudioFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -37,6 +39,9 @@ def audioRename(bookid):
     if exists:
         book_filename = exists['AudioFile']
         r = os.path.dirname(book_filename)
+    else:
+        logger.debug("Invalid bookid in audioRename %s" % bookid)
+        return ''
 
     cnt = 0
     parts = []
@@ -54,18 +59,20 @@ def audioRename(bookid):
                 logger.debug("id3reader error %s" % str(e))
                 pass
 
-    logger.debug("%s found %s files" % (exists['BookName'], cnt))
+    logger.debug("%s found %s audiofiles" % (exists['BookName'], cnt))
 
     if cnt != len(parts):
         logger.debug("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
         return book_filename
 
+    # does the track include total (eg 1/12)
     if '/' in track:
         a, b = track.split('/')
         if check_int(b, 0) and check_int(b, 0) != cnt:
             logger.debug("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))
             return book_filename
 
+    # check all parts have the same author and title
     for part in parts:
         if part[1] != book:
             logger.debug("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
@@ -74,9 +81,12 @@ def audioRename(bookid):
             logger.debug("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
             return book_filename
 
+    # strip out just part number
     for part in parts:
         if '/' in part[0]:
             part[0] = part[0].split('/')[0]
+
+    # do we have any track info (value is 0 if not)
     if check_int(parts[0][0], 0) == 0:
         tokmatch = ''
         # try to extract part information from filename. Search for token style of part 1 in this order...
@@ -85,9 +95,9 @@ def audioRename(bookid):
                 break
             for part in parts:
                 if token in part[3]:
-                   tokmatch = token
-                   break
-        if tokmatch:  # we know the numbering style, look for the other parts
+                    tokmatch = token
+                    break
+        if tokmatch:  # we know the numbering style, get numbers for the other parts
             cnt = 0
             while cnt < len(parts):
                 cnt += 1
@@ -101,12 +111,12 @@ def audioRename(bookid):
                     pattern = ' %s ' % str(cnt).zfill(2)
                 else:
                     pattern = '%s' % str(cnt).zfill(2)
-
+                # standardise numbering of the parts
                 for part in parts:
                     if pattern in part[3]:
                         part[0] = str(cnt)
                         break
-
+    # check all parts are present
     cnt = 0
     found = True
     while found and cnt < len(parts):
@@ -124,16 +134,20 @@ def audioRename(bookid):
     # if we get here, looks like we have all the parts needed to rename properly
 
     for part in parts:
-        o = os.path.join(r, part[3])
         pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
         pattern = pattern.replace('$Author', author).replace('$Title', book).replace(
                                 '$Part', part[0].zfill(len(str(len(parts))))).replace(
                                 '$Total', str(len(parts)))
         n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
-        #if int(part[0]) == 1:
-        #    book_filename = n
+        o = os.path.join(r, part[3])
         if o != n:
-           logger.debug('%s: Rename [%s] to [%s]' % (exists['BookName'], o, n))
+            try:
+                # shutil.move(o, n)
+                # if check_int(part[0], 0) == 1:
+                #    book_filename = n
+                logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
+            except Exception as e:
+                logger.error('Unable to rename [%s] to [%s] %s' % (o, n, str(e)))
     return book_filename
 
 
@@ -141,7 +155,10 @@ def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
     exists = myDB.match(cmd, (bookid,))
-    if exists:
+    if not exists:
+        logger.debug("Invalid bookid in bookRename %s" % bookid)
+        return ''
+    else:
         f = exists['BookFile']
         r = os.path.dirname(f)
         try:
@@ -159,7 +176,6 @@ def bookRename(bookid):
             new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
             new_basename = new_basename.replace('$Author', exists['AuthorName']).replace('$Title', exists['BookName'])
             if book_basename != new_basename:
-                f = os.path.join(r, new_basename + extn)
                 # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
                 for fname in os.listdir(r):
                     extn = ''
@@ -172,8 +188,12 @@ def bookRename(bookid):
                     if extn:
                         ofname = os.path.join(r, fname)
                         nfname = os.path.join(r, new_basename + extn)
-                        logger.debug("AutoRename %s to %s" % (ofname, nfname))
-                        shutil.move(ofname, nfname)
+                        try:
+                            shutil.move(ofname, nfname)
+                            logger.debug("bookRename %s to %s" % (ofname, nfname))
+                            f = nfname
+                        except Exception as e:
+                            logger.error('Unable to rename [%s] to [%s] %s' % (ofname, nfname, str(e)))
         return f
 
 

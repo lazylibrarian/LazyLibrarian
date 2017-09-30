@@ -753,15 +753,15 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
                                                 if tokmatch:
                                                     break
-                                                for f in os.listdir(r):
-                                                    if is_valid_booktype(f, booktype='audiobook') and token in f:
-                                                        book_filename = os.path.join(r, f)
+                                                for e in os.listdir(r):
+                                                    if is_valid_booktype(e, booktype='audiobook') and token in e:
+                                                        book_filename = os.path.join(r, e)
                                                         tokmatch = token
                                                         break
 
                                             if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and \
-                                                lazylibrarian.CONFIG['IMP_RENAME']:
-                                                    book_filename = audioRename(bookid)
+                                                    lazylibrarian.CONFIG['IMP_RENAME']:
+                                                book_filename = audioRename(bookid)
 
                                             if not check_status['AudioFile']:  # no previous location
                                                 myDB.action('UPDATE books set AudioFile=? where BookID=?',
