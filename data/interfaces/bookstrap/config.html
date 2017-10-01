@@ -387,6 +387,10 @@
                         </div>
                       </div>
                       <div class="form-group">
+                        <input type="button" value="Request oAuth1" id="grauthStep1" class="btn btn-default" />
+                        <input type="button" value="Request oAuth2" id="grauthStep2" class="btn btn-default" />
+                      </div>
+                      <div class="form-group">
                         <input type="button" value="Test Authorization" id="testgrauth" class="btn btn-default" />
                       </div>
                     </fieldset>
@@ -1396,6 +1400,12 @@
                     <span class="help-block">Options include $Author, $Title, any string.<br/>
                       Current limitation: each title has to be in unique subfolder</span>
                   </div>
+                  <div class="form-group">
+                    <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
+                    <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
+                    <span class="help-block">Options include $Author, $Title, $Part, $Total, any string.<br/>
+                      Current limitation: Has to include $Title and $Part</span>
+                  </div>
                   <div class="checkbox">
                     <%
                         if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:
@@ -1545,7 +1555,7 @@
                     <label for="imp_rename" class="control-label">
                       <input type="checkbox" id="imp_rename" name="imp_rename" value="1" ${checked} />
                       Rename existing books</label>
-                    <span class="help-block">This renames existing books to match eBook Filename Pattern</span>
+                    <span class="help-block">This renames existing files to match eBook/AudioBook Filename Patterns</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -3286,10 +3296,15 @@
         });
 
         $('#grauthStep1').click(function () {
-            $('#grauth-result').html('');
-            $.get("grauthStep1", {}, function (data) { window.open(data); })
-                .done(function () { $('#grauth-result').html('<b>Step1:</b> Confirm Authorization'); });
-            alert($('#grauth-result').html(''))
+            $.get("grauthStep1", {},
+                function (data) {
+                if ( data.substr(0, 4) == 'http') { window.alert("A new page will open to authorise lazylibrarian. Follow the prompts, then go back to LazyLibrarian and request oAuth2"); window.open(data); }
+                else { window.alert(data) } })
+        });
+
+        $('#grauthStep2').click(function () {
+            $.get("grauthStep2", {},
+                function (data) { window.alert(data); window.location.reload(false); })
         });
 
 

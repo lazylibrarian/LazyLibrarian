@@ -17,19 +17,148 @@ import os
 import shutil
 import time
 import urllib
+import lib.id3reader as id3reader
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
-from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, is_valid_booktype
+from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
+    is_valid_booktype, check_int
 from lib.fuzzywuzzy import fuzz
 
 
-def forceRename(bookid):
+def audioRename(bookid):
+    for item in ['$Part', '$Title']:
+        if item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
+            logger.error("Unable to audioRename, check AUDIOBOOK_DEST_FILE")
+            return ''
+
+    myDB = database.DBConnection()
+    cmd = 'select AuthorName,BookName,AudioFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
+    exists = myDB.match(cmd, (bookid,))
+    if exists:
+        book_filename = exists['AudioFile']
+        r = os.path.dirname(book_filename)
+    else:
+        logger.debug("Invalid bookid in audioRename %s" % bookid)
+        return ''
+
+    cnt = 0
+    parts = []
+    author = book = track = ''
+    for f in os.listdir(r):
+        if is_valid_booktype(f, booktype='audiobook'):
+            cnt += 1
+            try:
+                id3r = id3reader.Reader(os.path.join(r, f))
+                author = id3r.getValue('performer')
+                book = id3r.getValue('album')
+                track = id3r.getValue('track')
+                parts.append([track, book, author, f])
+            except Exception as e:
+                logger.debug("id3reader error %s" % str(e))
+                pass
+
+    logger.debug("%s found %s audiofiles" % (exists['BookName'], cnt))
+
+    if cnt != len(parts):
+        logger.debug("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
+        return book_filename
+
+    # does the track include total (eg 1/12)
+    if '/' in track:
+        a, b = track.split('/')
+        if check_int(b, 0) and check_int(b, 0) != cnt:
+            logger.debug("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))
+            return book_filename
+
+    # check all parts have the same author and title
+    for part in parts:
+        if part[1] != book:
+            logger.debug("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
+            return book_filename
+        if part[2] != author:
+            logger.debug("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
+            return book_filename
+
+    # strip out just part number
+    for part in parts:
+        if '/' in part[0]:
+            part[0] = part[0].split('/')[0]
+
+    # do we have any track info (value is 0 if not)
+    if check_int(parts[0][0], 0) == 0:
+        tokmatch = ''
+        # try to extract part information from filename. Search for token style of part 1 in this order...
+        for token in ['001.', '01.', '1.', ' 01 ', '01']:
+            if tokmatch:
+                break
+            for part in parts:
+                if token in part[3]:
+                    tokmatch = token
+                    break
+        if tokmatch:  # we know the numbering style, get numbers for the other parts
+            cnt = 0
+            while cnt < len(parts):
+                cnt += 1
+                if tokmatch == '001.':
+                    pattern = '%s.' % str(cnt).zfill(3)
+                elif tokmatch == '01.':
+                    pattern = '%s.' % str(cnt).zfill(2)
+                elif tokmatch == '1.':
+                    pattern = '%s.' % str(cnt)
+                elif tokmatch == ' 01 ':
+                    pattern = ' %s ' % str(cnt).zfill(2)
+                else:
+                    pattern = '%s' % str(cnt).zfill(2)
+                # standardise numbering of the parts
+                for part in parts:
+                    if pattern in part[3]:
+                        part[0] = str(cnt)
+                        break
+    # check all parts are present
+    cnt = 0
+    found = True
+    while found and cnt < len(parts):
+        found = False
+        cnt += 1
+        for part in parts:
+            trk = check_int(part[0], 0)
+            if trk == cnt:
+                found = True
+                break
+        if not found:
+            logger.debug("%s: No part %i found" % (exists['BookName'], cnt))
+            return book_filename
+
+    # if we get here, looks like we have all the parts needed to rename properly
+
+    for part in parts:
+        pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
+        pattern = pattern.replace('$Author', author).replace('$Title', book).replace(
+                                '$Part', part[0].zfill(len(str(len(parts))))).replace(
+                                '$Total', str(len(parts)))
+        n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
+        o = os.path.join(r, part[3])
+        if o != n:
+            try:
+                # shutil.move(o, n)
+                # if check_int(part[0], 0) == 1:
+                #    book_filename = n
+                logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
+            except Exception as e:
+                logger.error('Unable to rename [%s] to [%s] %s' % (o, n, str(e)))
+    return book_filename
+
+
+def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
     exists = myDB.match(cmd, (bookid,))
-    if exists:
+    if not exists:
+        logger.debug("Invalid bookid in bookRename %s" % bookid)
+        return ''
+    else:
         f = exists['BookFile']
         r = os.path.dirname(f)
         try:
@@ -47,7 +176,6 @@ def forceRename(bookid):
             new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
             new_basename = new_basename.replace('$Author', exists['AuthorName']).replace('$Title', exists['BookName'])
             if book_basename != new_basename:
-                f = os.path.join(r, new_basename + extn)
                 # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
                 for fname in os.listdir(r):
                     extn = ''
@@ -60,8 +188,12 @@ def forceRename(bookid):
                     if extn:
                         ofname = os.path.join(r, fname)
                         nfname = os.path.join(r, new_basename + extn)
-                        logger.debug("AutoRename %s to %s" % (ofname, nfname))
-                        shutil.move(ofname, nfname)
+                        try:
+                            shutil.move(ofname, nfname)
+                            logger.debug("bookRename %s to %s" % (ofname, nfname))
+                            f = nfname
+                        except Exception as e:
+                            logger.error('Unable to rename [%s] to [%s] %s' % (ofname, nfname, str(e)))
         return f
 
 

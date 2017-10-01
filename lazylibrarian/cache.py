@@ -47,23 +47,26 @@ def fetchURL(URL, headers=None, retry=True):
         if str(resp.getcode()).startswith("2"):  # (200 OK etc)
             try:
                 result = resp.read()
+                return result, True
             except socket.error as e:
-                return str(e), False
-            return result, True
+                return "Socket error %s" % str(e), False
+            except Exception as e:
+                return "resp.read error %s" % str(e), False
+
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug(resp.info())
-        return str(resp.getcode()), False
+        return "Resp getcode %s" % str(resp.getcode()), False
     except socket.timeout as e:
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
-            return str(e), False
+            return "Timeout %s" % str(e), False
         logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False)
         return result, success
     except Exception as e:
         if hasattr(e, 'reason'):
-            return e.reason, False
-        return str(e), False
+            return "Exception reason %s" % str(e.reason), False
+        return "Exception %s" % str(e), False
 
 
 def cache_img(img_type, img_ID, img_url, refresh=False):

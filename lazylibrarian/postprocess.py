@@ -29,6 +29,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
     unaccented, getList, surnameFirst
+from lazylibrarian.bookwork import audioRename
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -860,6 +861,10 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     if book_type == 'AudioBook':
         newValueDict = {"AudioFile": dest_file, "AudioStatus": "Open", "AudioLibrary": now()}
         myDB.upsert("books", newValueDict, controlValueDict)
+        if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and lazylibrarian.CONFIG['IMP_RENAME']:
+            book_filename = audioRename(bookid)
+            if dest_file != book_filename:
+                myDB.action('UPDATE books set AudioFile=? where BookID=?', (book_filename, bookid))
     else:
         newValueDict = {"Status": "Open", "BookFile": dest_file, "BookLibrary": now()}
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -1138,8 +1143,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         setperm(destfile)
                         if is_valid_booktype(destfile, booktype=booktype):
                             newbookfile = destfile
-                            if booktype == 'audiobook' and '01' in destfile:
-                                firstfile = destfile
                     except Exception as why:
                         return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
                 else:
@@ -1156,6 +1159,17 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     firstfile = preferred_type
                     break
 
+        # link to the first part of multi-part audiobooks
+        elif booktype == 'audiobook':
+            tokmatch = ''
+            for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
+                if tokmatch:
+                    break
+                for f in os.listdir(pp_path):
+                    if is_valid_booktype(f, booktype='audiobook') and token in f:
+                        firstfile = os.path.join(pp_path, f)
+                        tokmatch = token
+                        break
         if firstfile:
             newbookfile = firstfile
     return True, newbookfile
