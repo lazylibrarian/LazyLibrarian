@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
-    getBookAuthors, setAllBookAuthors, renameAudio
+    getBookAuthors, setAllBookAuthors, audioRename
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -235,7 +235,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = renameAudio(kwargs['id'])
+        self.data = audioRename(kwargs['id'])
 
     @staticmethod
     def _dumpMonths():

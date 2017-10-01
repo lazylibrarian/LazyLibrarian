@@ -15,28 +15,31 @@
 
 # based on code found in https://gist.github.com/gpiancastelli/537923 by Giulio Piancastelli
 
-import traceback
 import threading
-import lib.oauth2 as oauth
+import time
+import traceback
 import urllib
 import urlparse
-from string import Template
-import time
 import xml.dom.minidom
+from string import Template
 
 import lazylibrarian
+import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
+
+client = request_token = consumer = token = user_id = ''
 
 
 class grauth:
     def __init__(self):
         return
 
-    def goodreads_oauth1(self):
+    @staticmethod
+    def goodreads_oauth1():
         global client, request_token, consumer
         if lazylibrarian.CONFIG['GR_API'] == 'ckvsiSDsuqh7omh74ZZ6Q':
-            msg ="Please get your own personal GoodReads api key from https://www.goodreads.com/api/keys and try again"
+            msg = "Please get your own personal GoodReads api key from https://www.goodreads.com/api/keys and try again"
             return msg
         if not lazylibrarian.CONFIG['GR_SECRET']:
             return "Invalid or missing GR_SECRET"
@@ -48,7 +51,8 @@ class grauth:
         authorize_url = '%s/oauth/authorize' % 'http://www.goodreads.com'
         # access_token_url = '%s/oauth/access_token' % 'http://www.goodreads.com'
 
-        consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']), secret=str(lazylibrarian.CONFIG['GR_SECRET']))
+        consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
+                                  secret=str(lazylibrarian.CONFIG['GR_SECRET']))
 
         client = oauth.Client(consumer)
 
@@ -66,8 +70,9 @@ class grauth:
         # print authorize_link
         return authorize_link
 
-    def goodreads_oauth2(self):
-        global request_token, consumer
+    @staticmethod
+    def goodreads_oauth2():
+        global request_token, consumer, token, client
         try:
             token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
         except Exception:
@@ -94,12 +99,14 @@ class grauth:
 
     def get_user_id(self):
         global consumer, client, token, user_id
-        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-            logger.debug("Goodreads sync error: Please authorise first")
+        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not \
+                lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
+            logger.warn("Goodreads user id error: Please authorise first")
             return ""
         else:
             try:
-                consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']), secret=str(lazylibrarian.CONFIG['GR_SECRET']))
+                consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
+                                          secret=str(lazylibrarian.CONFIG['GR_SECRET']))
                 token = oauth.Token(lazylibrarian.CONFIG['GR_OAUTH_TOKEN'], lazylibrarian.CONFIG['GR_OAUTH_SECRET'])
                 client = oauth.Client(consumer, token)
                 user_id = self.getUserId()
@@ -110,8 +117,9 @@ class grauth:
 
     def get_shelf_list(self):
         global consumer, client, token, user_id
-        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-            logger.debug("Goodreads sync error: Please authorise first")
+        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not \
+                lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
+            logger.warn("Goodreads get shelf error: Please authorise first")
             return []
         else:
             #
@@ -119,7 +127,8 @@ class grauth:
             #     loop over each shelf
             #         add shelf to list
             #
-            consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']), secret=str(lazylibrarian.CONFIG['GR_SECRET']))
+            consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
+                                      secret=str(lazylibrarian.CONFIG['GR_SECRET']))
             token = oauth.Token(lazylibrarian.CONFIG['GR_OAUTH_TOKEN'], lazylibrarian.CONFIG['GR_OAUTH_SECRET'])
             client = oauth.Client(consumer, token)
             user_id = self.getUserId()
@@ -133,8 +142,8 @@ class grauth:
                 shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
                 body = urllib.urlencode({})
                 headers = {'content-type': 'application/x-www-form-urlencoded'}
-                request_url = shelf_template.substitute(base='http://www.goodreads.com', user_id=user_id, page=current_page,
-                                                        key=lazylibrarian.CONFIG['GR_API'])
+                request_url = shelf_template.substitute(base='http://www.goodreads.com', user_id=user_id,
+                                                        page=current_page, key=lazylibrarian.CONFIG['GR_API'])
                 time_now = int(time.time())
                 if time_now <= lazylibrarian.LAST_GOODREADS:
                     time.sleep(1)
@@ -171,11 +180,13 @@ class grauth:
 
     def follow_author(self, authorid=None, follow=True):
         global consumer, client, token, user_id
-        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-            logger.debug("Goodreads follow error: Please authorise first")
+        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not \
+                lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
+            logger.warn("Goodreads follow author error: Please authorise first")
             return False, 'Unauthorised'
 
-        consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']), secret=str(lazylibrarian.CONFIG['GR_SECRET']))
+        consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
+                                  secret=str(lazylibrarian.CONFIG['GR_SECRET']))
         token = oauth.Token(lazylibrarian.CONFIG['GR_OAUTH_TOKEN'], lazylibrarian.CONFIG['GR_OAUTH_SECRET'])
         client = oauth.Client(consumer, token)
         user_id = self.getUserId()
@@ -191,7 +202,8 @@ class grauth:
             body = urllib.urlencode({'id': authorid, 'format': 'xml'})
             headers = {'content-type': 'application/x-www-form-urlencoded'}
             try:
-                response, content = client.request('%s/author_followings' % 'http://www.goodreads.com', 'POST', body, headers)
+                response, content = client.request('%s/author_followings' % 'http://www.goodreads.com', 'POST', body,
+                                                   headers)
             except Exception as e:
                 return False, "Exception in client.request: %s" % str(e)
         else:
@@ -199,7 +211,7 @@ class grauth:
             headers = {'content-type': 'application/x-www-form-urlencoded'}
             try:
                 response, content = client.request('%s/author_followings/%s' % ('http://www.goodreads.com', authorid),
-                                                        'DELETE', body, headers)
+                                                   'DELETE', body, headers)
             except Exception as e:
                 return False, "Exception in client.request: %s" % str(e)
 
@@ -214,11 +226,13 @@ class grauth:
 
     def create_shelf(self, shelf='lazylibrarian'):
         global consumer, client, token, user_id
-        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-            logger.debug("Goodreads sync error: Please authorise first")
+        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not \
+                lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
+            logger.warn("Goodreads create shelf error: Please authorise first")
             return False, 'Unauthorised'
 
-        consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']), secret=str(lazylibrarian.CONFIG['GR_SECRET']))
+        consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
+                                  secret=str(lazylibrarian.CONFIG['GR_SECRET']))
         token = oauth.Token(lazylibrarian.CONFIG['GR_OAUTH_TOKEN'], lazylibrarian.CONFIG['GR_OAUTH_SECRET'])
         client = oauth.Client(consumer, token)
         user_id = self.getUserId()
@@ -231,7 +245,8 @@ class grauth:
             time.sleep(1)
             lazylibrarian.LAST_GOODREADS = time_now
         try:
-            response, content = client.request('%s/user_shelves.xml' % 'http://www.goodreads.com', 'POST', body, headers)
+            response, content = client.request('%s/user_shelves.xml' % 'http://www.goodreads.com', 'POST',
+                                               body, headers)
         except Exception as e:
             return False, "Exception in client.request: %s" % str(e)
 
@@ -242,8 +257,9 @@ class grauth:
 
     def get_gr_shelf_contents(self, shelf='to-read'):
         global consumer, client, token, user_id
-        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-            logger.debug("Goodreads sync error: Please authorise first")
+        if not lazylibrarian.CONFIG['GR_API'] or not lazylibrarian.CONFIG['GR_SECRET'] or not \
+                lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] or not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
+            logger.warn("Goodreads shelf contents error: Please authorise first")
             return []
         else:
             #
@@ -251,7 +267,8 @@ class grauth:
             #     loop over each book
             #         add book to list
             #
-            consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']), secret=str(lazylibrarian.CONFIG['GR_SECRET']))
+            consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
+                                      secret=str(lazylibrarian.CONFIG['GR_SECRET']))
             token = oauth.Token(lazylibrarian.CONFIG['GR_OAUTH_TOKEN'], lazylibrarian.CONFIG['GR_OAUTH_SECRET'])
             client = oauth.Client(consumer, token)
             user_id = self.getUserId()
@@ -263,11 +280,6 @@ class grauth:
 
             while True:
                 current_page = current_page + 1
-
-                time_now = int(time.time())
-                if time_now <= lazylibrarian.LAST_GOODREADS:
-                    time.sleep(1)
-                    lazylibrarian.LAST_GOODREADS = time_now
                 content = self.getShelfBooks(current_page, shelf)
                 xmldoc = xml.dom.minidom.parseString(content)
 
@@ -298,7 +310,8 @@ class grauth:
     #
     # who are we?
     #
-    def getUserId(self):
+    @staticmethod
+    def getUserId():
         global client, user_id
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
@@ -319,15 +332,16 @@ class grauth:
     #
     # fetch xml for a page of books on a shelf
     #
-    def getShelfBooks(self, page, shelf_name):
+    @staticmethod
+    def getShelfBooks(page, shelf_name):
         global client, user_id
         data = '${base}/review/list?format=xml&v=2&id=${user_id}&sort=author&order=a'
         data += '&key=${key}&page=${page}&per_page=100&shelf=${shelf_name}'
         owned_template = Template(data)
         body = urllib.urlencode({})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        request_url = owned_template.substitute(base='http://www.goodreads.com', user_id=user_id, page=page, key=lazylibrarian.CONFIG['GR_API'],
-                                                shelf_name=shelf_name)
+        request_url = owned_template.substitute(base='http://www.goodreads.com', user_id=user_id, page=page,
+                                                key=lazylibrarian.CONFIG['GR_API'], shelf_name=shelf_name)
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
             time.sleep(1)
@@ -350,7 +364,8 @@ class grauth:
         book_title = book.getElementsByTagName('title')[0].firstChild.nodeValue
         return book_id, book_title
 
-    def BookToList(self, book_id, shelf_name, action='add'):
+    @staticmethod
+    def BookToList(book_id, shelf_name, action='add'):
         global client
         if action == 'remove':
             body = urllib.urlencode({'name': shelf_name, 'book_id': book_id, 'a': 'remove'})
@@ -362,7 +377,8 @@ class grauth:
             time.sleep(1)
             lazylibrarian.LAST_GOODREADS = time_now
         try:
-            response, content = client.request('%s/shelf/add_to_shelf.xml' % 'http://www.goodreads.com', 'POST', body, headers)
+            response, content = client.request('%s/shelf/add_to_shelf.xml' % 'http://www.goodreads.com', 'POST',
+                                               body, headers)
         except Exception as e:
             return False, "Exception in client.request: %s" % str(e)
 
@@ -495,10 +511,6 @@ def grsync(status, shelf):
         else:
             for book in not_on_shelf:
                 # print "%s is not on shelf" % book
-                time_now = int(time.time())
-                if time_now <= lazylibrarian.LAST_GOODREADS:
-                    time.sleep(1)
-                    lazylibrarian.LAST_GOODREADS = time_now
                 try:
                     res, content = GA.BookToList(book, shelf)
                 except Exception as e:

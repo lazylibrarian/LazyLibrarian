@@ -1165,9 +1165,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
                 if tokmatch:
                     break
-                for f in os.listdir(r):
+                for f in os.listdir(pp_path):
                     if is_valid_booktype(f, booktype='audiobook') and token in f:
-                        firstfile = os.path.join(r, f)
+                        firstfile = os.path.join(pp_path, f)
                         tokmatch = token
                         break
         if firstfile:
