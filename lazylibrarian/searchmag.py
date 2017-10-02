@@ -61,6 +61,7 @@ def search_magazines(mags=None, reset=False):
                     searchmags.append(terms)
 
         if len(searchmags) == 0:
+            threading.currentThread().name = "WEBSERVER"
             return
 
         # should clear old search results as might not be available any more
@@ -526,3 +527,5 @@ def search_magazines(mags=None, reset=False):
 
     except Exception:
         logger.error('Unhandled exception in search_magazines: %s' % traceback.format_exc())
+    finally:
+        threading.currentThread().name = "WEBSERVER"

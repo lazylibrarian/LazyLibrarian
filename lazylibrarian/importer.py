@@ -329,7 +329,7 @@ def import_book(bookid):
         _ = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid]).start()
     else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
         GR = GoodReads(bookid)
-        _ = threading.Thread(target=GR.find_book, name='GR-RESULTS', args=[bookid]).start()
+        _ = threading.Thread(target=GR.find_book, name='GR-IMPORT', args=[bookid]).start()
 
 
 def search_for(searchterm):

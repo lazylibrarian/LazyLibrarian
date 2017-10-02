@@ -251,3 +251,5 @@ def search_book(books=None, library=None):
 
     except Exception:
         logger.error('Unhandled exception in search_book: %s' % traceback.format_exc())
+    finally:
+            threading.currentThread().name = "WEBSERVER"
