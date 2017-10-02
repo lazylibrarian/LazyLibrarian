@@ -48,9 +48,9 @@ class grauth:
         if lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] and lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
             return "Already authorised"
 
-        request_token_url = '%s/oauth/request_token' % 'http://www.goodreads.com'
-        authorize_url = '%s/oauth/authorize' % 'http://www.goodreads.com'
-        # access_token_url = '%s/oauth/access_token' % 'http://www.goodreads.com'
+        request_token_url = '%s/oauth/request_token' % 'https://www.goodreads.com'
+        authorize_url = '%s/oauth/authorize' % 'https://www.goodreads.com'
+        # access_token_url = '%s/oauth/access_token' % 'https://www.goodreads.com'
 
         consumer = oauth.Consumer(key=str(lazylibrarian.CONFIG['GR_API']),
                                   secret=str(lazylibrarian.CONFIG['GR_SECRET']))
@@ -79,7 +79,7 @@ class grauth:
         except Exception:
             return "Unable to run oAuth2. Have you run oAuth1?"
 
-        access_token_url = '%s/oauth/access_token' % 'http://www.goodreads.com'
+        access_token_url = '%s/oauth/access_token' % 'https://www.goodreads.com'
 
         client = oauth.Client(consumer, token)
 
@@ -143,7 +143,7 @@ class grauth:
                 shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
                 body = urllib.urlencode({})
                 headers = {'content-type': 'application/x-www-form-urlencoded'}
-                request_url = shelf_template.substitute(base='http://www.goodreads.com', user_id=user_id,
+                request_url = shelf_template.substitute(base='https://www.goodreads.com', user_id=user_id,
                                                         page=current_page, key=lazylibrarian.CONFIG['GR_API'])
                 time_now = int(time.time())
                 if time_now <= lazylibrarian.LAST_GOODREADS:
@@ -189,8 +189,8 @@ class grauth:
         client = oauth.Client(consumer, token)
         user_id = self.getUserId()
 
-        # follow http://www.goodreads.com/author_followings?id=AUTHOR_ID&format=xml
-        # unfollow http://www.goodreads.com/author_followings/AUTHOR_FOLLOWING_ID?format=xml
+        # follow https://www.goodreads.com/author_followings?id=AUTHOR_ID&format=xml
+        # unfollow https://www.goodreads.com/author_followings/AUTHOR_FOLLOWING_ID?format=xml
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
             time.sleep(1)
@@ -200,7 +200,7 @@ class grauth:
             body = urllib.urlencode({'id': authorid, 'format': 'xml'})
             headers = {'content-type': 'application/x-www-form-urlencoded'}
             try:
-                response, content = client.request('%s/author_followings' % 'http://www.goodreads.com', 'POST', body,
+                response, content = client.request('%s/author_followings' % 'https://www.goodreads.com', 'POST', body,
                                                    headers)
             except Exception as e:
                 return False, "Exception in client.request: %s" % str(e)
@@ -208,7 +208,7 @@ class grauth:
             body = urllib.urlencode({'format': 'xml'})
             headers = {'content-type': 'application/x-www-form-urlencoded'}
             try:
-                response, content = client.request('%s/author_followings/%s' % ('http://www.goodreads.com', authorid),
+                response, content = client.request('%s/author_followings/%s' % ('https://www.goodreads.com', authorid),
                                                    'DELETE', body, headers)
             except Exception as e:
                 return False, "Exception in client.request: %s" % str(e)
@@ -243,7 +243,7 @@ class grauth:
             time.sleep(1)
             lazylibrarian.LAST_GOODREADS = time_now
         try:
-            response, content = client.request('%s/user_shelves.xml' % 'http://www.goodreads.com', 'POST',
+            response, content = client.request('%s/user_shelves.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
         except Exception as e:
             return False, "Exception in client.request: %s" % str(e)
@@ -316,7 +316,7 @@ class grauth:
             time.sleep(1)
             lazylibrarian.LAST_GOODREADS = time_now
         try:
-            response, content = client.request('%s/api/auth_user' % 'http://www.goodreads.com', 'GET')
+            response, content = client.request('%s/api/auth_user' % 'https://www.goodreads.com', 'GET')
         except Exception as e:
             return "Exception in client.request: %s" % str(e)
         if response['status'] != '200':
@@ -338,7 +338,7 @@ class grauth:
         owned_template = Template(data)
         body = urllib.urlencode({})
         headers = {'content-type': 'application/x-www-form-urlencoded'}
-        request_url = owned_template.substitute(base='http://www.goodreads.com', user_id=user_id, page=page,
+        request_url = owned_template.substitute(base='https://www.goodreads.com', user_id=user_id, page=page,
                                                 key=lazylibrarian.CONFIG['GR_API'], shelf_name=shelf_name)
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
@@ -375,7 +375,7 @@ class grauth:
             time.sleep(1)
             lazylibrarian.LAST_GOODREADS = time_now
         try:
-            response, content = client.request('%s/shelf/add_to_shelf.xml' % 'http://www.goodreads.com', 'POST',
+            response, content = client.request('%s/shelf/add_to_shelf.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
         except Exception as e:
             return False, "Exception in client.request: %s" % str(e)

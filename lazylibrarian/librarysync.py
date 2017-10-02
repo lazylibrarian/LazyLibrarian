@@ -626,7 +626,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         # Either goodreads doesn't have the book or it didn't match language prefs
                                         # Since we have the book anyway, try and reload it ignoring language prefs
                                         rescan_count += 1
-                                        base_url = 'http://www.goodreads.com/search.xml?q='
+                                        base_url = 'https://www.goodreads.com/search.xml?q='
                                         params = {"key": lazylibrarian.CONFIG['GR_API']}
                                         if author[1] in '. ':
                                             surname = author

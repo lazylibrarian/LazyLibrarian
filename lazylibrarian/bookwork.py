@@ -692,7 +692,7 @@ def getSeriesAuthors(seriesid):
             bookname = member[1]
             authorname = member[2]
 
-            base_url = 'http://www.goodreads.com/search.xml?q='
+            base_url = 'https://www.goodreads.com/search.xml?q='
             params = {"key": lazylibrarian.CONFIG['GR_API']}
             searchname = bookname + ' ' + authorname
             searchname = cleanName(unaccented(searchname))
