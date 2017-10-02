@@ -586,10 +586,17 @@ class GoodReads:
                             match = myDB.match(cmd, (bookid,))
                             if match:
                                 # we have a book with this bookid already
-                                if bookname != match['BookName'] or authorNameResult != match['AuthorName']:
+                                if match['BookName'] == 'Untitled' and bookname != 'Untitled':
+                                    # goodreads has updated the name
+                                    logger.debug('Renaming bookid %s for [%s][%s] to [%s]' %
+                                                 (bookid, authorNameResult, match['BookName'], bookname))
+                                    check_status = True
+
+                                elif bookname != match['BookName'] or authorNameResult != match['AuthorName']:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
                                                  (bookid, authorNameResult, bookname,
                                                   match['AuthorName'], match['BookName']))
+                                    check_status = False
                                 else:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
                                                  (bookid, authorNameResult, bookname))
@@ -598,12 +605,15 @@ class GoodReads:
                                 rejected = True
 
                         if check_status or not rejected:
-                            existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?',
-                                                       (bookid,))
-                            if existing_book:
-                                book_status = existing_book['Status']
-                                locked = existing_book['Manual']
-                                added = existing_book['BookAdded']
+                            updated = False
+                            existing = myDB.match('SELECT Status,Manual,BookAdded,BookName FROM books WHERE BookID=?',
+                                                  (bookid,))
+                            if existing:
+                                book_status = existing['Status']
+                                locked = existing['Manual']
+                                added = existing['BookAdded']
+                                if bookname != existing['BookName']:
+                                    updated = True
                                 if locked is None:
                                     locked = False
                                 elif locked.isdigit():
@@ -638,7 +648,6 @@ class GoodReads:
                                 }
 
                                 resultsCount += 1
-                                updated = False
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 logger.debug("Book found: " + book.find('title').text + " " + pubyear)
@@ -687,7 +696,7 @@ class GoodReads:
                                     newValueDict = {"WorkPage": worklink}
                                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                                if not existing_book:
+                                if not existing:
                                     logger.debug("[%s] Added book: %s [%s] status %s" %
                                                  (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
