@@ -220,6 +220,7 @@ def processDir(reset=False):
             downloads = os.listdir(download_dir)
         except OSError as why:
             logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
+            threading.currentThread().name = "WEBSERVER"
             return
 
         logger.debug('Checking %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
@@ -658,13 +659,15 @@ def processDir(reset=False):
         if len(snatched) == 0:
             logger.info('Nothing marked as snatched. Stopping postprocessor.')
             scheduleJob(action='Stop', target='processDir')
-            return
 
         if reset:
             scheduleJob(action='Restart', target='processDir')
 
     except Exception:
         logger.error('Unhandled exception in processDir: %s' % traceback.format_exc())
+
+    finally:
+        threading.currentThread().name = "WEBSERVER"
 
 
 def delete_task(Source, DownloadID, remove_data):

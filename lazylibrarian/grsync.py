@@ -27,6 +27,7 @@ import lazylibrarian
 import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.formatter import plural
 
 client = request_token = consumer = token = user_id = ''
 
@@ -135,10 +136,10 @@ class grauth:
 
             current_page = 0
             shelves = []
-
-            while True:
-                page_shelves = 0
+            page_shelves = 1
+            while page_shelves:
                 current_page = current_page + 1
+                page_shelves = 0
                 shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
                 body = urllib.urlencode({})
                 headers = {'content-type': 'application/x-www-form-urlencoded'}
@@ -163,18 +164,15 @@ class grauth:
                     shelf_count = item.getElementsByTagName('book_count')[0].firstChild.nodeValue
                     shelf_exclusive = item.getElementsByTagName('exclusive_flag')[0].firstChild.nodeValue
                     shelves.append({'name': shelf_name, 'books': shelf_count, 'exclusive': shelf_exclusive})
+                    page_shelves += 1
 
                     if lazylibrarian.LOGLEVEL > 2:
-                        logger.debug('Shelf %s : %s: %s' % (shelf_name, shelf_count, shelf_exclusive))
-
-                    page_shelves += 1
+                        logger.debug('Shelf %s : %s: Exclusive %s' % (shelf_name, shelf_count, shelf_exclusive))
 
                 if lazylibrarian.LOGLEVEL > 2:
                     logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
-                    if page_shelves == 0:
-                        break
 
-            logger.debug('Found %s shelves' % len(shelves))
+            logger.debug('Found %s shelves on %s page%s' % (len(shelves), current_page - 1, plural(current_page - 1)))
             # print shelves
             return shelves
 
@@ -405,7 +403,6 @@ def test_auth():
 
 def cron_sync_to_gr():
     if 'GRSync' not in [n.name for n in [t for t in threading.enumerate()]]:
-        threading.currentThread().name = 'GRSync'
         _ = sync_to_gr()
     else:
         logger.debug("GRSync is already running")
@@ -413,21 +410,26 @@ def cron_sync_to_gr():
 
 def sync_to_gr():
     msg = ''
-    if lazylibrarian.CONFIG['GR_WANTED']:
-        to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
-        msg += "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
-        msg += "%s marked Wanted from GoodReads\n" % ll_wanted
-    else:
-        msg += "Sync Wanted books is disabled\n"
-    if lazylibrarian.CONFIG['GR_OWNED']:
-        to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
-        msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
-        msg += "%s marked Owned from GoodReads\n" % ll_have
-    else:
-        msg += "Sync Owned books is disabled\n"
-    logger.info(msg.strip('\n').replace('\n', ', '))
-    return msg
-
+    try:
+        threading.currentThread().name = 'GRSync'
+        if lazylibrarian.CONFIG['GR_WANTED']:
+            to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
+            msg += "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
+            msg += "%s marked Wanted from GoodReads\n" % ll_wanted
+        else:
+            msg += "Sync Wanted books is disabled\n"
+        if lazylibrarian.CONFIG['GR_OWNED']:
+            to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
+            msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
+            msg += "%s marked Owned from GoodReads\n" % ll_have
+        else:
+            msg += "Sync Owned books is disabled\n"
+        logger.info(msg.strip('\n').replace('\n', ', '))
+    except Exception as e:
+        logger.debug("Exception in sync_to_gr: %s" % str(e))
+    finally:
+        threading.currentThread().name = 'WEBSERVER'
+        return msg
 
 def grfollow(authorid, follow=True):
     myDB = database.DBConnection()

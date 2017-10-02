@@ -221,3 +221,5 @@ def search_rss_book(books=None, library=None):
 
     except Exception:
         logger.error('Unhandled exception in search_rss_book: %s' % traceback.format_exc())
+    finally:
+        threading.currentThread().name = "WEBSERVER"
