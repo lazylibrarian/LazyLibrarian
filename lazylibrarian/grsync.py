@@ -172,7 +172,7 @@ class grauth:
                 if lazylibrarian.LOGLEVEL > 2:
                     logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
 
-            logger.debug('Found %s shelves on %s page%s' % (len(shelves)), current_page - 1, plural(current_page - 1))
+            logger.debug('Found %s shelves on %s page%s' % (len(shelves), current_page - 1, plural(current_page - 1)))
             # print shelves
             return shelves
 
@@ -409,24 +409,27 @@ def cron_sync_to_gr():
 
 
 def sync_to_gr():
-    threading.currentThread().name = 'GRSync'
     msg = ''
-    if lazylibrarian.CONFIG['GR_WANTED']:
-        to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
-        msg += "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
-        msg += "%s marked Wanted from GoodReads\n" % ll_wanted
-    else:
-        msg += "Sync Wanted books is disabled\n"
-    if lazylibrarian.CONFIG['GR_OWNED']:
-        to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
-        msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
-        msg += "%s marked Owned from GoodReads\n" % ll_have
-    else:
-        msg += "Sync Owned books is disabled\n"
-    logger.info(msg.strip('\n').replace('\n', ', '))
-    threading.currentThread().name = 'WEBSERVER'
-    return msg
-
+    try:
+        threading.currentThread().name = 'GRSync'
+        if lazylibrarian.CONFIG['GR_WANTED']:
+            to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
+            msg += "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
+            msg += "%s marked Wanted from GoodReads\n" % ll_wanted
+        else:
+            msg += "Sync Wanted books is disabled\n"
+        if lazylibrarian.CONFIG['GR_OWNED']:
+            to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
+            msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
+            msg += "%s marked Owned from GoodReads\n" % ll_have
+        else:
+            msg += "Sync Owned books is disabled\n"
+        logger.info(msg.strip('\n').replace('\n', ', '))
+    except Exception as e:
+        logger.debug("Exception in sync_to_gr: %s" % str(e))
+    finally:
+        threading.currentThread().name = 'WEBSERVER'
+        return msg
 
 def grfollow(authorid, follow=True):
     myDB = database.DBConnection()
