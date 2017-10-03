@@ -431,6 +431,7 @@ def sync_to_gr():
         threading.currentThread().name = 'WEBSERVER'
         return msg
 
+
 def grfollow(authorid, follow=True):
     myDB = database.DBConnection()
     match = myDB.match('SELECT AuthorName,GRfollow from authors WHERE authorid=?', (authorid,))

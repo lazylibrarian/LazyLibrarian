@@ -95,14 +95,14 @@
             %if result['Status'] == 'Open':
             <td class="status text-center">
             <a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['BookID']}&library=eBook"
-            target="_self"><i class="fa fa-book"></i>Open</a>
+            target="_self"><i class="fa fa-book"></i> Open</a>
             %else:
             <td class="status text-center"><i class="fa fa-book"></i> ${result['Status']}
             %endif
             <br>
             %if result['AudioStatus'] == 'Open':
             <a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['BookID']}&library=Audio"
-            target="_self"><i class="fa fa-book"></i>Open</a>
+            target="_self"><i class="fa fa-book"></i> Open</a>
             %else:
             <i class="fa fa-headphones"></i> ${result['AudioStatus']}
             %endif
