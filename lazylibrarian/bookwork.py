@@ -54,7 +54,10 @@ def audioRename(bookid):
                 author = id3r.getValue('performer')
                 book = id3r.getValue('album')
                 track = id3r.getValue('track')
-                parts.append([track, book, author, f])
+                if not track:
+                    track = '0'
+                if author and book:
+                    parts.append([track, book, author, f])
             except Exception as e:
                 logger.debug("id3reader error %s" % str(e))
                 pass
