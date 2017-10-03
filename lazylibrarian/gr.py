@@ -31,7 +31,7 @@ from lib.fuzzywuzzy import fuzz
 
 
 class GoodReads:
-    # http://www.goodreads.com/api/
+    # https://www.goodreads.com/api/
 
     def __init__(self, name=None):
         if isinstance(name, str):
@@ -56,7 +56,7 @@ class GoodReads:
             searchterm = searchterm.replace(' <ll> ', ' ')
 
             url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
-            set_url = 'http://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
+            set_url = 'https://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
             # logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
@@ -98,7 +98,7 @@ class GoodReads:
 
                         try:
                             bookimg = author.find('./best_book/image_url').text
-                            if bookimg == 'http://www.goodreads.com/assets/nocover/111x148.png':
+                            if bookimg == 'https://www.goodreads.com/assets/nocover/111x148.png':
                                 bookimg = 'images/nocover.png'
                         except (KeyError, AttributeError):
                             bookimg = 'images/nocover.png'
@@ -114,7 +114,7 @@ class GoodReads:
                         bookisbn = ''
 
                         try:
-                            booklink = 'http://www.goodreads.com/book/show/' + author.find('./best_book/id').text
+                            booklink = 'https://www.goodreads.com/book/show/' + author.find('./best_book/id').text
                         except (KeyError, AttributeError):
                             booklink = ""
 
@@ -229,7 +229,7 @@ class GoodReads:
     def find_author_id(self, refresh=False):
         author = self.name
         author = formatAuthorName(unaccented(author))
-        URL = 'http://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
         if isinstance(author, str):
@@ -265,7 +265,7 @@ class GoodReads:
 
     def get_author_info(self, authorid=None):
 
-        URL = 'http://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
         author_dict = {}
 
         try:
@@ -313,7 +313,7 @@ class GoodReads:
             gb_lang_change = 0
             cache_hits = 0
             not_cached = 0
-            URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params)
+            URL = 'https://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params)
 
             # Artist is loading
             myDB = database.DBConnection()
@@ -437,7 +437,7 @@ class GoodReads:
                                 # still  no earlier match, we'll have to search the goodreads api
                                 try:
                                     if book.find(find_field).text:
-                                        BOOK_URL = 'http://www.goodreads.com/book/show?id=' + \
+                                        BOOK_URL = 'https://www.goodreads.com/book/show?id=' + \
                                                    book.find(find_field).text + '&' + urllib.urlencode(self.params)
                                         logger.debug("Book URL: " + BOOK_URL)
 
@@ -712,7 +712,7 @@ class GoodReads:
                         resultxml = None
                         logger.warn('Maximum books page search reached, still more results available')
                     else:
-                        URL = 'http://www.goodreads.com/author/list/' + authorid + '.xml?' + \
+                        URL = 'https://www.goodreads.com/author/list/' + authorid + '.xml?' + \
                               urllib.urlencode(self.params) + '&page=' + str(loopCount)
                         resultxml = None
                         try:
@@ -785,7 +785,7 @@ class GoodReads:
     def find_book(self, bookid=None):
         myDB = database.DBConnection()
 
-        URL = 'http://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
 
         try:
             rootxml, in_cache = get_xml_request(URL)
