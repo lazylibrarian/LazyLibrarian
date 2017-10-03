@@ -33,7 +33,7 @@
             %if whichStatus == item:
                 selected = "selected"
             %endif
-            >&#xf02d; ${item}</option>
+            >eBook ${item}</option>
           %endfor
           % if lazylibrarian.SHOW_AUDIO != 0:
             %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
@@ -41,7 +41,7 @@
               %if whichStatus == item:
                   selected = "selected"
               %endif
-              >&#xf025; ${item}</option>
+              >Audio ${item}</option>
             %endfor
           % endif
         </select>

@@ -12,14 +12,14 @@
             <div class="form-group">
               <label for="booksearch" class="control-label">Searches: </label>
               <select class="booksearch form-control input-sm" id="action" name="action">
-                <option value="e_full">&#xf02d; Title/Author</option>
-                <option value="e_title">&#xf02d; Title</option>
-                <option value="e_author">&#xf02d; Author</option>
+                <option value="e_full">eBook Title/Author</option>
+                <option value="e_title">eBook Title</option>
+                <option value="e_author">eBook Author</option>
                 <option value="g_full">&nbsp; General</option>
                 % if lazylibrarian.SHOW_AUDIO != 0:
-                  <option value="a_full">&#xf025; Title/Author</option>
-                  <option value="a_title">&#xf025; Title</option>
-                  <option value="a_author">&#xf025; Author</option>
+                  <option value="a_full">Audio Title/Author</option>
+                  <option value="a_title">Audio Title</option>
+                  <option value="a_author">Audio Author</option>
                 % endif
               </select>
             </div>
