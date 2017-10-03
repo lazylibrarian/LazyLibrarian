@@ -12,10 +12,13 @@
             <div class="form-group">
               <label for="booksearch" class="control-label">Searches: </label>
               <select class="booksearch form-control input-sm" id="action" name="action">
+                // would be nice to use fontawesome icons here but options are not styleable
+                // and some browsers don't show them, eg linux firefox, android chrome
+                // They only show icons on closed select, not in dropdown 
                 <option value="e_full">eBook Title/Author</option>
                 <option value="e_title">eBook Title</option>
                 <option value="e_author">eBook Author</option>
-                <option value="g_full">&nbsp; General</option>
+                <option value="g_full">General Search</option>
                 % if lazylibrarian.SHOW_AUDIO != 0:
                   <option value="a_full">Audio Title/Author</option>
                   <option value="a_title">Audio Title</option>

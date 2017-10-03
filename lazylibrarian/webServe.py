@@ -655,10 +655,10 @@ class WebInterface(object):
         cmd += ' and series.SeriesID=?'
         series = myDB.match(cmd, (seriesid,))
         cmd = 'SELECT member.BookID,BookName,SeriesNum,BookImg,books.Status,AuthorName,authors.AuthorID,'
-        cmd += 'BookLink,WorkPage'
+        cmd += 'BookLink,WorkPage,AudioStatus'
         cmd += ' from member,series,books,authors'
         cmd += ' where series.SeriesID=member.SeriesID and books.BookID=member.BookID'
-        cmd += ' and books.AuthorID=authors.AuthorID and books.Status != "Ignored"'
+        cmd += ' and books.AuthorID=authors.AuthorID and (books.Status != "Ignored" or AudioStatus != "Ignored")'
         cmd += ' and series.SeriesID=? order by SeriesName'
         members = myDB.select(cmd, (seriesid,))
         # is it a multi-author series?
