@@ -38,7 +38,11 @@ def audioRename(bookid):
     exists = myDB.match(cmd, (bookid,))
     if exists:
         book_filename = exists['AudioFile']
-        r = os.path.dirname(book_filename)
+        if book_filename:
+            r = os.path.dirname(book_filename)
+        else:
+            logger.debug("No filename for %s in audioRename %s" % bookid)
+            return ''
     else:
         logger.debug("Invalid bookid in audioRename %s" % bookid)
         return ''

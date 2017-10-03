@@ -759,15 +759,16 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                         tokmatch = token
                                                         break
 
+                                            if not check_status['AudioFile']:  # no existing book location
+                                                myDB.action('UPDATE books set AudioFile=? where BookID=?',
+                                                            (book_filename, bookid))
+
                                             if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and \
                                                     lazylibrarian.CONFIG['IMP_RENAME']:
                                                 book_filename = audioRename(bookid)
 
-                                            if not check_status['AudioFile']:  # no previous location
-                                                myDB.action('UPDATE books set AudioFile=? where BookID=?',
-                                                            (book_filename, bookid))
                                             # location may have changed since last scan
-                                            elif book_filename != check_status['AudioFile']:
+                                            if book_filename and book_filename != check_status['AudioFile']:
                                                 modified_count += 1
                                                 logger.warn("Updating audiobook location for %s %s from %s to %s" %
                                                             (author, book, check_status['AudioFile'], book_filename))
