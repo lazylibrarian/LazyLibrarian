@@ -29,12 +29,21 @@
         <label for="action" class="">Mark selected as</label>
         <select class="markBooks form-control input-sm" id="action" name="action">
           %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
-          <option value="${item}"
-                %if whichStatus == item:
-                    selected = "selected"
-                %endif
-                >${item}</option>
+            <option value="E ${item}"
+            %if whichStatus == item:
+                selected = "selected"
+            %endif
+            >&#xf02d; ${item}</option>
           %endfor
+          % if lazylibrarian.SHOW_AUDIO != 0:
+            %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
+              <option value="A ${item}"
+              %if whichStatus == item:
+                  selected = "selected"
+              %endif
+              >&#xf025; ${item}</option>
+            %endfor
+          % endif
         </select>
       </div>
       <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">

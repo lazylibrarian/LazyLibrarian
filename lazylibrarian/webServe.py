@@ -1819,6 +1819,12 @@ class WebInterface(object):
             library = 'eBook'
             if redirect == 'audio':
                 library = 'AudioBook'
+        if redirect == 'members' and ' ' in action:
+            library, action = action.split(' ')
+            if library == 'A':
+                library = 'AudioBook'
+            else:
+                library = 'eBook'
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
