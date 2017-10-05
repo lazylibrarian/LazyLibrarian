@@ -77,7 +77,7 @@ class utorrentclient(object):
             response = self.opener.open(url)
         except Exception as err:
             logger.debug('URL: %s' % url)
-            logger.debug('Error getting Token. uTorrent responded with: %s' % str(err))
+            logger.debug('%s getting Token. uTorrent responded with: %s' % (type(err).__name__, str(err)))
             return None
         match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)
@@ -177,7 +177,7 @@ def checkLink():
             return "uTorrent login successful"
         return "uTorrent login FAILED\nCheck debug log"
     except Exception as err:
-        return "uTorrent login FAILED: %s" % str(err)
+        return "uTorrent login FAILED: %s %s" % (type(err).__name__, str(err))
 
 
 def labelTorrent(hashid):

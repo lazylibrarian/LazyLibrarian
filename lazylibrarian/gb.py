@@ -441,7 +441,7 @@ class GoogleBooks:
                                                 logger.debug("LT language: " + booklang)
                                         except Exception as e:
                                             booklang = ""
-                                            logger.error("Error finding language: %s" % str(e))
+                                            logger.error("%s finding language: %s" % (type(e).__name__, str(e)))
 
                                     if match:
                                         # We found a better language match

@@ -81,7 +81,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
                 downloadID = nzbname
 
             except Exception as e:
-                logger.error('%s not writable, NZB not saved. Error: %s' % (nzbpath, str(e)))
+                logger.error('%s not writable, NZB not saved. %s: %s' % (nzbpath, type(e).__name__, str(e)))
                 downloadID = ''
 
     if not Source:
@@ -125,7 +125,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             try:
                 fdata = response.read()
             except Exception as e:
-                logger.warn('Error reading response from url: %s, %s' % (tor_url, str(e)))
+                logger.warn('%s reading response from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
                 return False
 
         bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
@@ -145,13 +145,13 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             setperm(destfile)
             downloadID = True
         except Exception as e:
-            logger.debug("Error writing book to %s, %s" % (destfile, str(e)))
+            logger.debug("%s writing book to %s, %s" % (type(e).__name__, destfile, str(e)))
 
     except socket.timeout:
         logger.warn('Timeout fetching file from url: %s' % tor_url)
         return False
     except urllib2.URLError as e:
-        logger.warn('Error fetching file from url: %s, %s' % (tor_url, e.reason))
+        logger.warn('URLError fetching file from url: %s, %s' % (tor_url, e.reason))
         return False
 
     if downloadID:
@@ -255,7 +255,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     logger.debug('Magnet file saved: %s' % tor_path)
                     downloadID = Source
                 except Exception as e:
-                    logger.debug("Failed to write magnet to file: %s" % (str(e)))
+                    logger.debug("Failed to write magnet to file: %s %s" % (type(e).__name__, str(e)))
                     logger.debug("Progress: %s" % msg)
                     logger.debug("Filename [%s]" % (repr(tor_path)))
                     return False
@@ -276,7 +276,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 logger.debug('Torrent file saved: %s' % tor_name)
                 downloadID = Source
             except Exception as e:
-                logger.debug("Failed to write torrent to file: %s" % (str(e)))
+                logger.debug("Failed to write torrent to file: %s %s" % (type(e).__name__, str(e)))
                 logger.debug("Progress: %s" % msg)
                 logger.debug("Filename [%s]" % (repr(tor_path)))
                 return False
@@ -355,7 +355,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                         tor_title = result['name']
 
             except Exception as e:
-                logger.debug('DelugeRPC failed %s' % str(e))
+                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                 return False
 
     if not Source:

@@ -65,7 +65,7 @@ class GoodReads:
                 try:
                     rootxml, in_cache = get_xml_request(set_url)
                 except Exception as e:
-                    logger.error("Error finding gr results: %s" % str(e))
+                    logger.error("%s finding gr results: %s" % (type(e).__name__, str(e)))
                     return
                 if rootxml is None:
                     logger.debug("Error requesting results")
@@ -203,7 +203,7 @@ class GoodReads:
                                     api_hits += 1
                         except Exception as e:
                             resultxml = None
-                            logger.error("Error finding page %s of results: %s" % (loopCount, str(e)))
+                            logger.error("%s finding page %s of results: %s" % (type(e).__name__, loopCount, str(e)))
 
                     if resultxml:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
@@ -242,7 +242,7 @@ class GoodReads:
         try:
             rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
         except Exception as e:
-            logger.error("Error finding authorid: %s, %s" % (URL, str(e)))
+            logger.error("%s finding authorid: %s, %s" % (type(e).__name__, URL, str(e)))
             return authorlist
         if rootxml is None:
             logger.debug("Error requesting authorid")
@@ -271,7 +271,7 @@ class GoodReads:
         try:
             rootxml, in_cache = get_xml_request(URL)
         except Exception as e:
-            logger.error("Error getting author info: %s" % str(e))
+            logger.error("%s getting author info: %s" % (type(e).__name__, str(e)))
             return author_dict
         if rootxml is None:
             logger.debug("Error requesting author info")
@@ -324,7 +324,7 @@ class GoodReads:
             try:
                 rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
             except Exception as e:
-                logger.error("Error fetching author books: %s" % str(e))
+                logger.error("%s fetching author books: %s" % (type(e).__name__, str(e)))
                 return
             if rootxml is None:
                 logger.debug("Error requesting author books")
@@ -431,7 +431,8 @@ class GoodReads:
                                                         (isbnhead, bookLanguage))
                                             logger.debug("LT language %s: %s" % (isbnhead, bookLanguage))
                                     except Exception as e:
-                                        logger.error("Error finding LT language result for [%s], %s" % (isbn, str(e)))
+                                        logger.error("%s finding LT language result for [%s], %s" %
+                                                     (type(e).__name__, isbn, str(e)))
 
                             if bookLanguage == "Unknown":
                                 # still  no earlier match, we'll have to search the goodreads api
@@ -457,9 +458,10 @@ class GoodReads:
                                                 try:
                                                     bookLanguage = BOOK_rootxml.find('./book/language_code').text
                                                 except Exception as e:
-                                                    logger.debug("Error finding language_code in book xml: %s" % str(e))
+                                                    logger.debug("%s finding language_code in book xml: %s" %
+                                                                 (type(e).__name__, str(e)))
                                         except Exception as e:
-                                            logger.debug("Error getting book xml: %s" % str(e))
+                                            logger.debug("%s getting book xml: %s" % (type(e).__name__, str(e)))
 
                                         if not in_cache:
                                             gr_lang_hits += 1
@@ -493,7 +495,8 @@ class GoodReads:
                                         # continue
 
                                 except Exception as e:
-                                    logger.debug("Goodreads language search failed: %s" % str(e))
+                                    logger.debug("Goodreads language search failed: %s %s" %
+                                                 (type(e).__name__, str(e)))
 
                             if bookLanguage not in valid_langs:
                                 logger.debug('Skipped %s with language %s' % (book.find('title').text, bookLanguage))
@@ -725,7 +728,7 @@ class GoodReads:
                                     api_hits += 1
                         except Exception as e:
                             resultxml = None
-                            logger.error("Error finding next page of results: %s" % str(e))
+                            logger.error("%s finding next page of results: %s" % (type(e).__name__, str(e)))
 
                     if resultxml:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
@@ -793,7 +796,7 @@ class GoodReads:
                 logger.debug("Error requesting book")
                 return
         except Exception as e:
-            logger.error("Error finding book: %s" % str(e))
+            logger.error("%s finding book: %s" % (type(e).__name__, str(e)))
             return
 
         bookLanguage = rootxml.find('./book/language_code').text

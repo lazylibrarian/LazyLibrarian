@@ -276,7 +276,7 @@ def dbupgrade(db_current_version):
                         try:
                             magazinescan.magazineScan()
                         except Exception as e:
-                            msg = "Failed to scan magazines, %s" % str(e)
+                            msg = "Failed to scan magazines, %s %s" % (type(e).__name__, str(e))
                             logger.debug(msg)
                             upgradelog.write("%s v1: %s\n" % (time.ctime(), msg))
 
@@ -286,7 +286,7 @@ def dbupgrade(db_current_version):
                             logger.debug(lazylibrarian.UPDATE_MSG)
                             threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
                         except Exception as e:
-                            msg = "Failed to update WorkPages, %s" % str(e)
+                            msg = "Failed to update WorkPages, %s %s" % (type(e).__name__, str(e))
                             logger.debug(msg)
                             upgradelog.write("%s v1: %s\n" % (time.ctime(), msg))
 
@@ -312,7 +312,7 @@ def dbupgrade(db_current_version):
                                         myDB.upsert("books", newValueDict, controlValueDict)
                                 upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                         except Exception as e:
-                            msg = 'Error adding series to books: ' + str(e)
+                            msg = 'Error adding series to books: %s %s' % (type(e).__name__, str(e))
                             logger.error(msg)
                             upgradelog.write("%s v1: %s\n" % (time.ctime(), msg))
                     upgradelog.write("%s v1: complete\n" % time.ctime())
@@ -337,7 +337,7 @@ def dbupgrade(db_current_version):
                             myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
                             myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
                 except Exception as e:
-                    msg = 'Delete unnamed author error: ' + str(e)
+                    msg = 'Delete unnamed author error: %s %s' % (type(e).__name__, str(e))
                     logger.error(msg)
                     upgradelog.write("%s: %s\n" % (time.ctime(), msg))
 
@@ -378,7 +378,7 @@ def db_v2(myDB, upgradelog):
                     'UPDATE wanted SET NZBsize=? WHERE BookID=?', (nzbsize, units["BookID"]))
             upgradelog.write("%s v2: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
     except Exception as e:
-        msg = 'Error removing units from wanted table: ' + str(e)
+        msg = 'Error removing units from wanted table: %s %s ' % (type(e).__name__, str(e))
         logger.error(msg)
         upgradelog.write("%s v2: %s\n" % (time.ctime(), msg))
     upgradelog.write("%s v2: complete\n" % time.ctime())
@@ -499,7 +499,7 @@ def db_v8(myDB, upgradelog):
                 try:
                     shutil.move(os.path.join(src, img), os.path.join(dst, img))
                 except Exception as e:
-                    msg = "dbupgrade: %s" % str(e)
+                    msg = "dbupgrade: %s %s" % (type(e).__name__, str(e))
                     logger.warn(msg)
                     upgradelog.write("%s v8: %s\n" % (time.ctime(), msg))
         upgradelog.write("%s v8: %s" % (time.ctime(), lazylibrarian.UPDATE_MSG))
@@ -524,7 +524,7 @@ def db_v8(myDB, upgradelog):
                 try:
                     shutil.move(srcfile, os.path.join(dst, img))
                 except Exception as e:
-                    msg = "dbupgrade: %s %s" % (srcfile, str(e))
+                    msg = "dbupgrade: %s %s %s" % (srcfile, type(e).__name__, str(e))
                     upgradelog.write("%s v8: %s\n" % (time.ctime(), msg))
                     logger.warn(msg)
         upgradelog.write("%s v8: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
@@ -650,9 +650,9 @@ def db_v14(myDB, upgradelog):
                             'UPDATE authors SET AuthorImg="cache/author/?" WHERE AuthorID=?',
                             (img, image['AuthorID']))
                     except Exception as e:
-                        logger.warn("dbupgrade: %s" % str(e))
+                        logger.warn("dbupgrade: %s %s" % (type(e).__name__, str(e)))
             except Exception as e:
-                msg = 'Failed to update author image for %s: %s' % (image['AuthorName'], str(e))
+                msg = 'Failed to update author image for %s: %s %s' % (image['AuthorName'], type(e).__name__, str(e))
                 logger.warn(msg)
                 upgradelog.write("%s v14: %s\n" % (time.ctime(), msg))
         upgradelog.write("%s v14: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
@@ -690,9 +690,10 @@ def db_v14(myDB, upgradelog):
                         myDB.action('UPDATE books SET BookImg="cache/book/?" WHERE BookID=?',
                                     (img, image['BookID']))
                     except Exception as e:
-                        logger.warn("dbupgrade: %s" % str(e))
+                        logger.warn("dbupgrade: %s %s" % (type(e).__name__, str(e)))
             except Exception as e:
-                logger.warn('Failed to update book image for %s: %s' % (image['BookName'], str(e)))
+                logger.warn('Failed to update book image for %s: %s %s' %
+                            (image['BookName'], type(e).__name__, str(e)))
         upgradelog.write("%s v14: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         logger.debug("Book Image cache updated")
 

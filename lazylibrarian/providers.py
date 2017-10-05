@@ -79,6 +79,8 @@ def get_capabilities(provider):
         host = provider['HOST']
         if not str(host)[:4] == "http":
             host = 'http://' + host
+        if host[-1:] == '/':
+            host = host[:-1]
         URL = host + '/api?t=caps&apikey=' + provider['API']
         logger.debug('Requesting capabilities for %s' % URL)
 
@@ -565,6 +567,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
     if params:
         if not str(host)[:4] == "http":
             host = 'http://' + host
+        if host[-1:] == '/':
+            host = host[:-1]
         URL = host + '/api?' + urllib.urlencode(params)
 
         sterm = book['searchterm']
@@ -578,7 +582,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             try:
                 rootxml = ElementTree.fromstring(result)
             except Exception as e:
-                logger.error('Error parsing data from %s: %s' % (host, str(e)))
+                logger.error('Error parsing data from %s: %s %s' % (host, type(e).__name__, str(e)))
                 rootxml = None
         else:
             if not result or result == "''":
@@ -597,7 +601,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 match = False
                 if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
                         (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
-                    errorlist = ['no such function', 'unknown parameter', 'unknown function', 'incorrect parameter']
+                    errorlist = ['no such function', 'unknown parameter', 'unknown function',
+                                 'bad request', 'incorrect parameter']
                     for item in errorlist:
                         if item in errormsg.lower():
                             match = True
@@ -644,7 +649,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                                 dt = datetime.datetime.strptime(nzbdate, "%a, %d %b %Y %H:%M:%S").timetuple()
                                 nzbage = age('%04d-%02d-%02d' % (dt.tm_year, dt.tm_mon, dt.tm_mday))
                             except Exception as e:
-                                logger.debug('Unable to get age from [%s] %s' % (thisnzb['nzbdate'], str(e)))
+                                logger.debug('Unable to get age from [%s] %s %s' %
+                                             (thisnzb['nzbdate'], type(e).__name__, str(e)))
                                 nzbage = 0
                             if nzbage <= maxage:
                                 nzbcount += 1

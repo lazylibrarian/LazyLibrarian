@@ -469,7 +469,7 @@ class Api(object):
         try:
             addAuthorToDB(self.id, refresh=refresh)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
         refresh = False
@@ -679,7 +679,7 @@ class Api(object):
                     self.data = "Moved book [%s] to [%s]" % (bookdata[1], authordata[0])
             logger.debug(self.data)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _moveBooks(self, **kwargs):
         if 'fromname' not in kwargs:
@@ -708,7 +708,7 @@ class Api(object):
 
             logger.debug(self.data)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _addAuthor(self, **kwargs):
         if 'name' not in kwargs:
@@ -719,7 +719,7 @@ class Api(object):
         try:
             self.data = addAuthorNameToDB(author=self.id, refresh=False)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _addAuthorID(self, **kwargs):
         if 'id' not in kwargs:
@@ -730,7 +730,7 @@ class Api(object):
         try:
             self.data = addAuthorToDB(refresh=False, authorid=self.id)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _grFollowAll(self):
         myDB = database.DBConnection()
@@ -766,7 +766,7 @@ class Api(object):
         try:
             self.data = grfollow(authorid=self.id, follow=True)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _grUnfollow(self, **kwargs):
         if 'id' not in kwargs:
@@ -777,7 +777,7 @@ class Api(object):
         try:
             self.data = grfollow(authorid=self.id, follow=False)
         except Exception as e:
-            self.data = str(e)
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _searchItem(self, **kwargs):
         if 'item' not in kwargs:
@@ -969,7 +969,7 @@ class Api(object):
                     setperm(destfile)
                     msg = ''
                 except Exception as why:
-                    msg += " Failed to copy file: %s" % str(why)
+                    msg += " Failed to copy file: %s %s" % (type(why).__name__, str(why))
             else:
                 msg += " invalid extension"
 

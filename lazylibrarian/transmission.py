@@ -147,7 +147,7 @@ def removeTorrent(torrentid, remove_data=False):
             logger.debug('%s has not finished seeding yet, torrent will not be removed, \
                         will try again on next run' % name)
     except Exception as e:
-        logger.debug('Unable to remove torrent %s, %s' % (torrentid, str(e)))
+        logger.debug('Unable to remove torrent %s, %s %s' % (torrentid, type(e).__name__, str(e)))
         return False
 
     return False
@@ -232,7 +232,7 @@ def torrentAction(method, arguments):
         response = request.request_json(host, method="POST", data=json.dumps(data),
                                         headers=headers, auth=auth)
     except Exception as e:
-        logger.debug('Transmission error %s' % str(e))
+        logger.debug('Transmission %s: %s' % (type(e).__name__, str(e)))
         response = ''
 
     if not response:

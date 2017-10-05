@@ -60,7 +60,7 @@ class grauth:
         try:
             response, content = client.request(request_token_url, 'GET')
         except Exception as e:
-            return "Exception in client.request: %s" % str(e)
+            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
         if response['status'] != '200':
             return 'Invalid response from: %s' % request_token_url
@@ -86,7 +86,7 @@ class grauth:
         try:
             response, content = client.request(access_token_url, 'POST')
         except Exception as e:
-            return "Exception in client.request: %s" % str(e)
+            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
         if response['status'] != '200':
             return 'Invalid response: %s' % response['status']
@@ -113,7 +113,7 @@ class grauth:
                 user_id = self.getUserId()
                 return user_id
             except Exception as e:
-                logger.debug("Unable to get UserID: %s" % str(e))
+                logger.debug("Unable to get UserID: %s %s" % (type(e).__name__, str(e)))
                 return ""
 
     def get_shelf_list(self):
@@ -152,7 +152,7 @@ class grauth:
                 try:
                     response, content = client.request(request_url, 'GET', body, headers)
                 except Exception as e:
-                    return "Exception in client.request: %s" % str(e)
+                    return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
                 if response['status'] != '200':
                     raise Exception('Failure status: %s for page %s' % (response['status'], current_page))
@@ -203,7 +203,7 @@ class grauth:
                 response, content = client.request('%s/author_followings' % 'https://www.goodreads.com', 'POST', body,
                                                    headers)
             except Exception as e:
-                return False, "Exception in client.request: %s" % str(e)
+                return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
         else:
             body = urllib.urlencode({'format': 'xml'})
             headers = {'content-type': 'application/x-www-form-urlencoded'}
@@ -211,7 +211,7 @@ class grauth:
                 response, content = client.request('%s/author_followings/%s' % ('https://www.goodreads.com', authorid),
                                                    'DELETE', body, headers)
             except Exception as e:
-                return False, "Exception in client.request: %s" % str(e)
+                return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
         if follow and response['status'] == '422':
             return True, 'Already following'
@@ -246,7 +246,7 @@ class grauth:
             response, content = client.request('%s/user_shelves.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
         except Exception as e:
-            return False, "Exception in client.request: %s" % str(e)
+            return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
         if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
@@ -318,7 +318,7 @@ class grauth:
         try:
             response, content = client.request('%s/api/auth_user' % 'https://www.goodreads.com', 'GET')
         except Exception as e:
-            return "Exception in client.request: %s" % str(e)
+            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
         if response['status'] != '200':
             raise Exception('Cannot fetch resource: %s' % response['status'])
 
@@ -347,7 +347,7 @@ class grauth:
         try:
             response, content = client.request(request_url, 'GET', body, headers)
         except Exception as e:
-            return "Exception in client.request: %s" % str(e)
+            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
         if response['status'] != '200':
             raise Exception('Failure status: %s for page ' % response['status'] + page)
         return content
@@ -378,7 +378,7 @@ class grauth:
             response, content = client.request('%s/shelf/add_to_shelf.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
         except Exception as e:
-            return False, "Exception in client.request: %s" % str(e)
+            return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
         if response['status'] != '200' and response['status'] != '201':
             msg = 'Failure status: %s' % response['status']
@@ -394,7 +394,7 @@ def test_auth():
     try:
         user_id = GA.get_user_id()
     except Exception as e:
-        return "GR Auth Error: %s" % str(e)
+        return "GR Auth %s: %s" % (type(e).__name__, str(e))
     if user_id:
         return "Pass: UserID is %s" % user_id
     else:
@@ -426,10 +426,11 @@ def sync_to_gr():
             msg += "Sync Owned books is disabled\n"
         logger.info(msg.strip('\n').replace('\n', ', '))
     except Exception as e:
-        logger.debug("Exception in sync_to_gr: %s" % str(e))
+        logger.debug("Exception in sync_to_gr: %s %s" % (type(e).__name__, str(e)))
     finally:
         threading.currentThread().name = 'WEBSERVER'
         return msg
+
 
 def grfollow(authorid, follow=True):
     myDB = database.DBConnection()
@@ -516,7 +517,7 @@ def grsync(status, shelf):
                 try:
                     res, content = GA.BookToList(book, shelf)
                 except Exception as e:
-                    logger.debug("Error in BookToList: %s" % str(e))
+                    logger.debug("Error in BookToList: %s %s" % (type(e).__name__, str(e)))
                     res = None
 
                 if res:

@@ -288,7 +288,7 @@ def getLatestVersion_FromGit():
                     # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
                 else:
                     logmsg('warn', '(getLatestVersion_FromGit) Could not get the latest commit from github')
-                    logmsg('debug', 'git error for %s: %s' % (url, str(e)))
+                    logmsg('debug', 'git %s for %s: %s' % (type(e).__name__, url, str(e)))
                     latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
@@ -331,11 +331,12 @@ def getCommitDifferenceFromGit():
                         messages.insert(0, item['commit']['message'])
                     for line in messages:
                         commit_list = "%s\n%s" % (commit_list, line)
-            except Exception:
-                logmsg('warn', '(getCommitDifferenceFromGit) -  could not get difference status from GitHub')
+            except Exception as e:
+                logmsg('warn', '(getCommitDifferenceFromGit) %s -  could not get difference status from GitHub' %
+                       type(e).__name__)
 
-        except Exception:
-            msg = '(getCommitDifferenceFromGit) -  Could not get commits behind from github. '
+        except Exception as e:
+            msg = '(getCommitDifferenceFromGit) %s -  Could not get commits behind from github. ' % type(e).__name__
             msg += 'Can happen if you have a local commit not pushed to repo or no connection to github'
             logmsg('warn', msg)
 

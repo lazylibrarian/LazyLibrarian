@@ -63,7 +63,7 @@ def audioRename(bookid):
                 if author and book:
                     parts.append([track, book, author, f])
             except Exception as e:
-                logger.debug("id3reader error %s" % str(e))
+                logger.debug("id3reader %s %s" % (type(e).__name__, str(e)))
                 pass
 
     logger.debug("%s found %s audiofiles" % (exists['BookName'], cnt))
@@ -143,18 +143,18 @@ def audioRename(bookid):
     for part in parts:
         pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
         pattern = pattern.replace('$Author', author).replace('$Title', book).replace(
-                                '$Part', part[0].zfill(len(str(len(parts))))).replace(
-                                '$Total', str(len(parts)))
+            '$Part', part[0].zfill(len(str(len(parts))))).replace(
+            '$Total', str(len(parts)))
         n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
         o = os.path.join(r, part[3])
         if o != n:
             try:
                 # shutil.move(o, n)
                 # if check_int(part[0], 0) == 1:
-                #    book_filename = n
+                #     book_filename = n
                 logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
             except Exception as e:
-                logger.error('Unable to rename [%s] to [%s] %s' % (o, n, str(e)))
+                logger.error('Unable to rename [%s] to [%s] %s %s' % (o, n, type(e).__name__, str(e)))
     return book_filename
 
 
@@ -200,7 +200,8 @@ def bookRename(bookid):
                             logger.debug("bookRename %s to %s" % (ofname, nfname))
                             f = nfname
                         except Exception as e:
-                            logger.error('Unable to rename [%s] to [%s] %s' % (ofname, nfname, str(e)))
+                            logger.error('Unable to rename [%s] to [%s] %s %s' %
+                                         (ofname, nfname, type(e).__name__, str(e)))
         return f
 
 
@@ -250,7 +251,7 @@ def setBookAuthors(book):
                                     (authorid, book['bookid']), suppress='UNIQUE')
                         newrefs += 1
     except Exception as e:
-        logger.debug("Error parsing authorlist for %s: %s" % (book['bookname'], str(e)))
+        logger.debug("Error parsing authorlist for %s: %s %s" % (book['bookname'], type(e).__name__, str(e)))
     return newauthors, newrefs
 
 
@@ -755,7 +756,7 @@ def getSeriesAuthors(seriesid):
                 if not authorid:
                     logger.warn("GoodReads doesn't know about %s %s" % (authorname, bookname))
             except Exception as e:
-                logger.error("Error finding goodreads results: %s" % str(e))
+                logger.error("Error finding goodreads results: %s %s" % (type(e).__name__, str(e)))
 
             if authorid:
                 lazylibrarian.importer.addAuthorToDB(refresh=False, authorid=authorid)
