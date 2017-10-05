@@ -87,6 +87,8 @@ EBOOK_UPDATE = 0
 AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
+SQLITE3 = ''
+GROUP_CONCAT = 0
 
 # user permissions
 perm_config = 1 << 0  # 1 access to config page

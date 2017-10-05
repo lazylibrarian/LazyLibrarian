@@ -29,6 +29,19 @@ class DBConnection:
     def __init__(self):
         self.connection = sqlite3.connect(lazylibrarian.DBFILE, 20)
         self.connection.row_factory = sqlite3.Row
+        lazylibrarian.SQLITE3 = sqlite3.sqlite_version
+        # group_concat needs sqlite3 >= 3.5.4
+        lazylibrarian.GROUP_CONCAT = False
+        try:
+            a,b,c = lazylibrarian.SQLITE3.split('.')
+            if int(a) == 3:
+                if int(b) > 5 or int(b) == 5 and int(c) >= 4:
+                    lazylibrarian.GROUP_CONCAT = True
+                else:
+                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' %
+                                lazylibrarian.SQLITE3)
+        except Exception as e:
+            logger.warn("Unable to parse sqlite3 version")
 
     def action(self, query, args=None, suppress=None):
         with db_lock:
