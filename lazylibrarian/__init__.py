@@ -26,6 +26,7 @@ import sys
 import threading
 import time
 import webbrowser
+import sqlite3
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
@@ -571,6 +572,20 @@ def initialize():
 
         except Exception as e:
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
+
+        SQLITE3 = sqlite3.sqlite_version
+        logger.debug("sqlite3 is v%s" % SQLITE3)
+        # group_concat needs sqlite3 >= 3.5.4
+        GROUP_CONCAT = False
+        try:
+            parts = SQLITE3.split('.')
+            if int(part[0]) == 3:
+                if int(part[1]) > 5 or int(part[1]) == 5 and int(part[2]) >= 4:
+                    GROUP_CONCAT = True
+                else:
+                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % SQLITE3)
+        except Exception as e:
+            logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
 
         MONTHNAMES = build_monthtable()
         BOOKSTRAP_THEMELIST = build_bookstrap_themes()
