@@ -235,6 +235,7 @@
                     { targets: [2], class: "hidden" },
                     { targets: [4], 'render': function(data, type, row){
                         if (row[12] === null ) { return data; }
+                        if (row[12] === '' ) { return row[4]; }
                         var series = row[12].split('^');
                         var output = [];
                         for (var index=0; index < series.length; ++index) {

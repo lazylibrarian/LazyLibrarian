@@ -1238,13 +1238,20 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
-        cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary, '
-        cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
-        cmd += ' FROM books, authors'
-        cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
-        cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
-        cmd += ' WHERE books.AuthorID = authors.AuthorID'
+        # group_concat needs sqlite3 >= 3.5.4, we check version in database.__init__
+        lazylibrarian.GROUP_CONCAT = False
+        if lazylibrarian.GROUP_CONCAT:
+            cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
+            cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary, '
+            cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
+            cmd += ' FROM books, authors'
+            cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
+            cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
+            cmd += ' WHERE books.AuthorID = authors.AuthorID'
+        else:
+            cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
+            cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
+            cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
 
         library = None
         status_type = 'books.status'
@@ -1280,8 +1287,9 @@ class WebInterface(object):
                 cmd += ' and BOOKLANG=?'
                 args.append(kwargs['booklang'])
 
-        cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
-        cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
+        if lazylibrarian.GROUP_CONCAT:
+            cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
+            cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
 
         rowlist = myDB.select(cmd, tuple(args))
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
@@ -1379,6 +1387,8 @@ class WebInterface(object):
                 if perm & lazylibrarian.perm_edit:
                     title = title + '&nbsp;' + editpage
 
+                if not lazylibrarian.GROUP_CONCAT:
+                    row.append('')
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
