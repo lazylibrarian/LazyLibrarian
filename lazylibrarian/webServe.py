@@ -1238,7 +1238,7 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        # group_concat needs sqlite3 >= 3.5.4, we check version in database.__init__
+        # group_concat needs sqlite3 >= 3.5.4, we check version in __init__
 
         if lazylibrarian.GROUP_CONCAT:
             cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,books.bookid,booklang,'
@@ -1388,7 +1388,7 @@ class WebInterface(object):
                     title = title + '&nbsp;' + editpage
 
                 if not lazylibrarian.GROUP_CONCAT:
-                    row.append('')
+                    row.append('')  # empty string for series links as no group_concat
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
