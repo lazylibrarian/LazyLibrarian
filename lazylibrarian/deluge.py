@@ -193,7 +193,7 @@ def getTorrentFolder(torrentid):
 
         return name
     except Exception as err:
-        logger.debug('Deluge: Could not get torrent folder name: %s' % str(err))
+        logger.debug('Deluge %s: Could not get torrent folder name: %s' % (type(err).__name__, str(err)))
 
 
 def removeTorrent(torrentid, remove_data=False):
@@ -238,7 +238,7 @@ def _get_auth():
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         #                                  , verify=TORRENT_VERIFY_CERT)
     except Exception as err:
-        logger.debug('Deluge: auth.login returned %s' % str(err))
+        logger.debug('Deluge %s: auth.login returned %s' % (type(err).__name__, str(err)))
         delugeweb_auth = {}
         return None
 
@@ -257,7 +257,7 @@ def _get_auth():
         response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
         #                                  , verify=TORRENT_VERIFY_CERT)
     except Exception as err:
-        logger.debug('Deluge: web.connected returned %s' % str(err))
+        logger.debug('Deluge %s: web.connected returned %s' % (type(err).__name__, str(err)))
         delugeweb_auth = {}
         return None
 
@@ -272,7 +272,7 @@ def _get_auth():
                                      cookies=delugeweb_auth, headers=headers)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
-            logger.debug('Deluge: web.get_hosts returned %s' % str(err))
+            logger.debug('Deluge %s: web.get_hosts returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
             return None
 
@@ -290,7 +290,7 @@ def _get_auth():
             _ = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth, headers=headers)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
-            logger.debug('Deluge: web.connect returned %s' % str(err))
+            logger.debug('Deluge %s: web.connect returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
             return None
 
@@ -303,7 +303,7 @@ def _get_auth():
                                      cookies=delugeweb_auth, headers=headers)
             #                                  , verify=TORRENT_VERIFY_CERT)
         except Exception as err:
-            logger.debug('Deluge: web.connected returned %s' % str(err))
+            logger.debug('Deluge %s: web.connected returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
             return None
 
@@ -333,7 +333,7 @@ def _add_torrent_magnet(result):
             logger.error('Deluge: Adding magnet failed: Is the WebUI running?')
         return json.loads(response.text)['result']
     except Exception as err:
-        logger.error('Deluge: Adding magnet failed: %s' % str(err))
+        logger.error('Deluge %s: Adding magnet failed: %s' % (type(err).__name__, str(err)))
 
 
 def _add_torrent_url(result):
@@ -352,7 +352,7 @@ def _add_torrent_url(result):
             logger.error('Deluge: Adding torrent URL failed: Is the WebUI running?')
         return json.loads(response.text)['result']
     except Exception as err:
-        logger.error('Deluge: Adding torrent URL failed: %s' % str(err))
+        logger.error('Deluge %s: Adding torrent URL failed: %s' % (type(err).__name__, str(err)))
         return False
 
 
@@ -374,7 +374,7 @@ def _add_torrent_file(result):
             logger.error('Deluge: Adding torrent file failed: Is the WebUI running?')
         return json.loads(response.text)['result']
     except Exception as err:
-        logger.error('Deluge: Adding torrent file failed: %s' % str(err))
+        logger.error('Deluge %s: Adding torrent file failed: %s' % (type(err).__name__, str(err)))
         formatted_lines = traceback.format_exc().splitlines()
         logger.error('; '.join(formatted_lines))
         return False
@@ -409,7 +409,7 @@ def setTorrentLabel(result):
                                       cookies=delugeweb_auth, headers=headers)
                     logger.debug('Deluge: %s label added to Deluge' % label)
                 except Exception as err:
-                    logger.error('Deluge: Setting label failed: %s' % str(err))
+                    logger.error('Deluge %s: Setting label failed: %s' % (type(err).__name__, str(err)))
                     formatted_lines = traceback.format_exc().splitlines()
                     logger.error('; '.join(formatted_lines))
 

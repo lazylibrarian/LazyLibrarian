@@ -90,7 +90,7 @@ def processAlternate(source_dir=None):
                 try:
                     metadata = get_book_info(metafile)
                 except Exception as e:
-                    logger.debug('Failed to read metadata from %s, %s' % (metafile, str(e)))
+                    logger.debug('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
             else:
                 logger.debug('No metadata file found for %s' % new_book)
             if 'title' not in metadata or 'creator' not in metadata:
@@ -98,7 +98,7 @@ def processAlternate(source_dir=None):
                 try:
                     metadata = get_book_info(new_book)
                 except Exception as e:
-                    logger.debug('No metadata found in %s, %s' % (new_book, str(e)))
+                    logger.debug('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
             if 'title' in metadata and 'creator' in metadata:
                 authorname = metadata['creator']
                 bookname = metadata['title']
@@ -112,9 +112,9 @@ def processAlternate(source_dir=None):
                     GR = GoodReads(authorname)
                     try:
                         author_gr = GR.find_author_id()
-                    except Exception:
+                    except Exception as e:
                         author_gr = {}
-                        logger.debug("No author id for [%s]" % authorname)
+                        logger.debug("No author id for [%s] %s" % (authorname, type(e).__name__))
                     if author_gr:
                         grauthorname = author_gr['authorname']
                         authorid = author_gr['authorid']
@@ -168,7 +168,7 @@ def try_rename(directory, filename):
         shutil.move(os.path.join(directory, filename), os.path.join(directory, newfname))
         return newfname
     except Exception as e:
-        logger.error("[try_rename] Unable to rename %s, %s" % (repr(filename), str(e)))
+        logger.error("[try_rename] Unable to rename %s, %s %s" % (repr(filename), type(e).__name__, str(e)))
         return ""
 
 
@@ -199,7 +199,8 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                         shutil.move(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
                 except Exception as why:
-                    logger.debug("Failed to copy/move file %s to [%s], %s" % (ourfile, targetdir, str(why)))
+                    logger.debug("Failed to copy/move file %s to [%s], %s %s" %
+                                 (ourfile, targetdir, type(why).__name__, str(why)))
 
 
 def cron_processDir():
@@ -264,10 +265,10 @@ def processDir(reset=False):
                             if 'name' in result:
                                 torrentname = unaccented_str(result['name'])
                         except Exception as e:
-                            logger.debug('DelugeRPC failed %s' % str(e))
+                            logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                 except Exception as e:
-                    logger.debug("Failed to get updated torrent name from %s for %s: %s" %
-                                 (book['Source'], book['DownloadID'], str(e)))
+                    logger.debug("Failed to get updated torrent name from %s for %s: %s %s" %
+                                 (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
 
                 matchtitle = unaccented_str(book['NZBtitle'])
                 if torrentname and torrentname != matchtitle:
@@ -528,7 +529,8 @@ def processDir(reset=False):
                                     logger.debug('Deleted %s, %s from %s' %
                                                  (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                 except Exception as why:
-                                    logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                                    logger.debug("Unable to remove %s, %s %s" %
+                                                 (pp_path, type(why).__name__, str(why)))
                         else:
                             if lazylibrarian.CONFIG['DESTINATION_COPY']:
                                 logger.debug("Not removing original files as Keep Files is set")
@@ -566,12 +568,14 @@ def processDir(reset=False):
                         try:
                             shutil.rmtree(pp_path + '.fail')
                         except Exception as why:
-                            logger.debug("Unable to remove %s, %s" % (pp_path + '.fail', str(why)))
+                            logger.debug("Unable to remove %s, %s %s" %
+                                         (pp_path + '.fail', type(why).__name__, str(why)))
                     try:
                         shutil.move(pp_path, pp_path + '.fail')
                         logger.warn('Residual files remain in %s.fail' % pp_path)
                     except Exception as why:
-                        logger.error("[processDir] Unable to rename %s, %s" % (pp_path, str(why)))
+                        logger.error("[processDir] Unable to rename %s, %s %s" %
+                                     (pp_path, type(why).__name__, str(why)))
                         logger.warn('Residual files remain in %s' % pp_path)
 
         # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
@@ -700,7 +704,7 @@ def delete_task(Source, DownloadID, remove_data):
                 client.connect()
                 client.call('core.remove_torrent', DownloadID, remove_data)
             except Exception as e:
-                logger.debug('DelugeRPC failed %s' % str(e))
+                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                 return False
         elif Source == 'DIRECT':
             return True
@@ -710,7 +714,7 @@ def delete_task(Source, DownloadID, remove_data):
         return True
 
     except Exception as e:
-        logger.debug("Failed to delete task %s from %s: %s" % (DownloadID, Source, str(e)))
+        logger.debug("Failed to delete task %s from %s: %s %s" % (DownloadID, Source, type(e).__name__, str(e)))
         return False
 
 
@@ -802,7 +806,7 @@ def import_book(pp_path=None, bookID=None):
                         try:
                             shutil.rmtree(pp_path)
                         except Exception as why:
-                            logger.debug("Unable to remove %s, %s" % (pp_path, str(why)))
+                            logger.debug("Unable to remove %s, %s %s" % (pp_path, type(why).__name__, str(why)))
                 else:
                     if lazylibrarian.CONFIG['DESTINATION_COPY']:
                         logger.debug("Not removing original files as Keep Files is set")
@@ -825,12 +829,12 @@ def import_book(pp_path=None, bookID=None):
                     try:
                         shutil.rmtree(pp_path + '.fail')
                     except Exception as why:
-                        logger.debug("Unable to remove %s, %s" % (pp_path + '.fail', str(why)))
+                        logger.debug("Unable to remove %s, %s %s" % (pp_path + '.fail', type(why).__name__, str(why)))
                 try:
                     shutil.move(pp_path, pp_path + '.fail')
                     logger.warn('Residual files remain in %s.fail' % pp_path)
                 except Exception as e:
-                    logger.error("[importBook] Unable to rename %s, %s" % (pp_path, str(e)))
+                    logger.error("[importBook] Unable to rename %s, %s %s" % (pp_path, type(e).__name__, str(e)))
                     logger.warn('Residual files remain in %s' % pp_path)
 
                 was_snatched = myDB.match('SELECT NZBurl FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
@@ -934,7 +938,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
             else:
                 logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
     except Exception as e:
-        logger.debug("calibredb exception: %s" % str(e))
+        logger.debug("calibredb exception: %s %s" % (type(e).__name__, str(e)))
         rc = 1
 
     if rc and dest_url.startswith('http'):
@@ -953,7 +957,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
             if rc:
                 logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
         except Exception as e:
-            logger.debug("calibredb retry exception: %s" % str(e))
+            logger.debug("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
     return res, err, rc
 
 
@@ -1098,7 +1102,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             return False, "Failed to locate calibre author dir [%s]" % calibre_dir
             # imported = LibraryScan(dest_dir)  # may have to rescan whole library instead
         except Exception as e:
-            return False, 'calibredb import failed, %s' % str(e)
+            return False, 'calibredb import failed, %s %s' % (type(e).__name__, str(e))
     else:
         # we are copying the files ourselves, either it's audiobook, magazine or we don't want to use calibre
         if not os.path.exists(dest_path):
@@ -1128,9 +1132,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
             else:
                 if is_valid_booktype(fname, booktype=booktype) or \
-                        ((fname.lower().endswith(".jpg") or
-                         fname.lower().endswith(".opf")) and not
-                         lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
+                        ((fname.lower().endswith(".jpg") or fname.lower().endswith(".opf"))
+                         and not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
                     logger.debug('Copying %s to directory %s' % (fname, dest_path))
                     try:
                         if booktype == 'audiobook':
@@ -1147,7 +1150,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         if is_valid_booktype(destfile, booktype=booktype):
                             newbookfile = destfile
                     except Exception as why:
-                        return False, "Unable to copy file %s to %s: %s" % (fname, dest_path, str(why))
+                        return False, "Unable to copy file %s to %s: %s %s" % \
+                               (fname, dest_path, type(why).__name__, str(why))
                 else:
                     logger.debug('Ignoring unwanted file: %s' % fname)
 
@@ -1227,7 +1231,8 @@ def processAutoAdd(src_path=None):
                         shutil.move(srcname, dstname)
                     copied = True
                 except Exception as why:
-                    logger.error('AutoAdd - Failed to copy/move file [%s] because [%s] ' % (name, str(why)))
+                    logger.error('AutoAdd - Failed to copy/move file [%s] %s [%s] ' %
+                                 (name, type(why).__name__, str(why)))
                     return False
                 try:
                     os.chmod(dstname, 0o666)  # make rw for calibre
@@ -1268,7 +1273,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     try:
         shutil.copyfile(cachefile, coverfile)
     except Exception as e:
-        logger.debug("Error copying image to %s, %s" % (coverfile, str(e)))
+        logger.debug("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
         return
 
 

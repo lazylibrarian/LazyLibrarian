@@ -50,7 +50,7 @@ def get_book_info(fname):
             book = Mobi(fname)
             book.parse()
         except Exception as e:
-            logger.debug('Unable to parse mobi in %s, %s' % (fname, str(e)))
+            logger.debug('Unable to parse mobi in %s, %s %s' % (fname, type(e).__name__, str(e)))
             return res
 
         author = book.author()
@@ -90,7 +90,7 @@ def get_book_info(fname):
         try:
             zipdata = zipfile.ZipFile(fname)
         except Exception as e:
-            logger.debug('Unable to parse epub file %s, %s' % (fname, str(e)))
+            logger.debug('Unable to parse epub file %s, %s %s' % (fname, type(e).__name__, str(e)))
             return res
 
         # find the contents metafile
@@ -98,7 +98,7 @@ def get_book_info(fname):
         try:
             tree = ElementTree.fromstring(txt)
         except Exception as e:
-            logger.error("Error parsing metadata from epub zipfile: %s" % str(e))
+            logger.error("Error parsing metadata from epub zipfile: %s %s" % (type(e).__name__, str(e)))
             return res
         n = 0
         cfname = ""
@@ -129,7 +129,7 @@ def get_book_info(fname):
     try:
         tree = ElementTree.fromstring(txt)
     except Exception as e:
-        logger.error("Error parsing metadata from %s, %s" % (fname, str(e)))
+        logger.error("Error parsing metadata from %s, %s %s" % (fname, type(e).__name__, str(e)))
         return res
 
     if not len(tree):
@@ -300,7 +300,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         else:
                             myDB.action('UPDATE authors set AuthorName=? WHERE AuthorID=?', (authorname, authorid))
             except Exception as e:
-                logger.info('Error: ' + str(e))
+                logger.info('%s %s' % (type(e).__name__, str(e)))
         else:
             if authid:
                 match = myDB.match('SELECT authorid from authors where authorid=?', (authid,))
@@ -442,7 +442,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             try:
                                 res = get_book_info(book_filename)
                             except Exception as e:
-                                logger.debug('get_book_info failed for %s, %s' % (book_filename, str(e)))
+                                logger.debug('get_book_info failed for %s, %s %s' %
+                                             (book_filename, type(e).__name__, str(e)))
                                 res = {}
                             # title and creator are the minimum we need
                             if 'title' in res and 'creator' in res:
@@ -471,7 +472,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             metafile = opf_file(r)
                             res = get_book_info(metafile)
                         except Exception as e:
-                            logger.debug('get_book_info failed for %s, %s' % (metafile, str(e)))
+                            logger.debug('get_book_info failed for %s, %s %s' % (metafile, type(e).__name__, str(e)))
 
                         # title and creator are the minimum we need
                         if res and 'title' in res and 'creator' in res:
@@ -502,7 +503,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     if author and book:
                                         match = True
                                 except Exception as e:
-                                    logger.debug("id3reader error %s" % str(e))
+                                    logger.debug("id3reader error %s %s" % (type(e).__name__, str(e)))
                                     pass
 
                         # Failing anything better, just pattern match on filename

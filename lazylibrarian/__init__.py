@@ -570,7 +570,7 @@ def initialize():
             logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
 
         except Exception as e:
-            logger.error("Can't connect to the database: %s" % str(e))
+            logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
 
         MONTHNAMES = build_monthtable()
         BOOKSTRAP_THEMELIST = build_bookstrap_themes()
@@ -893,25 +893,25 @@ def config_write():
         with open(CONFIGFILE + '.new', 'wb') as configfile:
             CFG.write(configfile)
     except Exception as e:
-        msg = '{} {} {}'.format('Unable to create new config file:', CONFIGFILE, str(e))
+        msg = '{} {} {} {}'.format('Unable to create new config file:', CONFIGFILE, type(e).__name__, str(e))
         logger.warn(msg)
         return
     try:
         os.remove(CONFIGFILE + '.bak')
     except OSError as e:
         if e.errno is not 2:  # doesn't exist is ok
-            msg = '{} {}{} {}'.format('Error deleting backup file:', CONFIGFILE, '.bak', e.strerror)
+            msg = '{} {}{} {} {}'.format(type(e).__name__, 'deleting backup file:', CONFIGFILE, '.bak', e.strerror)
             logger.warn(msg)
     try:
         os.rename(CONFIGFILE, CONFIGFILE + '.bak')
     except OSError as e:
         if e.errno is not 2:  # doesn't exist is ok as wouldn't exist until first save
-            msg = '{} {} {}'.format('Unable to backup config file:', CONFIGFILE, e.strerror)
+            msg = '{} {} {} {}'.format('Unable to backup config file:', CONFIGFILE, type(e).__name__, e.strerror)
             logger.warn(msg)
     try:
         os.rename(CONFIGFILE + '.new', CONFIGFILE)
     except OSError as e:
-        msg = '{} {} {}'.format('Unable to rename new config file:', CONFIGFILE, e.strerror)
+        msg = '{} {} {} {}'.format('Unable to rename new config file:', CONFIGFILE, type(e).__name__, e.strerror)
         logger.warn(msg)
 
     if not msg:
@@ -1076,7 +1076,7 @@ def build_bookstrap_themes():
             themelist.append(theme['name'].lower())
     except Exception as e:
         # error reading results
-        logger.debug('JSON Error reading bookstrap themes, %s' % str(e))
+        logger.debug('JSON Error reading bookstrap themes, %s %s' % (type(e).__name__, str(e)))
 
     logger.debug("Bookstrap found %i themes" % len(themelist))
     return themelist
@@ -1095,7 +1095,7 @@ def build_monthtable():
                 mlist += item + ' '
             logger.debug('Loaded monthnames.json : %s' % mlist)
         except Exception as e:
-            logger.error('Failed to load monthnames.json, %s' % str(e))
+            logger.error('Failed to load monthnames.json, %s %s' % (type(e).__name__, str(e)))
 
     if not table:
         # Default Month names table to hold long/short month names for multiple languages
@@ -1159,7 +1159,7 @@ def build_monthtable():
                     lang, table[1][len(table[1]) - 2], table[1][len(table[1]) - 1]))
         except Exception as e:
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
-            logger.warn("Unable to load requested locale [%s] %s" % (lang, str(e)))
+            logger.warn("Unable to load requested locale [%s] %s %s" % (lang, type(e).__name__, str(e)))
             try:
                 wanted_lang = lang.split('_')[0]
                 params = ['locale', '-a']
@@ -1173,7 +1173,7 @@ def build_monthtable():
                 else:
                     logger.warn("Unable to find an alternative")
             except Exception as e:
-                logger.warn("Unable to get a list of alternatives, %s" % str(e))
+                logger.warn("Unable to get a list of alternatives, %s %s" % (type(e).__name__, str(e)))
             logger.info("Set locale back to entry state %s" % current_locale)
 
     # with open(json_file, 'w') as f:
@@ -1226,7 +1226,7 @@ def launch_browser(host, port, root):
     try:
         webbrowser.open('http://%s:%i%s' % (host, port, root))
     except Exception as e:
-        logger.error('Could not launch browser: %s' % str(e))
+        logger.error('Could not launch browser:%s  %s' % (type(e).__name__, str(e)))
 
 
 def start():
@@ -1283,7 +1283,7 @@ def shutdown(restart=False, update=False):
                 logmsg('info', 'Lazylibrarian version updated')
                 config_write()
         except Exception as e:
-            logmsg('warn', 'LazyLibrarian failed to update: %s. Restarting.' % str(e))
+            logmsg('warn', 'LazyLibrarian failed to update: %s %s. Restarting.' % (type(e).__name__, str(e)))
 
     if PIDFILE:
         logmsg('info', 'Removing pidfile %s' % PIDFILE)
@@ -1303,13 +1303,13 @@ def shutdown(restart=False, update=False):
                 try:
                     executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
                 except Exception as e:
-                    logger.debug("where python2 failed: %s" % str(e))
+                    logger.debug("where python2 failed: %s %s" % (type(e).__name__, str(e)))
             else:
                 params = ["which", "python2"]
                 try:
                     executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
                 except Exception as e:
-                    logger.debug("which python2 failed: %s" % str(e))
+                    logger.debug("which python2 failed: %s %s" % (type(e).__name__, str(e)))
 
         if not executable:
             executable = 'python'  # default if not found, still might not work if points to python3

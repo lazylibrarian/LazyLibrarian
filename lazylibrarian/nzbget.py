@@ -73,7 +73,7 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
     except Exception as e:
-        logger.debug("NZBget connection to %s failed: %s" % (url, str(e)))
+        logger.debug("NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e)))
         return False
 
     if cmd == "test":
@@ -165,10 +165,10 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
         # also the return value has changed from boolean to integer
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
-            nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-                                             else nzb.url, lazylibrarian.CONFIG['NZBGET_CATEGORY'],
-                                             lazylibrarian.CONFIG['NZBGET_PRIORITY'], False,
-                                             False, dupekey, dupescore, "score")
+            nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None else nzb.url,
+                                             lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                             lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, False, dupekey, dupescore,
+                                             "score")
             if nzbget_result <= 0:
                 nzbget_result = False
         else:
@@ -186,5 +186,6 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
             logger.error("NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
             return False
     except Exception as e:
-        logger.error("Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", str(e)))
+        logger.error("Connect Error to NZBget: could not add %s to the queue: %s %s" %
+                     (nzb.name + ".nzb", type(e).__name__, str(e)))
         return False

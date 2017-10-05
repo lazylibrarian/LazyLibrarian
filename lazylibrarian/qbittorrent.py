@@ -70,7 +70,7 @@ class qbittorrentclient(object):
         try:
             _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
-            logger.debug('Error getting SID. qBittorrent responded with error: %s' % str(err))
+            logger.debug('Error getting SID. qBittorrent %s: %s' % (type(err).__name__, str(err)))
             logger.debug('Unable to log in to %s/login' % base_url)
             return
         for cookie in self.cookiejar:
@@ -200,7 +200,7 @@ def checkLink():
             return "qBittorrent login successful"
         return "qBittorrent login FAILED\nCheck debug log"
     except Exception as err:
-        return "qBittorrent login FAILED: %s" % str(err)
+        return "qBittorrent login FAILED: %s %s" % (type(err).__name__, str(err))
 
 
 def addTorrent(link):

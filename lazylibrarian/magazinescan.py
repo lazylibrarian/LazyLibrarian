@@ -46,7 +46,7 @@ def create_covers(refresh=False):
             create_cover(item['IssueFile'], refresh=refresh)
             cnt += 1
         except Exception as why:
-            logger.debug('Unable to create cover for %s, %s' % (item['IssueFile'], str(why)))
+            logger.debug('Unable to create cover for %s, %s %s' % (item['IssueFile'], type(why).__name__, str(why)))
     logger.info("Cover creation completed")
     if refresh:
         return "Created covers for %s issue%s" % (cnt, plural(cnt))
@@ -81,7 +81,7 @@ def create_cover(issuefile=None, refresh=False):
         try:
             data = zipfile.ZipFile(issuefile)
         except Exception as why:
-            logger.debug("Failed to read zip file %s, %s" % (issuefile, str(why)))
+            logger.debug("Failed to read zip file %s, %s %s" % (issuefile, type(why).__name__, str(why)))
             data = ''
     elif extn in ['.cbr']:
         try:
@@ -94,7 +94,7 @@ def create_cover(issuefile=None, refresh=False):
             from lib.unrar import rarfile
             data = rarfile.RarFile(issuefile)
         except Exception as why:
-            logger.debug("Failed to read rar file %s, %s" % (issuefile, str(why)))
+            logger.debug("Failed to read rar file %s, %s %s" % (issuefile, type(why).__name__, str(why)))
             data = ''
     if data:
         img = ''
@@ -112,7 +112,7 @@ def create_cover(issuefile=None, refresh=False):
             else:
                 logger.debug("Failed to find image in %s" % issuefile)
         except Exception as why:
-            logger.debug("Failed to extract image from %s, %s" % (issuefile, str(why)))
+            logger.debug("Failed to extract image from %s, %s %s" % (issuefile, type(why).__name__, str(why)))
 
     elif extn == '.pdf':
         generator = ""
@@ -128,14 +128,14 @@ def create_cover(issuefile=None, refresh=False):
                     GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
                     generator = "gswin64c"
                 except Exception as e:
-                    logger.debug("where gswin64c failed: %s" % str(e))
+                    logger.debug("where gswin64c failed: %s %s" % (type(e).__name__, str(e)))
             if not os.path.isfile(GS):
                 params = ["where", "gswin32c"]
                 try:
                     GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
                     generator = "gswin32c"
                 except Exception as e:
-                    logger.debug("where gswin32c failed: %s" % str(e))
+                    logger.debug("where gswin32c failed: %s %s" % (type(e).__name__, str(e)))
             if not os.path.isfile(GS):
                 logger.debug("No gswin found")
                 generator = "(no windows ghostscript found)"
@@ -184,7 +184,7 @@ def create_cover(issuefile=None, refresh=False):
                             logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
                     except Exception as e:
                         # logger.debug(params)
-                        logger.debug('External "convert" failed %s' % e)
+                        logger.debug('External "convert" failed %s %s' % (type(e).__name__, str(e)))
 
                 elif interface == 'wand':
                     generator = "wand interface"
@@ -214,7 +214,7 @@ def create_cover(issuefile=None, refresh=False):
                             GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
                             generator = GS
                         except Exception as e:
-                            logger.debug("which gs failed: %s" % str(e))
+                            logger.debug("which gs failed: %s %s" % (type(e).__name__, str(e)))
                         if not os.path.isfile(GS):
                             logger.debug("Cannot find gs")
                             generator = "(no gs found)"
@@ -229,8 +229,8 @@ def create_cover(issuefile=None, refresh=False):
                             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                             if not os.path.isfile(coverfile):
                                 logger.debug("Failed to create jpg: %s" % res)
-            except Exception:
-                logger.debug("Unable to create cover for %s using %s" % (issuefile, generator))
+            except Exception as e:
+                logger.debug("Unable to create cover for %s using %s %s" % (issuefile, type(e).__name__, generator))
                 logger.debug('Exception in create_cover: %s' % traceback.format_exc())
 
         if os.path.isfile(coverfile):
@@ -243,7 +243,7 @@ def create_cover(issuefile=None, refresh=False):
         shutil.copyfile(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.jpg'), coverfile)
         setperm(coverfile)
     except Exception as why:
-        logger.debug("Failed to copy nocover file, %s" % str(why))
+        logger.debug("Failed to copy nocover file, %s %s" % (type(why).__name__, str(why)))
     return
 
 
@@ -355,7 +355,7 @@ def magazineScan():
                                 logger.debug("Pattern match failed for [%s]" % fname)
                                 continue
                         except Exception as e:
-                            logger.debug("Invalid name format for [%s] %s" % (fname, str(e)))
+                            logger.debug("Invalid name format for [%s] %s %s" % (fname, type(e).__name__, str(e)))
                             continue
 
                     logger.debug("Found %s Issue %s" % (title, fname))

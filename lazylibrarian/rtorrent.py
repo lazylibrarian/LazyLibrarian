@@ -100,7 +100,7 @@ def addTorrent(tor_url, hashID):
 
     except Exception as e:
         # socket.setdefaulttimeout(None)  # reset timeout if failed
-        logger.error("rTorrent Error: %s" % str(e))
+        logger.error("rTorrent Error: %s: %s" % (type(e).__name__, str(e)))
         return False
 
     # For each torrent in the main view

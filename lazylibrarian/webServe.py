@@ -1098,7 +1098,7 @@ class WebInterface(object):
                     threading.Thread(target=LibraryScan, name='AUTHOR_SCAN',
                                      args=[authordir, library, AuthorID, remove]).start()
                 except Exception as e:
-                    logger.error('Unable to complete the scan: %s' % str(e))
+                    logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
             else:
                 # maybe we don't have any of their books
                 logger.warn('Unable to find author directory: %s' % authordir)
@@ -1239,10 +1239,10 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         # group_concat needs sqlite3 >= 3.5.4, we check version in database.__init__
-        lazylibrarian.GROUP_CONCAT = False
+
         if lazylibrarian.GROUP_CONCAT:
-            cmd = 'SELECT bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
-            cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary, '
+            cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,books.bookid,booklang,'
+            cmd += ' booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary,'
             cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
             cmd += ' FROM books, authors'
             cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
@@ -1676,7 +1676,8 @@ class WebInterface(object):
                                     authorimg = 'cache/author/' + authorid + '.jpg'
                                     rejected = False
                                 except Exception as why:
-                                    logger.debug("Failed to copy file %s, %s" % (authorimg, str(why)))
+                                    logger.debug("Failed to copy file %s, %s %s" %
+                                                 (authorimg, type(why).__name__, str(why)))
 
                         if authorimg.startswith('http'):
                             # cache image from url
@@ -1869,7 +1870,8 @@ class WebInterface(object):
                                         rmtree(os.path.dirname(bookfile), ignore_errors=True)
                                         deleted = True
                                     except Exception as e:
-                                        logger.debug('rmtree failed on %s, %s' % (bookfile, str(e)))
+                                        logger.debug('rmtree failed on %s, %s %s' %
+                                                     (bookfile, type(e).__name__, str(e)))
                                         deleted = False
 
                                     if deleted:
@@ -2316,7 +2318,7 @@ class WebInterface(object):
                 logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
             return True
         except Exception as e:
-            logger.debug('delete issue failed on %s, %s' % (issuefile, str(e)))
+            logger.debug('delete issue failed on %s, %s %s' % (issuefile, type(e).__name__, str(e)))
         return False
 
     @cherrypy.expose
@@ -2489,7 +2491,7 @@ class WebInterface(object):
             try:
                 threading.Thread(target=LibraryScan, name=threadname, args=[None, library, None, remove]).start()
             except Exception as e:
-                logger.error('Unable to complete the scan: %s' % str(e))
+                logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('%s already running' % threadname)
         if library == 'Audio':
@@ -2502,7 +2504,7 @@ class WebInterface(object):
             try:
                 threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
             except Exception as e:
-                logger.error('Unable to complete the scan: %s' % str(e))
+                logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('MAGAZINE_SCAN already running')
         raise cherrypy.HTTPRedirect("magazines")
@@ -2514,7 +2516,7 @@ class WebInterface(object):
                 threading.Thread(target=LibraryScan, name='ALT-LIBRARYSCAN',
                                  args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], 'eBook', None, False]).start()
             except Exception as e:
-                logger.error('Unable to complete the libraryscan: %s' % str(e))
+                logger.error('Unable to complete the libraryscan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('ALT-LIBRARYSCAN already running')
         raise cherrypy.HTTPRedirect("manage")
@@ -2526,7 +2528,7 @@ class WebInterface(object):
                 threading.Thread(target=processAlternate, name='IMPORTALT',
                                  args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
             except Exception as e:
-                logger.error('Unable to complete the import: %s' % str(e))
+                logger.error('Unable to complete the import: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('IMPORTALT already running')
         raise cherrypy.HTTPRedirect("manage")
@@ -2543,7 +2545,7 @@ class WebInterface(object):
                 else:
                     message = "No CSV file in [%s]" % lazylibrarian.CONFIG['ALTERNATE_DIR']
             except Exception as e:
-                message = 'Unable to complete the import: %s' % str(e)
+                message = 'Unable to complete the import: %s %s' % (type(e).__name__, str(e))
                 logger.error(message)
         else:
             message = 'IMPORTCSV already running'
@@ -3124,7 +3126,7 @@ class WebInterface(object):
             elif 'need more than 1 value' in str(e):
                 msg += "Invalid USERNAME or PASSWORD"
             else:
-                msg += str(e)
+                msg += type(e).__name__ + ' ' + str(e)
             return msg
 
     @cherrypy.expose

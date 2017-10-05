@@ -200,7 +200,7 @@ def setperm(file_or_dir):
         return True
     except Exception as e:
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Failed to set permission %s for %s : %s" % (value, file_or_dir, str(e)))
+            logger.debug("Failed to set permission %s for %s: %s %s" % (value, file_or_dir, type(e).__name__, str(e)))
         return False
 
 
@@ -249,7 +249,7 @@ def book_file(search_dir=None, booktype=None):
                 if is_valid_booktype(fname, booktype=booktype):
                     return os.path.join(search_dir, fname)
         except Exception as e:
-            logger.warn('Listdir error [%s]: %s' % (search_dir, str(e)))
+            logger.warn('Listdir error [%s]: %s %s' % (search_dir, type(e).__name__, str(e)))
     return ""
 
 
@@ -556,7 +556,7 @@ def saveLog():
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
     passchars = string.ascii_letters + string.digits + '_/'  # _/ used by slack and googlebooks
     redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ', 'using api [',
-                  'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': '"]
+                  'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': ', 'keys ->'"]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0

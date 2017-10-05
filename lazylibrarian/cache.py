@@ -51,7 +51,7 @@ def fetchURL(URL, headers=None, retry=True):
             except socket.error as e:
                 return "Socket error %s" % str(e), False
             except Exception as e:
-                return "resp.read error %s" % str(e), False
+                return "resp.read %s %s" % (type(e).__name__, str(e)), False
 
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug(resp.info())
@@ -65,8 +65,8 @@ def fetchURL(URL, headers=None, retry=True):
         return result, success
     except Exception as e:
         if hasattr(e, 'reason'):
-            return "Exception reason %s" % str(e.reason), False
-        return "Exception %s" % str(e), False
+            return "Exception %s: Reason: %s" % (type(e).__name__, str(e.reason)), False
+        return "Exception %s: %s" % (type(e).__name__, str(e)), False
 
 
 def cache_img(img_type, img_ID, img_url, refresh=False):
@@ -91,7 +91,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
                     img.write(result)
                 return link, True
             except Exception as e:
-                logger.debug("Error writing image to %s, %s" % (cachefile, str(e)))
+                logger.debug("%s writing image to %s, %s" % (type(e).__name__, cachefile, str(e)))
                 return str(e), False
         return result, False
     else:
@@ -99,7 +99,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
             shutil.copyfile(img_url, cachefile)
             return link, True
         except Exception as e:
-            logger.debug("Error copying image to %s, %s" % (cachefile, str(e)))
+            logger.debug("%s copying image to %s, %s" % (type(e).__name__, cachefile, str(e)))
             return str(e), False
 
 
@@ -168,7 +168,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 try:
                     source = json.loads(result)
                 except Exception as e:
-                    logger.debug(u"Error decoding json from %s" % url)
+                    logger.debug(u"%s decoding json from %s" % (type(e).__name__, url))
                     logger.debug(u"%s : %s" % (e, result))
                     return None, False
                 json.dump(source, open(hashfilename, "w"))

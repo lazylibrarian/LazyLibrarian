@@ -52,7 +52,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
         try:
             author_gr = GR.find_author_id()
         except Exception as e:
-            logger.warn("Error finding author id for [%s] %s" % (author, str(e)))
+            logger.warn("%s finding author id for [%s] %s" % (type(e).__name__, author, str(e)))
             return "", "", False
 
         # only try to add if GR data matches found author data
@@ -101,7 +101,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
                         if check_exist_author:
                             new = True
                     except Exception as e:
-                        logger.debug('Failed to add author [%s] to db: %s' % (author, str(e)))
+                        logger.debug('Failed to add author [%s] to db: %s %s' % (author, type(e).__name__, str(e)))
     # check author exists in db, either newly loaded or already there
     if not check_exist_author:
         logger.debug("Failed to match author [%s] in database" % author)
