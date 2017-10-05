@@ -579,8 +579,8 @@ def initialize():
         GROUP_CONCAT = False
         try:
             parts = SQLITE3.split('.')
-            if int(part[0]) == 3:
-                if int(part[1]) > 5 or int(part[1]) == 5 and int(part[2]) >= 4:
+            if int(parts[0]) == 3:
+                if int(parts[1]) > 5 or int(parts[1]) == 5 and int(parts[2]) >= 4:
                     GROUP_CONCAT = True
                 else:
                     logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % SQLITE3)
