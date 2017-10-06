@@ -178,18 +178,21 @@ def month2num(month):
 def datecompare(nzbdate, control_date):
     """
     Return how many days between two dates given in yy-mm-dd format or yyyy-mm-dd format
+    or zero if error (not a valid date)
     """
-    y1 = int(nzbdate.split('-')[0])
-    m1 = int(nzbdate.split('-')[1])
-    d1 = int(nzbdate.split('-')[2])
-    y2 = int(control_date.split('-')[0])
-    m2 = int(control_date.split('-')[1])
-    d2 = int(control_date.split('-')[2])
-    date1 = datetime.date(y1, m1, d1)
-    date2 = datetime.date(y2, m2, d2)
-    dtage = date1 - date2
-    return dtage.days
-
+    try:
+        y1 = int(nzbdate.split('-')[0])
+        m1 = int(nzbdate.split('-')[1])
+        d1 = int(nzbdate.split('-')[2])
+        y2 = int(control_date.split('-')[0])
+        m2 = int(control_date.split('-')[1])
+        d2 = int(control_date.split('-')[2])
+        date1 = datetime.date(y1, m1, d1)
+        date2 = datetime.date(y2, m2, d2)
+        dtage = date1 - date2
+        return dtage.days
+    except Exception:
+        return 0
 
 def plural(var):
     """
