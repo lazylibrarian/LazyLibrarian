@@ -19,7 +19,7 @@ import urlparse
 
 import lazylibrarian
 from lazylibrarian import logger, request
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 # This is just a simple script to send torrents to transmission. The
@@ -38,7 +38,7 @@ def addTorrent(link, directory=None):
     #    arguments = {'metainfo': metainfo }
     # else:
     if directory is None:
-        directory = lazylibrarian.DIRECTORY('Download')
+        directory = getList(lazylibrarian.CONFIG('DOWNLOAD_DIR'))[0]
     arguments = {'filename': link, 'download-dir': directory}
 
     response = torrentAction(method, arguments)

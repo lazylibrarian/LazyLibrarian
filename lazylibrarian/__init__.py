@@ -998,7 +998,7 @@ def DIRECTORY(dirname):
     elif dirname == "Audio":
         usedir = CONFIG['AUDIO_DIR']
     elif dirname == "Download":
-        usedir = CONFIG['DOWNLOAD_DIR']
+        usedir = getList(CONFIG['DOWNLOAD_DIR'])[0]
     elif dirname == "Alternate":
         usedir = CONFIG['ALTERNATE_DIR']
     else:

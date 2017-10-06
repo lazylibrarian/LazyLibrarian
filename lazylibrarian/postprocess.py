@@ -213,416 +213,416 @@ def processDir(reset=False):
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
             threading.currentThread().name = "POSTPROCESS"
-
-        download_dir = lazylibrarian.DIRECTORY('Download')
         ppcount = 0
-        # download_dir is set to unicode so we get unicode results from listdir
-        try:
-            downloads = os.listdir(download_dir)
-        except OSError as why:
-            logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
-            threading.currentThread().name = "WEBSERVER"
-            return
-
-        logger.debug('Checking %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
-
         myDB = database.DBConnection()
-        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
-
         skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
 
-        if len(snatched) > 0 and len(downloads) > 0:
-            for book in snatched:
-                # if torrent, see if we can get current status from the downloader as the name
-                # may have been changed once magnet resolved, or download started or completed
-                # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
-                torrentname = ''
-                try:
-                    logger.debug("%s was sent to %s" % (book['NZBtitle'], book['Source']))
-                    if book['Source'] == 'TRANSMISSION':
-                        torrentname = transmission.getTorrentFolder(book['DownloadID'])
-                    elif book['Source'] == 'UTORRENT':
-                        torrentname = utorrent.nameTorrent(book['DownloadID'])
-                    elif book['Source'] == 'RTORRENT':
-                        torrentname = rtorrent.getName(book['DownloadID'])
-                    elif book['Source'] == 'QBITTORRENT':
-                        torrentname = qbittorrent.getName(book['DownloadID'])
-                    elif book['Source'] == 'SYNOLOGY_TOR':
-                        torrentname = synology.getName(book['DownloadID'])
-                    elif book['Source'] == 'DELUGEWEBUI':
-                        torrentname = deluge.getTorrentFolder(book['DownloadID'])
-                    elif book['Source'] == 'DELUGERPC':
-                        client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
-                                                 int(lazylibrarian.CONFIG['DELUGE_PORT']),
-                                                 lazylibrarian.CONFIG['DELUGE_USER'],
-                                                 lazylibrarian.CONFIG['DELUGE_PASS'])
-                        try:
-                            client.connect()
-                            result = client.call('core.get_torrent_status', book['DownloadID'], {})
-                            #    for item in result:
-                            #        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
-                            if 'name' in result:
-                                torrentname = unaccented_str(result['name'])
-                        except Exception as e:
-                            logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-                except Exception as e:
-                    logger.debug("Failed to get updated torrent name from %s for %s: %s %s" %
-                                 (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
+        for download_dir in getList(lazylibrarian.CONFIG['DOWNLOAD_DIR']):
+            # download_dir is set to unicode so we get unicode results from listdir
+            try:
+                if isinstance(download_dir, str):
+                    download_dir = download_dir.decode(lazylibrarian.SYS_ENCODING)
+                downloads = os.listdir(download_dir)
+            except OSError as why:
+                logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
+                threading.currentThread().name = "WEBSERVER"
+                return
 
-                matchtitle = unaccented_str(book['NZBtitle'])
-                if torrentname and torrentname != matchtitle:
-                    logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
-                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
-                    matchtitle = torrentname
+            snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+            logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
+            logger.debug('Checking %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
 
-                # here we could also check percentage downloaded or eta or status?
-                # If downloader says it hasn't completed, no need to look for it.
+            if len(snatched) > 0 and len(downloads) > 0:
+                for book in snatched:
+                    # if torrent, see if we can get current status from the downloader as the name
+                    # may have been changed once magnet resolved, or download started or completed
+                    # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
+                    torrentname = ''
+                    try:
+                        logger.debug("%s was sent to %s" % (book['NZBtitle'], book['Source']))
+                        if book['Source'] == 'TRANSMISSION':
+                            torrentname = transmission.getTorrentFolder(book['DownloadID'])
+                        elif book['Source'] == 'UTORRENT':
+                            torrentname = utorrent.nameTorrent(book['DownloadID'])
+                        elif book['Source'] == 'RTORRENT':
+                            torrentname = rtorrent.getName(book['DownloadID'])
+                        elif book['Source'] == 'QBITTORRENT':
+                            torrentname = qbittorrent.getName(book['DownloadID'])
+                        elif book['Source'] == 'SYNOLOGY_TOR':
+                            torrentname = synology.getName(book['DownloadID'])
+                        elif book['Source'] == 'DELUGEWEBUI':
+                            torrentname = deluge.getTorrentFolder(book['DownloadID'])
+                        elif book['Source'] == 'DELUGERPC':
+                            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
+                                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                                     lazylibrarian.CONFIG['DELUGE_USER'],
+                                                     lazylibrarian.CONFIG['DELUGE_PASS'])
+                            try:
+                                client.connect()
+                                result = client.call('core.get_torrent_status', book['DownloadID'], {})
+                                #    for item in result:
+                                #        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
+                                if 'name' in result:
+                                    torrentname = unaccented_str(result['name'])
+                            except Exception as e:
+                                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+                    except Exception as e:
+                        logger.debug("Failed to get updated torrent name from %s for %s: %s %s" %
+                                     (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
 
-                matches = []
+                    matchtitle = unaccented_str(book['NZBtitle'])
+                    if torrentname and torrentname != matchtitle:
+                        logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
+                        myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
+                        matchtitle = torrentname
 
-                book_type = book['AuxInfo']
-                if book_type != 'AudioBook' and book_type != 'eBook':
-                    if book_type is None or book_type == '':
-                        book_type = 'eBook'
+                    # here we could also check percentage downloaded or eta or status?
+                    # If downloader says it hasn't completed, no need to look for it.
+
+                    matches = []
+
+                    book_type = book['AuxInfo']
+                    if book_type != 'AudioBook' and book_type != 'eBook':
+                        if book_type is None or book_type == '':
+                            book_type = 'eBook'
+                        else:
+                            book_type = 'Magazine'
+
+                    logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
+                    for fname in downloads:
+                        if isinstance(fname, str):
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.warn("unexpected unicode conversion in downloads")
+                            fname = try_rename(download_dir, fname)
+                        if not fname:
+                            fname = "failed rename"
+                        # skip if failed before or incomplete torrents, or incomplete btsync etc
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug("Checking extn on %s" % fname)
+                        extn = os.path.splitext(fname)[1]
+                        if not extn or extn not in skipped_extensions:
+                            # This is to get round differences in torrent filenames.
+                            # Usenet is ok, but Torrents aren't always returned with the name we searched for
+                            # We ask the torrent downloader for the torrent name, but don't always get an answer
+                            # so we try to do a "best match" on the name, there might be a better way...
+
+                            matchname = fname
+                            # torrents might have words_separated_by_underscores
+                            matchname = matchname.split(' LL.(')[0].replace('_', ' ')
+                            matchtitle = matchtitle.split(' LL.(')[0].replace('_', ' ')
+                            match = fuzz.token_set_ratio(matchtitle, matchname)
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
+                            if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
+                                pp_path = os.path.join(download_dir, fname)
+                                if isinstance(pp_path, str):
+                                    try:
+                                        pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
+                                    except UnicodeDecodeError:
+                                        logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
+                                        pp_path = "Failed pp_path"
+
+                                if int(lazylibrarian.LOGLEVEL) > 2:
+                                    logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
+
+                                if os.path.isfile(pp_path):
+                                    # handle single file downloads here. Book/mag file in download root.
+                                    # move the file into it's own subdirectory so we don't move/delete
+                                    # things that aren't ours
+                                    if int(lazylibrarian.LOGLEVEL) > 2:
+                                        logger.debug('%s is a file' % fname)
+                                    if is_valid_booktype(fname, booktype="book") \
+                                            or is_valid_booktype(fname, booktype="audiobook") \
+                                            or is_valid_booktype(fname, booktype="mag"):
+                                        if int(lazylibrarian.LOGLEVEL) > 2:
+                                            logger.debug('file [%s] is a valid book/mag' % fname)
+                                        if bts_file(download_dir):
+                                            logger.debug("Skipping %s, found a .bts file" % download_dir)
+                                        else:
+                                            fname = os.path.splitext(fname)[0]
+                                            while fname[-1] in '. ':
+                                                fname = fname[:-1]
+                                            targetdir = os.path.join(download_dir, fname)
+                                            try:
+                                                os.makedirs(targetdir)
+                                                setperm(targetdir)
+                                            except OSError as why:
+                                                if not os.path.isdir(targetdir):
+                                                    logger.debug('Failed to create directory [%s], %s' %
+                                                                 (targetdir, why.strerror))
+                                            if os.path.isdir(targetdir):
+                                                if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
+                                                        lazylibrarian.CONFIG['KEEP_SEEDING']:
+                                                    move_into_subdir(download_dir, targetdir, fname, move='copy')
+                                                else:
+                                                    move_into_subdir(download_dir, targetdir, fname)
+                                                pp_path = targetdir
+
+                                if os.path.isdir(pp_path):
+                                    logger.debug('Found folder (%s%%) [%s] for %s %s' %
+                                                 (match, pp_path, book_type, matchtitle))
+                                    skipped = False
+                                    if book_type == 'eBook' and not book_file(pp_path, 'ebook'):
+                                        logger.debug("Skipping %s, no ebook found" % pp_path)
+                                        skipped = True
+                                    elif book_type == 'AudioBook' and not book_file(pp_path, 'audiobook'):
+                                        logger.debug("Skipping %s, no audiobook found" % pp_path)
+                                        skipped = True
+                                    elif book_type == 'Magazine' and not book_file(pp_path, 'mag'):
+                                        logger.debug("Skipping %s, no magazine found" % pp_path)
+                                        skipped = True
+                                    if not os.listdir(pp_path):
+                                        logger.debug("Skipping %s, folder is empty" % pp_path)
+                                        skipped = True
+                                    elif bts_file(pp_path):
+                                        logger.debug("Skipping %s, found a .bts file" % pp_path)
+                                        skipped = True
+                                    if not skipped:
+                                        matches.append([match, pp_path, book])
+                                else:
+                                    logger.debug('%s is not a directory?' % pp_path)
+                            else:
+                                pp_path = os.path.join(download_dir, fname)
+                                matches.append([match, pp_path, book])  # so we can report closest match
+                        else:
+                            logger.debug('Skipping %s' % fname)
+
+                    match = 0
+                    if matches:
+                        highest = max(matches, key=lambda x: x[0])
+                        match = highest[0]
+                        pp_path = highest[1]
+                        book = highest[2]
+                    if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
+                        mostrecentissue = ''
+                        logger.debug('Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
+
+                        cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
+                        cmd += ' and books.AuthorID = authors.AuthorID'
+                        data = myDB.match(cmd, (book['BookID'],))
+                        if data:  # it's ebook/audiobook
+                            logger.debug('Processing %s %s' % (book_type, book['BookID']))
+                            authorname = data['AuthorName']
+                            authorname = ' '.join(authorname.split())  # ensure no extra whitespace
+                            bookname = data['BookName']
+                            if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
+                                logger.warn('Please check your EBOOK_DEST_FOLDER setting')
+                                lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG[
+                                    'EBOOK_DEST_FOLDER'].replace('/', '\\')
+                            # Default destination path, should be allowed change per config file.
+                            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace(
+                                '$Title', bookname)
+                            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace(
+                                '$Title', bookname)
+                            global_name = unaccented(global_name)
+                            dest_path = unaccented_str(replace_all(dest_path, __dic__))
+                            dest_dir = lazylibrarian.DIRECTORY('eBook')
+                            if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
+                                dest_dir = lazylibrarian.DIRECTORY('Audio')
+                            dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
+                        else:
+                            data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
+                            if data:  # it's a magazine
+                                logger.debug('Processing magazine %s' % book['BookID'])
+                                # AuxInfo was added for magazine release date, normally housed in 'magazines'
+                                # but if multiple files are downloading, there will be an error in post-processing
+                                # trying to go to the same directory.
+                                mostrecentissue = data['IssueDate']  # keep for processing issues arriving out of order
+                                mag_name = unaccented_str(replace_all(book['BookID'], __dic__))
+                                # book auxinfo is a cleaned date, eg 2015-01-01
+                                dest_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER'].replace(
+                                    '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
+
+                                if lazylibrarian.CONFIG['MAG_RELATIVE']:
+                                    if dest_path[0] not in '._':
+                                        dest_path = '_' + dest_path
+                                    dest_dir = lazylibrarian.DIRECTORY('eBook')
+                                    dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
+                                else:
+                                    dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
+                                authorname = None
+                                bookname = None
+                                global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate',
+                                                                                            book['AuxInfo']).replace(
+                                    '$Title', mag_name)
+                                global_name = unaccented(global_name)
+                            else:  # not recognised
+                                logger.debug('Nothing in database matching "%s"' % book['BookID'])
+                                continue
                     else:
-                        book_type = 'Magazine'
+                        logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
+                        if match:
+                            logger.debug('Closest match (%s%%): %s' % (match, pp_path))
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                for match in matches:
+                                    logger.debug('Match: %s%%  %s' % (match[0], match[1]))
+                        continue
 
-                logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
-                for fname in downloads:
-                    if isinstance(fname, str):
+                    success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
+                                                            global_name, book['BookID'], book_type)
+                    if success:
+                        logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
+                        # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
+                        controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
+                        newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
+                        myDB.upsert("wanted", newValueDict, controlValueDict)
+
+                        if bookname:  # it's ebook or audiobook
+                            processExtras(dest_file, global_name, book['BookID'], book_type)
+                        else:  # update mags
+                            if mostrecentissue:
+                                if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
+                                    older = (int(mostrecentissue) > int(book['AuxInfo']))  # issuenumber
+                                else:
+                                    older = (mostrecentissue > book['AuxInfo'])  # YYYY-MM-DD
+                            else:
+                                older = False
+
+                            controlValueDict = {"Title": book['BookID']}
+                            if older:  # check this in case processing issues arriving out of order
+                                newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
+                            else:
+                                newValueDict = {"IssueDate": book['AuxInfo'], "LastAcquired": today(),
+                                                "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
+                                                "IssueStatus": "Open"}
+                            myDB.upsert("magazines", newValueDict, controlValueDict)
+
+                            iss_id = create_id("%s %s" % (book['BookID'], book['AuxInfo']))
+                            controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
+                            newValueDict = {"IssueAcquired": today(),
+                                            "IssueFile": dest_file,
+                                            "IssueID": iss_id
+                                            }
+                            myDB.upsert("issues", newValueDict, controlValueDict)
+
+                            # create a thumbnail cover for the new issue
+                            create_cover(dest_file)
+                            processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
+
+                        # calibre or ll copied/moved the files we want, now delete source files
+
+                        to_delete = True
+                        if book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
+                            # Only delete torrents if we don't want to keep seeding
+                            if lazylibrarian.CONFIG['KEEP_SEEDING']:
+                                logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
+                                to_delete = False
+                        if to_delete:
+                            # ask downloader to delete the torrent, but not the files
+                            # we may delete them later, depending on other settings
+                            if not book['Source']:
+                                logger.warn("Unable to remove %s, no source" % book['NZBtitle'])
+                            elif not book['DownloadID'] or book['DownloadID'] == "unknown":
+                                logger.warn("Unable to remove %s from %s, no DownloadID" %
+                                            (book['NZBtitle'], book['Source'].lower()))
+                            elif book['Source'] != 'DIRECT':
+                                logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
+                                delete_task(book['Source'], book['DownloadID'], False)
+
+                        if to_delete:
+                            # only delete the files if not in download root dir and if DESTINATION_COPY not set
+                            if not lazylibrarian.CONFIG['DESTINATION_COPY'] and (pp_path != download_dir):
+                                if os.path.isdir(pp_path):
+                                    # calibre might have already deleted it?
+                                    try:
+                                        shutil.rmtree(pp_path)
+                                        logger.debug('Deleted %s, %s from %s' %
+                                                     (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
+                                    except Exception as why:
+                                        logger.debug("Unable to remove %s, %s %s" %
+                                                     (pp_path, type(why).__name__, str(why)))
+                            else:
+                                if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                                    logger.debug("Not removing original files as Keep Files is set")
+                                else:
+                                    logger.debug("Not removing original files as in download root")
+
+                        logger.info('Successfully processed: %s' % global_name)
+
+                        ppcount += 1
+                        if bookname:
+                            custom_notify_download(book['BookID'])
+                            notify_download("%s %s from %s at %s" %
+                                            (book_type, global_name, book['NZBprov'], now()), book['BookID'])
+                        else:
+                            custom_notify_download(iss_id)
+                            notify_download("%s %s from %s at %s" %
+                                            (book_type, global_name, book['NZBprov'], now()), iss_id)
+
+                        update_downloads(book['NZBprov'])
+                    else:
+                        logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
+                        controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
+                        newValueDict = {"Status": "Failed", "NZBDate": now()}
+                        myDB.upsert("wanted", newValueDict, controlValueDict)
+                        # if it's a book, reset status so we try for a different version
+                        # if it's a magazine, user can select a different one from pastissues table
+                        if book_type == 'eBook':
+                            myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
+                        elif book_type == 'AudioBook':
+                            myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
+
+                        # at this point, as it failed we should move it or it will get postprocessed
+                        # again (and fail again)
+                        if os.path.isdir(pp_path + '.fail'):
+                            try:
+                                shutil.rmtree(pp_path + '.fail')
+                            except Exception as why:
+                                logger.debug("Unable to remove %s, %s %s" %
+                                             (pp_path + '.fail', type(why).__name__, str(why)))
+                        try:
+                            shutil.move(pp_path, pp_path + '.fail')
+                            logger.warn('Residual files remain in %s.fail' % pp_path)
+                        except Exception as why:
+                            logger.error("[processDir] Unable to rename %s, %s %s" %
+                                         (pp_path, type(why).__name__, str(why)))
+                            logger.warn('Residual files remain in %s' % pp_path)
+
+            # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
+            # do a fresh listdir in case we processed and deleted any earlier
+            # and don't process any we've already done as we might not want to delete originals
+            downloads = os.listdir(download_dir)
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
+            for entry in downloads:
+                if "LL.(" in entry:
+                    if isinstance(entry, str):
                         if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.warn("unexpected unicode conversion in downloads")
-                        fname = try_rename(download_dir, fname)
-                    if not fname:
-                        fname = "failed rename"
-                    # skip if failed before or incomplete torrents, or incomplete btsync etc
-                    if int(lazylibrarian.LOGLEVEL) > 2:
-                        logger.debug("Checking extn on %s" % fname)
-                    extn = os.path.splitext(fname)[1]
+                            logger.warn("unexpected unicode conversion in LL scanner")
+                        entry = try_rename(download_dir, entry)
+                        if not entry:
+                            entry = "failed rename"
+                    dname, extn = os.path.splitext(entry)
                     if not extn or extn not in skipped_extensions:
-                        # This is to get round differences in torrent filenames.
-                        # Usenet is ok, but Torrents aren't always returned with the name we searched for
-                        # We ask the torrent downloader for the torrent name, but don't always get an answer
-                        # so we try to do a "best match" on the name, there might be a better way...
-
-                        matchname = fname
-                        # torrents might have words_separated_by_underscores
-                        matchname = matchname.split(' LL.(')[0].replace('_', ' ')
-                        matchtitle = matchtitle.split(' LL.(')[0].replace('_', ' ')
-                        match = fuzz.token_set_ratio(matchtitle, matchname)
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
-                        if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
-                            pp_path = os.path.join(download_dir, fname)
-                            if isinstance(pp_path, str):
-                                try:
-                                    pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
-                                except UnicodeDecodeError:
-                                    logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
-                                    pp_path = "Failed pp_path"
+                        bookID = entry.split("LL.(")[1].split(")")[0]
+                        logger.debug("Book with id: %s found in download directory" % bookID)
+                        data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
+                        if data and data['BookFile'] and os.path.isfile(data['BookFile']):
+                            logger.debug('Skipping BookID %s, already exists' % bookID)
+                        else:
+                            pp_path = os.path.join(download_dir, entry)
 
                             if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
+                                logger.debug("Checking type of %s" % pp_path)
 
                             if os.path.isfile(pp_path):
-                                # handle single file downloads here. Book/mag file in download root.
-                                # move the file into it's own subdirectory so we don't move/delete
-                                # things that aren't ours
                                 if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug('%s is a file' % fname)
-                                if is_valid_booktype(fname, booktype="book") \
-                                        or is_valid_booktype(fname, booktype="audiobook") \
-                                        or is_valid_booktype(fname, booktype="mag"):
+                                    logger.debug("%s is a file" % pp_path)
+                                pp_path = os.path.join(download_dir)
+
+                            if os.path.isdir(pp_path):
+                                if int(lazylibrarian.LOGLEVEL) > 2:
+                                    logger.debug("%s is a dir" % pp_path)
+                                if import_book(pp_path, bookID):
                                     if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug('file [%s] is a valid book/mag' % fname)
-                                    if bts_file(download_dir):
-                                        logger.debug("Skipping %s, found a .bts file" % download_dir)
-                                    else:
-                                        fname = os.path.splitext(fname)[0]
-                                        while fname[-1] in '. ':
-                                            fname = fname[:-1]
-                                        targetdir = os.path.join(download_dir, fname)
-                                        try:
-                                            os.makedirs(targetdir)
-                                            setperm(targetdir)
-                                        except OSError as why:
-                                            if not os.path.isdir(targetdir):
-                                                logger.debug('Failed to create directory [%s], %s' %
-                                                             (targetdir, why.strerror))
-                                        if os.path.isdir(targetdir):
-                                            if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
-                                                    lazylibrarian.CONFIG['KEEP_SEEDING']:
-                                                move_into_subdir(download_dir, targetdir, fname, move='copy')
-                                            else:
-                                                move_into_subdir(download_dir, targetdir, fname)
-                                            pp_path = targetdir
-
-                            if os.path.isdir(pp_path):
-                                logger.debug('Found folder (%s%%) [%s] for %s %s' %
-                                             (match, pp_path, book_type, matchtitle))
-                                skipped = False
-                                if book_type == 'eBook' and not book_file(pp_path, 'ebook'):
-                                    logger.debug("Skipping %s, no ebook found" % pp_path)
-                                    skipped = True
-                                elif book_type == 'AudioBook' and not book_file(pp_path, 'audiobook'):
-                                    logger.debug("Skipping %s, no audiobook found" % pp_path)
-                                    skipped = True
-                                elif book_type == 'Magazine' and not book_file(pp_path, 'mag'):
-                                    logger.debug("Skipping %s, no magazine found" % pp_path)
-                                    skipped = True
-                                if not os.listdir(pp_path):
-                                    logger.debug("Skipping %s, folder is empty" % pp_path)
-                                    skipped = True
-                                elif bts_file(pp_path):
-                                    logger.debug("Skipping %s, found a .bts file" % pp_path)
-                                    skipped = True
-                                if not skipped:
-                                    matches.append([match, pp_path, book])
-                            else:
-                                logger.debug('%s is not a directory?' % pp_path)
-                        else:
-                            pp_path = os.path.join(download_dir, fname)
-                            matches.append([match, pp_path, book])  # so we can report closest match
+                                        logger.debug("Imported %s" % pp_path)
+                                    ppcount += 1
                     else:
-                        logger.debug('Skipping %s' % fname)
-
-                match = 0
-                if matches:
-                    highest = max(matches, key=lambda x: x[0])
-                    match = highest[0]
-                    pp_path = highest[1]
-                    book = highest[2]
-                if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
-                    mostrecentissue = ''
-                    logger.debug('Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
-
-                    cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
-                    cmd += ' and books.AuthorID = authors.AuthorID'
-                    data = myDB.match(cmd, (book['BookID'],))
-                    if data:  # it's ebook/audiobook
-                        logger.debug('Processing %s %s' % (book_type, book['BookID']))
-                        authorname = data['AuthorName']
-                        authorname = ' '.join(authorname.split())  # ensure no extra whitespace
-                        bookname = data['BookName']
-                        if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
-                            logger.warn('Please check your EBOOK_DEST_FOLDER setting')
-                            lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG[
-                                'EBOOK_DEST_FOLDER'].replace('/', '\\')
-                        # Default destination path, should be allowed change per config file.
-                        dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace(
-                            '$Title', bookname)
-                        global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace(
-                            '$Title', bookname)
-                        global_name = unaccented(global_name)
-                        dest_path = unaccented_str(replace_all(dest_path, __dic__))
-                        dest_dir = lazylibrarian.DIRECTORY('eBook')
-                        if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
-                            dest_dir = lazylibrarian.DIRECTORY('Audio')
-                        dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
-                    else:
-                        data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
-                        if data:  # it's a magazine
-                            logger.debug('Processing magazine %s' % book['BookID'])
-                            # AuxInfo was added for magazine release date, normally housed in 'magazines'
-                            # but if multiple files are downloading, there will be an error in post-processing
-                            # trying to go to the same directory.
-                            mostrecentissue = data['IssueDate']  # keep for processing issues arriving out of order
-                            mag_name = unaccented_str(replace_all(book['BookID'], __dic__))
-                            # book auxinfo is a cleaned date, eg 2015-01-01
-                            dest_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER'].replace(
-                                '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
-
-                            if lazylibrarian.CONFIG['MAG_RELATIVE']:
-                                if dest_path[0] not in '._':
-                                    dest_path = '_' + dest_path
-                                dest_dir = lazylibrarian.DIRECTORY('eBook')
-                                dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
-                            else:
-                                dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
-                            authorname = None
-                            bookname = None
-                            global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate',
-                                                                                        book['AuxInfo']).replace(
-                                '$Title', mag_name)
-                            global_name = unaccented(global_name)
-                        else:  # not recognised
-                            logger.debug('Nothing in database matching "%s"' % book['BookID'])
-                            continue
-                else:
-                    logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
-                    if match:
-                        logger.debug('Closest match (%s%%): %s' % (match, pp_path))
                         if int(lazylibrarian.LOGLEVEL) > 2:
-                            for match in matches:
-                                logger.debug('Match: %s%%  %s' % (match[0], match[1]))
-                    continue
-
-                success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
-                                                        global_name, book['BookID'], book_type)
-                if success:
-                    logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
-                    # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
-                    controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
-                    newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-
-                    if bookname:  # it's ebook or audiobook
-                        processExtras(dest_file, global_name, book['BookID'], book_type)
-                    else:  # update mags
-                        if mostrecentissue:
-                            if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
-                                older = (int(mostrecentissue) > int(book['AuxInfo']))  # issuenumber
-                            else:
-                                older = (mostrecentissue > book['AuxInfo'])  # YYYY-MM-DD
-                        else:
-                            older = False
-
-                        controlValueDict = {"Title": book['BookID']}
-                        if older:  # check this in case processing issues arriving out of order
-                            newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
-                        else:
-                            newValueDict = {"IssueDate": book['AuxInfo'], "LastAcquired": today(),
-                                            "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
-                                            "IssueStatus": "Open"}
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
-
-                        iss_id = create_id("%s %s" % (book['BookID'], book['AuxInfo']))
-                        controlValueDict = {"Title": book['BookID'], "IssueDate": book['AuxInfo']}
-                        newValueDict = {"IssueAcquired": today(),
-                                        "IssueFile": dest_file,
-                                        "IssueID": iss_id
-                                        }
-                        myDB.upsert("issues", newValueDict, controlValueDict)
-
-                        # create a thumbnail cover for the new issue
-                        create_cover(dest_file)
-                        processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
-
-                    # calibre or ll copied/moved the files we want, now delete source files
-
-                    to_delete = True
-                    if book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
-                        # Only delete torrents if we don't want to keep seeding
-                        if lazylibrarian.CONFIG['KEEP_SEEDING']:
-                            logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
-                            to_delete = False
-                    if to_delete:
-                        # ask downloader to delete the torrent, but not the files
-                        # we may delete them later, depending on other settings
-                        if not book['Source']:
-                            logger.warn("Unable to remove %s, no source" % book['NZBtitle'])
-                        elif not book['DownloadID'] or book['DownloadID'] == "unknown":
-                            logger.warn("Unable to remove %s from %s, no DownloadID" %
-                                        (book['NZBtitle'], book['Source'].lower()))
-                        elif book['Source'] != 'DIRECT':
-                            logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
-                            delete_task(book['Source'], book['DownloadID'], False)
-
-                    if to_delete:
-                        # only delete the files if not in download root dir and if DESTINATION_COPY not set
-                        if not lazylibrarian.CONFIG['DESTINATION_COPY'] and (pp_path != download_dir):
-                            if os.path.isdir(pp_path):
-                                # calibre might have already deleted it?
-                                try:
-                                    shutil.rmtree(pp_path)
-                                    logger.debug('Deleted %s, %s from %s' %
-                                                 (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
-                                except Exception as why:
-                                    logger.debug("Unable to remove %s, %s %s" %
-                                                 (pp_path, type(why).__name__, str(why)))
-                        else:
-                            if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                                logger.debug("Not removing original files as Keep Files is set")
-                            else:
-                                logger.debug("Not removing original files as in download root")
-
-                    logger.info('Successfully processed: %s' % global_name)
-
-                    ppcount += 1
-                    if bookname:
-                        custom_notify_download(book['BookID'])
-                        notify_download("%s %s from %s at %s" %
-                                        (book_type, global_name, book['NZBprov'], now()), book['BookID'])
-                    else:
-                        custom_notify_download(iss_id)
-                        notify_download("%s %s from %s at %s" %
-                                        (book_type, global_name, book['NZBprov'], now()), iss_id)
-
-                    update_downloads(book['NZBprov'])
-                else:
-                    logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
-                    controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
-                    newValueDict = {"Status": "Failed", "NZBDate": now()}
-                    myDB.upsert("wanted", newValueDict, controlValueDict)
-                    # if it's a book, reset status so we try for a different version
-                    # if it's a magazine, user can select a different one from pastissues table
-                    if book_type == 'eBook':
-                        myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
-                    elif book_type == 'AudioBook':
-                        myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
-
-                    # at this point, as it failed we should move it or it will get postprocessed
-                    # again (and fail again)
-                    if os.path.isdir(pp_path + '.fail'):
-                        try:
-                            shutil.rmtree(pp_path + '.fail')
-                        except Exception as why:
-                            logger.debug("Unable to remove %s, %s %s" %
-                                         (pp_path + '.fail', type(why).__name__, str(why)))
-                    try:
-                        shutil.move(pp_path, pp_path + '.fail')
-                        logger.warn('Residual files remain in %s.fail' % pp_path)
-                    except Exception as why:
-                        logger.error("[processDir] Unable to rename %s, %s %s" %
-                                     (pp_path, type(why).__name__, str(why)))
-                        logger.warn('Residual files remain in %s' % pp_path)
-
-        # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
-        # do a fresh listdir in case we processed and deleted any earlier
-        # and don't process any we've already done as we might not want to delete originals
-        downloads = os.listdir(download_dir)
-        if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
-        for entry in downloads:
-            if "LL.(" in entry:
-                if isinstance(entry, str):
-                    if int(lazylibrarian.LOGLEVEL) > 2:
-                        logger.warn("unexpected unicode conversion in LL scanner")
-                    entry = try_rename(download_dir, entry)
-                    if not entry:
-                        entry = "failed rename"
-                dname, extn = os.path.splitext(entry)
-                if not extn or extn not in skipped_extensions:
-                    bookID = entry.split("LL.(")[1].split(")")[0]
-                    logger.debug("Book with id: %s found in download directory" % bookID)
-                    data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
-                    if data and data['BookFile'] and os.path.isfile(data['BookFile']):
-                        logger.debug('Skipping BookID %s, already exists' % bookID)
-                    else:
-                        pp_path = os.path.join(download_dir, entry)
-
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("Checking type of %s" % pp_path)
-
-                        if os.path.isfile(pp_path):
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("%s is a file" % pp_path)
-                            pp_path = os.path.join(download_dir)
-
-                        if os.path.isdir(pp_path):
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("%s is a dir" % pp_path)
-                            if import_book(pp_path, bookID):
-                                if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug("Imported %s" % pp_path)
-                                ppcount += 1
+                            logger.debug("Skipping extn %s" % entry)
                 else:
                     if int(lazylibrarian.LOGLEVEL) > 2:
-                        logger.debug("Skipping extn %s" % entry)
-            else:
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.debug("Skipping (not LL) %s" % entry)
+                        logger.debug("Skipping (not LL) %s" % entry)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 

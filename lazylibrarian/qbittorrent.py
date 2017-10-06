@@ -27,7 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 class qbittorrentclient(object):
@@ -207,7 +207,7 @@ def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
 
     qbclient = qbittorrentclient()
-    args = {'urls': link, 'savepath': lazylibrarian.DIRECTORY('Download')}
+    args = {'urls': link, 'savepath': getList(lazylibrarian.CONFIG('DOWNLOAD_DIR'))[0]}
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
         args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
     # noinspection PyProtectedMember

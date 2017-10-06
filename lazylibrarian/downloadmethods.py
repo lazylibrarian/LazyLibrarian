@@ -28,7 +28,7 @@ from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, 
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT
-from lazylibrarian.formatter import cleanName, unaccented_str
+from lazylibrarian.formatter import cleanName, unaccented_str, getList
 from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
 
@@ -130,7 +130,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
 
         bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
         logger.debug("File download got %s bytes for %s/%s" % (len(fdata), tor_title, bookname))
-        destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
+        destdir = os.path.join(getList(lazylibrarian.CONFIG('DOWNLOAD_DIR'))[0], tor_title)
         try:
             os.makedirs(destdir)
             setperm(destdir)
