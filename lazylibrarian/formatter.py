@@ -194,6 +194,7 @@ def datecompare(nzbdate, control_date):
     except Exception:
         return 0
 
+
 def plural(var):
     """
     Convenience function for log messages, if var = 1 return ''

@@ -217,7 +217,14 @@ def processDir(reset=False):
         myDB = database.DBConnection()
         skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
 
-        for download_dir in getList(lazylibrarian.CONFIG['DOWNLOAD_DIR']):
+        templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'])
+        if lazylibrarian.DIRECTORY("Download") != templist[0]:
+            templist.insert(0, lazylibrarian.DIRECTORY("Download"))
+        dirlist = []
+        for item in templist:
+            if os.path.isdir(item):
+                dirlist.append(item)
+        for download_dir in dirlist:
             # download_dir is set to unicode so we get unicode results from listdir
             try:
                 if isinstance(download_dir, str):
@@ -405,15 +412,16 @@ def processDir(reset=False):
                             authorname = data['AuthorName']
                             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
                             bookname = data['BookName']
-                            if 'windows' in platform.system().lower() and '/' in lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
+                            if 'windows' in platform.system().lower() and '/' in \
+                                    lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']:
                                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG[
                                     'EBOOK_DEST_FOLDER'].replace('/', '\\')
                             # Default destination path, should be allowed change per config file.
-                            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace(
-                                '$Title', bookname)
-                            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace(
-                                '$Title', bookname)
+                            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
+                                '$Author', authorname).replace('$Title', bookname)
+                            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
+                                '$Author', authorname).replace('$Title', bookname)
                             global_name = unaccented(global_name)
                             dest_path = unaccented_str(replace_all(dest_path, __dic__))
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
@@ -450,7 +458,8 @@ def processDir(reset=False):
                                 logger.debug('Nothing in database matching "%s"' % book['BookID'])
                                 continue
                     else:
-                        logger.debug("Snatched %s %s is not in download directory" % (book['NZBmode'], book['NZBtitle']))
+                        logger.debug("Snatched %s %s is not in download directory" %
+                                     (book['NZBmode'], book['NZBtitle']))
                         if match:
                             logger.debug('Closest match (%s%%): %s' % (match, pp_path))
                             if int(lazylibrarian.LOGLEVEL) > 2:
@@ -462,7 +471,7 @@ def processDir(reset=False):
                                                             global_name, book['BookID'], book_type)
                     if success:
                         logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
-                        # update nzbs, only update the snatched ones in case multiple matches for same book/magazine issue
+                        # only update the snatched ones in case multiple matches for same book/magazine issue
                         controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                         newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                         myDB.upsert("wanted", newValueDict, controlValueDict)
