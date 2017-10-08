@@ -3047,11 +3047,13 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose
-    def forceSearch(self, source=None):
+    def forceSearch(self, source=None, title=None):
         if source == "magazines":
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                if 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
+                if title:
+                    self.searchForMag(bookid=title)
+                elif 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
         elif source in ["books", "audio"]:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
