@@ -88,7 +88,6 @@ EBOOK_UPDATE = 0
 AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
-SQLITE3 = ''
 GROUP_CONCAT = 0
 
 # user permissions
@@ -574,17 +573,17 @@ def initialize():
         except Exception as e:
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
 
-        SQLITE3 = sqlite3.sqlite_version
-        logger.debug("sqlite3 is v%s" % SQLITE3)
+        sq = sqlite3.sqlite_version
+        logger.debug("sqlite3 is v%s" % sq)
         # group_concat needs sqlite3 >= 3.5.4
         GROUP_CONCAT = False
         try:
-            parts = SQLITE3.split('.')
+            parts = sq.split('.')
             if int(parts[0]) == 3:
                 if int(parts[1]) > 5 or int(parts[1]) == 5 and int(parts[2]) >= 4:
                     GROUP_CONCAT = True
                 else:
-                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % SQLITE3)
+                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % sq)
         except Exception as e:
             logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
 
@@ -998,7 +997,7 @@ def DIRECTORY(dirname):
     elif dirname == "Audio":
         usedir = CONFIG['AUDIO_DIR']
     elif dirname == "Download":
-        usedir = CONFIG['DOWNLOAD_DIR']
+        usedir = getList(CONFIG['DOWNLOAD_DIR'])[0]
     elif dirname == "Alternate":
         usedir = CONFIG['ALTERNATE_DIR']
     else:
