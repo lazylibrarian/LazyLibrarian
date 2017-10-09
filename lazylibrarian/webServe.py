@@ -1308,22 +1308,23 @@ class WebInterface(object):
             if sSearch:
                 if library is not None:
                     if library == 'AudioBook':
-                        searchFields = ['BookImg', 'AuthorName', 'BookName', 'BookRate', 'BookDate', 'AudioStatus',
-                                        'BookID', 'BookLang', 'BookSub', 'BookLink', 'WorkPage', 'AuthorID',
-                                        'SeriesDisplay', 'AudioLibrary']
+                        searchFields = ['AuthorName', 'BookName', 'BookRate', 'BookDate', 'AudioStatus',
+                                        'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
                     else:
-                        searchFields = ['BookImg', 'AuthorName', 'BookName', 'BookRate', 'BookDate', 'Status',
-                                        'BookID', 'BookLang', 'BookSub', 'BookLink', 'WorkPage', 'AuthorID',
-                                        'SeriesDisplay', 'BookLibrary']
-
+                        searchFields = ['AuthorName', 'BookName', 'BookRate', 'BookDate', 'Status',
+                                        'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
                     filtered = list()
                     for row in rowlist:
                         _dict = dict(row)
                         for key in searchFields:
-                            if sSearch.lower() in str(_dict.get(key, '')).lower():
-                                filtered.append(list(row))
-                                break
-
+                            if key == 'BookRate':
+                                if check_int(sSearch, 0) == int(_dict.get(key, '')):
+                                    filtered.append(list(row))
+                                    break
+                            else:
+                                if sSearch.lower() in _dict.get(key, '').lower():
+                                    filtered.append(list(row))
+                                    break
                 else:
                     filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
 
