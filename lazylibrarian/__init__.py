@@ -89,6 +89,7 @@ AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
 GROUP_CONCAT = 0
+SQLITEVERSION = ''
 
 # user permissions
 perm_config = 1 << 0  # 1 access to config page
@@ -492,7 +493,7 @@ def initialize():
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
         AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE, \
-        GROUP_CONCAT
+        GROUP_CONCAT, SQLITEVERSION
 
     with INIT_LOCK:
 
@@ -573,17 +574,17 @@ def initialize():
         except Exception as e:
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
 
-        sq = sqlite3.sqlite_version
-        logger.debug("sqlite3 is v%s" % sq)
+        SQLITEVERSION = sqlite3.sqlite_version
+        logger.debug("sqlite3 is v%s" % SQLITEVERSION)
         # group_concat needs sqlite3 >= 3.5.4
         GROUP_CONCAT = False
         try:
-            parts = sq.split('.')
+            parts = SQLITEVERSION.split('.')
             if int(parts[0]) == 3:
                 if int(parts[1]) > 5 or int(parts[1]) == 5 and int(parts[2]) >= 4:
                     GROUP_CONCAT = True
                 else:
-                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % sq)
+                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % SQLITEVERSION)
         except Exception as e:
             logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
 

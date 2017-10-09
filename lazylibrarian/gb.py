@@ -20,8 +20,7 @@
 import re
 import traceback
 import urllib
-import urllib2
-from urllib2 import HTTPError
+import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -125,7 +124,7 @@ class GoogleBooks:
                                 break
                             else:
                                 pass
-                        except HTTPError as err:
+                        except Exception as err:
                             logger.warn(
                                 'Google Books API Error [%s]: Check your API key or wait a while' %
                                 err.reason)
@@ -342,7 +341,7 @@ class GoogleBooks:
                             if not in_cache:
                                 api_hits += 1
                             number_results = jsonresults['totalItems']
-                    except HTTPError as err:
+                    except Exception as err:
                         logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.reason)
                         break
 
@@ -429,7 +428,8 @@ class GoogleBooks:
                                         BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
                                         try:
                                             librarything_wait()
-                                            resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
+                                            r = requests.get(BOOK_URL, timeout=30)
+                                            resp = r.text
                                             lt_lang_hits += 1
                                             logger.debug(
                                                 "LibraryThing reports language [%s] for %s" % (resp, isbnhead))

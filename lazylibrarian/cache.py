@@ -17,9 +17,8 @@ import hashlib
 import json
 import os
 import shutil
-import socket
 import time
-import urllib2
+import lib.requests as requests
 from xml.etree import ElementTree
 
 import lazylibrarian
@@ -31,35 +30,29 @@ def fetchURL(URL, headers=None, retry=True):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
         Allow one retry on timeout by default"""
-    request = urllib2.Request(URL)
-    if lazylibrarian.CONFIG['PROXY_HOST']:
-        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
-        request.add_header('User-Agent', USER_AGENT)
-    else:
-        for item in headers:
-            request.add_header(item, headers[item])
-    try:
-        resp = urllib2.urlopen(request, timeout=30)
+        headers = {'User-Agent': USER_AGENT}
 
-        if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-            try:
-                result = resp.read()
-                return result, True
-            except socket.error as e:
-                return "Socket error %s" % str(e), False
-            except Exception as e:
-                return "resp.read %s %s" % (type(e).__name__, str(e)), False
+    proxies = None
+    if lazylibrarian.CONFIG['PROXY_HOST']:
+        proxies = {lazylibrarian.CONFIG['PROXY_HOST']: lazylibrarian.CONFIG['PROXY_TYPE']}
+
+    try:
+        r = requests.get(URL, headers=headers, timeout=30, proxies=proxies)
+
+        if str(r.status_code).startswith('2'):  # (200 OK etc)
+            return r.content, True
 
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug(resp.info())
-        return "Resp getcode %s" % str(resp.getcode()), False
-    except socket.timeout as e:
+            logger.debug(r.content)
+        return "Response status %s" % str(r.status_code), False
+    except requests.exceptions.Timeout as e:
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
-            return "Timeout %s" % str(e), False
+            return "Timeout", False
         logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False)
         return result, success

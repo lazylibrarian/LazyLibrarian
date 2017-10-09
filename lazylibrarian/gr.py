@@ -18,7 +18,7 @@ import time
 import traceback
 import unicodedata
 import urllib
-import urllib2
+import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -209,7 +209,7 @@ class GoodReads:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
-            except urllib2.HTTPError as err:
+            except Exception as err:
                 if err.code == 404:
                     logger.error('Received a 404 error when searching for author')
                 if err.code == 403:
@@ -419,7 +419,8 @@ class GoodReads:
                                     BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + isbn
                                     try:
                                         librarything_wait()
-                                        resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
+                                        r = requests.get(BOOK_URL, timeout=30)
+                                        resp = r.text
                                         lt_lang_hits += 1
                                         logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 

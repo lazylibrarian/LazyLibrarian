@@ -550,7 +550,7 @@ def saveLog():
     header += "uname: %s\n" % str(platform.uname())
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
-    header += "sqlite3: %s\n" % lazylibrarian.SQLITE3
+    header += "sqlite3: %s\n" % lazylibrarian.SQLITEVERSION
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
