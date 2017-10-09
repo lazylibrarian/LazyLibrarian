@@ -269,18 +269,16 @@ def getLatestVersion_FromGit():
 
                 if str(r.status_code).startswith('2'):
                     git = r.json()
-                latest_version = git['sha']
-                logmsg('debug', '(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
-                    branch, latest_version))
-            except Exception as e:
-                if hasattr(e, 'code') and str(e.code) == '304':  # Not modified
+                    latest_version = git['sha']
+                    logmsg('debug', '(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
+                        branch, latest_version))
+                elif str(r.status_code) == '304':
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
                     logmsg('debug', '(getLatestVersion_FromGit) Not modified, currently on Latest Version')
-                    # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-                else:
-                    logmsg('warn', '(getLatestVersion_FromGit) Could not get the latest commit from github')
-                    logmsg('debug', 'git %s for %s: %s' % (type(e).__name__, url, str(e)))
-                    latest_version = 'Not_Available_From_GitHUB'
+            except Exception as e:
+                logmsg('warn', '(getLatestVersion_FromGit) Could not get the latest commit from github')
+                logmsg('debug', 'git %s for %s: %s' % (type(e).__name__, url, str(e)))
+                latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
 
@@ -299,7 +297,6 @@ def getCommitDifferenceFromGit():
             lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['CURRENT_VERSION'],
             lazylibrarian.CONFIG['LATEST_VERSION'])
         logmsg('debug', '(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
-
 
         try:
             headers = {'User-Agent': USER_AGENT}

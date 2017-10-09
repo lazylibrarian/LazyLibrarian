@@ -52,7 +52,7 @@ def fetchURL(URL, headers=None, retry=True):
     except requests.exceptions.Timeout as e:
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
-            return "Timeout", False
+            return "Timeout %s" % str(e), False
         logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False)
         return result, success
