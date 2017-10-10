@@ -16,9 +16,13 @@
 import json
 import time
 import urlparse
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
-from lazylibrarian import logger, request
+from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
 
 
@@ -31,12 +35,6 @@ from lazylibrarian.formatter import check_int
 
 def addTorrent(link, directory=None):
     method = 'torrent-add'
-    # print type(link), link
-    # if link.endswith('.torrent'):
-    #    with open(link, 'rb') as f:
-    #        metainfo = str(base64.b64encode(f.read()))
-    #    arguments = {'metainfo': metainfo }
-    # else:
     if directory is None:
         directory = lazylibrarian.DIRECTORY('Download')
     arguments = {'filename': link, 'download-dir': directory}
@@ -201,8 +199,7 @@ def torrentAction(method, arguments):
 
     # Retrieve session id
     auth = (username, password) if username and password else None
-    response = request.request_response(host, auth=auth,
-                                        whitelist_status_code=[401, 409])
+    response = requests.get(host, auth=auth, timeout=30)
 
     if response is None:
         logger.error("Error getting Transmission session ID")
@@ -229,8 +226,8 @@ def torrentAction(method, arguments):
     data = {'method': method, 'arguments': arguments}
 
     try:
-        response = request.request_json(host, method="POST", data=json.dumps(data),
-                                        headers=headers, auth=auth)
+        response = requests.post(host, data=json.dumps(data), headers=headers, auth=auth, timeout=30)
+        response = response.json()
     except Exception as e:
         logger.debug('Transmission %s: %s' % (type(e).__name__, str(e)))
         response = ''
