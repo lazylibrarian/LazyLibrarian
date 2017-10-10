@@ -18,8 +18,7 @@ import os
 import re
 import socket
 import unicodedata
-import urllib2
-from StringIO import StringIO
+import lib.requests as requests
 from base64 import b16encode, b32decode
 from hashlib import sha1
 
@@ -43,8 +42,6 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] and lazylibrarian.CONFIG['NZBGET_HOST']:
         Source = "NZBGET"
-        # headers = {'User-Agent': USER_AGENT}
-        # data = request.request_content(url=nzburl, headers=headers)
         data, success = fetchURL(nzburl)
         if not success:
             logger.debug('Failed to read nzb data for nzbget: %s' % data)
@@ -107,52 +104,41 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     myDB = database.DBConnection()
     downloadID = False
     Source = "DIRECT"
-    full_url = tor_url  # keep the url as stored in "wanted" table
+
     logger.debug("Starting Direct Download for [%s]" % bookname)
-    request = urllib2.Request(ur'%s' % tor_url)
+
+    headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
+    proxies = None
     if lazylibrarian.CONFIG['PROXY_HOST']:
-        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
-    request.add_header('Accept-encoding', 'gzip')
-    request.add_header('User-Agent', USER_AGENT)
+        proxies = {lazylibrarian.CONFIG['PROXY_HOST']: lazylibrarian.CONFIG['PROXY_TYPE']}
 
     try:
-        response = urllib2.urlopen(request, timeout=90)
-        if response.info().get('Content-Encoding') == 'gzip':
-            buf = StringIO(response.read())
-            f = gzip.GzipFile(fileobj=buf)
-            fdata = f.read()
-        else:
-            try:
-                fdata = response.read()
-            except Exception as e:
-                logger.warn('%s reading response from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
-                return False
-
-        bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
-        logger.debug("File download got %s bytes for %s/%s" % (len(fdata), tor_title, bookname))
-        destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
-        try:
-            os.makedirs(destdir)
-            setperm(destdir)
-        except OSError as e:
-            if not os.path.isdir(destdir):
-                logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
-
-        destfile = os.path.join(destdir, bookname)
-        try:
-            with open(destfile, 'wb') as bookfile:
-                bookfile.write(fdata)
-            setperm(destfile)
-            downloadID = True
-        except Exception as e:
-            logger.debug("%s writing book to %s, %s" % (type(e).__name__, destfile, str(e)))
-
-    except socket.timeout:
+        r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
+    except requests.exceptions.Timeout:
         logger.warn('Timeout fetching file from url: %s' % tor_url)
         return False
-    except urllib2.URLError as e:
-        logger.warn('URLError fetching file from url: %s, %s' % (tor_url, e.reason))
+    except Exception as e:
+        logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
         return False
+
+    bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
+    logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
+    destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
+    try:
+        os.makedirs(destdir)
+        setperm(destdir)
+    except OSError as e:
+        if not os.path.isdir(destdir):
+            logger.debug("Error creating directory %s, %s" % (destdir, e.strerror))
+
+    destfile = os.path.join(destdir, bookname)
+    try:
+        with open(destfile, 'wb') as bookfile:
+            bookfile.write(r.content)
+        setperm(destfile)
+        downloadID = True
+    except Exception as e:
+        logger.debug("%s writing book to %s, %s" % (type(e).__name__, destfile, str(e)))
 
     if downloadID:
         logger.debug('File %s has been downloaded from %s' % (tor_title, tor_url))
@@ -161,11 +147,11 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
         elif library == 'AudioBook':
             myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
         myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
-                    (Source, downloadID, full_url))
+                    (Source, downloadID, tor_url))
         return True
     else:
-        logger.error('Failed to download file @ <a href="%s">%s</a>' % (full_url, tor_url))
-        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
+        logger.error('Failed to download file @ <a href="%s">%s</a>' % (tor_url, tor_url))
+        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (tor_url,))
         return False
 
 
@@ -200,30 +186,21 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             if '.torrent' in tor_url:
                 tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
-        request = urllib2.Request(ur'%s' % tor_url)
+        headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
+        proxies = None
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
-        request.add_header('Accept-encoding', 'gzip')
-        request.add_header('User-Agent', USER_AGENT)
+            proxies = {lazylibrarian.CONFIG['PROXY_HOST']: lazylibrarian.CONFIG['PROXY_TYPE']}
 
         try:
-            response = urllib2.urlopen(request, timeout=90)
-            if response.info().get('Content-Encoding') == 'gzip':
-                buf = StringIO(response.read())
-                f = gzip.GzipFile(fileobj=buf)
-                torrent = f.read()
-            else:
-                torrent = response.read()
+            r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
+        except requests.exceptions.Timeout:
+            logger.warn('Timeout fetching file from url: %s' % tor_url)
+            return False
+        except Exception as e:
+            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+            return False
 
-        except socket.timeout:
-            logger.warn('Timeout fetching torrent from url: %s' % tor_url)
-            return False
-        except urllib2.URLError as e:
-            logger.warn('Error fetching torrent from url: %s, %s' % (tor_url, e.reason))
-            return False
-        except ValueError as e:
-            logger.warn('Error, invalid url: [%s] %s' % (full_url, str(e)))
-            return False
+        torrent = r.content
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
