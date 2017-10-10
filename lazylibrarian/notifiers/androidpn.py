@@ -29,7 +29,6 @@ from lazylibrarian.formatter import getList
 
 
 class AndroidPNNotifier:
-
     def __init__(self):
         pass
 
@@ -95,7 +94,6 @@ class AndroidPNNotifier:
                 logger.error(u"ANDROIDPN: Notification failed. Error code: " + str(e.code))
             return False
 
-
     def _notify(self, title, message, url=None, username=None, broadcast=None, force=False):
         """
         Sends a pushover notification based on the provided info or SB config
@@ -125,9 +123,9 @@ class AndroidPNNotifier:
 
         return self._sendAndroidPN(title, message, url, username, broadcast)
 
-#
-# Public functions
-#
+    #
+    # Public functions
+    #
 
     def notify_snatch(self, ep_name):
         if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH']:

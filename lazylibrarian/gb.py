@@ -432,8 +432,8 @@ class GoogleBooks:
                                         proxies = None
                                         if lazylibrarian.CONFIG['PROXY_HOST']:
                                             proxies = {}
-                                            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-                                                proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
+                                            for prox in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                                                proxies.update({prox: lazylibrarian.CONFIG['PROXY_HOST']})
                                         try:
                                             librarything_wait()
                                             r = requests.get(BOOK_URL, timeout=30, proxies=proxies)
