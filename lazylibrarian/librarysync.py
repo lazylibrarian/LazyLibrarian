@@ -711,11 +711,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(r, files)
 
-                                            if lazylibrarian.CONFIG['IMP_RENAME']:
-                                                book_filename = bookRename(bookid)
-
                                             book_basename = os.path.splitext(book_filename)[0]
-
                                             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
                                             for book_type in booktype_list:
                                                 preferred_type = "%s.%s" % (book_basename, book_type)
@@ -725,11 +721,14 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                                  (book_type, preferred_type))
                                                     break
 
-                                            if not check_status['BookFile']:  # no previous location
-                                                myDB.action('UPDATE books set BookFile=? where BookID=?',
-                                                            (book_filename, bookid))
-                                            # location may have changed since last scan
-                                            elif book_filename != check_status['BookFile']:
+                                            myDB.action('UPDATE books set BookFile=? where BookID=?',
+                                                        (book_filename, bookid))
+
+                                            if lazylibrarian.CONFIG['IMP_RENAME']:
+                                                book_filename = bookRename(bookid)
+
+                                            # location may have changed on rename
+                                            if book_filename and book_filename != check_status['BookFile']:
                                                 modified_count += 1
                                                 logger.warn("Updating book location for %s %s from %s to %s" %
                                                             (author, book, check_status['BookFile'], book_filename))
@@ -757,12 +756,13 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 for e in os.listdir(r):
                                                     if is_valid_booktype(e, booktype='audiobook') and token in e:
                                                         book_filename = os.path.join(r, e)
+                                                        logger.debug("Librarysync link to preferred part %s: %s" %
+                                                                 (token, book_filename))
                                                         tokmatch = token
                                                         break
 
-                                            if not check_status['AudioFile']:  # no existing book location
-                                                myDB.action('UPDATE books set AudioFile=? where BookID=?',
-                                                            (book_filename, bookid))
+                                            myDB.action('UPDATE books set AudioFile=? where BookID=?',
+                                                        (book_filename, bookid))
 
                                             if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and \
                                                     lazylibrarian.CONFIG['IMP_RENAME']:
