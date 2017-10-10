@@ -232,7 +232,6 @@ class WebInterface(object):
             else:
                 filtered = rows
             sortcolumn = int(iSortCol_0)
-
             filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
