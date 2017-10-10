@@ -20,7 +20,10 @@
 import re
 import traceback
 import urllib
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -426,9 +429,14 @@ class GoogleBooks:
                                         # if no language found, librarything return value is "invalid" or "unknown"
                                         # librarything returns plain text, not xml
                                         BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
+                                        proxies = None
+                                        if lazylibrarian.CONFIG['PROXY_HOST']:
+                                            proxies = {}
+                                            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                                                proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
                                         try:
                                             librarything_wait()
-                                            r = requests.get(BOOK_URL, timeout=30)
+                                            r = requests.get(BOOK_URL, timeout=30, proxies=proxies)
                                             resp = r.text
                                             lt_lang_hits += 1
                                             logger.debug(

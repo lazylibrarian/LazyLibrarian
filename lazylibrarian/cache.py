@@ -18,12 +18,17 @@ import json
 import os
 import shutil
 import time
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
+
 from xml.etree import ElementTree
 
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import getList
 
 
 def fetchURL(URL, headers=None, retry=True):
@@ -38,7 +43,9 @@ def fetchURL(URL, headers=None, retry=True):
 
     proxies = None
     if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxies = {lazylibrarian.CONFIG['PROXY_HOST']: lazylibrarian.CONFIG['PROXY_TYPE']}
+        proxies = {}
+        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
 
     try:
         r = requests.get(URL, headers=headers, timeout=30, proxies=proxies)

@@ -20,11 +20,15 @@ import subprocess
 import tarfile
 import threading
 import time
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import getList
 
 
 def logmsg(level, msg):
@@ -265,7 +269,13 @@ def getLatestVersion_FromGit():
                     logmsg('debug', '(getLatestVersion_FromGit) Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
 
-                r = requests.get(url, timeout=30, headers=headers)
+                proxies = None
+                if lazylibrarian.CONFIG['PROXY_HOST']:
+                    proxies = {}
+                    for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                        proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
+                
+                r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
 
                 if str(r.status_code).startswith('2'):
                     git = r.json()
@@ -300,7 +310,13 @@ def getCommitDifferenceFromGit():
 
         try:
             headers = {'User-Agent': USER_AGENT}
-            r = requests.get(url, timeout=30, headers=headers)
+            proxies = None
+            if lazylibrarian.CONFIG['PROXY_HOST']:
+                proxies = {}
+                for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                    proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
+
+            r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
             git = r.json()
             logmsg('debug', 'pull total_commits from json object')
             commits = int(git['total_commits'])
@@ -414,11 +430,17 @@ def update():
         try:
             logmsg('info', '(update) Downloading update from: ' + tar_download_url)
             headers = {'User-Agent': USER_AGENT}
-            r = requests.get(tar_download_url, timeout=30, headers=headers)
+            proxies = None
+            if lazylibrarian.CONFIG['PROXY_HOST']:
+                proxies = {}
+                for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                    proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
+
+            r = requests.get(tar_download_url, timeout=30, headers=headers, proxies=proxies)
         except requests.exceptions.Timeout:
             logmsg('error', "(update) Timeout retrieving new version from " + tar_download_url)
             return False
-        except Exception as e:  # (urllib2.HTTPError, urllib2.URLError) as e:
+        except Exception as e:
             if hasattr(e, 'reason'):
                 errmsg = e.reason
             else:

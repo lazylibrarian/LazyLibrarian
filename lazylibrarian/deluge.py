@@ -30,9 +30,12 @@ import re
 import time
 import traceback
 from base64 import b64encode
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
-import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import check_int

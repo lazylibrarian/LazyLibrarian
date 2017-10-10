@@ -18,7 +18,11 @@ import os
 import re
 import socket
 import unicodedata
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
+
 from base64 import b16encode, b32decode
 from hashlib import sha1
 
@@ -27,7 +31,7 @@ from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, 
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT
-from lazylibrarian.formatter import cleanName, unaccented_str
+from lazylibrarian.formatter import cleanName, unaccented_str, getList
 from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
 
@@ -110,7 +114,9 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
     proxies = None
     if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxies = {lazylibrarian.CONFIG['PROXY_HOST']: lazylibrarian.CONFIG['PROXY_TYPE']}
+        proxies = {}
+        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
 
     try:
         r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
@@ -187,9 +193,12 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
         headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
+    
         proxies = None
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            proxies = {lazylibrarian.CONFIG['PROXY_HOST']: lazylibrarian.CONFIG['PROXY_TYPE']}
+            proxies = {}
+            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
 
         try:
             r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
