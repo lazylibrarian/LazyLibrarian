@@ -30,7 +30,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import setperm, USER_AGENT
+from lazylibrarian.common import setperm, USER_AGENT, proxyList
 from lazylibrarian.formatter import cleanName, unaccented_str, getList
 from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
@@ -112,14 +112,8 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     logger.debug("Starting Direct Download for [%s]" % bookname)
 
     headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
-    proxies = None
-    if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxies = {}
-        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
-
     try:
-        r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
+        r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxyList())
     except requests.exceptions.Timeout:
         logger.warn('Timeout fetching file from url: %s' % tor_url)
         return False
@@ -194,14 +188,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
         headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
     
-        proxies = None
-        if lazylibrarian.CONFIG['PROXY_HOST']:
-            proxies = {}
-            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-                proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
-
         try:
-            r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
+            r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxyList())
         except requests.exceptions.Timeout:
             logger.warn('Timeout fetching file from url: %s' % tor_url)
             return False

@@ -23,6 +23,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int, unaccented_str, getList
+from lazylibrarian.common import proxyList
 
 
 def checkLink():
@@ -132,14 +133,8 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     # to debug because of api
     logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
 
-    proxies = None
-    if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxies = {}
-        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
-
     try:
-        r = requests.get(URL, timeout=30, proxies=proxies)
+        r = requests.get(URL, timeout=30, proxies=proxyList())
         result = r.json()
     except requests.exceptions.Timeout:
         logger.error("Timeout connecting to SAB with URL: %s" % URL)

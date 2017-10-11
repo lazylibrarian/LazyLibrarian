@@ -23,7 +23,7 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, proxyList
 from lazylibrarian.formatter import getList
 
 # from lazylibrarian.exceptions import ex
@@ -72,15 +72,9 @@ class BoxcarNotifier:
                 'notification[sound]': "done"
             }
 
-        proxies = None
-        if lazylibrarian.CONFIG['PROXY_HOST']:
-            proxies = {}
-            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-                proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
-
         # send the request to boxcar
         try:
-            r = requests.get(curUrl, params=data, timeout=30, proxies=proxies)
+            r = requests.get(curUrl, params=data, timeout=30, proxies=proxyList())
             status = str(r.status_code)
             if status.startswith('2'):
                 logger.debug("BOXCAR: Notification successful.")

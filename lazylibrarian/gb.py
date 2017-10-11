@@ -32,6 +32,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
     getList, cleanName
+from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -429,14 +430,9 @@ class GoogleBooks:
                                         # if no language found, librarything return value is "invalid" or "unknown"
                                         # librarything returns plain text, not xml
                                         BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
-                                        proxies = None
-                                        if lazylibrarian.CONFIG['PROXY_HOST']:
-                                            proxies = {}
-                                            for prox in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-                                                proxies.update({prox: lazylibrarian.CONFIG['PROXY_HOST']})
                                         try:
                                             librarything_wait()
-                                            r = requests.get(BOOK_URL, timeout=30, proxies=proxies)
+                                            r = requests.get(BOOK_URL, timeout=30, proxies=proxyList())
                                             resp = r.text
                                             lt_lang_hits += 1
                                             logger.debug(

@@ -24,6 +24,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
+from lazylibrarian.common import proxyList
 
 
 # This is just a simple script to send torrents to transmission. The
@@ -199,13 +200,7 @@ def torrentAction(method, arguments):
 
     # Retrieve session id
     auth = (username, password) if username and password else None
-    proxies = None
-    if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxies = {}
-        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
-
-    response = requests.get(host, auth=auth, proxies=proxies, timeout=30)
+    response = requests.get(host, auth=auth, proxies=proxyList(), timeout=30)
 
     if response is None:
         logger.error("Error getting Transmission session ID")
@@ -232,7 +227,8 @@ def torrentAction(method, arguments):
     data = {'method': method, 'arguments': arguments}
 
     try:
-        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies, auth=auth, timeout=30)
+        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxyList(), 
+                                 auth=auth, timeout=30)
         response = response.json()
     except Exception as e:
         logger.debug('Transmission %s: %s' % (type(e).__name__, str(e)))

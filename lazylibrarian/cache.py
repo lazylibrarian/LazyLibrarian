@@ -27,7 +27,7 @@ from xml.etree import ElementTree
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import getList
 
 
@@ -41,14 +41,8 @@ def fetchURL(URL, headers=None, retry=True):
         # if you don't want any headers, send headers=[]
         headers = {'User-Agent': USER_AGENT}
 
-    proxies = None
-    if lazylibrarian.CONFIG['PROXY_HOST']:
-        proxies = {}
-        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
-
     try:
-        r = requests.get(URL, headers=headers, timeout=30, proxies=proxies)
+        r = requests.get(URL, headers=headers, timeout=30, proxies=proxyList())
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True

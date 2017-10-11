@@ -30,6 +30,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
     cleanName, is_valid_isbn, formatAuthorName, check_int
+from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
 
 
@@ -420,14 +421,9 @@ class GoodReads:
                                     # if no language found, librarything return value is "invalid" or "unknown"
                                     # returns plain text, not xml
                                     BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + isbn
-                                    proxies = None
-                                    if lazylibrarian.CONFIG['PROXY_HOST']:
-                                        proxies = {}
-                                        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
-                                            proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
                                     try:
                                         librarything_wait()
-                                        r = requests.get(BOOK_URL, timeout=30, proxies=proxies)
+                                        r = requests.get(BOOK_URL, timeout=30, proxies=proxyList())
                                         resp = r.text
                                         lt_lang_hits += 1
                                         logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
