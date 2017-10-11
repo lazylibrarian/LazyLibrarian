@@ -16,10 +16,10 @@
 import json
 import time
 import urlparse
-try:
-    import requests
-except ImportError:
-    import lib.requests as requests
+#try:
+#    import requests
+#except ImportError:
+import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger
@@ -200,7 +200,8 @@ def torrentAction(method, arguments):
 
     # Retrieve session id
     auth = (username, password) if username and password else None
-    response = requests.get(host, auth=auth, proxies=proxyList(), timeout=30)
+    proxies=proxyList()
+    response = requests.get(host, auth=auth, proxies=proxies, timeout=30)
 
     if response is None:
         logger.error("Error getting Transmission session ID")
@@ -225,9 +226,9 @@ def torrentAction(method, arguments):
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
-
+    proxies=proxyList()
     try:
-        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxyList(), 
+        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies, 
                                  auth=auth, timeout=30)
         response = response.json()
     except Exception as e:

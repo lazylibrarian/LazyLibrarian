@@ -13,12 +13,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import ssl
 import urllib
-try:
-    import requests
-except ImportError:
-    import lib.requests as requests
+#try:
+#    import requests
+#except ImportError:
+import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger
@@ -132,9 +131,9 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
 
     # to debug because of api
     logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
-
+    proxies=proxyList()
     try:
-        r = requests.get(URL, timeout=30, proxies=proxyList())
+        r = requests.get(URL, timeout=30, proxies=proxies)
         result = r.json()
     except requests.exceptions.Timeout:
         logger.error("Timeout connecting to SAB with URL: %s" % URL)

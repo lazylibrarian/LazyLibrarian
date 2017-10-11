@@ -1,5 +1,5 @@
 #  This file is part of Lazylibrarian.
-#
+
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -18,10 +18,10 @@ import json
 import os
 import shutil
 import time
-try:
-    import requests
-except ImportError:
-    import lib.requests as requests
+#try:
+#    import requests
+#except ImportError:
+import lib.requests as requests
 
 from xml.etree import ElementTree
 
@@ -40,9 +40,9 @@ def fetchURL(URL, headers=None, retry=True):
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
         headers = {'User-Agent': USER_AGENT}
-
+    proxies=proxyList()
     try:
-        r = requests.get(URL, headers=headers, timeout=30, proxies=proxyList())
+        r = requests.get(URL, headers=headers, timeout=30, proxies=proxies)
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True
