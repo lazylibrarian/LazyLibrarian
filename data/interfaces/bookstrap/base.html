@@ -138,7 +138,7 @@
           % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
               msg = '<div class="input-group">You are running an unknown version of lazylibrarian.</div><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
           % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
-              msg = '<div class="input-group">Running Unknown version via source install. Update from central area now</div><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>
+              msg = '<div class="input-group">Running Unknown version via source install. Update from central area now</div><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
           % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
               % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
                   msg = '<div class="input-group">Unable to get latest version from GITHub</div>'

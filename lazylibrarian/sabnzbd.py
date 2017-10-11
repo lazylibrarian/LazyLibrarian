@@ -13,15 +13,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
-import socket
 import ssl
 import urllib
-import urllib2
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.formatter import check_int, unaccented_str
+from lazylibrarian.formatter import check_int, unaccented_str, getList
+from lazylibrarian.common import proxyList
 
 
 def checkLink():
@@ -132,11 +134,12 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
 
     try:
-        request = urllib2.urlopen(URL, timeout=30)
-    except socket.error as e:
-        logger.error("Timeout connecting to SAB with URL: %s : %s" % (URL, str(e)))
+        r = requests.get(URL, timeout=30, proxies=proxyList())
+        result = r.json()
+    except requests.exceptions.Timeout:
+        logger.error("Timeout connecting to SAB with URL: %s" % URL)
         return False
-    except (EOFError, IOError, urllib2.URLError) as e:
+    except Exception as e:
         if hasattr(e, 'reason'):
             errmsg = e.reason
         elif hasattr(e, 'strerror'):
@@ -145,16 +148,6 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
             errmsg = str(e)
 
         logger.error("Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
-        return False
-
-    except (urllib2.HTTPError, ssl.SSLError) as e:
-        logger.error("Invalid SAB host, check your config. Current host: %s : %s" % (HOST, str(e)))
-        return False
-
-    result = json.loads(request.read())
-
-    if not result:
-        logger.error("SABnzbd didn't return any json")
         return False
 
     logger.debug("Result text from SAB: " + str(result))

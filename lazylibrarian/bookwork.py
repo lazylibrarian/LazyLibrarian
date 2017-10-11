@@ -151,8 +151,9 @@ def audioRename(bookid):
             try:
                 # shutil.move(o, n)
                 # if check_int(part[0], 0) == 1:
-                #     book_filename = n
+                #     book_filename = n  # return part 1 of set
                 logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
+
             except Exception as e:
                 logger.error('Unable to rename [%s] to [%s] %s %s' % (o, n, type(e).__name__, str(e)))
     return book_filename
@@ -167,6 +168,9 @@ def bookRename(bookid):
         return ''
     else:
         f = exists['BookFile']
+        if not f:
+            logger.debug("No filename for %s in BookRename %s" % bookid)
+            return ''
         r = os.path.dirname(f)
         try:
             calibreid = r.rsplit('(', 1)[1].split(')')[0]
@@ -179,7 +183,7 @@ def bookRename(bookid):
             msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
             logger.debug(msg)
         else:
-            book_basename, extn = os.path.splitext(os.path.basename(f))
+            book_basename, prefextn = os.path.splitext(os.path.basename(f))
             new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
             new_basename = new_basename.replace('$Author', exists['AuthorName']).replace('$Title', exists['BookName'])
             if book_basename != new_basename:
@@ -198,7 +202,8 @@ def bookRename(bookid):
                         try:
                             shutil.move(ofname, nfname)
                             logger.debug("bookRename %s to %s" % (ofname, nfname))
-                            f = nfname
+                            if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
+                                f = nfname
                         except Exception as e:
                             logger.error('Unable to rename [%s] to [%s] %s %s' %
                                          (ofname, nfname, type(e).__name__, str(e)))

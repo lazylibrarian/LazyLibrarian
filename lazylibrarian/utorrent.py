@@ -23,7 +23,7 @@ import urlparse
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 class utorrentclient(object):
@@ -147,7 +147,8 @@ class utorrentclient(object):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
         request = urllib2.Request(url)
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
         request.add_header('User-Agent', USER_AGENT)
 
         if body:

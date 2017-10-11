@@ -20,8 +20,10 @@
 import re
 import traceback
 import urllib
-import urllib2
-from urllib2 import HTTPError
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -30,6 +32,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
     getList, cleanName
+from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 
@@ -125,7 +128,7 @@ class GoogleBooks:
                                 break
                             else:
                                 pass
-                        except HTTPError as err:
+                        except Exception as err:
                             logger.warn(
                                 'Google Books API Error [%s]: Check your API key or wait a while' %
                                 err.reason)
@@ -342,7 +345,7 @@ class GoogleBooks:
                             if not in_cache:
                                 api_hits += 1
                             number_results = jsonresults['totalItems']
-                    except HTTPError as err:
+                    except Exception as err:
                         logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.reason)
                         break
 
@@ -429,7 +432,8 @@ class GoogleBooks:
                                         BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
                                         try:
                                             librarything_wait()
-                                            resp = urllib2.urlopen(BOOK_URL, timeout=30).read()
+                                            r = requests.get(BOOK_URL, timeout=30, proxies=proxyList())
+                                            resp = r.text
                                             lt_lang_hits += 1
                                             logger.debug(
                                                 "LibraryThing reports language [%s] for %s" % (resp, isbnhead))

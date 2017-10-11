@@ -16,17 +16,19 @@
 import os
 import platform
 import re
-import socket
 import subprocess
 import tarfile
 import threading
 import time
-import urllib2
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
-import lib.simplejson as simplejson
 from lazylibrarian import logger, version
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.formatter import getList
 
 
 def logmsg(level, msg):
@@ -122,12 +124,9 @@ def getInstallType():
            (lazylibrarian.CONFIG['INSTALL_TYPE'], lazylibrarian.CONFIG['GIT_BRANCH']))
 
 
-#
-# Establish the version of the installed app for Source or GIT only
-# Global variable set in LazyLibrarian.py on startup as it should be
-
-
 def getCurrentVersion():
+    # Establish the version of the installed app for Source or GIT only
+    # Global variable set in LazyLibrarian.py on startup as it should be
     if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'win':
         logmsg('debug', '(getCurrentVersion) Windows install - no update available')
 
@@ -183,12 +182,9 @@ def getCurrentVersion():
     return VERSION
 
 
-#
-# Returns current branch name of installed version from GIT
-# return "NON GIT INSTALL" if INSTALL TYPE is not GIT
-
-
 def getCurrentGitBranch():
+    # Returns current branch name of installed version from GIT
+    # return "NON GIT INSTALL" if INSTALL TYPE is not GIT
     # Can only work for GIT driven installs, so check install type
     if lazylibrarian.CONFIG['INSTALL_TYPE'] != 'git':
         logmsg('debug', 'Non GIT Install doing getCurrentGitBranch')
@@ -224,12 +220,10 @@ def checkForUpdates():
     logmsg('debug', 'Update check complete')
 
 
-# Return latest version from GITHUB
-# if GIT install return latest on current branch
-# if nonGIT install return latest from master
-
-
 def getLatestVersion():
+    # Return latest version from GITHUB
+    # if GIT install return latest on current branch
+    # if nonGIT install return latest from master
     # Can only work for GIT driven installs, so check install type
     # lazylibrarian.CONFIG['COMMITS_BEHIND'] = 'Unknown'
 
@@ -244,9 +238,9 @@ def getLatestVersion():
     return latest_version
 
 
-# Don't call directly, use getLatestVersion as wrapper.
-# Also removed reference to global variable setting.
 def getLatestVersion_FromGit():
+    # Don't call directly, use getLatestVersion as wrapper.
+    # Also removed reference to global variable setting.
     latest_version = 'Unknown'
 
     # Can only work for non Windows driven installs, so check install type
@@ -270,36 +264,35 @@ def getLatestVersion_FromGit():
 
             age = lazylibrarian.CONFIG['GIT_UPDATED']
             try:
-                request = urllib2.Request(url)
-                request.add_header('User-Agent', USER_AGENT)
+                headers = {'User-Agent': USER_AGENT}
                 if age:
                     logmsg('debug', '(getLatestVersion_FromGit) Checking if modified since %s' % age)
-                    request.add_header('If-Modified-Since', age)
-                resp = urllib2.urlopen(request, timeout=30)
-                result = resp.read()
-                git = simplejson.JSONDecoder().decode(result)
-                latest_version = git['sha']
-                logmsg('debug', '(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
-                    branch, latest_version))
-            except Exception as e:
-                if hasattr(e, 'code') and str(e.code) == '304':  # Not modified
+                    headers.update({'If-Modified-Since': age})
+                
+                r = requests.get(url, timeout=30, headers=headers, proxies=proxyList())
+
+                if str(r.status_code).startswith('2'):
+                    git = r.json()
+                    latest_version = git['sha']
+                    logmsg('debug', '(getLatestVersion_FromGit) Branch [%s] Latest Version has been set to [%s]' % (
+                        branch, latest_version))
+                elif str(r.status_code) == '304':
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
                     logmsg('debug', '(getLatestVersion_FromGit) Not modified, currently on Latest Version')
-                    # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-                else:
-                    logmsg('warn', '(getLatestVersion_FromGit) Could not get the latest commit from github')
-                    logmsg('debug', 'git %s for %s: %s' % (type(e).__name__, url, str(e)))
-                    latest_version = 'Not_Available_From_GitHUB'
+            except Exception as e:
+                logmsg('warn', '(getLatestVersion_FromGit) Could not get the latest commit from github')
+                logmsg('debug', 'git %s for %s: %s' % (type(e).__name__, url, str(e)))
+                latest_version = 'Not_Available_From_GitHUB'
 
     return latest_version
 
 
 def getCommitDifferenceFromGit():
     # See how many commits behind we are
-    commits = -1
     # Takes current latest version value and trys to diff it with the latest
     # version in the current branch.
     commit_list = ''
+    commits = -1
     if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
         commits = 0  # don't report a commit diff as we don't know anything
     if lazylibrarian.CONFIG['CURRENT_VERSION'] and commits != 0:
@@ -310,35 +303,26 @@ def getCommitDifferenceFromGit():
         logmsg('debug', '(getCommitDifferenceFromGit) -  Check for differences between local & repo by [%s]' % url)
 
         try:
-            request = urllib2.Request(url)
-            request.add_header('User-Agent', USER_AGENT)
-            resp = urllib2.urlopen(request, timeout=30)
-            result = resp.read()
-            try:
-                logmsg('debug', 'JSONDecode url')
-                git = simplejson.JSONDecoder().decode(result)
-                logmsg('debug', 'pull total_commits from json object')
-                commits = int(git['total_commits'])
+            headers = {'User-Agent': USER_AGENT}
+            r = requests.get(url, timeout=30, headers=headers, proxies=proxyList())
+            git = r.json()
+            logmsg('debug', 'pull total_commits from json object')
+            commits = int(git['total_commits'])
 
-                msg = '(getCommitDifferenceFromGit) -  GitHub reports as follows '
-                msg += 'Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
-                    git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
-                logmsg('debug', msg)
+            msg = '(getCommitDifferenceFromGit) -  GitHub reports as follows '
+            msg += 'Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
+                git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
+            logmsg('debug', msg)
 
-                if int(git['total_commits']) > 0:
-                    messages = []
-                    for item in git['commits']:
-                        messages.insert(0, item['commit']['message'])
-                    for line in messages:
-                        commit_list = "%s\n%s" % (commit_list, line)
-            except Exception as e:
-                logmsg('warn', '(getCommitDifferenceFromGit) %s -  could not get difference status from GitHub' %
-                       type(e).__name__)
-
+            if int(git['total_commits']) > 0:
+                messages = []
+                for item in git['commits']:
+                    messages.insert(0, item['commit']['message'])
+                for line in messages:
+                    commit_list = "%s\n%s" % (commit_list, line)
         except Exception as e:
-            msg = '(getCommitDifferenceFromGit) %s -  Could not get commits behind from github. ' % type(e).__name__
-            msg += 'Can happen if you have a local commit not pushed to repo or no connection to github'
-            logmsg('warn', msg)
+            logmsg('warn', '(getCommitDifferenceFromGit) %s -  could not get difference status from GitHub' %
+                   type(e).__name__)
 
         if commits > 1:
             logmsg('info', '[VersionCheck] -  New version is available. You are %s commits behind' % commits)
@@ -363,8 +347,6 @@ def getCommitDifferenceFromGit():
     return commits, commit_list
 
 
-#
-# writes a version.txt file in the LL root dir with value of parameter
 def updateVersionFile(new_version_id):
     # Update version.txt located in LL home dir.
     version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
@@ -435,13 +417,12 @@ def update():
 
         try:
             logmsg('info', '(update) Downloading update from: ' + tar_download_url)
-            request = urllib2.Request(tar_download_url)
-            request.add_header('User-Agent', USER_AGENT)
-            data = urllib2.urlopen(request, timeout=30)
-        except socket.timeout:
+            headers = {'User-Agent': USER_AGENT}
+            r = requests.get(tar_download_url, timeout=30, headers=headers, proxies=proxylist())
+        except requests.exceptions.Timeout:
             logmsg('error', "(update) Timeout retrieving new version from " + tar_download_url)
             return False
-        except (urllib2.HTTPError, urllib2.URLError) as e:
+        except Exception as e:
             if hasattr(e, 'reason'):
                 errmsg = e.reason
             else:
@@ -450,14 +431,13 @@ def update():
                    "(update) Unable to retrieve new version from " + tar_download_url + ", can't update: %s" % errmsg)
             return False
 
-        download_name = data.geturl().split('/')[-1]
+        download_name = r.url.split('/')[-1]
 
         tar_download_path = os.path.join(lazylibrarian.PROG_DIR, download_name)
 
         # Save tar to disk
-        f = open(tar_download_path, 'wb')
-        f.write(data.read())
-        f.close()
+        with open(tar_download_path, 'w') as f:
+            f.write(r.content)
 
         # Extract the tar to update folder
         logmsg('info', '(update) Extracting file' + tar_download_path)

@@ -375,7 +375,8 @@ def surnameFirst(authorname):
     res = words.pop()
     if res.strip('.').lower in getList(lazylibrarian.CONFIG['NAME_POSTFIX']):
         res = words.pop() + ' ' + res
-    return res + ', ' + ' '.join(words)
+    authorname = res + ', ' + ' '.join(words)
+    return authorname.decode(lazylibrarian.SYS_ENCODING)
 
 
 def cleanName(name, extras=None):

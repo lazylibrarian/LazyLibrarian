@@ -27,7 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 class qbittorrentclient(object):
@@ -93,7 +93,8 @@ class qbittorrentclient(object):
         request = urllib2.Request(url, data, headers)
 
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
         request.add_header('User-Agent', USER_AGENT)
 
         try:

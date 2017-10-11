@@ -40,6 +40,16 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
+def proxyList():
+    proxies = None
+    if lazylibrarian.CONFIG['PROXY_HOST']:
+        proxies = {}
+        for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+            if item in ['http', 'https']:
+                proxies.update({item: lazylibrarian.CONFIG['PROXY_HOST']})
+    return proxies
+
+
 def isValidEmail(email):
     if len(email) > 7:
         try:
@@ -550,7 +560,7 @@ def saveLog():
     header += "uname: %s\n" % str(platform.uname())
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
-    header += "sqlite3: %s\n" % lazylibrarian.SQLITE3
+    header += "sqlite3: %s\n" % lazylibrarian.SQLITEVERSION
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
