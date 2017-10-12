@@ -14,10 +14,7 @@
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import lazylibrarian
-try:
-    import requests
-except ImportError:
-    import lib.requests as requests
+import lib.requests as requests
 
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD

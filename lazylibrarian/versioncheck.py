@@ -20,10 +20,7 @@ import subprocess
 import tarfile
 import threading
 import time
-try:
-    import requests
-except ImportError:
-    import lib.requests as requests
+import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, version
@@ -268,8 +265,9 @@ def getLatestVersion_FromGit():
                 if age:
                     logmsg('debug', '(getLatestVersion_FromGit) Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
-                
-                r = requests.get(url, timeout=30, headers=headers, proxies=proxyList())
+                proxies = proxyList()
+                logger.debug("proxies: %s" % proxies)
+                r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
 
                 if str(r.status_code).startswith('2'):
                     git = r.json()
@@ -304,7 +302,8 @@ def getCommitDifferenceFromGit():
 
         try:
             headers = {'User-Agent': USER_AGENT}
-            r = requests.get(url, timeout=30, headers=headers, proxies=proxyList())
+            proxies = proxyList()
+            r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
             git = r.json()
             logmsg('debug', 'pull total_commits from json object')
             commits = int(git['total_commits'])
@@ -418,7 +417,8 @@ def update():
         try:
             logmsg('info', '(update) Downloading update from: ' + tar_download_url)
             headers = {'User-Agent': USER_AGENT}
-            r = requests.get(tar_download_url, timeout=30, headers=headers, proxies=proxylist())
+            proxies = proxyList()
+            r = requests.get(tar_download_url, timeout=30, headers=headers, proxies=proxies)
         except requests.exceptions.Timeout:
             logmsg('error', "(update) Timeout retrieving new version from " + tar_download_url)
             return False

@@ -25,6 +25,8 @@ import time
 import traceback
 import lib.zipfile as zipfile
 import re
+import ssl
+import requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -561,6 +563,8 @@ def saveLog():
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
     header += "sqlite3: %s\n" % lazylibrarian.SQLITEVERSION
+    header += "openssl: %s\n" % ssl.OPENSSL_VERSION
+    header += "requests: %s\n" % requests.__version__
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
