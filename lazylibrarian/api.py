@@ -26,7 +26,8 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
     getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
     getBookAuthors, setAllBookAuthors, audioRename
 from lazylibrarian.cache import cache_img
-from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
+    logHeader
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today, formatAuthorName, check_int, plural
 from lazylibrarian.gb import GoogleBooks
@@ -60,6 +61,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getSnatched': 'list snatched books',
             'getHistory': 'list history',
             'getLogs': 'show current log',
+            'getDebug': 'show debug log header',
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
             'getIssues': '&name= list issues of named magazine',
@@ -256,6 +258,9 @@ class Api(object):
 
     def _getLogs(self):
         self.data = lazylibrarian.LOGLIST
+
+    def _getDebug(self):
+        self.data = logHeader().replace('\n', '<br>')
 
     def _clearLogs(self):
         self.data = clearLog()

@@ -575,7 +575,7 @@ def initialize():
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
 
         SQLITEVERSION = sqlite3.sqlite_version
-        logger.debug("sqlite3 is v%s" % SQLITEVERSION)
+        #logger.debug("sqlite3 is v%s" % SQLITEVERSION)
         # group_concat needs sqlite3 >= 3.5.4
         GROUP_CONCAT = False
         try:
