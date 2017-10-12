@@ -17,9 +17,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
-#try:
-#    import requests
-#except ImportError:
 import lib.requests as requests
 
 import lazylibrarian
@@ -45,7 +42,7 @@ class AndroidPNNotifier:
             'username': username,
             'message': msg.encode('utf-8'),
         }
-        proxies=proxyList()
+        proxies = proxyList()
         # send the request
         try:
             r = requests.get(url, params=data, timeout=30, proxies=proxies)

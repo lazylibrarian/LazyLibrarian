@@ -20,9 +20,6 @@ import subprocess
 import tarfile
 import threading
 import time
-#try:
-#    import requests
-#except ImportError:
 import lib.requests as requests
 
 import lazylibrarian
@@ -420,7 +417,7 @@ def update():
         try:
             logmsg('info', '(update) Downloading update from: ' + tar_download_url)
             headers = {'User-Agent': USER_AGENT}
-            proxies=proxyList()
+            proxies = proxyList()
             r = requests.get(tar_download_url, timeout=30, headers=headers, proxies=proxies)
         except requests.exceptions.Timeout:
             logmsg('error', "(update) Timeout retrieving new version from " + tar_download_url)

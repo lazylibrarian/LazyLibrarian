@@ -18,9 +18,6 @@ import os
 import re
 import socket
 import unicodedata
-#try:
-#    import requests
-#except ImportError:
 import lib.requests as requests
 
 from base64 import b16encode, b32decode
@@ -110,7 +107,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     Source = "DIRECT"
 
     logger.debug("Starting Direct Download for [%s]" % bookname)
-    proxies=proxyList()
+    proxies = proxyList()
     headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
     try:
         r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
@@ -187,7 +184,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
         headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
-        proxies=proxyList()
+        proxies = proxyList()
         try:
             r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
         except requests.exceptions.Timeout:

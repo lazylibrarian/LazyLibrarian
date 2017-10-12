@@ -16,9 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
-#try:
-#    import requests
-#except ImportError:
 import lib.requests as requests
 
 import lazylibrarian
@@ -71,7 +68,7 @@ class BoxcarNotifier:
                 'notification[long_message]': msg.encode('utf-8'),
                 'notification[sound]': "done"
             }
-        proxies=proxyList()
+        proxies = proxyList()
         # send the request to boxcar
         try:
             r = requests.get(curUrl, params=data, timeout=30, proxies=proxies)

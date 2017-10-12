@@ -18,9 +18,6 @@ import json
 import os
 import shutil
 import time
-#try:
-#    import requests
-#except ImportError:
 import lib.requests as requests
 
 from xml.etree import ElementTree
@@ -40,7 +37,7 @@ def fetchURL(URL, headers=None, retry=True):
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
         headers = {'User-Agent': USER_AGENT}
-    proxies=proxyList()
+    proxies = proxyList()
     try:
         r = requests.get(URL, headers=headers, timeout=30, proxies=proxies)
 

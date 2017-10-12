@@ -14,9 +14,6 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import urllib
-#try:
-#    import requests
-#except ImportError:
 import lib.requests as requests
 
 import lazylibrarian
@@ -131,7 +128,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
 
     # to debug because of api
     logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
-    proxies=proxyList()
+    proxies = proxyList()
     try:
         r = requests.get(URL, timeout=30, proxies=proxies)
         result = r.json()
