@@ -563,8 +563,31 @@ def saveLog():
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
     header += "sqlite3: %s\n" % lazylibrarian.SQLITEVERSION
-    header += "openssl: %s\n" % ssl.OPENSSL_VERSION
-    header += "requests: %s\n" % requests.__version__
+    header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION')
+    header += "requests: %s\n" % getattr(requests, '__version__')
+    try:
+        # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
+        # attribute is only present on those versions.
+        import OpenSSL
+        from OpenSSL.crypto import X509
+        x509 = X509()
+        if getattr(x509, "_x509", None) is None:
+            header += "'pyOpenSSL' module missing required functionality. Try upgrading to v0.14 or newer."
+        else:
+            header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__')
+    except ImportError:
+        header += "pyOpenSSL: is not installed\n"
+
+    try:
+        # Method added in `cryptography==1.1`; not available in older versions
+        import cryptography
+        from cryptography.x509.extensions import Extensions
+        if getattr(Extensions, "get_extension_for_class", None) is None:
+            header += "'cryptography' module missing required functionality. Try upgrading to v1.3.4 or newer."
+        else:
+            header += "cryptography: %s\n" %  getattr(cryptography, '__version__')
+    except ImportError:
+        header += "cryptography: is not installed\n"
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
