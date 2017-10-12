@@ -543,10 +543,7 @@ def reverse_readline(filename, buf_size=8192):
             yield segment
 
 
-def saveLog():
-    if not os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
-        return 'LOGDIR does not exist'
-
+def logHeader():
     popen_list = [sys.executable, lazylibrarian.FULL_PATH]
     popen_list += lazylibrarian.ARGS
     header = "Startup cmd: %s\n" % str(popen_list)
@@ -563,8 +560,8 @@ def saveLog():
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
     header += "sqlite3: %s\n" % lazylibrarian.SQLITEVERSION
-    header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION')
-    header += "requests: %s\n" % getattr(requests, '__version__')
+    header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION', None)
+    header += "requests: %s\n" % getattr(requests, '__version__', None)
     try:
         # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
         # attribute is only present on those versions.
@@ -572,9 +569,8 @@ def saveLog():
         from OpenSSL.crypto import X509
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
-            header += "'pyOpenSSL' module missing required functionality. Try upgrading to v0.14 or newer."
-        else:
-            header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__')
+            header += "'pyOpenSSL' module missing required functionality. Try upgrading to v0.14 or newer  "
+        header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__', None)
     except ImportError:
         header += "pyOpenSSL: is not installed\n"
 
@@ -583,11 +579,16 @@ def saveLog():
         import cryptography
         from cryptography.x509.extensions import Extensions
         if getattr(Extensions, "get_extension_for_class", None) is None:
-            header += "'cryptography' module missing required functionality. Try upgrading to v1.3.4 or newer."
-        else:
-            header += "cryptography: %s\n" %  getattr(cryptography, '__version__')
+            header += "'cryptography' module missing required functionality. Try upgrading to v1.3.4 or newer  "
+        header += "cryptography: %s\n" %  getattr(cryptography, '__version__', None)
     except ImportError:
         header += "cryptography: is not installed\n"
+    return header
+
+
+def saveLog():
+    if not os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
+        return 'LOGDIR does not exist'
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
@@ -631,8 +632,8 @@ def saveLog():
                 extn += 1
 
     with open(outfile + '.log', 'w') as logfile:
-        logfile.write(header)
-        lines = 0  # len(header.split('\n'))
+        logfile.write(logHeader())
+        lines = 0
         for line in reverse_readline(outfile + '.tmp'):
             logfile.write("%s\n" % line)
             lines += 1
