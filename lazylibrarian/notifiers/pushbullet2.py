@@ -13,15 +13,16 @@
 
 import lib.simplejson as json
 # We use system version if available for pushbullet, as there was a report that
-# lazylibrarian version of requests was not working with pushbullet. Not clear why.
+# lazylibrarian version of requests was not working with pushbullet.
+# Not clear why, it may have been an old version of pyOpenSSL?
+# Added _validate_dependencies_met() function in requests/packages/urllib3/contrib/pyopenssl.py
+# Was reported as issue #675
 try:
     import requests
     from requests.auth import HTTPBasicAuth
 except ImportError:
     import lib.requests as requests
     from lib.requests.auth import HTTPBasicAuth
-
-# from websocket import create_connection
 
 HOST = "https://api.pushbullet.com/v2"
 
