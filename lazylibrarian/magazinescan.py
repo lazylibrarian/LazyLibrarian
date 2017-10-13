@@ -60,12 +60,12 @@ def create_cover(issuefile=None, refresh=False):
         logger.debug('No issuefile %s' % issuefile)
         return
 
-    extn = os.path.splitext(issuefile)[1]
-    if extn:
-        coverfile = issuefile.replace(extn, '.jpg')
-    else:
+    base, extn = os.path.splitext(issuefile)
+    if not extn:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
         return
+
+    coverfile = base + '.jpg'
 
     if os.path.isfile(coverfile):
         if refresh:
@@ -116,7 +116,29 @@ def create_cover(issuefile=None, refresh=False):
 
     elif extn == '.pdf':
         generator = ""
-        if platform.system() == "Windows":
+        if len(lazylibrarian.CONFIG['IMP_CONVERT']):  # allow external convert to override libraries
+            generator = "external program: %s" % lazylibrarian.CONFIG['IMP_CONVERT']
+            if "gsconvert.py" in lazylibrarian.CONFIG['IMP_CONVERT']:
+                msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
+                msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
+                logger.warn(msg)
+            converter = lazylibrarian.CONFIG['IMP_CONVERT']
+            postfix = ''
+            if not converter.startswith(os.sep):  # full path given, or just program_name?
+                converter = os.path.join(os.getcwd(), lazylibrarian.CONFIG['IMP_CONVERT'])
+                if 'convert' in converter and 'gs' not in converter:
+                    # tell imagemagick to only convert first page
+                    postfix = '[0]'
+            try:
+                params = [converter, '%s%s' % (issuefile, postfix), '%s' % coverfile]
+                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                if res:
+                    logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
+            except Exception as e:
+                # logger.debug(params)
+                logger.debug('External "convert" failed %s %s' % (type(e).__name__, str(e)))
+
+        elif platform.system() == "Windows":
             GS = os.path.join(os.getcwd(), "gswin64c.exe")
             generator = "local gswin64c"
             if not os.path.isfile(GS):
@@ -168,25 +190,7 @@ def create_cover(issuefile=None, refresh=False):
                 except ImportError:
                     interface = ""
             try:
-                if len(lazylibrarian.CONFIG['IMP_CONVERT']):  # allow external convert to override libraries
-                    generator = "external program: %s" % lazylibrarian.CONFIG['IMP_CONVERT']
-                    if "gsconvert.py" in lazylibrarian.CONFIG['IMP_CONVERT']:
-                        msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
-                        msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
-                        logger.warn(msg)
-                    converter = lazylibrarian.CONFIG['IMP_CONVERT']
-                    if not converter.startswith(os.sep):  # full path given, or just program_name?
-                        converter = os.path.join(os.getcwd(), lazylibrarian.CONFIG['IMP_CONVERT'])
-                    try:
-                        params = [converter, '%s' % issuefile, '%s' % coverfile]
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                        if res:
-                            logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
-                    except Exception as e:
-                        # logger.debug(params)
-                        logger.debug('External "convert" failed %s %s' % (type(e).__name__, str(e)))
-
-                elif interface == 'wand':
+                if interface == 'wand':
                     generator = "wand interface"
                     # noinspection PyUnboundLocalVariable
                     with Image(filename=issuefile + '[0]') as img:

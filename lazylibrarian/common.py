@@ -26,7 +26,7 @@ import traceback
 import lib.zipfile as zipfile
 import re
 import ssl
-import requests
+import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -580,7 +580,7 @@ def logHeader():
         from cryptography.x509.extensions import Extensions
         if getattr(Extensions, "get_extension_for_class", None) is None:
             header += "'cryptography' module missing required functionality. Try upgrading to v1.3.4 or newer  "
-        header += "cryptography: %s\n" %  getattr(cryptography, '__version__', None)
+        header += "cryptography: %s\n" % getattr(cryptography, '__version__', None)
     except ImportError:
         header += "cryptography: is not installed\n"
     return header
