@@ -572,7 +572,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
         URL = host + '/api?' + urllib.urlencode(params)
 
         sterm = book['searchterm']
-        if isinstance(sterm, str):
+        if isinstance(sterm, str) and hasattr(sterm, "decode"):
             sterm = sterm.decode('utf-8')
 
         rootxml = None

@@ -75,7 +75,7 @@ def GEN(book=None, prov=None):
         search = search[1:]
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     page = 1

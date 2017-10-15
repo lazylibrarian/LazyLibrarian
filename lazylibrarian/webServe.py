@@ -812,7 +812,7 @@ class WebInterface(object):
                 # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
                 # otherwise the comparison fails, but sometimes accented characters won't
                 # fit latin-1 but fit utf-8 how can we tell ???
-                if isinstance(title, str):
+                if isinstance(title, str) and hasattr(title, "decode"):
                     try:
                         title = title.encode('latin-1')
                     except UnicodeEncodeError:
@@ -962,7 +962,9 @@ class WebInterface(object):
 
         if not author:
             raise cherrypy.HTTPRedirect("home")
-        authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
+        authorname = author['AuthorName']
+        if isinstance(authorname, str) and hasattr(authorname, "decode"):
+            authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
             author=author, languages=languages, booklang=BookLang, types=types, library=library, ignored=Ignored,
@@ -2190,7 +2192,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         maglist = []
         for nzburl in args:
-            if isinstance(nzburl, str):
+            if isinstance(nzburl, str) and hasattr(nzburl, "decode"):
                 nzburl = nzburl.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
@@ -2325,7 +2327,7 @@ class WebInterface(object):
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
         for item in args:
-            if isinstance(item, str):
+            if isinstance(item, str) and hasattr(item, "decode"):
                 item = item.decode(lazylibrarian.SYS_ENCODING)
             # ouch dirty workaround...
             if not item == 'book_table_length':

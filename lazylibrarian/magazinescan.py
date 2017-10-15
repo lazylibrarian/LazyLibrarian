@@ -106,7 +106,7 @@ def create_cover(issuefile=None, refresh=False):
                         img = data.read(member)
                         break
             if img:
-                with open(coverfile, "wb") as f:
+                with open(coverfile, 'wb') as f:
                     f.write(img)
                 return
             else:
@@ -268,8 +268,9 @@ def magazineScan():
         if lazylibrarian.CONFIG['MAG_RELATIVE']:
             if mag_path[0] not in '._':
                 mag_path = '_' + mag_path
-            mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path).encode(lazylibrarian.SYS_ENCODING)
-        else:
+            mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
+
+        if isinstance(mag_path, str) and hasattr(mag_path, "decode"):
             mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
         if lazylibrarian.CONFIG['FULL_SCAN']:
@@ -322,7 +323,8 @@ def magazineScan():
         match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
         title_pattern = re.compile(match, re.VERBOSE)
-        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
+        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
+            "\\$\\T\\i\\t\\l\\e", "") + '\.[' + booktypes + ']'
         date_pattern = re.compile(match, re.VERBOSE)
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file

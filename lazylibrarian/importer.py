@@ -106,7 +106,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
     if not check_exist_author:
         logger.debug("Failed to match author [%s] in database" % author)
         return "", "", False
-    if isinstance(author, str):
+    if isinstance(author, str) and hasattr(author, "decode"):
         author = author.decode(lazylibrarian.SYS_ENCODING)
     return author, check_exist_author['AuthorID'], new
 

@@ -62,11 +62,15 @@ class PushoverNotifier:
 
         http_handler = HTTPSConnection('api.pushover.net')
 
+        if isinstance(message, str) and hasattr(message, "decode"):
+            message = message.encode(lazylibrarian.SYS_ENCODING)
+        if isinstance(event, str) and hasattr(event, "decode"):
+            event = event.encode(lazylibrarian.SYS_ENCODING)
         try:
             data = {'token': pushover_apitoken,
                     'user': pushover_keys,
-                    'title': event.encode('utf-8'),
-                    'message': message.encode("utf-8"),
+                    'title': event,
+                    'message': message,
                     'device': pushover_device,
                     'priority': lazylibrarian.CONFIG['PUSHOVER_PRIORITY']}
             http_handler.request(method,

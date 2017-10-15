@@ -32,7 +32,7 @@ import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import restartJobs
+from lazylibrarian.common import restartJobs, logHeader
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
 from lib.apscheduler.scheduler import Scheduler
 
@@ -89,7 +89,6 @@ AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
 GROUP_CONCAT = 0
-SQLITEVERSION = ''
 
 # user permissions
 perm_config = 1 << 0  # 1 access to config page
@@ -471,7 +470,8 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
                 my_val = my_val[1:-1]
             if not len(my_val):
                 my_val = def_val
-            my_val = my_val.decode(SYS_ENCODING)
+            if isinstance(my_val, str) and hasattr(my_val, "decode"):
+                my_val = my_val.decode(SYS_ENCODING)
         except ConfigParser.Error:
             my_val = str(def_val)
         except Exception as e:
@@ -493,7 +493,7 @@ def initialize():
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
         AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE, \
-        GROUP_CONCAT, SQLITEVERSION
+        GROUP_CONCAT
 
     with INIT_LOCK:
 
@@ -574,19 +574,21 @@ def initialize():
         except Exception as e:
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
 
-        SQLITEVERSION = sqlite3.sqlite_version
-        # logger.debug("sqlite3 is v%s" % SQLITEVERSION)
         # group_concat needs sqlite3 >= 3.5.4
         GROUP_CONCAT = False
         try:
-            parts = SQLITEVERSION.split('.')
+            sqlv = getattr(sqlite3, 'sqlite_version', None)
+            parts = sqlv.split('.')
             if int(parts[0]) == 3:
                 if int(parts[1]) > 5 or int(parts[1]) == 5 and int(parts[2]) >= 4:
                     GROUP_CONCAT = True
-                else:
-                    logger.warn('sqlite3 version is too old (%s), some functions will be disabled' % SQLITEVERSION)
         except Exception as e:
             logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
+
+        debuginfo = logHeader()
+        for item in debuginfo.splitlines():
+            if 'missing' in item:
+                logger.warn(item)
 
         MONTHNAMES = build_monthtable()
         BOOKSTRAP_THEMELIST = build_bookstrap_themes()
@@ -804,9 +806,13 @@ def config_write():
                 LOGLEVEL = check_int(value, 1)
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                          'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
-                value = value.encode(SYS_ENCODING)
+                # py2 str has decode, py3 str doesn't. Both have encode, but we don't want to encode py3 str
+                if isinstance(value, str) and hasattr(value, "decode"):
+                    value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
-                value = value.encode(SYS_ENCODING).lower()
+                if isinstance(value, str) and hasattr(value, "decode"):
+                    value = value.encode(SYS_ENCODING)
+                value = value.lower()
         else:
             # keep the old value
             value = CFG.get(section, key.lower())
@@ -999,7 +1005,7 @@ def DIRECTORY(dirname):
         usedir = CONFIG['AUDIO_DIR']
     elif dirname == "Download":
         try:
-            usedir = getList(CONFIG['DOWNLOAD_DIR'])[0]
+            usedir = getList(CONFIG['DOWNLOAD_DIR'], ',')[0]
         except IndexError:
             usedir = ''
     elif dirname == "Alternate":
@@ -1020,7 +1026,7 @@ def DIRECTORY(dirname):
         usedir = os.getcwd()
 
     # return directory as unicode so we get unicode results from listdir
-    if isinstance(usedir, str):
+    if isinstance(usedir, str) and hasattr(usedir, "decode"):
         usedir = usedir.decode(SYS_ENCODING)
     return usedir
 

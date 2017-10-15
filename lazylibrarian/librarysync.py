@@ -55,9 +55,9 @@ def get_book_info(fname):
 
         author = book.author()
         title = book.title()
-        if isinstance(author, str):
+        if isinstance(author, str) and hasattr(author, "decode"):
             author = author.decode(lazylibrarian.SYS_ENCODING)
-        if isinstance(title, str):
+        if isinstance(title, str) and hasattr(title, "decode"):
             title = title.decode(lazylibrarian.SYS_ENCODING)
         res['creator'] = author
         res['title'] = title
@@ -142,14 +142,14 @@ def get_book_info(fname):
             txt = tree[0][n].text
             attrib = str(tree[0][n].attrib).lower()
             if 'title' in tag:
-                if isinstance(txt, str):
+                if isinstance(txt, str) and hasattr(txt, "decode"):
                     txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['title'] = txt
             elif 'language' in tag:
                 res['language'] = txt
             elif 'creator' in tag and 'creator' not in res:
                 # take the first author name if multiple authors
-                if isinstance(txt, str):
+                if isinstance(txt, str) and hasattr(txt, "decode"):
                     txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['creator'] = txt
             elif 'identifier' in tag and 'isbn' in attrib:
@@ -401,7 +401,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             for files in f:
                 file_count += 1
 
-                if isinstance(r, str):
+                if isinstance(r, str) and hasattr(r, "decode"):
                     r = r.decode(lazylibrarian.SYS_ENCODING)
 
                 subdirectory = r.replace(startdir, '')
@@ -437,7 +437,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                         # if it's an epub or a mobi we can try to read metadata from it
                         if (extn == ".epub") or (extn == ".mobi"):
-                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                            book_filename = os.path.join(r, files)
+                            if isinstance(book_filename, str) and hasattr(book_filename, "decode"):
+                                book_filename = book_filename.encode(lazylibrarian.SYS_ENCODING)
 
                             try:
                                 res = get_book_info(book_filename)
@@ -495,7 +497,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             # no author/book from metadata file, and not embedded either
                             # or audiobook which may have id3 tags
                             if is_valid_booktype(files, 'audiobook'):
-                                filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+                                filename = os.path.join(r, files)
+                                if isinstance(filename, str) and hasattr(filename, "decode"):
+                                    filename = filename.encode(lazylibrarian.SYS_ENCODING)
                                 try:
                                     id3r = id3reader.Reader(filename)
                                     author = id3r.getValue('performer')
@@ -522,9 +526,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 except IndexError:
                                     book = ''
 
-                                if isinstance(book, str):
+                                if isinstance(book, str) and hasattr(book, "decode"):
                                     book = book.decode(lazylibrarian.SYS_ENCODING)
-                                if isinstance(author, str):
+                                if isinstance(author, str) and hasattr(author, "decode"):
                                     author = author.decode(lazylibrarian.SYS_ENCODING)
                                 if len(book) <= 2 or len(author) <= 2:
                                     match = False
@@ -608,7 +612,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 if not bookid:
                                     # get author name from parent directory of this book directory
                                     newauthor = os.path.basename(os.path.dirname(r))
-                                    if isinstance(newauthor, str):
+                                    if isinstance(newauthor, str) and hasattr(newauthor, "decode"):
                                         newauthor = newauthor.decode(lazylibrarian.SYS_ENCODING)
                                     # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
                                     if newauthor.endswith('_'):

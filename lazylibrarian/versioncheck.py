@@ -266,7 +266,6 @@ def getLatestVersion_FromGit():
                     logmsg('debug', '(getLatestVersion_FromGit) Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
                 proxies = proxyList()
-                logger.debug("proxies: %s" % proxies)
                 r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
 
                 if str(r.status_code).startswith('2'):

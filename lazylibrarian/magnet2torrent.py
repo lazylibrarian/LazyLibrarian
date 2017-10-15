@@ -102,7 +102,7 @@ def magnet2torrent(magnet, output_name=None):
             output = pt.abspath(output_name)
 
     logger.debug("Saving torrent file here : " + output + " ...")
-    with open(output, "wb") as f:
+    with open(output, 'wb') as f:
         f.write(torcontent)
     logger.debug("Saved! Cleaning up dir: " + tempdir)
     try:
