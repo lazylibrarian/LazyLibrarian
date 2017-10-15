@@ -88,7 +88,7 @@ def finditem(item, authorname, headers):
     bookid = ""
     bookname = item['Title']
 
-    if isinstance(bookname, str):
+    if isinstance(bookname, str) and hasattr(bookname, "decode"):
         bookname = bookname.decode(lazylibrarian.SYS_ENCODING)
     if 'ISBN' in headers:
         isbn10 = item['ISBN']
@@ -173,11 +173,11 @@ def import_CSV(search_dir=None):
             logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
             for item in content.keys():
                 authorname = content[item]['Author']
-                if isinstance(authorname, str):
+                if isinstance(authorname, str) and hasattr(authorname, "decode"):
                     authorname = authorname.decode(lazylibrarian.SYS_ENCODING)
                 authorname = formatAuthorName(authorname)
                 title = content[item]['Title']
-                if isinstance(title, str):
+                if isinstance(title, str) and hasattr(title, "decode"):
                     title = title.decode(lazylibrarian.SYS_ENCODING)
 
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))

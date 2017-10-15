@@ -53,7 +53,7 @@ class CustomNotifier:
                 params = [lazylibrarian.CONFIG['CUSTOM_SCRIPT']]
                 for item in dictionary:
                     params.append(item)
-                    if hasattr(dictionary[item], 'encode'):
+                    if isinstance(dictionary[item], str) and hasattr(dictionary[item], 'decode'):
                         params.append(dictionary[item].encode('utf-8'))
                     else:
                         params.append(str(dictionary[item]))

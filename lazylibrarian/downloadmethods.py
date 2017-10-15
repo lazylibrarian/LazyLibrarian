@@ -171,7 +171,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             # had a problem with torznab utf-8 encoded strings not matching
             # our utf-8 strings because of long/short form differences
             url, value = tor_url.split('&file=', 1)
-            if isinstance(value, str):
+            if isinstance(value, str) and hasattr(value, "decode"):
                 value = value.decode('utf-8')  # make unicode
             value = unicodedata.normalize('NFC', value)  # normalize to short form
             value = value.encode('unicode-escape')  # then escape the result

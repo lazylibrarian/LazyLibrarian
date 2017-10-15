@@ -35,7 +35,7 @@ class GoodReads:
     # https://www.goodreads.com/api/
 
     def __init__(self, name=None):
-        if isinstance(name, str):
+        if isinstance(name, str) and hasattr(name, "decode"):
             self.name = name.decode(lazylibrarian.SYS_ENCODING)
         else:
             self.name = name
@@ -48,15 +48,16 @@ class GoodReads:
         try:
             resultlist = []
             api_hits = 0
+            searchtitle = ''
+            searchauthorname = ''
 
             if ' <ll> ' in searchterm:  # special token separates title from author
                 searchtitle, searchauthorname = searchterm.split(' <ll> ')
-            else:
-                searchtitle = ''
-                searchauthorname = ''
-            searchterm = searchterm.replace(' <ll> ', ' ')
+                searchterm = searchterm.replace(' <ll> ', ' ')
 
-            url = urllib.quote_plus(searchterm.encode(lazylibrarian.SYS_ENCODING))
+            if isinstance(searchterm, str) and hasattr(searchterm, "decode"):
+                searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+            url = urllib.quote_plus(searchterm)
             set_url = 'https://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
             # logger.debug('Searching for %s at: %s' % (searchterm, set_url))
@@ -233,7 +234,7 @@ class GoodReads:
         URL = 'https://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
-        if isinstance(author, str):
+        if isinstance(author, str) and hasattr(author, "decode"):
             author = author.decode('utf-8')  # make unicode
         author = unicodedata.normalize('NFC', author)  # normalize to short form
 

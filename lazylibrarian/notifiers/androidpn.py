@@ -33,6 +33,8 @@ class AndroidPNNotifier:
 
         # build up the URL and parameters
         msg = msg.strip()
+        if isinstance(msg, str) and hasattr(msg, "decode"):
+            msg = msg.encode(lazylibrarian.SYS_ENCODING)
 
         data = {
             'action': "send",
@@ -40,7 +42,7 @@ class AndroidPNNotifier:
             'uri': "",
             'title': title,
             'username': username,
-            'message': msg.encode('utf-8'),
+            'message': msg,
         }
         proxies = proxyList()
         # send the request

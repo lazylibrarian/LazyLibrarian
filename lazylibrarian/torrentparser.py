@@ -53,7 +53,7 @@ def TPB(book=None):
             cat = 0
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     page = 0
@@ -184,7 +184,7 @@ def KAT(book=None):
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     result, success = fetchURL(searchURL)
@@ -292,7 +292,7 @@ def WWT(book=None):
     providerurl = url_fix(host + "/torrents-search.php")
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     cat = 0  # 0=all, 36=ebooks, 52=mags, 56=audiobooks
@@ -434,7 +434,7 @@ def EXTRA(book=None):
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     data, success = fetchURL(searchURL)
@@ -516,7 +516,7 @@ def ZOO(book=None):
     searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     data, success = fetchURL(searchURL)
@@ -598,7 +598,7 @@ def LIME(book=None):
     searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     data, success = fetchURL(searchURL)
@@ -685,7 +685,7 @@ def TDL(book=None):
     searchURL = providerurl + "/rss.xml?%s" % urllib.urlencode(params)
 
     sterm = book['searchterm']
-    if isinstance(sterm, str):
+    if isinstance(sterm, str) and hasattr(sterm, "decode"):
         sterm = sterm.decode('utf-8')
 
     data, success = fetchURL(searchURL)

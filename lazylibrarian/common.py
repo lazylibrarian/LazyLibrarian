@@ -26,6 +26,7 @@ import traceback
 import lib.zipfile as zipfile
 import re
 import ssl
+import sqlite3
 import lib.requests as requests
 
 import lazylibrarian
@@ -222,7 +223,7 @@ def any_file(search_dir=None, extn=None):
     if search_dir is None or extn is None:
         return ""
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(search_dir, str):
+    if isinstance(search_dir, str) and hasattr(search_dir, 'decode'):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if os.path.isdir(search_dir):
         for fname in os.listdir(search_dir):
@@ -253,7 +254,7 @@ def book_file(search_dir=None, booktype=None):
     if search_dir is None or booktype is None:
         return ""
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(search_dir, str):
+    if isinstance(search_dir, str) and hasattr(search_dir, 'decode'):
         search_dir = search_dir.decode(lazylibrarian.SYS_ENCODING)
     if search_dir and os.path.isdir(search_dir):
         try:
@@ -559,9 +560,11 @@ def logHeader():
     header += "uname: %s\n" % str(platform.uname())
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
-    header += "sqlite3: %s\n" % lazylibrarian.SQLITEVERSION
     header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION', None)
     header += "requests: %s\n" % getattr(requests, '__version__', None)
+    if not lazylibrarian.GROUP_CONCAT:
+        header += 'sqlite3: missing required functionality. Try upgrading to v3.5.4 or newer. '
+    header += "sqlite3: %s\n" % getattr(sqlite3, 'sqlite_version', None)
     try:
         # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
         # attribute is only present on those versions.
@@ -569,20 +572,20 @@ def logHeader():
         from OpenSSL.crypto import X509
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
-            header += "'pyOpenSSL' module missing required functionality. Try upgrading to v0.14 or newer  "
+            header += "pyOpenSSL: module missing required functionality. Try upgrading to v0.14 or newer. "
         header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__', None)
     except ImportError:
-        header += "pyOpenSSL: is not installed\n"
+        header += "pyOpenSSL: module missing\n"
 
     try:
         # Method added in `cryptography==1.1`; not available in older versions
         import cryptography
         from cryptography.x509.extensions import Extensions
         if getattr(Extensions, "get_extension_for_class", None) is None:
-            header += "'cryptography' module missing required functionality. Try upgrading to v1.3.4 or newer  "
+            header += "cryptography: module missing required functionality. Try upgrading to v1.3.4 or newer. "
         header += "cryptography: %s\n" % getattr(cryptography, '__version__', None)
     except ImportError:
-        header += "cryptography: is not installed\n"
+        header += "cryptography: module missing\n"
     return header
 
 
@@ -655,7 +658,7 @@ def cleanCache():
     result = []
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(cache, str):
+    if isinstance(cache, str) and hasattr(cache, 'decode'):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -677,7 +680,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(cache, str):
+    if isinstance(cache, str) and hasattr(cache, 'decode'):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -699,7 +702,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(cache, str):
+    if isinstance(cache, str) and hasattr(cache, 'decode'):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -724,7 +727,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "SeriesCache")
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(cache, str):
+    if isinstance(cache, str) and hasattr(cache, 'decode'):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0
@@ -749,7 +752,7 @@ def cleanCache():
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "magazine")
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(cache, str):
+    if isinstance(cache, str) and hasattr(cache, 'decode'):
         cache = cache.decode(lazylibrarian.SYS_ENCODING)
     cleaned = 0
     kept = 0

@@ -67,7 +67,7 @@ def processAlternate(source_dir=None):
         logger.debug('Processing alternate directory %s' % source_dir)
         # first, recursively process any books in subdirectories
         # ensure directory is unicode so we get unicode results from listdir
-        if isinstance(source_dir, str):
+        if isinstance(source_dir, str) and hasattr(source_dir, "decode"):
             source_dir = source_dir.decode(lazylibrarian.SYS_ENCODING)
         for fname in os.listdir(source_dir):
             subdir = os.path.join(source_dir, fname)
@@ -154,7 +154,7 @@ def try_rename(directory, filename):
     if int(lazylibrarian.LOGLEVEL) > 2:
         logger.debug("try_rename %s %s %s %s" % (type(filename), repr(filename), type(directory), repr(directory)))
 
-    if isinstance(filename, str):
+    if isinstance(filename, str) and hasattr(filename, "decode"):
         try:
             # try decode first in case we called listdir with str instead of unicode
             filename = filename.decode(lazylibrarian.SYS_ENCODING)
@@ -178,7 +178,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
     list_dir = os.listdir(sourcedir)
     for ourfile in list_dir:
-        if isinstance(ourfile, str):
+        if isinstance(ourfile, str) and hasattr(ourfile, "decode"):
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.warn("unexpected unicode conversion moving file into subdir")
             ourfile = try_rename(sourcedir, ourfile)
@@ -217,7 +217,7 @@ def processDir(reset=False):
         myDB = database.DBConnection()
         skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
 
-        templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'])
+        templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'], ',')
         if lazylibrarian.DIRECTORY("Download") != templist[0]:
             templist.insert(0, lazylibrarian.DIRECTORY("Download"))
         dirlist = []
@@ -227,7 +227,7 @@ def processDir(reset=False):
         for download_dir in dirlist:
             # download_dir is set to unicode so we get unicode results from listdir
             try:
-                if isinstance(download_dir, str):
+                if isinstance(download_dir, str) and hasattr(download_dir, "decode"):
                     download_dir = download_dir.decode(lazylibrarian.SYS_ENCODING)
                 downloads = os.listdir(download_dir)
             except OSError as why:
@@ -297,7 +297,7 @@ def processDir(reset=False):
 
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
                     for fname in downloads:
-                        if isinstance(fname, str):
+                        if isinstance(fname, str) and hasattr(fname, "decode"):
                             if int(lazylibrarian.LOGLEVEL) > 2:
                                 logger.warn("unexpected unicode conversion in downloads")
                             fname = try_rename(download_dir, fname)
@@ -322,7 +322,7 @@ def processDir(reset=False):
                                 logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
                             if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                                 pp_path = os.path.join(download_dir, fname)
-                                if isinstance(pp_path, str):
+                                if isinstance(pp_path, str) and hasattr(pp_path, "decode"):
                                     try:
                                         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
                                     except UnicodeDecodeError:
@@ -427,7 +427,9 @@ def processDir(reset=False):
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
                                 dest_dir = lazylibrarian.DIRECTORY('Audio')
-                            dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
+                            dest_path = os.path.join(dest_dir, dest_path)
+                            if isinstance(dest_path, str) and hasattr(dest_path, "decode"):
+                                dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                         else:
                             data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                             if data:  # it's a magazine
@@ -445,9 +447,11 @@ def processDir(reset=False):
                                     if dest_path[0] not in '._':
                                         dest_path = '_' + dest_path
                                     dest_dir = lazylibrarian.DIRECTORY('eBook')
-                                    dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
-                                else:
+                                    dest_path = os.path.join(dest_dir, dest_path)
+                                
+                                if isinstance(dest_path, str) and hasattr(dest_path, "decode"):
                                     dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
+
                                 authorname = None
                                 bookname = None
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate',
@@ -595,7 +599,7 @@ def processDir(reset=False):
                 logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
             for entry in downloads:
                 if "LL.(" in entry:
-                    if isinstance(entry, str):
+                    if isinstance(entry, str) and hasattr(entry, "decode"):
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.warn("unexpected unicode conversion in LL scanner")
                         entry = try_rename(download_dir, entry)
@@ -786,7 +790,9 @@ def import_book(pp_path=None, bookID=None):
                                                                                                          bookname)
             global_name = unaccented(global_name)
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
-            dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
+            dest_path = os.path.join(dest_dir, dest_path)
+            if isinstance(dest_path, str) and hasattr(dest_path, "decode"):
+                dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
 
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("processDestination %s" % pp_path)
@@ -981,7 +987,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     booktype = booktype.lower()
 
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(pp_path, str):
+    if isinstance(pp_path, str) and hasattr(pp_path, "decode"):
         pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
 
     bestmatch = ''
@@ -1133,7 +1139,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
 
         for fname in os.listdir(pp_path):
-            if isinstance(fname, str):
+            if isinstance(fname, str) and hasattr(fname, "decode"):
                 if int(lazylibrarian.LOGLEVEL) > 2:
                     logger.warn("unexpected unicode conversion copying file to target directory")
                 fname = try_rename(pp_path, fname)
@@ -1194,7 +1200,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 def processAutoAdd(src_path=None):
     # Called to copy/move the book files to an auto add directory for the likes of Calibre which can't do nested dirs
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(src_path, str):
+    if isinstance(src_path, str) and hasattr(src_path, "decode"):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
 

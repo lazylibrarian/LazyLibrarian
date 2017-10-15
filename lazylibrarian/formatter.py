@@ -254,11 +254,11 @@ def getList(st):
     # split a string into a list on whitespace or plus or comma
     # quotes treated as part of word in case unpaired
     # could maybe strip them out?
-    # This method uses string.translate which is 20x faster than the shlex we used before
     if st:
         if isinstance(st, unicode):
             st = st.encode('utf-8')
-        return string.translate(st, string.maketrans(',+', '  ')).split()
+        st = st.replace(',', ' ').replace('+', ' ')
+        return st.split(' ')
     return []
 
 
@@ -322,7 +322,7 @@ def split_title(author, book):
 
 def formatAuthorName(author):
     """ get authorame in a consistent format """
-    if isinstance(author, str):
+    if isinstance(author, str) and hasattr(author, "decode"):
         author = author.decode(lazylibrarian.SYS_ENCODING)
 
     if "," in author:
