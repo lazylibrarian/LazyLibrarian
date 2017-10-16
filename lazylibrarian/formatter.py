@@ -254,8 +254,8 @@ def getList(st, c=None):
     # split a string into a list on whitespace or plus or comma
     # or single character split eg filenames with spaces split on comma only
     if st:
-        if isinstance(st, str) and hasattr(st, "decode"):
-            st = st.encode(lazylibrarian-SYS_ENCODING)
+        if isinstance(st, unicode):
+            st = st.encode('utf-8')
         if c is not None:
             x = st.split(c)
             st = []
