@@ -62,10 +62,8 @@ class PushoverNotifier:
 
         http_handler = HTTPSConnection('api.pushover.net')
 
-        if isinstance(message, str) and hasattr(message, "decode"):
-            message = message.encode(lazylibrarian.SYS_ENCODING)
-        if isinstance(event, str) and hasattr(event, "decode"):
-            event = event.encode(lazylibrarian.SYS_ENCODING)
+        message = message.encode(lazylibrarian.SYS_ENCODING)
+        event = event.encode(lazylibrarian.SYS_ENCODING)
         try:
             data = {'token': pushover_apitoken,
                     'user': pushover_keys,

@@ -270,8 +270,7 @@ def magazineScan():
                 mag_path = '_' + mag_path
             mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
 
-        if isinstance(mag_path, str) and hasattr(mag_path, "decode"):
-            mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
+        mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
         if lazylibrarian.CONFIG['FULL_SCAN']:
             mags = myDB.select('select * from Issues')

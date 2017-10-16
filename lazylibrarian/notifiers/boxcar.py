@@ -52,11 +52,8 @@ class BoxcarNotifier:
         logger.debug('Subscribe: %s' % subscribe)
 
         # build up the URL and parameters
-        msg = msg.strip()
-        if isinstance(msg, str) and hasattr(msg, "decode"):
-            msg = msg.encode(lazylibrarian.SYS_ENCODING)
-        if isinstance(title, str) and hasattr(title, "decode"):
-            title = title.encode(lazylibrarian.SYS_ENCODING)
+        msg = msg.strip().encode(lazylibrarian.SYS_ENCODING)
+        title = title.encode(lazylibrarian.SYS_ENCODING)
         curUrl = API_URL
 
         # if this is a subscription notification then act accordingly

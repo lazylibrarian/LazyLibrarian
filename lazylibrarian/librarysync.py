@@ -437,9 +437,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                         # if it's an epub or a mobi we can try to read metadata from it
                         if (extn == ".epub") or (extn == ".mobi"):
-                            book_filename = os.path.join(r, files)
-                            if isinstance(book_filename, str) and hasattr(book_filename, "decode"):
-                                book_filename = book_filename.encode(lazylibrarian.SYS_ENCODING)
+                            book_filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
 
                             try:
                                 res = get_book_info(book_filename)
@@ -497,9 +495,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             # no author/book from metadata file, and not embedded either
                             # or audiobook which may have id3 tags
                             if is_valid_booktype(files, 'audiobook'):
-                                filename = os.path.join(r, files)
-                                if isinstance(filename, str) and hasattr(filename, "decode"):
-                                    filename = filename.encode(lazylibrarian.SYS_ENCODING)
+                                filename = os.path.join(r, files).encode(lazylibrarian.SYS_ENCODING)
+
                                 try:
                                     id3r = id3reader.Reader(filename)
                                     author = id3r.getValue('performer')

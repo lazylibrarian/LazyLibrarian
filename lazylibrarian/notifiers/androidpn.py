@@ -32,9 +32,7 @@ class AndroidPNNotifier:
     def _sendAndroidPN(self, title, msg, url, username, broadcast):
 
         # build up the URL and parameters
-        msg = msg.strip()
-        if isinstance(msg, str) and hasattr(msg, "decode"):
-            msg = msg.encode(lazylibrarian.SYS_ENCODING)
+        msg = msg.strip().encode(lazylibrarian.SYS_ENCODING)
 
         data = {
             'action': "send",
