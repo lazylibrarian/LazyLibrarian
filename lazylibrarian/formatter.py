@@ -251,21 +251,19 @@ def is_valid_booktype(filename, booktype=None):
 
 
 def getList(st, c=None):
-    # split a string into a list on whitespace or plus or comma
+    # split a string/unicode into a list on whitespace or plus or comma
     # or single character split eg filenames with spaces split on comma only
+    # Returns list of same type as st
+    l = []
     if st:
-        if isinstance(st, unicode):
-            st = st.encode('utf-8')
-        if c is not None:
+        if c is not None and len(c) == 1:
             x = st.split(c)
-            st = []
             for item in x:
-                st.append(item.strip())
-            return st
+                l.append(item.strip())
         else:
             st = st.replace(',', ' ').replace('+', ' ')
-            return st.split(' ')
-    return []
+            l = ' '.join(st.split()).split()
+    return l
 
 
 def safe_unicode(obj, *args):
@@ -376,13 +374,14 @@ def surnameFirst(authorname):
     if not authorname:
         return ''
     words = getList(authorname)
+
     if len(words) < 2:
         return authorname
     res = words.pop()
+
     if res.strip('.').lower in getList(lazylibrarian.CONFIG['NAME_POSTFIX']):
         res = words.pop() + ' ' + res
-    authorname = res + ', ' + ' '.join(words)
-    return authorname.decode(lazylibrarian.SYS_ENCODING)
+    return res + ', ' + ' '.join(words)
 
 
 def cleanName(name, extras=None):
