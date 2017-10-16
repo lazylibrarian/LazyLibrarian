@@ -250,15 +250,21 @@ def is_valid_booktype(filename, booktype=None):
     return False
 
 
-def getList(st):
+def getList(st, c=None):
     # split a string into a list on whitespace or plus or comma
-    # quotes treated as part of word in case unpaired
-    # could maybe strip them out?
+    # or single character split eg filenames with spaces split on comma only
     if st:
-        if isinstance(st, unicode):
-            st = st.encode('utf-8')
-        st = st.replace(',', ' ').replace('+', ' ')
-        return st.split(' ')
+        if isinstance(st, str) and hasattr(st, "decode"):
+            st = st.encode(lazylibrarian-SYS_ENCODING)
+        if c is not None:
+            x = st.split(c)
+            st = []
+            for item in x:
+                st.append(item.strip())
+            return st
+        else:
+            st = st.replace(',', ' ').replace('+', ' ')
+            return st.split(' ')
     return []
 
 
