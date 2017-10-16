@@ -962,9 +962,8 @@ class WebInterface(object):
 
         if not author:
             raise cherrypy.HTTPRedirect("home")
-        authorname = author['AuthorName']
-        if isinstance(authorname, str) and hasattr(authorname, "decode"):
-            authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
+        authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
+
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
             author=author, languages=languages, booklang=BookLang, types=types, library=library, ignored=Ignored,
