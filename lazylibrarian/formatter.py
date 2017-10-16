@@ -250,15 +250,21 @@ def is_valid_booktype(filename, booktype=None):
     return False
 
 
-def getList(st):
+def getList(st, c=None):
     # split a string into a list on whitespace or plus or comma
-    # quotes treated as part of word in case unpaired
-    # could maybe strip them out?
+    # or single character split eg filenames with spaces split on comma only
     if st:
-        if isinstance(st, unicode):
-            st = st.encode('utf-8')
-        st = st.replace(',', ' ').replace('+', ' ')
-        return st.split(' ')
+        if isinstance(st, str) and hasattr(st, "decode"):
+            st = st.encode(lazylibrarian-SYS_ENCODING)
+        if c is not None:
+            x = st.split(c)
+            st = []
+            for item in x:
+                st.append(item.strip())
+            return st
+        else:
+            st = st.replace(',', ' ').replace('+', ' ')
+            return st.split(' ')
     return []
 
 
@@ -385,6 +391,7 @@ def cleanName(name, extras=None):
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')
     except TypeError:
         cleanedName = unicodedata.normalize('NFKD', name.decode(lazylibrarian.SYS_ENCODING)).encode('ASCII', 'ignore')
+    cleanedName = cleanedName.decode('utf-8')
     cleaned = u''.join(c for c in cleanedName if c in validNameChars)
     return cleaned.strip()
 
@@ -398,11 +405,13 @@ def unaccented_str(str_or_unicode):
     if not str_or_unicode:
         return ''
     try:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode)
+        cleaned = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode.decode(lazylibrarian.SYS_ENCODING, 'replace'))
+        cleaned = unicodedata.normalize('NFKD', str_or_unicode.decode('utf-8', 'replace'))
+
+    cleaned = cleaned.decode(lazylibrarian.SYS_ENCODING)
     # turn accented chars into non-accented
-    stripped = ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    stripped = u''.join([c for c in cleaned if not unicodedata.combining(c)])
     # replace all non-ascii quotes/apostrophes with ascii ones eg "Collector's"
     dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
     # Other characters not converted by unicodedata.combining
@@ -417,6 +426,6 @@ def unaccented_str(str_or_unicode):
 
 
 def replace_all(text, dic):
-    for i, j in dic.iteritems():
-        text = text.replace(i, j)
+    for item in dic:
+        text = text.replace(item, dic[item])
     return text
