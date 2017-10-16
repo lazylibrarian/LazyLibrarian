@@ -405,12 +405,13 @@ def unaccented_str(str_or_unicode):
     if not str_or_unicode:
         return ''
     try:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode)
+        cleaned = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode.decode('utf-8', 'replace'))
-    nfkd_form = nfkd_form.decode(lazylibrarian.SYS_ENCODING')
+        cleaned = unicodedata.normalize('NFKD', str_or_unicode.decode('utf-8', 'replace'))
+
+    cleaned = cleaned.decode(lazylibrarian.SYS_ENCODING)
     # turn accented chars into non-accented
-    stripped = ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    stripped = u''.join([c for c in cleaned if not unicodedata.combining(c)])
     # replace all non-ascii quotes/apostrophes with ascii ones eg "Collector's"
     dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
     # Other characters not converted by unicodedata.combining
