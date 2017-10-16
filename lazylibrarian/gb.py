@@ -74,9 +74,6 @@ class GoogleBooks:
             if ' <ll> ' in searchterm:  # special token separates title from author
                 title, authorname = searchterm.split(' <ll> ')
 
-            if isinstance(searchterm, str) and hasattr(searchterm, "decode"):
-                searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
-
             fullterm = searchterm.replace(' <ll> ', ' ')
             logger.debug('Now searching Google Books API with searchterm: %s' % fullterm)
 
@@ -91,13 +88,15 @@ class GoogleBooks:
                         searchterm = title
                     searchterm = searchterm.replace("'", "").replace('"', '')  # and no quotes
                     searchterm = searchterm.strip()
+                    searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
                     set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
                 elif api_value == 'inauthor:':
                     searchterm = fullterm
                     if authorname:
                         searchterm = authorname  # just search for author
-                    set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
                     searchterm = searchterm.strip()
+                    searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+                    set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
 
                 startindex = 0
                 resultcount = 0

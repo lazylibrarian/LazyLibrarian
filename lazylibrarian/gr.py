@@ -55,8 +55,7 @@ class GoodReads:
                 searchtitle, searchauthorname = searchterm.split(' <ll> ')
                 searchterm = searchterm.replace(' <ll> ', ' ')
 
-            if isinstance(searchterm, str) and hasattr(searchterm, "decode"):
-                searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+            searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
             url = urllib.quote_plus(searchterm)
             set_url = 'https://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)

@@ -391,7 +391,6 @@ def cleanName(name, extras=None):
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')
     except TypeError:
         cleanedName = unicodedata.normalize('NFKD', name.decode(lazylibrarian.SYS_ENCODING)).encode('ASCII', 'ignore')
-    cleanedName = cleanedName.decode('utf-8')
     cleaned = u''.join(c for c in cleanedName if c in validNameChars)
     return cleaned.strip()
 
@@ -409,7 +408,6 @@ def unaccented_str(str_or_unicode):
     except TypeError:
         cleaned = unicodedata.normalize('NFKD', str_or_unicode.decode('utf-8', 'replace'))
 
-    cleaned = cleaned.decode(lazylibrarian.SYS_ENCODING)
     # turn accented chars into non-accented
     stripped = u''.join([c for c in cleaned if not unicodedata.combining(c)])
     # replace all non-ascii quotes/apostrophes with ascii ones eg "Collector's"

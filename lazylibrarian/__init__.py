@@ -806,13 +806,9 @@ def config_write():
                 LOGLEVEL = check_int(value, 1)
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                          'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
-                # py2 str has decode, py3 str doesn't. Both have encode, but we don't want to encode py3 str
-                if isinstance(value, str) and hasattr(value, "decode"):
-                    value = value.encode(SYS_ENCODING)
+                value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
-                if isinstance(value, str) and hasattr(value, "decode"):
-                    value = value.encode(SYS_ENCODING)
-                value = value.lower()
+                value = value.encode(SYS_ENCODING).lower()
         else:
             # keep the old value
             value = CFG.get(section, key.lower())

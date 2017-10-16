@@ -159,8 +159,7 @@ def getTorrentFolder(torrentid):
                                     ["total_done"]
                                 ],
                                 "id": 22})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
 
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         total_done = json.loads(response.text)['result']['total_done']
@@ -188,8 +187,7 @@ def getTorrentFolder(torrentid):
                                 ],
                                 "id": 23})
 
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
 
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
@@ -206,8 +204,7 @@ def removeTorrent(torrentid, remove_data=False):
         _get_auth()
 
     post_data = json.dumps({"method": "core.remove_torrent", "params": [torrentid, remove_data], "id": 25})
-    if isinstance(post_data, str) and hasattr(post_data, "decode"):
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+    post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
     response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
     result = json.loads(response.text)['result']
 
@@ -240,8 +237,7 @@ def _get_auth():
     post_data = json.dumps({"method": "auth.login",
                             "params": [delugeweb_password],
                             "id": 1})
-    if isinstance(post_data, str) and hasattr(post_data, "decode"):
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+    post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
 
     try:
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
@@ -262,8 +258,7 @@ def _get_auth():
     post_data = json.dumps({"method": "web.connected",
                             "params": [],
                             "id": 10})
-    if isinstance(post_data, str) and hasattr(post_data, "decode"):
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+    post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
     try:
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         #                                  , verify=TORRENT_VERIFY_CERT)
@@ -278,8 +273,7 @@ def _get_auth():
         post_data = json.dumps({"method": "web.get_hosts",
                                 "params": [],
                                 "id": 11})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         try:
             response = requests.post(delugeweb_url, data=post_data,
                                      cookies=delugeweb_auth, headers=headers)
@@ -298,8 +292,7 @@ def _get_auth():
         post_data = json.dumps({"method": "web.connect",
                                 "params": [delugeweb_hosts[0][0]],
                                 "id": 11})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
 
         try:
             _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
@@ -313,8 +306,7 @@ def _get_auth():
                                 "params": [],
                                 "id": 10})
 
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         try:
             response = requests.post(delugeweb_url, data=post_data,
                                      cookies=delugeweb_auth, headers=headers)
@@ -342,8 +334,7 @@ def _add_torrent_magnet(result):
         post_data = json.dumps({"method": "core.add_torrent_magnet",
                                 "params": [result['url'], {}],
                                 "id": 2})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
         msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
@@ -363,8 +354,7 @@ def _add_torrent_url(result):
         post_data = json.dumps({"method": "core.add_torrent_url",
                                 "params": [result['url'], {}],
                                 "id": 2})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
         msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
@@ -387,8 +377,7 @@ def _add_torrent_file(result):
                                 "params":
                                     [result['name'] + '.torrent', b64encode(result['content'].encode('utf8')), {}],
                                 "id": 2})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         result['hash'] = json.loads(response.text)['result']
         msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
@@ -418,8 +407,7 @@ def setTorrentLabel(result):
         post_data = json.dumps({"method": 'label.get_labels',
                                 "params": [],
                                 "id": 3})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         labels = json.loads(response.text)['result']
 
@@ -430,8 +418,7 @@ def setTorrentLabel(result):
                     post_data = json.dumps({"method": 'label.add',
                                             "params": [label],
                                             "id": 4})
-                    if isinstance(post_data, str) and hasattr(post_data, "decode"):
-                        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+                    post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
                     _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
                     logger.debug('Deluge: %s label added to Deluge' % label)
                 except Exception as err:
@@ -443,8 +430,7 @@ def setTorrentLabel(result):
             post_data = json.dumps({"method": 'label.set_torrent',
                                     "params": [result['hash'], label],
                                     "id": 5})
-            if isinstance(post_data, str) and hasattr(post_data, "decode"):
-                post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
             response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
             logger.debug('Deluge: %s label added to torrent' % label)
             return not json.loads(response.text)['error']
@@ -469,14 +455,12 @@ def setSeedRatio(result):
         post_data = json.dumps({"method": "core.set_torrent_stop_at_ratio",
                                 "params": [result['hash'], True],
                                 "id": 5})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
         post_data = json.dumps({"method": "core.set_torrent_stop_ratio",
                                 "params": [result['hash'], float(ratio)],
                                 "id": 6})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
         return not json.loads(response.text)['error']
@@ -493,8 +477,7 @@ def setTorrentPath(result):
         post_data = json.dumps({"method": "core.set_torrent_move_completed",
                                 "params": [result['hash'], True],
                                 "id": 7})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
         move_to = lazylibrarian.DIRECTORY('Download')
@@ -506,8 +489,7 @@ def setTorrentPath(result):
         post_data = json.dumps({"method": "core.set_torrent_move_completed_path",
                                 "params": [result['hash'], move_to],
                                 "id": 8})
-        if isinstance(post_data, str) and hasattr(post_data, "decode"):
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
         return not json.loads(response.text)['error']
@@ -523,8 +505,7 @@ def setTorrentPause(result):
     post_data = json.dumps({"method": "core.pause_torrent",
                             "params": [[result['hash']]],
                             "id": 9})
-    if isinstance(post_data, str) and hasattr(post_data, "decode"):
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+    post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
     response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
     return not json.loads(response.text)['error']

@@ -25,8 +25,7 @@ class Prowl_Notifier:
         if prowl_priority is None:
             prowl_priority = lazylibrarian.CONFIG['PROWL_PRIORITY']
 
-        if isinstance(message, str) and hasattr(message, "decode"):
-            message = message.encode(lazylibrarian.SYS_ENCODING)
+        message = message.encode(lazylibrarian.SYS_ENCODING)
 
         logger.debug(u"Prowl: title: " + title)
         logger.debug(u"Prowl: event: " + event)
