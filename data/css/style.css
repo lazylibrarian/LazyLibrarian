@@ -873,6 +873,13 @@ TABLE#book_table TH#series
 	text-align: left;
 	width: 90px !important;
 }
+TABLE#book_table TH#seriesNum
+{
+	text-align: center;
+	width: 50px;
+	max-width: 50px;
+	vertical-align: middle;
+}
 TABLE#book_table TH#status
 {
 	text-align: center;
@@ -941,6 +948,11 @@ TABLE#book_table TD#series
 {
 	vertical-align: middle;
 	text-align: left;
+}
+TABLE#book_table TD#seriesNum
+{
+	vertical-align: middle;
+	text-align: center;
 }
 TABLE#book_table TD#status
 {

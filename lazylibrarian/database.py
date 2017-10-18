@@ -50,7 +50,7 @@ class DBConnection:
                     break
 
                 except sqlite3.OperationalError as e:
-                    if "unable to open database file" in e.message or "database is locked" in e.message:
+                    if "unable to open database file" in str(e) or "database is locked" in str(e):
                         logger.warn('Database Error: %s' % e)
                         logger.debug("Attempted db query: [%s]" % query)
                         attempt += 1
@@ -67,11 +67,11 @@ class DBConnection:
                     # we could ignore unique errors in sqlite by using "insert or ignore into" statements
                     # but this would also ignore null values as we can't specify which errors to ignore :-(
                     # The python interface to sqlite only returns english text messages, not error codes
-                    msg = e.message
+                    msg = str(e)
                     msg = msg.lower()
                     if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
                         if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug('Suppressed [%s] %s' % (query, e.message))
+                            logger.debug('Suppressed [%s] %s' % (query, e))
                             logger.debug("Suppressed args: [%s]" % str(args))
                         self.connection.commit()
                         break

@@ -1085,8 +1085,7 @@ def build_bookstrap_themes():
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
-    result, success = fetchURL(URL, None, False)  # use default headers, no retry
-
+    result, success = fetchURL(URL, headers=None, retry=False)
     if not success:
         logger.debug("Error getting bookstrap themes : %s" % result)
         return themelist

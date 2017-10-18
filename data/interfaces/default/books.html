@@ -50,7 +50,7 @@
           <th id="stars" class="center">Rating</th>
           <th id="date" class="center">Released</th>
           <th id="date" class="center">Added</th>
-          <th id="status" class="center">Status</th>
+          <th id="select" class="center">Status</th>
         </tr>
       </thead>
     </table>
@@ -151,28 +151,64 @@
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
                     $('td', nRow).eq(0).addClass('center');
-                    $('td', nRow).eq(5).addClass('center');
-                    $('td', nRow).eq(6).addClass('center');
-                    $('td', nRow).eq(7).addClass('center');
-                    $('td', nRow).eq(8).addClass('center');
+                    if ( show != '1' )
+                    {
+                        $('td', nRow).eq(4).addClass('center');
+                        $('td', nRow).eq(5).addClass('center');
+                        $('td', nRow).eq(6).addClass('center');
+                        $('td', nRow).eq(7).addClass('center');
+                    }
+                    else
+                    {
+                        $('td', nRow).eq(5).addClass('center');
+                        $('td', nRow).eq(6).addClass('center');
+                        $('td', nRow).eq(7).addClass('center');
+                        $('td', nRow).eq(8).addClass('center');
+                    }
                     var w = window.innerWidth;
                     if ( w < 1024 )
-                    {   // hide stars,date on medium devices
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
-                        $('td', nRow).eq(7).addClass('hidden');
+                    {   // hide rating,released,added on medium devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                            $('td', nRow).eq(7).addClass('hidden');
+                        }
                     }
                     if ( w < 768 )
-                    {   // hide cover,stars,date on small devices
-                        $('td', nRow).eq(1).addClass('hidden');
+                    {   // hide cover on small devices
+                        if ( show == '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
                     }
                     if ( w < 640 )
-                    {   // hide cover,series,stars,date on smaller devices
-                        $('td', nRow).eq(4).addClass('hidden');
+                    {   // hide series on smaller devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                        }
                     }
                     if ( w < 320 )
-                    {   // hide cover,author,series,stars,date on smallest devices
-                        $('td', nRow).eq(2).addClass('hidden');
+                    {   // hide author on smallest devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
                     }
                     return nRow;
                 },

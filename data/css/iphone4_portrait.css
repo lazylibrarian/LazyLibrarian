@@ -39,7 +39,7 @@ table#book_table th#select, td#select {  }
 table#book_table th#bookart, td#bookart { display:none; }
 table#book_table th#bookname, td#bookname {  }
 table#book_table th#authorname, td#authorname { }
-table#book_table th#status, td#status {  }
+table#book_table th#status, td#status { display:none; }
 table#book_table th#date, td#date { display:none;  }
 table#book_table th#series, td#series { display:none; }
 table#book_table th#language, td#language { display:none; }
@@ -51,4 +51,3 @@ table#log_table { background-color: white; margin-left:5px; margin-right:5px; ma
 table#log_table th#timestamp, td#timestamp { display:none; }
 table#log_table th#level, td#level {  }
 table#log_table th#message, td#message { text-align: left; }
-

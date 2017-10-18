@@ -47,8 +47,8 @@
           <th id="number">Num</th>
           <th id="series">Acquired</th>
           <th id="date">Latest</th>
-          <th id="stars">Status</th>
-          <th id="status">Show</th>
+          <th id="status">Status</th>
+          <th id="select">Show</th>
         </tr>
       </thead>
       <tbody>
@@ -97,7 +97,7 @@
   <script>
     $(document).ready(function()
     {
-    
+
         $('#go').click(function () {
             var action = $("#action").val();
             if (action == "Delete") {
@@ -111,7 +111,7 @@
                 return
             }
         });
-    
+
         $('#book_table').dataTable(
             {
                 "aoColumns": [

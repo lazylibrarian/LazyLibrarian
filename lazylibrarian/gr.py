@@ -162,7 +162,7 @@ class GoodReads:
                             'authorname': authorNameResult,
                             'bookid': bookid,
                             'authorid': authorid,
-                            'bookname': bookTitle.encode("ascii", "ignore"),
+                            'bookname': bookTitle,
                             'booksub': booksub,
                             'bookisbn': bookisbn,
                             'bookpub': bookpub,

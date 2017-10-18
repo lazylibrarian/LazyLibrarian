@@ -31,11 +31,11 @@
       var ADAPT_CONFIG = {
         // Where is your CSS?
         path: 'css/',
-      
+
         // false = Only run once, when page first loads.
         // true = Change on window resize and page tilt.
         dynamic: true,
-      
+
         // First range entry is the minimum.
         // Last range entry is the maximum.
         // Separate ranges by "to" keyword.
@@ -49,11 +49,11 @@
       };
     </script>
     <script type="text/javascript" src="js/adapt.min.js"></script>
-    <!--    <div id="demo"></div>
+    <div id="wwidth"></div>
     <script>
     wsize = window.innerWidth;
-    document.getElementById("demo").innerHTML = wsize;
-    </script> -->
+    document.getElementById("wwidth").innerHTML = wsize;
+    </script>
     <script type="text/javascript" >
       // Script to add a clear button to the search author input box
       $(document).ready(function () {
@@ -61,7 +61,7 @@
               $(this).prev('input').val('').focus();
               $('#deleteicon').removeClass('deleteicon');
           }));
-      
+
           $('input.deletable').bind('input', function () {
               if ($(this).val() == "") // get the current value of the input field.
               {
