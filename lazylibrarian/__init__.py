@@ -828,7 +828,7 @@ def config_write():
         new_list = []
         # strip out any empty slots
         for provider in entry[0]:
-            if provider['HOST']:
+            if dict(provider)['HOST']:
                 new_list.append(provider)
 
         # renumber the items

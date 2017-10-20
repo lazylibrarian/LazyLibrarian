@@ -108,7 +108,7 @@ def search_rss_book(books=None, library=None):
                         if book['rss_isbn']:
                             results = search_for(book['rss_isbn'])
                         if results:
-                            result = results[0]
+                            result = dict(results[0])
                             if result['isbn_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
                                 logger.info("Found (%s%%) %s: %s" %
                                             (result['isbn_fuzz'], result['authorname'], result['bookname']))
@@ -119,7 +119,7 @@ def search_rss_book(books=None, library=None):
                             searchterm = "%s <ll> %s" % (item['Title'], formatAuthorName(book['rss_author']))
                             results = search_for(unaccented(searchterm))
                         if results:
-                            result = results[0]
+                            result = dict(results[0])
                             if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
                                     and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
                                 logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],

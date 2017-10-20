@@ -340,7 +340,7 @@ class WebInterface(object):
             password = kwargs['password']
         if username and password:
             pwd = hashlib.md5(password).hexdigest()
-            res = myDB.match('SELECT UserID, Password from users where username=?', (username,))
+            res = dict(myDB.match('SELECT UserID, Password from users where username=?', (username,)))
         if res and pwd == res['Password']:
             cherrypy.response.cookie['ll_uid'] = res['UserID']
             if 'remember' in kwargs:
@@ -526,12 +526,12 @@ class WebInterface(object):
     @cherrypy.expose
     def password_reset(self, **kwargs):
         self.label_thread('PASSWORD_RESET')
-        res = ''
+        res = {}
         remote_ip = cherrypy.request.remote.ip
         myDB = database.DBConnection()
         if 'username' in kwargs and kwargs['username']:
             logger.debug("Reset password request from %s, IP:%s" % (kwargs['username'], remote_ip))
-            res = myDB.match('SELECT UserID,Email from users where username=?', (kwargs['username'],))
+            res = dict(myDB.match('SELECT UserID,Email from users where username=?', (kwargs['username'],)))
             if res:
                 if 'email' in kwargs and kwargs['email']:
                     if res['Email']:
