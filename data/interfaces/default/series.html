@@ -99,15 +99,6 @@
                     $('td', nRow).eq(0).addClass("center");
                     $('td', nRow).eq(3).addClass("center");
                     $('td', nRow).eq(4).addClass("center");
-                    var w = window.innerWidth;
-                    if ( w < 768 )
-                    {   // hide status on small devices
-                        //$('td', nRow).eq(3).addClass('hidden');
-                    }
-                    if ( w < 640 )
-                    {   // hide author,status on smaller devices
-                        $('td', nRow).eq(3).addClass('hidden');
-                    }
                     return nRow;
                 },
             });

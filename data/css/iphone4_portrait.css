@@ -39,7 +39,7 @@ table#book_table th#select, td#select {  }
 table#book_table th#bookart, td#bookart { display:none; }
 table#book_table th#bookname, td#bookname {  }
 table#book_table th#authorname, td#authorname { }
-table#book_table th#status, td#status { display:none; }
+table#book_table th#status, td#status {  }
 table#book_table th#date, td#date { display:none;  }
 table#book_table th#series, td#series { display:none; }
 table#book_table th#language, td#language { display:none; }

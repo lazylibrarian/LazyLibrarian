@@ -714,7 +714,7 @@ class GoodReads:
                                 book_ignore_count += 1
 
                     loopCount += 1
-                    if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < loopCount:
+                    if 0 < lazylibrarian.CONFIG['MAX_BOOKPAGES'] < loopCount:
                         resultxml = None
                         logger.warn('Maximum books page search reached, still more results available')
                     else:

@@ -163,6 +163,7 @@ CONFIG_DEFINITIONS = {
     'DIR_PERM': ('str', 'General', '0o755'),
     'BLOCKLIST_TIMER': ('int', 'General', 3600),
     'MAX_PAGES': ('int', 'General', 0),
+    'MAX_BOOKPAGES': ('int', 'General', 0),
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),

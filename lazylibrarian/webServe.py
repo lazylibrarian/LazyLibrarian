@@ -3069,6 +3069,8 @@ class WebInterface(object):
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
+            else:
+                logger-debug('forceSearch called but no download methods set')
         else:
             logger.debug("forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)
