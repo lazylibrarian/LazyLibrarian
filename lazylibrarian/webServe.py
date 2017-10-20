@@ -2700,19 +2700,22 @@ class WebInterface(object):
             # the masterlist to be filled with the row data
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 thisrow = dict(row)
-                # title needs spaces for column resizing
+                # title needs spaces, not dots, for column resizing
                 title = thisrow['NZBtitle']
-                title = title.replace('.', ' ')
-                title = title.replace('LL (', 'LL.(')
-                thisrow['NZBtitle'] = title
+                if title:
+                    title = title.replace('.', ' ')
+                    title = title.replace('LL (', 'LL.(')
+                    thisrow['NZBtitle'] = title
                 # provider needs to be shorter and with spaces for column resizing
                 provider = thisrow['NZBprov']
-                if len(provider) > 20:
-                    while len(provider) > 20 and '/' in provider:
-                        provider = provider.split('/', 1)[1]
-                    provider = provider.replace('/', ' ')
-                    thisrow['NZBprov'] = provider
-                rows.append(thisrow)  # add the rowlist to the masterlist
+                if provider:
+                    if len(provider) > 20:
+                        while len(provider) > 20 and '/' in provider:
+                            provider = provider.split('/', 1)[1]
+                        provider = provider.replace('/', ' ')
+                        thisrow['NZBprov'] = provider
+                if title and provider:
+                    rows.append(thisrow)  # add the rowlist to the masterlist
         return serve_template(templatename="history.html", title="History", history=rows)
 
     @cherrypy.expose
