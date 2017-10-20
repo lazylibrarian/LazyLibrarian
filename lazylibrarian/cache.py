@@ -25,7 +25,7 @@ from xml.etree import ElementTree
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import getList
+from lazylibrarian.formatter import getList, check_int
 
 
 def fetchURL(URL, headers=None, retry=True):
@@ -39,7 +39,8 @@ def fetchURL(URL, headers=None, retry=True):
         headers = {'User-Agent': USER_AGENT}
     proxies = proxyList()
     try:
-        r = requests.get(URL, headers=headers, timeout=30, proxies=proxies)
+        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+        r = requests.get(URL, headers=headers, timeout=timeout, proxies=proxies)
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True

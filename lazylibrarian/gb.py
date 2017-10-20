@@ -28,7 +28,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
     setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
-    getList, cleanName
+    getList, cleanName, check_int
 from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -429,7 +429,8 @@ class GoogleBooks:
                                         proxies = proxyList()
                                         try:
                                             librarything_wait()
-                                            r = requests.get(BOOK_URL, timeout=30, proxies=proxies)
+                                            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+                                            r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
                                             resp = r.text
                                             lt_lang_hits += 1
                                             logger.debug(

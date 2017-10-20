@@ -25,7 +25,7 @@ import lib.requests as requests
 import lazylibrarian
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import getList
+from lazylibrarian.formatter import getList, check_int
 
 
 def logmsg(level, msg):
@@ -266,7 +266,8 @@ def getLatestVersion_FromGit():
                     logmsg('debug', '(getLatestVersion_FromGit) Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
                 proxies = proxyList()
-                r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
+                timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+                r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
 
                 if str(r.status_code).startswith('2'):
                     git = r.json()
@@ -302,7 +303,8 @@ def getCommitDifferenceFromGit():
         try:
             headers = {'User-Agent': USER_AGENT}
             proxies = proxyList()
-            r = requests.get(url, timeout=30, headers=headers, proxies=proxies)
+            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+            r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
             git = r.json()
             logmsg('debug', 'pull total_commits from json object')
             commits = int(git['total_commits'])
@@ -417,7 +419,8 @@ def update():
             logmsg('info', '(update) Downloading update from: ' + tar_download_url)
             headers = {'User-Agent': USER_AGENT}
             proxies = proxyList()
-            r = requests.get(tar_download_url, timeout=30, headers=headers, proxies=proxies)
+            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+            r = requests.get(tar_download_url, timeout=timeout, headers=headers, proxies=proxies)
         except requests.exceptions.Timeout:
             logmsg('error', "(update) Timeout retrieving new version from " + tar_download_url)
             return False
@@ -441,11 +444,10 @@ def update():
         # Extract the tar to update folder
         logmsg('info', '(update) Extracting file ' + tar_download_path)
         try:
-            tar = tarfile.open(tar_download_path)
-            tar.extractall(update_dir)
-            tar.close()
+            with tarfile.open(tar_download_path) as tar:
+                tar.extractall(update_dir)
         except Exception as e:
-            logger.error('Failed to unpack tarfile %s: %s' % (tar_download_path, str(e)))
+            logger.error('Failed to unpack tarfile %s (%s): %s' % (type(e).__name__, tar_download_path, str(e)))
             return False
 
         # Delete the tar.gz

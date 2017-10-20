@@ -21,7 +21,7 @@ import lib.requests as requests
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, proxyList
-from lazylibrarian.formatter import getList
+from lazylibrarian.formatter import getList, check_int
 
 # from lazylibrarian.exceptions import ex
 
@@ -72,7 +72,8 @@ class BoxcarNotifier:
         proxies = proxyList()
         # send the request to boxcar
         try:
-            r = requests.get(curUrl, params=data, timeout=30, proxies=proxies)
+            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+            r = requests.get(curUrl, params=data, timeout=timeout, proxies=proxies)
             status = str(r.status_code)
             if status.startswith('2'):
                 logger.debug("BOXCAR: Notification successful.")
