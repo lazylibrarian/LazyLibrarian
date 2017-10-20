@@ -421,7 +421,8 @@ class GoodReads:
                                     proxies = proxyList()
                                     try:
                                         librarything_wait()
-                                        r = requests.get(BOOK_URL, timeout=30, proxies=proxies)
+                                        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+                                        r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
                                         resp = r.text
                                         lt_lang_hits += 1
                                         logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))

@@ -602,7 +602,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
                         (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
                     errorlist = ['no such function', 'unknown parameter', 'unknown function',
-                                 'bad request', 'incorrect parameter']
+                                 'bad request', 'incorrect parameter', 'does not support']
                     for item in errorlist:
                         if item in errormsg.lower():
                             match = True

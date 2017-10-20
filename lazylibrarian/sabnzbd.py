@@ -130,7 +130,8 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
     proxies = proxyList()
     try:
-        r = requests.get(URL, timeout=30, proxies=proxies)
+        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+        r = requests.get(URL, timeout=timeout, proxies=proxies)
         result = r.json()
     except requests.exceptions.Timeout:
         logger.error("Timeout connecting to SAB with URL: %s" % URL)

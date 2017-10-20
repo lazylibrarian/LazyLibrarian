@@ -198,7 +198,8 @@ def torrentAction(method, arguments):
     # Retrieve session id
     auth = (username, password) if username and password else None
     proxies = proxyList()
-    response = requests.get(host, auth=auth, proxies=proxies, timeout=30)
+    timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+    response = requests.get(host, auth=auth, proxies=proxies, timeout=timeout)
 
     if response is None:
         logger.error("Error getting Transmission session ID")
@@ -224,9 +225,10 @@ def torrentAction(method, arguments):
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
     proxies = proxyList()
+    timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     try:
         response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies, 
-                                 auth=auth, timeout=30)
+                                 auth=auth, timeout=timeout)
         response = response.json()
     except Exception as e:
         logger.debug('Transmission %s: %s' % (type(e).__name__, str(e)))
