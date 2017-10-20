@@ -162,7 +162,7 @@ class GoodReads:
                             'authorname': authorNameResult,
                             'bookid': bookid,
                             'authorid': authorid,
-                            'bookname': bookTitle.encode("ascii", "ignore"),
+                            'bookname': bookTitle,
                             'booksub': booksub,
                             'bookisbn': bookisbn,
                             'bookpub': bookpub,
@@ -251,7 +251,7 @@ class GoodReads:
 
         resultxml = rootxml.getiterator('author')
 
-        if resultxml is None or not len(resultxml):
+        if resultxml is None:
             logger.warn('No authors found with name: %s' % author)
         else:
             # In spite of how this looks, goodreads only returns one result, even if there are multiple matches
@@ -280,7 +280,7 @@ class GoodReads:
 
         resultxml = rootxml.find('author')
 
-        if resultxml is None or not len(resultxml):
+        if resultxml is None:
             logger.warn('No author found with ID: ' + authorid)
         else:
             # added authorname to author_dict - this holds the intact name preferred by GR
@@ -345,7 +345,7 @@ class GoodReads:
             book_ignore_count = 0
             total_count = 0
 
-            if resultxml is None or not len(resultxml):
+            if resultxml is None:
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
                 logger.debug("[%s] Now processing books with GoodReads API" % authorname)
@@ -714,7 +714,7 @@ class GoodReads:
                                 book_ignore_count += 1
 
                     loopCount += 1
-                    if 0 < lazylibrarian.CONFIG['MAX_PAGES'] < loopCount:
+                    if 0 < lazylibrarian.CONFIG['MAX_BOOKPAGES'] < loopCount:
                         resultxml = None
                         logger.warn('Maximum books page search reached, still more results available')
                     else:

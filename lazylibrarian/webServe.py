@@ -2058,8 +2058,13 @@ class WebInterface(object):
                 this_mag['Cover'] = magimg
                 this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
                 mags.append(this_mag)
-            if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
-                covercount = 0
+
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+                if not lazylibrarian.CONFIG['MAG_IMG']:
+                    covercount = 0
+            else:
+                if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
+                    covercount = 0
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
@@ -2097,9 +2102,12 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-        if not lazylibrarian.CONFIG['TOGGLES']:
-            if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
-                covercount = 0
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+                if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
+                    covercount = 0
+            elif not lazylibrarian.CONFIG['TOGGLES']:
+                if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
+                    covercount = 0
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
@@ -3061,6 +3069,8 @@ class WebInterface(object):
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
+            else:
+                logger-debug('forceSearch called but no download methods set')
         else:
             logger.debug("forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

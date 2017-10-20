@@ -110,25 +110,58 @@
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
                     $('td', nRow).eq(0).addClass('center');
-                    $('td', nRow).eq(5).addClass('center');
-                    $('td', nRow).eq(6).addClass('center');
+                    if ( show != '1' )
+                    {
+                        $('td', nRow).eq(4).addClass('center');
+                        $('td', nRow).eq(5).addClass('center');
+                    }
+                    else
+                    {
+                        $('td', nRow).eq(5).addClass('center');
+                        $('td', nRow).eq(6).addClass('center');
+                    }
                     var w = window.innerWidth;
                     if ( w < 1024 )
                     {   // hide stars,date on medium devices
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                        }
                     }
                     if ( w < 768 )
                     {   // hide cover,stars,date on small devices
-                        $('td', nRow).eq(1).addClass('hidden');
+                        if ( show == '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
                     }
                     if ( w < 640 )
                     {   // hide cover,series,stars,date on smaller devices
-                        $('td', nRow).eq(4).addClass('hidden');
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                        }
                     }
                     if ( w < 320 )
                     {   // hide cover,author,series,stars,date on smallest devices
-                        $('td', nRow).eq(2).addClass('hidden');
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
                     }
                     return nRow;
                 },

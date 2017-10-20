@@ -435,17 +435,21 @@ def update():
         tar_download_path = os.path.join(lazylibrarian.PROG_DIR, download_name)
 
         # Save tar to disk
-        with open(tar_download_path, 'w') as f:
+        with open(tar_download_path, 'wb') as f:
             f.write(r.content)
 
         # Extract the tar to update folder
-        logmsg('info', '(update) Extracting file' + tar_download_path)
-        tar = tarfile.open(tar_download_path)
-        tar.extractall(update_dir)
-        tar.close()
+        logmsg('info', '(update) Extracting file ' + tar_download_path)
+        try:
+            tar = tarfile.open(tar_download_path)
+            tar.extractall(update_dir)
+            tar.close()
+        except Exception as e:
+            logger.error('Failed to unpack tarfile %s: %s' % (tar_download_path, str(e)))
+            return False
 
         # Delete the tar.gz
-        logmsg('info', '(update) Deleting file' + tar_download_path)
+        logmsg('info', '(update) Deleting file ' + tar_download_path)
         os.remove(tar_download_path)
 
         # Find update dir name

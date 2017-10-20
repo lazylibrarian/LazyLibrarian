@@ -74,6 +74,7 @@
                     },
                     null
                     ],
+                "responsive": true,
                 "order": [[ 1, 'asc']],
                 "oLanguage": {
                     "sLengthMenu":"Show _MENU_ authors per page",
@@ -88,9 +89,44 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    $('td', nRow).eq(3).addClass('center');
-                    $('td', nRow).eq(4).addClass('center');
-                    $('td', nRow).eq(5).addClass('center');
+                    if ( show != '1' )
+                    {
+                        $('td', nRow).eq(2).addClass('center');
+                        $('td', nRow).eq(3).addClass('center');
+                        $('td', nRow).eq(4).addClass('center');
+                    }
+                    else
+                    {
+                        $('td', nRow).eq(3).addClass('center');
+                        $('td', nRow).eq(4).addClass('center');
+                        $('td', nRow).eq(5).addClass('center');
+                    }
+
+                    var w = window.innerWidth;
+                    if ( w < 1024 )
+                    {   // hide date on ipad_landscape
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        //$('td', nRow).eq(6).addClass('hidden');
+                    };
+                    if ( w < 768 )
+                    {   // hide latest book on ipad_portrait
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
+                        //$('td', nRow).eq(4).addClass('hidden');
+                    };
                     return nRow;
                 },
                 "aaSorting": [[1, 'asc']],

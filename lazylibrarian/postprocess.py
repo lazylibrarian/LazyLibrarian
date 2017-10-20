@@ -218,7 +218,7 @@ def processDir(reset=False):
         skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
 
         templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'], ',')
-        if lazylibrarian.DIRECTORY("Download") != templist[0]:
+        if len(templist) and lazylibrarian.DIRECTORY("Download") != templist[0]:
             templist.insert(0, lazylibrarian.DIRECTORY("Download"))
         dirlist = []
         for item in templist:

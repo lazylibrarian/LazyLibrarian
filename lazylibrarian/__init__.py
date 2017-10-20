@@ -163,6 +163,7 @@ CONFIG_DEFINITIONS = {
     'DIR_PERM': ('str', 'General', '0o755'),
     'BLOCKLIST_TIMER': ('int', 'General', 3600),
     'MAX_PAGES': ('int', 'General', 0),
+    'MAX_BOOKPAGES': ('int', 'General', 0),
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),
@@ -1085,8 +1086,7 @@ def build_bookstrap_themes():
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
-    result, success = fetchURL(URL, None, False)  # use default headers, no retry
-
+    result, success = fetchURL(URL, headers=None, retry=False)
     if not success:
         logger.debug("Error getting bookstrap themes : %s" % result)
         return themelist
