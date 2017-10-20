@@ -44,10 +44,7 @@ def fetchURL(URL, headers=None, retry=True):
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True
-
-        if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug(r.content)
-        return "Response status %s" % str(r.status_code), False
+        return "Response status %s: %s" % (r.status_code, r.content), False
     except requests.exceptions.Timeout as e:
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)

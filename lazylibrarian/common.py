@@ -563,7 +563,7 @@ def logHeader():
     header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION', None)
     header += "requests: %s\n" % getattr(requests, '__version__', None)
     if not lazylibrarian.GROUP_CONCAT:
-        header += 'sqlite3: missing required functionality. Try upgrading to v3.5.4 or newer. '
+        header += 'sqlite3: missing required functionality. Try upgrading to v3.5.4 or newer. You have '
     header += "sqlite3: %s\n" % getattr(sqlite3, 'sqlite_version', None)
     try:
         # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
@@ -572,7 +572,7 @@ def logHeader():
         from OpenSSL.crypto import X509
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
-            header += "pyOpenSSL: module missing required functionality. Try upgrading to v0.14 or newer. "
+            header += "pyOpenSSL: module missing required functionality. Try upgrading to v0.14 or newer. You have "
         header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__', None)
     except ImportError:
         header += "pyOpenSSL: module missing\n"
@@ -582,7 +582,7 @@ def logHeader():
         import cryptography
         from cryptography.x509.extensions import Extensions
         if getattr(Extensions, "get_extension_for_class", None) is None:
-            header += "cryptography: module missing required functionality. Try upgrading to v1.3.4 or newer. "
+            header += "cryptography: module missing required functionality. Try upgrading to v1.3.4 or newer. You have "
         header += "cryptography: %s\n" % getattr(cryptography, '__version__', None)
     except ImportError:
         header += "cryptography: module missing\n"
