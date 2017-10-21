@@ -827,8 +827,8 @@ def config_write():
     for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
         new_list = []
         # strip out any empty slots
-        for provider in entry[0]:
-            if dict(provider)['HOST']:
+        for provider in entry[0]:  # type: dict
+            if provider['HOST']: 
                 new_list.append(provider)
 
         # renumber the items

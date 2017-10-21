@@ -475,8 +475,8 @@ def grsync(status, shelf):
         GR = None
         shelves = GA.get_shelf_list()
         found = False
-        for item in shelves:
-            if dict(item)['name'] == shelf:
+        for item in shelves:  # type: dict
+            if item['name'] == shelf:
                 found = True
                 break
         if not found:

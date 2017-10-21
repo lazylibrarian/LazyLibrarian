@@ -251,7 +251,7 @@ def _addTorrentURI(task_cgi, sid, torurl):
             # DownloadStation doesn't return the download_id for the newly added uri
             # which we need for monitoring progress & deleting etc.
             # so we have to scan the task list to get the id
-            for task in _listTasks(task_cgi, sid):
+            for task in _listTasks(task_cgi, sid):  # type: dict
                 if task['status'] == 'error':
                     try:
                         errmsg = task['status_extra']['error_detail']
@@ -259,7 +259,7 @@ def _addTorrentURI(task_cgi, sid, torurl):
                         errmsg = "No error details"
                     logger.warn("Synology task [%s] failed: %s" % (task['title'], errmsg))
                 else:
-                    info = _getInfo(task_cgi, sid, task['id'])
+                    info = _getInfo(task_cgi, sid, task['id'])  # type: dict
                     try:
                         uri = info['additional']['detail']['uri']
                         if uri == torurl:
@@ -325,7 +325,7 @@ def getName(download_id):
     if hosturl:
         auth_cgi, task_cgi, sid = _login(hosturl)
         if sid:
-            result = _getInfo(task_cgi, sid, download_id)
+            result = _getInfo(task_cgi, sid, download_id)  # type: dict
             _logout(auth_cgi, sid)
             if result and 'title' in result:
                 return result['title']
