@@ -149,9 +149,9 @@ def audioRename(bookid):
         o = os.path.join(r, part[3])
         if o != n:
             try:
-                # shutil.move(o, n)
-                # if check_int(part[0], 0) == 1:
-                #     book_filename = n  # return part 1 of set
+                shutil.move(o, n)
+                if check_int(part[0], 0) == 1:
+                    book_filename = n  # return part 1 of set
                 logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
 
             except Exception as e:
