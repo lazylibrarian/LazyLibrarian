@@ -581,7 +581,7 @@ def logHeader():
 
     try:
         import OpenSSL.SSL
-    except (ImportError,AttributeError) as e:
+    except (ImportError, AttributeError) as e:
         header += 'OpenSSL missing module/attribute: %s\n' % e
 
     try:
