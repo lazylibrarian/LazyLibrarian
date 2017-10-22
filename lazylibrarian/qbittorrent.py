@@ -174,18 +174,17 @@ def removeTorrent(hashid, remove_data=False):
     qbclient = qbittorrentclient()
     # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
-    if torrentList:
-        for torrent in torrentList:
-            if torrent['hash'].upper() == hashid.upper():
-                if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                    qbclient.remove(hashid, remove_data)
-                    return True
-                else:
-                    logger.info(
-                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                        torrent['name'])
-                    return False
+    for torrent in torrentList:
+        if torrent['hash'].upper() == hashid.upper():
+            if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
+                logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                qbclient.remove(hashid, remove_data)
+                return True
+            else:
+                logger.info(
+                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                    torrent['name'])
+                return False
     return False
 
 

@@ -340,7 +340,7 @@ class WebInterface(object):
             password = kwargs['password']
         if username and password:
             pwd = hashlib.md5(password).hexdigest()
-            res = myDB.match('SELECT UserID, Password from users where username=?', (username,))
+            res = myDB.match('SELECT UserID, Password from users where username=?', (username,))  # type: dict
         if res and pwd == res['Password']:
             cherrypy.response.cookie['ll_uid'] = res['UserID']
             if 'remember' in kwargs:
@@ -526,12 +526,12 @@ class WebInterface(object):
     @cherrypy.expose
     def password_reset(self, **kwargs):
         self.label_thread('PASSWORD_RESET')
-        res = ''
+        res = {}
         remote_ip = cherrypy.request.remote.ip
         myDB = database.DBConnection()
         if 'username' in kwargs and kwargs['username']:
             logger.debug("Reset password request from %s, IP:%s" % (kwargs['username'], remote_ip))
-            res = myDB.match('SELECT UserID,Email from users where username=?', (kwargs['username'],))
+            res = myDB.match('SELECT UserID,Email from users where username=?', (kwargs['username'],))  # type: dict
             if res:
                 if 'email' in kwargs and kwargs['email']:
                     if res['Email']:
@@ -802,16 +802,18 @@ class WebInterface(object):
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
 
         if magazines:
+            count = 0
             for mag in magazines:
                 title = mag['Title']
                 reject = mag['Reject']
                 regex = mag['Regex']
-                # seems kwargs parameters are passed as latin-1, can't see how to
+                # seems kwargs parameters from cherrypy are passed as latin-1, can't see how to
                 # configure it, so we need to correct it on accented magazine names
-                # eg "Elle Quebec" where we might have e-acute stored as utf-8
+                # eg "Elle Quebec" where we might have e-acute stored as unicode
                 # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
                 # otherwise the comparison fails, but sometimes accented characters won't
                 # fit latin-1 but fit utf-8 how can we tell ???
+                # Check if we're a python 2 str, python3 str doesn't have "decode"
                 if isinstance(title, str) and hasattr(title, "decode"):
                     try:
                         title = title.encode('latin-1')
@@ -824,14 +826,18 @@ class WebInterface(object):
 
                 new_reject = kwargs.get('reject_list[%s]' % title, None)
                 if not new_reject == reject:
+                    count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'Reject': new_reject}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                 new_regex = kwargs.get('regex[%s]' % title, None)
                 if not new_regex == regex:
+                    count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
+            if count:
+                logger.info("Magazine filters updated")    
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):
@@ -2700,19 +2706,22 @@ class WebInterface(object):
             # the masterlist to be filled with the row data
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 thisrow = dict(row)
-                # title needs spaces for column resizing
+                # title needs spaces, not dots, for column resizing
                 title = thisrow['NZBtitle']
-                title = title.replace('.', ' ')
-                title = title.replace('LL (', 'LL.(')
-                thisrow['NZBtitle'] = title
+                if title:
+                    title = title.replace('.', ' ')
+                    title = title.replace('LL (', 'LL.(')
+                    thisrow['NZBtitle'] = title
                 # provider needs to be shorter and with spaces for column resizing
                 provider = thisrow['NZBprov']
-                if len(provider) > 20:
-                    while len(provider) > 20 and '/' in provider:
-                        provider = provider.split('/', 1)[1]
-                    provider = provider.replace('/', ' ')
-                    thisrow['NZBprov'] = provider
-                rows.append(thisrow)  # add the rowlist to the masterlist
+                if provider:
+                    if len(provider) > 20:
+                        while len(provider) > 20 and '/' in provider:
+                            provider = provider.split('/', 1)[1]
+                        provider = provider.replace('/', ' ')
+                        thisrow['NZBprov'] = provider
+                if title and provider:
+                    rows.append(thisrow)  # add the rowlist to the masterlist
         return serve_template(templatename="history.html", title="History", history=rows)
 
     @cherrypy.expose

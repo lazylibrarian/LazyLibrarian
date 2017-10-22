@@ -355,15 +355,14 @@ def updateVersionFile(new_version_id):
         logmsg('debug', "(updateVersionFile) Updating [%s] with value [%s]" % (
             version_path, new_version_id))
         if os.path.exists(version_path):
-            ver_file = open(version_path, 'r')
-            current_version = ver_file.read().strip(' \n\r')
-            ver_file.close()
+            with open(version_path, 'r') as ver_file:
+                current_version = ver_file.read().strip(' \n\r')
             if current_version == new_version_id:
                 return False
 
-        ver_file = open(version_path, 'w')
-        ver_file.write(new_version_id)
-        ver_file.close()
+        with open(version_path, 'w') as ver_file:
+            ver_file.write(new_version_id)
+
         lazylibrarian.CONFIG['CURRENT_VERSION'] = new_version_id
         return True
     except IOError as e:

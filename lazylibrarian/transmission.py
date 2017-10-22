@@ -37,7 +37,7 @@ def addTorrent(link, directory=None):
         directory = lazylibrarian.DIRECTORY('Download')
     arguments = {'filename': link, 'download-dir': directory}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
 
     if not response:
         return False
@@ -63,7 +63,7 @@ def getTorrentFolder(torrentid):  # uses hashid
     arguments = {'ids': [torrentid], 'fields': ['name', 'percentDone']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)
+        response = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
             percentdone = response['arguments']['torrents'][0]['percentDone']
             if percentdone:
@@ -84,7 +84,7 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
     arguments = {'fields': ['name', 'percentDone', 'id']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)
+        response = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
             tor = 0
             while tor < len(response['arguments']['torrents']):
@@ -112,7 +112,7 @@ def setSeedRatio(torrentid, ratio):
     else:
         arguments = {'seedRatioMode': 2, 'ids': [torrentid]}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
     if not response:
         return False
 
@@ -122,7 +122,7 @@ def removeTorrent(torrentid, remove_data=False):
     method = 'torrent-get'
     arguments = {'ids': [torrentid], 'fields': ['isFinished', 'name']}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
     if not response:
         return False
 
@@ -154,7 +154,7 @@ def checkLink():
     method = 'session-stats'
     arguments = {}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
     if response:
         if response['result'] == 'success':
             # does transmission handle labels?

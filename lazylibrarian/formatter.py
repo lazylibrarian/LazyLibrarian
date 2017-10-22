@@ -254,16 +254,16 @@ def getList(st, c=None):
     # split a string/unicode into a list on whitespace or plus or comma
     # or single character split eg filenames with spaces split on comma only
     # Returns list of same type as st
-    l = []
+    lst = []
     if st:
         if c is not None and len(c) == 1:
             x = st.split(c)
             for item in x:
-                l.append(item.strip())
+                lst.append(item.strip())
         else:
             st = st.replace(',', ' ').replace('+', ' ')
-            l = ' '.join(st.split()).split()
-    return l
+            lst = ' '.join(st.split()).split()
+    return lst
 
 
 def safe_unicode(obj, *args):
