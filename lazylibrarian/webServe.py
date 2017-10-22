@@ -802,16 +802,18 @@ class WebInterface(object):
         magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
 
         if magazines:
+            count = 0
             for mag in magazines:
                 title = mag['Title']
                 reject = mag['Reject']
                 regex = mag['Regex']
-                # seems kwargs parameters are passed as latin-1, can't see how to
+                # seems kwargs parameters from cherrypy are passed as latin-1, can't see how to
                 # configure it, so we need to correct it on accented magazine names
-                # eg "Elle Quebec" where we might have e-acute stored as utf-8
+                # eg "Elle Quebec" where we might have e-acute stored as unicode
                 # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
                 # otherwise the comparison fails, but sometimes accented characters won't
                 # fit latin-1 but fit utf-8 how can we tell ???
+                # Check if we're a python 2 str, python3 str doesn't have "decode"
                 if isinstance(title, str) and hasattr(title, "decode"):
                     try:
                         title = title.encode('latin-1')
@@ -824,14 +826,18 @@ class WebInterface(object):
 
                 new_reject = kwargs.get('reject_list[%s]' % title, None)
                 if not new_reject == reject:
+                    count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'Reject': new_reject}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                 new_regex = kwargs.get('regex[%s]' % title, None)
                 if not new_regex == regex:
+                    count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
+            if count:
+                logger.info("Magazine filters updated")    
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):
