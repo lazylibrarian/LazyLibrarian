@@ -428,7 +428,7 @@ def processDir(reset=False):
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
                                 dest_dir = lazylibrarian.DIRECTORY('Audio')
                             dest_path = os.path.join(dest_dir, dest_path)
-                            dest_path = dest.path.encode(lazylibrarian.SYS_ENCODING)
+                            dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                         else:
                             data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                             if data:  # it's a magazine
