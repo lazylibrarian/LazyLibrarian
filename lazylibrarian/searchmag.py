@@ -85,7 +85,8 @@ def search_magazines(mags=None, reset=False):
                     searchterm = searchmag['Title']
                 searchterm = replace_all(searchterm, dic)
 
-                searchterm = re.sub('[.\-/]', ' ', searchterm).encode(lazylibrarian.SYS_ENCODING)
+                searchterm = re.sub('[.\-/]', ' ', searchterm)
+                searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
 
             searchlist.append({"bookid": bookid, "searchterm": searchterm})
 

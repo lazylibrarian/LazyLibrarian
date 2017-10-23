@@ -427,7 +427,8 @@ def processDir(reset=False):
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
                                 dest_dir = lazylibrarian.DIRECTORY('Audio')
-                            dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
+                            dest_path = os.path.join(dest_dir, dest_path)
+                            dest_path = dest.path.encode(lazylibrarian.SYS_ENCODING)
                         else:
                             data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                             if data:  # it's a magazine
@@ -787,7 +788,8 @@ def import_book(pp_path=None, bookID=None):
                                                                                                          bookname)
             global_name = unaccented(global_name)
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
-            dest_path = os.path.join(dest_dir, dest_path).encode(lazylibrarian.SYS_ENCODING)
+            dest_path = os.path.join(dest_dir, dest_path)
+            dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
 
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("processDestination %s" % pp_path)
