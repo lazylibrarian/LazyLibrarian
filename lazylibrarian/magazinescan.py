@@ -433,7 +433,7 @@ def magazineScan():
                         # Set magazine_lastacquired to acquired date of most recent issue we have
                         # acquired dates are read from magazine file timestamps
                         newValueDict = {"IssueStatus": "Open"}
-                        if iss_acquired < magazineadded:
+                        if not magazineadded or iss_acquired < magazineadded:
                             newValueDict["MagazineAdded"] = iss_acquired
                         if not maglastacquired or iss_acquired > maglastacquired:
                             newValueDict["LastAcquired"] = iss_acquired

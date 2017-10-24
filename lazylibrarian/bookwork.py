@@ -149,9 +149,9 @@ def audioRename(bookid):
         o = os.path.join(r, part[3])
         if o != n:
             try:
-                # shutil.move(o, n)
-                # if check_int(part[0], 0) == 1:
-                #     book_filename = n  # return part 1 of set
+                shutil.move(o, n)
+                if check_int(part[0], 0) == 1:
+                    book_filename = n  # return part 1 of set
                 logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
 
             except Exception as e:
@@ -550,12 +550,15 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             if bookID:
-                title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
-                author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+                title = safe_unicode(item['BookName'])
+                title = title.encode(lazylibrarian.SYS_ENCODING)
+                author = safe_unicode(item['AuthorName'])
+                author = author.encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/api/whatwork.php?author=%s&title=%s' % \
                       (urllib.quote_plus(author), urllib.quote_plus(title))
             else:
-                seriesname = safe_unicode(item['seriesName']).encode(lazylibrarian.SYS_ENCODING)
+                seriesname = safe_unicode(item['seriesName'])
+                seriesname = seriesname.encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/series/%s' % urllib.quote_plus(seriesname)
 
             librarything_wait()
@@ -709,7 +712,8 @@ def getSeriesAuthors(seriesid):
             params = {"key": lazylibrarian.CONFIG['GR_API']}
             searchname = bookname + ' ' + authorname
             searchname = cleanName(unaccented(searchname))
-            searchterm = urllib.quote_plus(searchname.encode(lazylibrarian.SYS_ENCODING))
+            searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+            searchterm = urllib.quote_plus(searchname)
             set_url = base_url + searchterm + '&' + urllib.urlencode(params)
             authorid = ''
             try:
@@ -737,7 +741,8 @@ def getSeriesAuthors(seriesid):
                             break
                 if not authorid:  # try again with title only
                     searchname = cleanName(unaccented(bookname))
-                    searchterm = urllib.quote_plus(searchname.encode(lazylibrarian.SYS_ENCODING))
+                    searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+                    searchterm = urllib.quote_plus(searchname)
                     set_url = base_url + searchterm + '&' + urllib.urlencode(params)
                     rootxml, in_cache = get_xml_request(set_url)
                     if rootxml is None:
@@ -874,8 +879,10 @@ def getBookCover(bookID=None):
     item = myDB.match(cmd, (bookID,))
     safeparams = ''
     if item:
-        title = safe_unicode(item['BookName']).encode(lazylibrarian.SYS_ENCODING)
-        author = safe_unicode(item['AuthorName']).encode(lazylibrarian.SYS_ENCODING)
+        title = safe_unicode(item['BookName'])
+        title = title.encode(lazylibrarian.SYS_ENCODING)
+        author = safe_unicode(item['AuthorName'])
+        author = author.encode(lazylibrarian.SYS_ENCODING)
         booklink = item['BookLink']
         safeparams = urllib.quote_plus("%s %s" % (author, title))
         if 'goodreads' in booklink:
@@ -993,7 +1000,8 @@ def getAuthorImage(authorid=None):
     myDB = database.DBConnection()
     authors = myDB.select('select AuthorName from authors where AuthorID=?', (authorid,))
     if authors:
-        authorname = safe_unicode(authors[0][0]).encode(lazylibrarian.SYS_ENCODING)
+        authorname = safe_unicode(authors[0][0])
+        authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
         safeparams = urllib.quote_plus("author %s" % authorname)
         URL = "https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)

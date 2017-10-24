@@ -52,7 +52,8 @@ class BoxcarNotifier:
         logger.debug('Subscribe: %s' % subscribe)
 
         # build up the URL and parameters
-        msg = msg.strip().encode(lazylibrarian.SYS_ENCODING)
+        msg = msg.strip()
+        msg = msg.encode(lazylibrarian.SYS_ENCODING)
         title = title.encode(lazylibrarian.SYS_ENCODING)
         curUrl = API_URL
 

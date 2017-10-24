@@ -968,7 +968,8 @@ class WebInterface(object):
 
         if not author:
             raise cherrypy.HTTPRedirect("home")
-        authorname = author['AuthorName'].encode(lazylibrarian.SYS_ENCODING)
+        authorname = author['AuthorName']
+        authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
 
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
@@ -2062,7 +2063,9 @@ class WebInterface(object):
                 this_mag = dict(mag)
                 this_mag['Count'] = issues
                 this_mag['Cover'] = magimg
-                this_mag['safetitle'] = urllib.quote_plus(mag['Title'].encode(lazylibrarian.SYS_ENCODING))
+                temp_title = mag['Title']
+                temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
+                this_mag['safetitle'] = urllib.quote_plus(temp_title)
                 mags.append(this_mag)
 
             if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
@@ -2196,9 +2199,8 @@ class WebInterface(object):
             return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
         else:  # multiple issues, show a list
             logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
-            raise cherrypy.HTTPRedirect(
-                "issuePage?title=%s" %
-                urllib.quote_plus(bookid.encode(lazylibrarian.SYS_ENCODING)))
+            bookid = bookid.encode(lazylibrarian.SYS_ENCODING)
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid))
 
     @cherrypy.expose
     def markPastIssues(self, action=None, **args):
