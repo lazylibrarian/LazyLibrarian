@@ -161,6 +161,13 @@ def main():
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
 
+    if lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'] == 0:
+        logger.debug('Automatic update checks are disabled')
+        # pretend we're up to date so we don't keep warning the user
+        # version check button will still override this if you want to
+        lazylibrarian.CONFIG['LATEST_VERSION'] = lazylibrarian.CONFIG['CURRENT_VERSION']
+        lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
+
     if not lazylibrarian.CONFIG['GIT_UPDATED']:
         if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
             if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
