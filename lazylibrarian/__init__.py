@@ -326,6 +326,7 @@ CONFIG_DEFINITIONS = {
     'MAG_TYPE': ('str', 'General', 'pdf'),
     'REJECT_WORDS': ('str', 'General', 'audiobook, mp3'),
     'REJECT_AUDIO': ('str', 'General', 'epub, mobi'),
+    'REJECT_MAGS': ('str', 'General', ''),
     'REJECT_MAXSIZE': ('int', 'General', 0),
     'REJECT_MINSIZE': ('int', 'General', 0),
     'REJECT_MAXAUDIO': ('int', 'General', 0),
@@ -737,6 +738,7 @@ def config_read(reloaded=False):
     CONFIG['EBOOK_TYPE'] = CONFIG['EBOOK_TYPE'].lower()
     CONFIG['AUDIOBOOK_TYPE'] = CONFIG['AUDIOBOOK_TYPE'].lower()
     CONFIG['MAG_TYPE'] = CONFIG['MAG_TYPE'].lower()
+    CONFIG['REJECT_MAGS'] = CONFIG['REJECT_MAGS'].lower()
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
 
@@ -809,8 +811,9 @@ def config_write():
             elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
                          'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
-            elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
-                value = value.encode(SYS_ENCODING).lower()
+            elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
+                value = value.encode(SYS_ENCODING)
+                value = value.lower()
         else:
             # keep the old value
             value = CFG.get(section, key.lower())
@@ -828,7 +831,7 @@ def config_write():
         new_list = []
         # strip out any empty slots
         for provider in entry[0]:  # type: dict
-            if provider['HOST']: 
+            if provider['HOST']:
                 new_list.append(provider)
 
         # renumber the items
