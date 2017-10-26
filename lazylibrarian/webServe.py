@@ -837,7 +837,7 @@ class WebInterface(object):
                     newValueDict = {'Regex': new_regex}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
             if count:
-                logger.info("Magazine filters updated")    
+                logger.info("Magazine filters updated")
 
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):

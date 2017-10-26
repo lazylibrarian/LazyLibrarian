@@ -124,7 +124,7 @@ def create_cover(issuefile=None, refresh=False):
                 logger.warn(msg)
             converter = lazylibrarian.CONFIG['IMP_CONVERT']
             postfix = ''
-            if not converter.startswith(os.sep):  # full path given, or just program_name?
+            if not os.path.isfile(converter):  # full path given, or just program_name?
                 converter = os.path.join(os.getcwd(), lazylibrarian.CONFIG['IMP_CONVERT'])
                 if 'convert' in converter and 'gs' not in converter:
                     # tell imagemagick to only convert first page

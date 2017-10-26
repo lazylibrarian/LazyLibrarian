@@ -2407,6 +2407,15 @@
                   </span>
                 </div>
                 </div>
+                <div class="col-md-6">
+                <legend>Magazine Reject List (all titles)</legend>
+                <div class="form-group">
+                  <input type="text" id="reject_mags" name="reject_mags" value="${lazylibrarian.CONFIG['REJECT_MAGS']}" class="form-control" placeholder="Reject word list">
+                  <span class="help-block">Comma separated list of words to reject:<br/>
+                    Search results with any of these words in the title will be ignored<br/>
+                  </span>
+                </div>
+                </div>
                 <div class="col-md-12">
                 <legend>Book Size Limits</legend>
                 </div>
@@ -2465,7 +2474,7 @@
                 </div>
                 </div>
                 <div class="col-md-12">
-                <legend>Magazine Reject Lists</legend>
+                <legend>Magazine Reject Lists (per title)</legend>
                 </div>
                 %for mag in config['magazines_list']:
                 <div class="col-md-6">

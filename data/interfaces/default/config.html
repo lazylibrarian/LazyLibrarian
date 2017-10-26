@@ -1926,6 +1926,17 @@
                 <BR><BR>
               </fieldset>
               <fieldset>
+                <h3>Magazine Reject List (all titles)</h3>
+                Default: None
+                <br>
+                <input type="text" id="reject_mags" name="reject_mags" placeholder="Reject Word List" value="${lazylibrarian.CONFIG['REJECT_MAGS']}" size="20">
+                <br>
+                <small>Comma separated list of words to reject:<br>
+                  Search results with any of these words in the title will be ignored
+                  <BR></small>
+                <BR><BR>
+              </fieldset>
+              <fieldset>
                 <h3>Magazine Size Limits</h3>
                 Default: 0
                 <br>
@@ -1945,7 +1956,7 @@
             </td>
             <td>
               <fieldset>
-                <h3>Magazine Reject Lists</h3>
+                <h3>Magazine Reject Lists (per title)</h3>
                 Default: None
                 <br>
                 %for mag in config['magazines_list']:

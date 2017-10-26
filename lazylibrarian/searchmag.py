@@ -100,12 +100,12 @@ def search_magazines(mags=None, reset=False):
             if lazylibrarian.USE_NZB():
                 resultlist, nproviders = IterateOverNewzNabSites(book, 'mag')
                 if not nproviders:
-                    logger.warn('No nzb providers are set. Check config for NEWZNAB or TORZNAB providers')
+                    logger.warn('No nzb providers are available. Check config and blocklist')
 
             if lazylibrarian.USE_DIRECT():
                 dir_resultlist, nproviders = IterateOverDirectSites(book, 'mag')
                 if not nproviders:
-                    logger.warn('No direct providers are set. Check config for DIRECT providers')
+                    logger.warn('No direct providers are available. Check config and blocklist')
 
                 if dir_resultlist:
                     for item in dir_resultlist:  # reformat the results so they look like nzbs
@@ -122,7 +122,7 @@ def search_magazines(mags=None, reset=False):
             if lazylibrarian.USE_TOR():
                 tor_resultlist, nproviders = IterateOverTorrentSites(book, 'mag')
                 if not nproviders:
-                    logger.warn('No torrent providers are set. Check config for TORRENT providers')
+                    logger.warn('No torrent providers are available. Check config and blocklist')
 
                 if tor_resultlist:
                     for item in tor_resultlist:  # reformat the torrent results so they look like nzbs
@@ -139,7 +139,7 @@ def search_magazines(mags=None, reset=False):
             if lazylibrarian.USE_RSS():
                 rss_resultlist, nproviders = IterateOverRSSSites()
                 if not nproviders:
-                    logger.warn('No rss providers are set. Check config for RSS providers')
+                    logger.warn('No rss providers are available. Check config and blocklist')
 
                 if rss_resultlist:
                     for item in rss_resultlist:  # reformat the rss results so they look like nzbs
@@ -249,6 +249,7 @@ def search_magazines(mags=None, reset=False):
 
                         if not rejected:
                             reject_list = getList(str(results['Reject']).lower())
+                            reject_list += getList(lazylibrarian.CONFIG['REJECT_MAGS'])
                             lower_title = unaccented(nzbtitle_formatted).lower()
                             lower_bookid = unaccented(bookid).lower()
                             if reject_list:

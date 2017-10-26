@@ -130,6 +130,7 @@ def search_book(books=None, library=None):
         if 'rss' in modelist:
             rss_resultlist, nprov = IterateOverRSSSites()
             if not nprov:
+                logger.warn('No rss providers are available. Check config and blocklist')
                 modelist.remove('rss')
 
         book_count = 0
@@ -146,19 +147,19 @@ def search_book(books=None, library=None):
                 if mode == 'nzb':
                     resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                     if not nprov:
-                        logger.debug("No active nzb providers found")
+                        logger.warn('No nzb providers are available. Check config and blocklist')
                         if 'nzb' in modelist:
                             modelist.remove('nzb')
                 elif mode == 'tor':
                     resultlist, nprov = IterateOverTorrentSites(book, searchtype)
                     if not nprov:
-                        logger.debug("No active tor providers found")
+                        logger.warn('No tor providers are available. Check config and blocklist')
                         if 'tor' in modelist:
                             modelist.remove('tor')
                 elif mode == 'direct':
                     resultlist, nprov = IterateOverDirectSites(book, searchtype)
                     if not nprov:
-                        logger.debug("No active direct providers found")
+                        logger.warn('No direct providers are available. Check config and blocklist')
                         if 'direct' in modelist:
                             modelist.remove('direct')
                 elif mode == 'rss':
@@ -180,19 +181,19 @@ def search_book(books=None, library=None):
                     if mode == 'nzb':
                         resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
-                            logger.debug("No active nzb providers found")
+                            logger.warn('No nzb providers are available. Check config and blocklist')
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                     elif mode == 'tor':
                         resultlist, nprov = IterateOverTorrentSites(book, searchtype)
                         if not nprov:
-                            logger.debug("No active tor providers found")
+                            logger.warn('No tor providers are available. Check config and blocklist')
                             if 'tor' in modelist:
                                 modelist.remove('tor')
                     elif mode == 'direct':
                         resultlist, nprov = IterateOverDirectSites(book, searchtype)
                         if not nprov:
-                            logger.debug("No active direct providers found")
+                            logger.warn('No direct providers are available. Check config and blocklist')
                             if 'direct' in modelist:
                                 modelist.remove('direct')
                     elif mode == 'rss':
@@ -210,7 +211,7 @@ def search_book(books=None, library=None):
                     if mode == 'nzb':
                         resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
-                            logger.debug("No active nzb providers found")
+                            logger.warn('No nzb providers are available. Check config and blocklist')
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                         if resultlist:
@@ -224,7 +225,7 @@ def search_book(books=None, library=None):
                     if mode == 'nzb':
                         resultlist, _ = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
-                            logger.debug("No active nzb providers found")
+                            logger.warn('No nzb providers are available. Check config and blocklist')
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                         if resultlist:
