@@ -71,7 +71,8 @@ def bookSeries(bookname):
     if series.lower().strip('.') == 'vol':
         series = ''
     if series.lower().strip('.').endswith('vol'):
-        series = series[:-4].strip()
+        series = series.strip('.')
+        series = series[:-3].strip()
     return series, seriesNum
 
 

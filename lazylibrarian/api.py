@@ -632,8 +632,8 @@ class Api(object):
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, queue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-            queue = Queue.Queue()
             GR = GoodReads(authorname)
+            queue = Queue.Queue()
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, queue])
             search_api.start()
 
@@ -651,8 +651,8 @@ class Api(object):
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-            queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
+            queue = Queue.Queue()
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
             search_api.start()
 

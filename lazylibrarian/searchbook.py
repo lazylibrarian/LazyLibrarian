@@ -18,7 +18,7 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural
+from lazylibrarian.formatter import plural, check_int
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
     IterateOverDirectSites
 from lazylibrarian.resultlist import findBestResult, downloadResult
@@ -32,7 +32,7 @@ def cron_search_book():
 
 
 def goodEnough(match):
-    if match and int(match[0]) >= int(lazylibrarian.CONFIG['MATCH_RATIO']):
+    if match and int(match[0]) >= check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
         return True
     return False
 
