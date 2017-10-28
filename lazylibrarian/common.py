@@ -31,7 +31,7 @@ import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int
+from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, getList
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
