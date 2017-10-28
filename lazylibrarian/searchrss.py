@@ -20,7 +20,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob
 from lazylibrarian.csvfile import finditem
-from lazylibrarian.formatter import plural, unaccented, formatAuthorName
+from lazylibrarian.formatter import plural, unaccented, formatAuthorName, check_int
 from lazylibrarian.importer import import_book, search_for
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverWishLists
 from lazylibrarian.resultlist import processResultList
@@ -109,7 +109,7 @@ def search_rss_book(books=None, library=None):
                             results = search_for(book['rss_isbn'])
                         if results:
                             result = results[0]  # type: dict
-                            if result['isbn_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                            if result['isbn_fuzz'] > check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
                                 logger.info("Found (%s%%) %s: %s" %
                                             (result['isbn_fuzz'], result['authorname'], result['bookname']))
                                 import_book(result['bookid'])
@@ -120,8 +120,8 @@ def search_rss_book(books=None, library=None):
                             results = search_for(unaccented(searchterm))
                         if results:
                             result = results[0]  # type: dict
-                            if result['author_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO'] \
-                                    and result['book_fuzz'] > lazylibrarian.CONFIG['MATCH_RATIO']:
+                            if result['author_fuzz'] > check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90) \
+                                    and result['book_fuzz'] > check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
                                 logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
                                                                           result['authorname'], result['bookname']))
                                 import_book(result['bookid'])

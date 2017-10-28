@@ -473,14 +473,15 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
                 my_val = my_val[1:-1]
             if not len(my_val):
                 my_val = def_val
-            if isinstance(my_val, str) and hasattr(my_val, "decode"):
-                my_val = my_val.decode(SYS_ENCODING)
         except ConfigParser.Error:
             my_val = str(def_val)
         except Exception as e:
             logger.warn('Invalid str for %s: %s, using default %s' % (cfg_name, item_name, str(def_val)))
             logger.debug(str(e))
             my_val = str(def_val)
+        finally:
+            if isinstance(my_val, str) and hasattr(my_val, "decode"):
+                my_val = my_val.decode(SYS_ENCODING)
 
     check_section(cfg_name)
     CFG.set(cfg_name, item_name, my_val)
@@ -1168,6 +1169,7 @@ def build_monthtable():
 
     for lang in getList(CONFIG['IMP_MONTHLANG']):
         try:
+            lang = str(lang)
             if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
                 logger.debug('Month names for %s already loaded' % lang)
             else:

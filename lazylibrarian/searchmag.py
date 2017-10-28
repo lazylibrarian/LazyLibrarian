@@ -227,7 +227,7 @@ def search_magazines(mags=None, reset=False):
                                     unaccented(bookid),
                                     unaccented(nzbtitle_formatted))
 
-                                if mag_title_match < lazylibrarian.CONFIG['MATCH_RATIO']:
+                                if mag_title_match < check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
                                     logger.debug(
                                         u"Magazine token set Match failed: " + str(
                                             mag_title_match) + "% for " + nzbtitle_formatted)

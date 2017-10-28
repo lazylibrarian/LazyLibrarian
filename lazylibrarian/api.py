@@ -85,6 +85,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'update': 'update lazylibrarian',
             'findAuthor': '&name= search goodreads/googlebooks for named author',
             'findBook': '&name= search goodreads/googlebooks for named book',
+            'addBook': '&id= add book details to the database',
             'moveBooks': '&fromname= &toname= move all books from one author to another by AuthorName',
             'moveBook': '&id= &toid= move one book to new author by BookID and AuthorID',
             'addAuthor': '&name= add author to database by name',
@@ -92,8 +93,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'removeAuthor': '&id= remove author from database by AuthorID',
             'addMagazine': '&name= add magazine to database by name',
             'removeMagazine': '&name= remove magazine and all of its issues from database by name',
-            'queueBook': '&id= mark book as Wanted',
-            'unqueueBook': '&id= mark book as Skipped',
+            'queueBook': '&id= [&type=eBook/AudioBook] mark book as Wanted, default eBook',
+            'unqueueBook': '&id= [&type=eBook/AudioBook] mark book as Skipped, default eBook',
             'readCFG': '&name=&group= read value of config variable "name" in section "group"',
             'writeCFG': '&name=&group=&value= set config variable "name" in section "group" to value',
             'loadCFG': 'reload config from file',
@@ -104,7 +105,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'listIgnoredBooks': 'list all books in the database marked ignored',
             'listIgnoredSeries': 'list all series in the database marked ignored',
             'listMissingWorkpages': 'list all books with errorpage or no workpage',
-            'searchBook': '&id= [&wait] search for one book by BookID',
+            'searchBook': '&id= [&wait] [&type=eBook/AudioBook] search for one book by BookID',
             'searchItem': '&item= get search results for an item (author, title, isbn)',
             'showJobs': 'show status of running jobs',
             'restartJobs': 'restart background jobs',
@@ -369,6 +370,8 @@ class Api(object):
         myDB = database.DBConnection()
         controlValueDict = {'BookID': self.id}
         newValueDict = {'Status': 'Wanted'}
+        if 'type' in kwargs and kwargs['type'] == 'AudioBook':
+            newValueDict = {'AudioStatus': 'Wanted'}
         myDB.upsert("books", newValueDict, controlValueDict)
 
     def _unqueueBook(self, **kwargs):
@@ -381,6 +384,8 @@ class Api(object):
         myDB = database.DBConnection()
         controlValueDict = {'BookID': self.id}
         newValueDict = {'Status': 'Skipped'}
+        if 'type' in kwargs and kwargs['type'] == 'AudioBook':
+            newValueDict = {'AudioStatus': 'Skipped'}
         myDB.upsert("books", newValueDict, controlValueDict)
 
     def _addMagazine(self, **kwargs):
@@ -632,8 +637,8 @@ class Api(object):
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, queue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-            queue = Queue.Queue()
             GR = GoodReads(authorname)
+            queue = Queue.Queue()
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, queue])
             search_api.start()
 
@@ -651,13 +656,25 @@ class Api(object):
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-            queue = Queue.Queue()
             GR = GoodReads(kwargs['name'])
+            queue = Queue.Queue()
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
             search_api.start()
 
         search_api.join()
         self.data = queue.get()
+
+    def _addBook(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+            GB = GoogleBooks(kwargs['id'])
+            threading.Thread(target=GB.find_book, name='API-GBRESULTS', args=[kwargs['id']]).start()
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+            GR = GoodReads(kwargs['id'])
+            threading.Thread(target=GR.find_book, name='API-GRRESULTS', args=[kwargs['id']]).start()
 
     def _moveBook(self, **kwargs):
         if 'id' not in kwargs:
