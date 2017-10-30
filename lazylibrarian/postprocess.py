@@ -1043,14 +1043,15 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 identifier = "google:%s" % bookid
 
             res, err, rc = calibredb('add', ['-1'], [pp_path])
-            if rc or not res:
-                return False, 'calibredb return %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
 
-            logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
-            logger.debug('%s returns: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
-            if 'already exist' in err or 'already exist' in res:  # needed for different calibredb versions
+            logger.debug('%s result : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            logger.debug('%s error  : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
+
+            if rc or not res:
+                return False, 'calibredb rc %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
+            elif 'already exist' in err or 'already exist' in res:  # needed for different calibredb versions
                 return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
-            if 'Added book ids' not in res:
+            elif 'Added book ids' not in res:
                 return False, 'Calibre failed to import %s %s, no added bookids' % (authorname, bookname)
 
             calibre_id = res.split("book ids: ", 1)[1].split("\n", 1)[0]

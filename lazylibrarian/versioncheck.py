@@ -314,8 +314,8 @@ def getCommitDifferenceFromGit():
                     git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
                 logmsg('debug', msg)
             else:
-                logmsg('warn','(getCommitDifferenceFromGit) Could not get difference status from GitHub: %s' %
-                    str(git))
+                logmsg('warn', '(getCommitDifferenceFromGit) Could not get difference status from GitHub: %s' %
+                       str(git))
                 commits = -1
 
             if int(git['total_commits']) > 0:

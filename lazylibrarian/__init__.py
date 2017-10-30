@@ -542,7 +542,6 @@ def initialize():
             logger.info("Screen Log set to INFO/WARN/ERROR")
 
         config_read()
-        logger.info('SYS_ENCODING is %s' % SYS_ENCODING)
 
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
@@ -1203,7 +1202,7 @@ def build_monthtable():
                     logger.warn("Unable to find an alternative")
             except Exception as e:
                 logger.warn("Unable to get a list of alternatives, %s %s" % (type(e).__name__, str(e)))
-            logger.info("Set locale back to entry state %s" % current_locale)
+            logger.debug("Set locale back to entry state %s" % current_locale)
 
     # with open(json_file, 'w') as f:
     #    json.dump(table, f)
