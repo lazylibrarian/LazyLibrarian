@@ -456,8 +456,11 @@ def processDir(reset=False):
                                                                                             book['AuxInfo']).replace(
                                     '$Title', mag_name)
                                 global_name = unaccented(global_name)
-                            else:  # not recognised
+                            else:  # not recognised, maybe deleted
                                 logger.debug('Nothing in database matching "%s"' % book['BookID'])
+                                controlValueDict = {"BookID": book['BookID'], "Status": "Snatched"}
+                                newValueDict = {"Status": "Failed", "NZBDate": now()}
+                                myDB.upsert("wanted", newValueDict, controlValueDict)
                                 continue
                     else:
                         logger.debug("Snatched %s %s is not in download directory" %
