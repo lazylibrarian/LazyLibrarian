@@ -307,12 +307,16 @@ def getCommitDifferenceFromGit():
             r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
             git = r.json()
             logmsg('debug', 'pull total_commits from json object')
-            commits = int(git['total_commits'])
-
-            msg = '(getCommitDifferenceFromGit) -  GitHub reports as follows '
-            msg += 'Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
-                git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
-            logmsg('debug', msg)
+            if 'total_commits' in str(git):
+                commits = int(git['total_commits'])
+                msg = '(getCommitDifferenceFromGit) -  GitHub reports as follows '
+                msg += 'Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
+                    git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
+                logmsg('debug', msg)
+            else:
+                logmsg('warn','(getCommitDifferenceFromGit) Could not get difference status from GitHub: %s' %
+                    str(git))
+                commits = -1
 
             if int(git['total_commits']) > 0:
                 messages = []
