@@ -1048,7 +1048,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('%s error  : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
 
             if rc or not res:
-                return False,'calibredb rc %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
+                return False, 'calibredb rc %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
             elif 'already exist' in err or 'already exist' in res:  # needed for different calibredb versions
                 return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
             elif 'Added book ids' not in res:
