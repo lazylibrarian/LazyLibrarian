@@ -1912,6 +1912,7 @@ class WebInterface(object):
                             if authorcheck:
                                 if authorcheck['Status'] not in ['Active', 'Wanted']:
                                     myDB.action('delete from books where bookid=?', (bookid,))
+                                    myDB.action('delete from wanted where bookid=?', (bookid,))
                                     logger.info('Removed "%s" from database' % bookname)
                                 elif library == 'eBook':
                                     myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
@@ -1921,6 +1922,7 @@ class WebInterface(object):
                                     logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
                             else:
                                 myDB.action('delete from books where bookid=?', (bookid,))
+                                myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
 
         if redirect == "author" or len(authorcheck):
@@ -2375,6 +2377,7 @@ class WebInterface(object):
                     myDB.action('DELETE from magazines WHERE Title=?', (item,))
                     myDB.action('DELETE from pastissues WHERE BookID=?', (item,))
                     myDB.action('DELETE from issues WHERE Title=?', (item,))
+                    myDB.action('DELETE from wanted where BookID=?', (item,))
                     logger.info('Magazine %s removed from database' % item)
                 if action == "Reset":
                     controlValueDict = {"Title": item}
