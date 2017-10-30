@@ -456,8 +456,11 @@ def processDir(reset=False):
                                                                                             book['AuxInfo']).replace(
                                     '$Title', mag_name)
                                 global_name = unaccented(global_name)
-                            else:  # not recognised
+                            else:  # not recognised, maybe deleted
                                 logger.debug('Nothing in database matching "%s"' % book['BookID'])
+                                controlValueDict = {"BookID": book['BookID'], "Status": "Snatched"}
+                                newValueDict = {"Status": "Failed", "NZBDate": now()}
+                                myDB.upsert("wanted", newValueDict, controlValueDict)
                                 continue
                     else:
                         logger.debug("Snatched %s %s is not in download directory" %
@@ -1045,7 +1048,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
             logger.debug('%s returns: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
-            if 'already exist' in res:
+            if 'already exist' in err or 'already exist' in res:  # needed for different calibredb versions
                 return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
             if 'Added book ids' not in res:
                 return False, 'Calibre failed to import %s %s, no added bookids' % (authorname, bookname)
