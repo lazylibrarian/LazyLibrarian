@@ -1121,6 +1121,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             return False, 'calibredb import failed, %s %s' % (type(e).__name__, str(e))
     else:
         # we are copying the files ourselves, either it's audiobook, magazine or we don't want to use calibre
+        logger.debug("BookType: %s, calibredb: [%s]" % (booktype, lazylibrarian.CONFIG['IMP_CALIBREDB']))
         if not os.path.exists(dest_path):
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
         elif not os.path.isdir(dest_path):
