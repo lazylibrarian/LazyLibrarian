@@ -585,7 +585,7 @@ def logHeader():
         header += 'OpenSSL missing module/attribute: %s\n' % e
 
     try:
-        # get_extention_for_class method added in `cryptography==1.1`; not available in older versions
+        # get_extension_for_class method added in `cryptography==1.1`; not available in older versions
         # but need cryptography >= 1.3.4 for access from pyopenssl >= 0.14
         import cryptography
         from cryptography.x509.extensions import Extensions
@@ -603,9 +603,9 @@ def saveLog():
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
-    passchars = string.ascii_letters + string.digits + '_/'  # _/ used by slack and googlebooks
-    redactlist = ['api -> ', 'apikey -> ', 'pass -> ', 'password -> ', 'token -> ', 'using api [',
-                  'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': ', 'keys ->'"]
+    passchars = string.ascii_letters + string.digits + ':_/'  # _/ used by slack, telegram and googlebooks
+    redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ',  'keys ->',
+                  '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': ',"]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0
@@ -641,6 +641,25 @@ def saveLog():
                         break
                     linecount += 1
                 extn += 1
+
+        if os.path.exists(lazylibrarian.CONFIGFILE):
+            out.write('---END-CONFIG---------------------------------\n')
+            for line in reverse_readline(lazylibrarian.CONFIGFILE):
+                for item in redactlist:
+                    item = item.replace('->', '=')
+                    startpos = line.find(item)
+                    if startpos >= 0:
+                        startpos += len(item)
+                        endpos = startpos
+                        while endpos < len(line) and not line[endpos] in passchars:
+                            endpos += 1
+                        while endpos < len(line) and line[endpos] in passchars:
+                            endpos += 1
+                        if endpos != startpos:
+                            line = line[:startpos] + '<redacted>' + line[endpos:]
+                            redacts += 1
+                out.write("%s\n" % line)
+            out.write('---CONFIG-------------------------------------\n')
 
     with open(outfile + '.log', 'w') as logfile:
         logfile.write(logHeader())
