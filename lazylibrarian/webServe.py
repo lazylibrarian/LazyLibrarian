@@ -642,6 +642,9 @@ class WebInterface(object):
             match = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
             if match:
                 title = "%s Series" % match['AuthorName']
+            if '&' in title and '&amp;' not in title:
+                title = title.replace('&', '&amp;')
+
         return serve_template(templatename="series.html", title=title, authorid=AuthorID, series=[],
                               whichStatus=whichStatus)
 
@@ -2119,6 +2122,9 @@ class WebInterface(object):
             elif not lazylibrarian.CONFIG['TOGGLES']:
                 if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
                     covercount = 0
+
+        if '&' in title and '&amp;' not in title:  # could use htmlparser but seems overkill for just '&'
+            title = title.replace('&', '&amp;')
 
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
