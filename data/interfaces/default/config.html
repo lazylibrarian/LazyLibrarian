@@ -1013,6 +1013,7 @@
             <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
             <BR>
             <small>Path to "calibredb" to import books into the library</small>
+            <input type="button" value="Test calibredb" id="testCalibredb" />
 
             <div class="checkbox">
             <%
@@ -2677,6 +2678,12 @@
             var androidpn_broadcast = ($("#androidpn_broadcast").prop('checked') == true) ? 'Y' : 'N';
             $.get("testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast},
                 function (data) { alert(data); });
+        });
+
+        $('#testCalibredb').click(function () {
+            var prg = $.trim($("#imp_calibredb").val());
+            $.get("testCalibredb", { 'prg': prg},
+                function (data) { window.alert(data) });
         });
 
         // when the page first loads, hide all tab headers and panels

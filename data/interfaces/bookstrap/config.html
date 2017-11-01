@@ -1327,6 +1327,7 @@
                     <label for="imp_calibredb">Calibredb import program:</label>
                     <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
                     <span class="help-block">Path to "calibredb" to import books into the library</span>
+                    <input type="button" value="Test calibredb" id="testCalibredb" class="btn btn-default" />
                   </div>
                   <div class="checkbox">
                       <%
@@ -3417,6 +3418,12 @@
             var androidpn_username = $.trim($("#androidpn_username").val());
             var androidpn_broadcast = ($("#androidpn_broadcast").prop('checked') == true) ? 'Y' : 'N';
             $.get("testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast},
+                function (data) { window.alert(data) });
+        });
+
+        $('#testCalibredb').click(function () {
+            var prg = $.trim($("#imp_calibredb").val());
+            $.get("testCalibredb", { 'prg': prg},
                 function (data) { window.alert(data) });
         });
 
