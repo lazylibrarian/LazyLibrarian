@@ -16,6 +16,7 @@
 import datetime
 import hashlib
 import os
+import subprocess
 import random
 import re
 import threading
@@ -3291,3 +3292,17 @@ class WebInterface(object):
         if 'success' in msg:
             lazylibrarian.config_write()
         return msg
+
+    @cherrypy.expose
+    def testCalibredb(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'prg' in kwargs and kwargs['prg']:
+            lazylibrarian.CONFIG['IMP_CALIBREDB'] = kwargs['prg']
+            try:
+                params = [kwargs['prg'], "--version"]
+                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+            except Exception as e:
+                res = str(e)
+        else:
+            res = "No calibredb set in config"
+        return res
