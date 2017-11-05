@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import os
 import sys
 
@@ -63,6 +64,12 @@ def initialize(options=None):
             # 'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
             'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
             'tools.proxy.on': options['http_proxy']  # pay attention to X-Forwarded-Proto header
+            # NOTE we have no way currently to say which header to use
+            # default if not specified is to use apache X-Forwarded-Host
+            # we should probably make this a config item
+            # 'tools.proxy.local': 'X-Forwarded-Host'  # this is for apache2
+            # 'tools.proxy.local': 'Host'  # this is for nginx
+            # 'tools.proxy.local': 'X-Host'  # this is for lighthttpd
         },
         '/interfaces': {
             'tools.staticdir.on': True,
@@ -112,7 +119,7 @@ def initialize(options=None):
         cherrypy.process.servers.check_port(str(options['http_host']), options['http_port'])
         cherrypy.server.start()
     except IOError:
-        print 'Failed to start on port: %i. Is something else running?' % (options['http_port'])
+        print('Failed to start on port: %i. Is something else running?' % (options['http_port']))
         sys.exit(1)
 
     cherrypy.server.wait()

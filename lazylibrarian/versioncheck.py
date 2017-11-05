@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import os
 import platform
 import re
@@ -42,7 +43,7 @@ def logmsg(level, msg):
         else:
             logger.info(msg)
     else:
-        print level.upper(), msg
+        print(level.upper(), msg)
 
 
 def runGit(args):

@@ -346,6 +346,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             else:
                 tor_title = unaccented_str(tor_title)
                 logger.debug('%s setting torrent name to [%s]' % (Source, tor_title))
+                # should we check against reject words list again as the name may have changed
                 myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (tor_title, full_url))
         return True
     else:

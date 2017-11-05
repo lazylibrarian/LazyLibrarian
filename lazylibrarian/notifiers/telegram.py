@@ -36,7 +36,7 @@ class Telegram_Notifier:
             logger.debug(url)
             logger.debug(payload)
             response = requests.request('POST', url, data=payload)
-        except Exception, e:
+        except Exception as e:
             logger.warn(u'Telegram notify failed: ' + str(e))
             return False
 

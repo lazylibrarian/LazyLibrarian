@@ -280,6 +280,7 @@ def processDir(reset=False):
                     matchtitle = unaccented_str(book['NZBtitle'])
                     if torrentname and torrentname != matchtitle:
                         logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
+                        # should we check against reject word list again as the name has changed?
                         myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
                         matchtitle = torrentname
 

@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 from __future__ import with_statement
 
 import ConfigParser
@@ -519,8 +520,8 @@ def initialize():
                 os.makedirs(CONFIG['LOGDIR'])
             except OSError as e:
                 if LOGLEVEL:
-                    print '%s : Unable to create folder for logs: %s' % (
-                        CONFIG['LOGDIR'], str(e))
+                    print('%s : Unable to create folder for logs: %s' % (
+                        CONFIG['LOGDIR'], str(e)))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
@@ -1293,7 +1294,7 @@ def logmsg(level, msg):
         else:
             logger.info(msg)
     else:
-        print level.upper(), msg
+        print(level.upper(), msg)
 
 
 def shutdown(restart=False, update=False):
