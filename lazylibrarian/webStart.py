@@ -64,12 +64,6 @@ def initialize(options=None):
             # 'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
             'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
             'tools.proxy.on': options['http_proxy']  # pay attention to X-Forwarded-Proto header
-            # NOTE we have no way currently to say which header to use
-            # default if not specified is to use apache X-Forwarded-Host
-            # we should probably make this a config item
-            # 'tools.proxy.local': 'X-Forwarded-Host'  # this is for apache2
-            # 'tools.proxy.local': 'Host'  # this is for nginx
-            # 'tools.proxy.local': 'X-Host'  # this is for lighthttpd
         },
         '/interfaces': {
             'tools.staticdir.on': True,
@@ -98,6 +92,14 @@ def initialize(options=None):
         }
     }
 
+    if lazylibrarian.CONFIG['PROXY_LOCAL']:
+        conf['/'].update({
+            # NOTE default if not specified is to use apache style X-Forwarded-Host
+            # 'tools.proxy.local': 'X-Forwarded-Host'  # this is for apache2
+            # 'tools.proxy.local': 'Host'  # this is for nginx
+            # 'tools.proxy.local': 'X-Host'  # this is for lighthttpd
+            'tools.proxy.local': lazylibrarian.CONFIG['PROXY_LOCAL']
+            })
     if options['http_pass'] != "":
         logger.info("Web server authentication is enabled, username is '%s'" % options['http_user'])
         conf['/'].update({
@@ -108,7 +110,7 @@ def initialize(options=None):
             })
         })
         conf['/api'] = {'tools.auth_basic.on': False}
-
+    print(conf['/'])
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
     cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)

@@ -143,7 +143,7 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT']
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -195,6 +195,7 @@ CONFIG_DEFINITIONS = {
     'API_KEY': ('str', 'General', ''),
     'PROXY_HOST': ('str', 'General', ''),
     'PROXY_TYPE': ('str', 'General', ''),
+    'PROXY_LOCAL': ('str', 'General', ''),
     'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
