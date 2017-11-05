@@ -11,7 +11,8 @@
         <a id="forcepostprocess" class="btn btn-sm btn-primary" href="forceProcess?source=books"><i class="fa fa-cogs"></i> Force Post-Processing</a>
         <a href="libraryScan?library=eBook" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
         %endif
-        <a href="bookWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Recent Books</a>
+        <a href="bookWall?have=0" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Additions</a>
+        <a href="bookWall?have=1" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Downloads</a>
       </div>
         %if len(languages) > 1:
           <div class="form-group pull-right">
