@@ -67,6 +67,10 @@ LOGTOGGLE = 2  # normal debug
 # These are transient globals
 UPDATE_MSG = ''
 AUTHORUPDATE_MSG = 0
+NO_TOR_MSG = 0
+NO_RSS_MSG = 0
+NO_NZB_MSG = 0
+NO_DIRECT_MSG = 0
 IGNORED_AUTHORS = 0
 CURRENT_TAB = '1'
 CACHE_HIT = 0
