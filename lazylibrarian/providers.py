@@ -16,6 +16,7 @@
 import time
 import datetime
 import urllib
+import threading
 from xml.etree import ElementTree
 
 import lazylibrarian
@@ -177,7 +178,9 @@ def get_capabilities(provider):
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
+            threadname = threading.currentThread().name
             lazylibrarian.config_write()
+            threading.currentThread().name = threadname
         else:
             logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider
@@ -623,7 +626,9 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                                         logger.error("Disabled %s=%s for %s" %
                                                      (msg, provider[msg], provider['HOST']))
                                         lazylibrarian.NEWZNAB_PROV[count][msg] = ""
+                                        threadname = threading.currentThread().name
                                         lazylibrarian.config_write()
+                                        threading.currentThread().name = threadname
                                     else:
                                         logger.error("Unable to disable %s for %s [MANUAL=%s]" %
                                                      (msg, provider['HOST'], provider['MANUAL']))

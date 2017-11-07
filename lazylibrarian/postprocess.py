@@ -1153,23 +1153,26 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         ((fname.lower().endswith(".jpg") or fname.lower().endswith(".opf"))
                          and not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']):
                     logger.debug('Copying %s to directory %s' % (fname, dest_path))
+                    typ = ''
+                    srcfile = os.path.join(pp_path, fname)
+                    if booktype == 'audiobook':
+                        destfile = os.path.join(dest_path, fname)  # don't rename, just copy it
+                    else:
+                        # for ebooks, the book, jpg, opf all have the same basename
+                        destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
                     try:
-                        if booktype == 'audiobook':
-                            destfile = os.path.join(dest_path, fname)  # don't rename, just copy it
-                        else:
-                            # for ebooks, the book, jpg, opf all have the same basename
-                            destfile = os.path.join(dest_path, global_name + os.path.splitext(fname)[1])
-
                         if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                            shutil.copyfile(os.path.join(pp_path, fname), destfile)
+                            typ = 'copy'
+                            shutil.copyfile(srcfile, destfile)
                         else:
-                            shutil.move(os.path.join(pp_path, fname), destfile)
+                            typ = 'move'
+                            shutil.move(srcfile, destfile)
                         setperm(destfile)
                         if is_valid_booktype(destfile, booktype=booktype):
                             newbookfile = destfile
                     except Exception as why:
-                        return False, "Unable to copy file %s to %s: %s %s" % \
-                               (fname, dest_path, type(why).__name__, str(why))
+                        return False, "Unable to %s file %s to %s: %s %s" % \
+                               (typ, srcfile, destfile, type(why).__name__, str(why))
                 else:
                     logger.debug('Ignoring unwanted file: %s' % fname)
 
