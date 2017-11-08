@@ -255,11 +255,23 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 entry_status = 'Active'  # default for invalid/unknown or "loading"
             # process books
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
-                book_api = GoogleBooks()
-                book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
+                if lazylibrarian.CONFIG['GB_API']:
+                    book_api = GoogleBooks()
+                    book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                                              refresh=refresh)
+                # if lazylibrarian.CONFIG['GR_API']:
+                #     book_api = GoodReads(authorname)
+                #     book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                #                               refresh=refresh)
             elif lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-                book_api = GoodReads(authorname)
-                book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status, refresh=refresh)
+                if lazylibrarian.CONFIG['GR_API']:
+                    book_api = GoodReads(authorname)
+                    book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                                              refresh=refresh)
+                # if lazylibrarian.CONFIG['GB_API']:
+                #     book_api = GoogleBooks()
+                #     book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                #                               refresh=refresh)
 
             # update totals works for existing authors only.
             # New authors need their totals updating after libraryscan or import of books.

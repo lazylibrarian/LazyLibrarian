@@ -1971,6 +1971,8 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("magazines")
         else:
             mod_issues = []
+            count = 0
+            maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
             for issue in issues:
                 magfile = issue['IssueFile']
                 extn = os.path.splitext(magfile)[1]
@@ -1992,6 +1994,9 @@ class WebInterface(object):
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
+                count += 1
+                if maxcount and count > maxcount:
+                    break
         return serve_template(
             templatename="coverwall.html", title="Recent Issues", results=mod_issues, redirect="magazines",
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
@@ -2009,6 +2014,9 @@ class WebInterface(object):
         results = myDB.select(cmd)
         if not len(results):
             raise cherrypy.HTTPRedirect("books")
+        maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
+        if maxcount and len(results) > maxcount:
+            results = results[:maxcount]
         return serve_template(
             templatename="coverwall.html", title=title, results=results, redirect="books", have=have,
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
@@ -2021,6 +2029,9 @@ class WebInterface(object):
             'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by AudioLibrary DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("audio")
+        maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
+        if maxcount and len(results) > maxcount:
+            results = results[:maxcount]
         return serve_template(
             templatename="coverwall.html", title="Recent AudioBooks", results=results, redirect="audio",
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
