@@ -1997,14 +1997,20 @@ class WebInterface(object):
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
-    def bookWall(self):
+    def bookWall(self, have='1'):
         self.label_thread('BOOKWALL')
         myDB = database.DBConnection()
-        results = myDB.select('SELECT BookFile,BookImg,BookID from books where Status="Open" order by BookLibrary DESC')
+        if have == '1':
+            cmd = 'SELECT BookLink,BookImg,BookID from books where Status="Open" order by BookLibrary DESC'
+            title = 'Recently Downloaded Books'
+        else:
+            cmd = 'SELECT BookLink,BookImg,BookID from books order by BookAdded DESC'
+            title = 'Recently Added Books'
+        results = myDB.select(cmd)
         if not len(results):
             raise cherrypy.HTTPRedirect("books")
         return serve_template(
-            templatename="coverwall.html", title="Recent Books", results=results, redirect="books",
+            templatename="coverwall.html", title=title, results=results, redirect="books", have=have,
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose

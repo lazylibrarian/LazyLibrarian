@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import os
 import sys
 
@@ -91,6 +92,14 @@ def initialize(options=None):
         }
     }
 
+    if lazylibrarian.CONFIG['PROXY_LOCAL']:
+        conf['/'].update({
+            # NOTE default if not specified is to use apache style X-Forwarded-Host
+            # 'tools.proxy.local': 'X-Forwarded-Host'  # this is for apache2
+            # 'tools.proxy.local': 'Host'  # this is for nginx
+            # 'tools.proxy.local': 'X-Host'  # this is for lighthttpd
+            'tools.proxy.local': lazylibrarian.CONFIG['PROXY_LOCAL']
+            })
     if options['http_pass'] != "":
         logger.info("Web server authentication is enabled, username is '%s'" % options['http_user'])
         conf['/'].update({
@@ -101,7 +110,7 @@ def initialize(options=None):
             })
         })
         conf['/api'] = {'tools.auth_basic.on': False}
-
+    print(conf['/'])
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
     cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)
@@ -112,7 +121,7 @@ def initialize(options=None):
         cherrypy.process.servers.check_port(str(options['http_host']), options['http_port'])
         cherrypy.server.start()
     except IOError:
-        print 'Failed to start on port: %i. Is something else running?' % (options['http_port'])
+        print('Failed to start on port: %i. Is something else running?' % (options['http_port']))
         sys.exit(1)
 
     cherrypy.server.wait()

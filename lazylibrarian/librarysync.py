@@ -733,9 +733,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # location may have changed on rename
                                             if book_filename and book_filename != check_status['BookFile']:
-                                                modified_count += 1
-                                                logger.warn("Updating book location for %s %s from %s to %s" %
-                                                            (author, book, check_status['BookFile'], book_filename))
+                                                if str(check_status['BookFile']) != 'None':
+                                                    modified_count += 1
+                                                    logger.warn("Updating book location for %s %s from %s to %s" %
+                                                                (author, book, check_status['BookFile'], book_filename))
                                                 logger.debug("%s %s matched %s BookID %s, [%s][%s]" %
                                                              (author, book, check_status['Status'], bookid,
                                                               check_status['AuthorName'], check_status['BookName']))
@@ -774,9 +775,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # location may have changed since last scan
                                             if book_filename and book_filename != check_status['AudioFile']:
-                                                modified_count += 1
-                                                logger.warn("Updating audiobook location for %s %s from %s to %s" %
-                                                            (author, book, check_status['AudioFile'], book_filename))
+                                                if str(check_status['AudioFile']) != 'None':
+                                                    modified_count += 1
+                                                    logger.warn("Updating audiobook location for %s %s from %s to %s" %
+                                                                (author, book, check_status['AudioFile'],
+                                                                 book_filename))
                                                 logger.debug("%s %s matched %s BookID %s, [%s][%s]" %
                                                              (author, book, check_status['AudioStatus'], bookid,
                                                               check_status['AuthorName'], check_status['BookName']))

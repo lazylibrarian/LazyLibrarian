@@ -15,7 +15,7 @@
 
 import threading
 import traceback
-
+import time
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, check_int
@@ -130,7 +130,11 @@ def search_book(books=None, library=None):
         if 'rss' in modelist:
             rss_resultlist, nprov = IterateOverRSSSites()
             if not nprov:
-                logger.warn('No rss providers are available. Check config and blocklist')
+                # don't nag. Show warning message no more than every 20 mins
+                timenow = int(time.time())
+                if check_int(lazylibrarian.NO_RSS_MSG, 0) + 1200 < timenow:
+                    logger.warn('No rss providers are available. Check config and blocklist')
+                    lazylibrarian.NO_RSS_MSG = timenow
                 modelist.remove('rss')
 
         book_count = 0
@@ -147,19 +151,31 @@ def search_book(books=None, library=None):
                 if mode == 'nzb':
                     resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                     if not nprov:
-                        logger.warn('No nzb providers are available. Check config and blocklist')
+                        # don't nag. Show warning message no more than every 20 mins
+                        timenow = int(time.time())
+                        if check_int(lazylibrarian.NO_NZB_MSG, 0) + 1200 < timenow:
+                            logger.warn('No nzb providers are available. Check config and blocklist')
+                            lazylibrarian.NO_NZB_MSG = timenow
                         if 'nzb' in modelist:
                             modelist.remove('nzb')
                 elif mode == 'tor':
                     resultlist, nprov = IterateOverTorrentSites(book, searchtype)
                     if not nprov:
-                        logger.warn('No tor providers are available. Check config and blocklist')
+                        # don't nag. Show warning message no more than every 20 mins
+                        timenow = int(time.time())
+                        if check_int(lazylibrarian.NO_TOR_MSG, 0) + 1200 < timenow:
+                            logger.warn('No tor providers are available. Check config and blocklist')
+                            lazylibrarian.NO_TOR_MSG = timenow
                         if 'tor' in modelist:
                             modelist.remove('tor')
                 elif mode == 'direct':
                     resultlist, nprov = IterateOverDirectSites(book, searchtype)
                     if not nprov:
-                        logger.warn('No direct providers are available. Check config and blocklist')
+                        # don't nag. Show warning message no more than every 20 mins
+                        timenow = int(time.time())
+                        if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
+                            logger.warn('No direct providers are available. Check config and blocklist')
+                            lazylibrarian.NO_DIRECT_MSG = timenow
                         if 'direct' in modelist:
                             modelist.remove('direct')
                 elif mode == 'rss':
@@ -181,19 +197,31 @@ def search_book(books=None, library=None):
                     if mode == 'nzb':
                         resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
-                            logger.warn('No nzb providers are available. Check config and blocklist')
+                            # don't nag. Show warning message no more than every 20 mins
+                            timenow = int(time.time())
+                            if check_int(lazylibrarian.NO_NZB_MSG, 0) + 1200 < timenow:
+                                logger.warn('No nzb providers are available. Check config and blocklist')
+                                lazylibrarian.NO_NZB_MSG = timenow
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                     elif mode == 'tor':
                         resultlist, nprov = IterateOverTorrentSites(book, searchtype)
                         if not nprov:
-                            logger.warn('No tor providers are available. Check config and blocklist')
+                            # don't nag. Show warning message no more than every 20 mins
+                            timenow = int(time.time())
+                            if check_int(lazylibrarian.NO_TOR_MSG, 0) + 1200 < timenow:
+                                logger.warn('No tor providers are available. Check config and blocklist')
+                                lazylibrarian.NO_TOR_MSG = timenow
                             if 'tor' in modelist:
                                 modelist.remove('tor')
                     elif mode == 'direct':
                         resultlist, nprov = IterateOverDirectSites(book, searchtype)
                         if not nprov:
-                            logger.warn('No direct providers are available. Check config and blocklist')
+                            # don't nag. Show warning message no more than every 20 mins
+                            timenow = int(time.time())
+                            if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
+                                logger.warn('No direct providers are available. Check config and blocklist')
+                                lazylibrarian.NO_DIRECT_MSG = timenow
                             if 'direct' in modelist:
                                 modelist.remove('direct')
                     elif mode == 'rss':
@@ -211,7 +239,11 @@ def search_book(books=None, library=None):
                     if mode == 'nzb':
                         resultlist, nprov = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
-                            logger.warn('No nzb providers are available. Check config and blocklist')
+                            # don't nag. Show warning message no more than every 20 mins
+                            timenow = int(time.time())
+                            if check_int(lazylibrarian.NO_NZB_MSG, 0) + 1200 < timenow:
+                                logger.warn('No nzb providers are available. Check config and blocklist')
+                                lazylibrarian.NO_NZB_MSG = timenow
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                         if resultlist:
@@ -225,7 +257,11 @@ def search_book(books=None, library=None):
                     if mode == 'nzb':
                         resultlist, _ = IterateOverNewzNabSites(book, searchtype)
                         if not nprov:
-                            logger.warn('No nzb providers are available. Check config and blocklist')
+                            # don't nag. Show warning message no more than every 20 mins
+                            timenow = int(time.time())
+                            if check_int(lazylibrarian.NO_NZB_MSG, 0) + 1200 < timenow:
+                                logger.warn('No nzb providers are available. Check config and blocklist')
+                                lazylibrarian.NO_NZB_MSG = timenow
                             if 'nzb' in modelist:
                                 modelist.remove('nzb')
                         if resultlist:

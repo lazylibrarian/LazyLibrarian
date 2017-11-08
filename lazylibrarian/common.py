@@ -603,9 +603,9 @@ def saveLog():
 
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
-    passchars = string.ascii_letters + string.digits + ':_/'  # _/ used by slack, telegram and googlebooks
+    passchars = string.ascii_letters + string.digits + ':_/'  # used by slack, telegram and googlebooks
     redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ',  'keys ->',
-                  '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': u'", "apikey': ',"]
+                  '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': "]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0

@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 from __future__ import with_statement
 
 import ConfigParser
@@ -66,6 +67,10 @@ LOGTOGGLE = 2  # normal debug
 # These are transient globals
 UPDATE_MSG = ''
 AUTHORUPDATE_MSG = 0
+NO_TOR_MSG = 0
+NO_RSS_MSG = 0
+NO_NZB_MSG = 0
+NO_DIRECT_MSG = 0
 IGNORED_AUTHORS = 0
 CURRENT_TAB = '1'
 CACHE_HIT = 0
@@ -142,7 +147,7 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT']
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -194,6 +199,7 @@ CONFIG_DEFINITIONS = {
     'API_KEY': ('str', 'General', ''),
     'PROXY_HOST': ('str', 'General', ''),
     'PROXY_TYPE': ('str', 'General', ''),
+    'PROXY_LOCAL': ('str', 'General', ''),
     'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
@@ -519,8 +525,8 @@ def initialize():
                 os.makedirs(CONFIG['LOGDIR'])
             except OSError as e:
                 if LOGLEVEL:
-                    print '%s : Unable to create folder for logs: %s' % (
-                        CONFIG['LOGDIR'], str(e))
+                    print('%s : Unable to create folder for logs: %s' % (
+                        CONFIG['LOGDIR'], str(e)))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
@@ -1293,7 +1299,7 @@ def logmsg(level, msg):
         else:
             logger.info(msg)
     else:
-        print level.upper(), msg
+        print(level.upper(), msg)
 
 
 def shutdown(restart=False, update=False):
