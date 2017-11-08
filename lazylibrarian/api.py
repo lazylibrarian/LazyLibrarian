@@ -19,6 +19,7 @@ import json
 import os
 import shutil
 import threading
+import cherrypy
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -189,7 +190,8 @@ class Api(object):
             threading.currentThread().name = "API"
 
         if self.data == 'OK':
-            logger.info('Received API command: %s %s' % (self.cmd, self.kwargs))
+            remote_ip = cherrypy.request.remote.ip
+            logger.info('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
             if 'callback' not in self.kwargs:
