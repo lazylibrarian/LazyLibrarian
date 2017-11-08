@@ -29,6 +29,7 @@ from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, 
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT, proxyList
 from lazylibrarian.formatter import cleanName, unaccented_str, getList
+from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
 
@@ -334,25 +335,50 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         return False
 
     if downloadID:
+        if tor_title:
+            if downloadID.upper() in tor_title.upper():
+                logger.warn('%s: name contains hash, probably unresolved magnet' % Source)
+            else:
+                tor_title = unaccented_str(tor_title)
+                # need to check against reject words list again as the name may have changed
+                # library = magazine eBook AudioBook to determine which reject list
+                # but we can't easily do the per-magazine rejects
+                if library == 'magazine':
+                    reject_list = getList(lazylibrarian.CONFIG['REJECT_MAGS'])
+                elif library == 'eBook':
+                    reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+                elif library == 'AudioBook':
+                    reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+                else:
+                    logger.debug("Invalid library [%s] in TORDownloadMethod" % library)
+                    reject_list = []
+
+                rejected = False
+                lower_title = tor_title.lower()
+                for word in reject_list:
+                    if word in lower_title:
+                        rejected = True
+                        logger.debug("Rejecting torrent name %s, contains %s" % (tor_title, word))
+                        break
+                if rejected:
+                    myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
+                    delete_task(Source, downloadID, True)
+                    return False
+                else:
+                    logger.debug('%s setting torrent name to [%s]' % (Source, tor_title))
+                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (tor_title, full_url))
+
         if library == 'eBook':
             myDB.action('UPDATE books SET status="Snatched" WHERE BookID=?', (bookid,))
         elif library == 'AudioBook':
             myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
         myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, full_url))
-        if tor_title:
-            if downloadID.upper() in tor_title.upper():
-                logger.warn('%s: name contains hash, probably unresolved magnet' % Source)
-            else:
-                tor_title = unaccented_str(tor_title)
-                logger.debug('%s setting torrent name to [%s]' % (Source, tor_title))
-                # should we check against reject words list again as the name may have changed
-                myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (tor_title, full_url))
         return True
-    else:
-        logger.error('Failed to download torrent from %s, %s' % (Source, tor_url))
-        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
-        return False
+
+    logger.error('Failed to download torrent from %s, %s' % (Source, tor_url))
+    myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
+    return False
 
 
 def CalcTorrentHash(torrent):
