@@ -1995,7 +1995,7 @@ class WebInterface(object):
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
                 count += 1
-                if maxcount and count > maxcount:
+                if maxcount and count >= maxcount:
                     title = "%s (Top %i)" % (title, count)
                     break
 
@@ -2149,7 +2149,8 @@ class WebInterface(object):
         if '&' in title and '&amp;' not in title:  # could use htmlparser but seems overkill for just '&'
             title = title.replace('&', '&amp;')
 
-        return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
+        logger.debug(repr(title))
+        return serve_template(templatename="issues.html", title="dummy", issues=mod_issues, covercount=covercount)
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
