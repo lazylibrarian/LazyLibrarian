@@ -1966,7 +1966,7 @@ class WebInterface(object):
             args = (title,)
         cmd += ' order by IssueAcquired DESC'
         issues = myDB.select(cmd, args)
-
+        title = "Recent Issues"
         if not len(issues):
             raise cherrypy.HTTPRedirect("magazines")
         else:
@@ -1996,9 +1996,11 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
                 count += 1
                 if maxcount and count > maxcount:
+                    title = "%s (Top %i)" % (title, count)
                     break
+
         return serve_template(
-            templatename="coverwall.html", title="Recent Issues", results=mod_issues, redirect="magazines",
+            templatename="coverwall.html", title=title, results=mod_issues, redirect="magazines",
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
@@ -2017,6 +2019,7 @@ class WebInterface(object):
         maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
         if maxcount and len(results) > maxcount:
             results = results[:maxcount]
+            title = "%s (Top %i)" % (title, len(results))
         return serve_template(
             templatename="coverwall.html", title=title, results=results, redirect="books", have=have,
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
@@ -2029,11 +2032,13 @@ class WebInterface(object):
             'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by AudioLibrary DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("audio")
+        title = "Recent AudioBooks"
         maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
         if maxcount and len(results) > maxcount:
             results = results[:maxcount]
+            title = "%s (Top %i)" % (title, len(results))
         return serve_template(
-            templatename="coverwall.html", title="Recent AudioBooks", results=results, redirect="audio",
+            templatename="coverwall.html", title=title, results=results, redirect="audio",
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
