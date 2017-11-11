@@ -177,7 +177,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
-        cmd += ',AuthorLink,LastLink,HaveBooks,TotalBooks,AuthorID from authors '
+        cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID from authors '
         if lazylibrarian.IGNORED_AUTHORS:
             cmd += 'where Status == "Ignored" '
         else:
