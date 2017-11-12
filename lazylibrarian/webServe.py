@@ -177,7 +177,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
-        cmd += ',AuthorLink,LastLink,HaveBooks,TotalBooks,AuthorID from authors '
+        cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID from authors '
         if lazylibrarian.IGNORED_AUTHORS:
             cmd += 'where Status == "Ignored" '
         else:
@@ -1959,7 +1959,7 @@ class WebInterface(object):
     def magWall(self, title=None):
         self.label_thread('MAGWALL')
         myDB = database.DBConnection()
-        cmd = 'SELECT IssueFile,IssueID from issues'
+        cmd = 'SELECT IssueFile,IssueID,IssueDate from issues'
         args = None
         if title:
             cmd += ' WHERE Title=?'
@@ -2008,10 +2008,10 @@ class WebInterface(object):
         self.label_thread('BOOKWALL')
         myDB = database.DBConnection()
         if have == '1':
-            cmd = 'SELECT BookLink,BookImg,BookID from books where Status="Open" order by BookLibrary DESC'
+            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books where Status="Open" order by BookLibrary DESC'
             title = 'Recently Downloaded Books'
         else:
-            cmd = 'SELECT BookLink,BookImg,BookID from books order by BookAdded DESC'
+            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books order by BookAdded DESC'
             title = 'Recently Added Books'
         results = myDB.select(cmd)
         if not len(results):
@@ -2029,7 +2029,7 @@ class WebInterface(object):
         self.label_thread('AUDIOWALL')
         myDB = database.DBConnection()
         results = myDB.select(
-            'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by AudioLibrary DESC')
+            'SELECT AudioFile,BookImg,BookID,BookName from books where AudioStatus="Open" order by AudioLibrary DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("audio")
         title = "Recent AudioBooks"
@@ -2149,8 +2149,7 @@ class WebInterface(object):
         if '&' in title and '&amp;' not in title:  # could use htmlparser but seems overkill for just '&'
             title = title.replace('&', '&amp;')
 
-        logger.debug(repr(title))
-        return serve_template(templatename="issues.html", title="dummy", issues=mod_issues, covercount=covercount)
+        return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None):
