@@ -526,8 +526,7 @@ def initialize():
                 os.makedirs(CONFIG['LOGDIR'])
             except OSError as e:
                 if LOGLEVEL:
-                    print('%s : Unable to create folder for logs: %s' % (
-                        CONFIG['LOGDIR'], str(e)))
+                    print('%s : Unable to create folder for logs: %s' % (CONFIG['LOGDIR'], str(e)))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
@@ -601,6 +600,12 @@ def initialize():
         for item in debuginfo.splitlines():
             if 'missing' in item:
                 logger.warn(item)
+
+        try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
+            from dbcheck import dbcheck
+            dbcheck()
+        except ImportError:
+            pass
 
         MONTHNAMES = build_monthtable()
         BOOKSTRAP_THEMELIST = build_bookstrap_themes()
