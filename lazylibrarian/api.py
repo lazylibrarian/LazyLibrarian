@@ -38,7 +38,7 @@ from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_tota
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
 from lazylibrarian.manualbook import searchItem
-from lazylibrarian.postprocess import processDir, processAlternate
+from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
@@ -127,9 +127,11 @@ cmd_dict = {'help': 'list available commands. ' +
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory',
-            'grFollow': '&id Follow an author on goodreads',
+            'grFollow': '&id= Follow an author on goodreads',
             'grFollowAll': 'Follow all lazylibrarian authors on goodreads',
-            'grUnfollow': '&id Unfollow an author on goodreads',
+            'grUnfollow': '&id= Unfollow an author on goodreads',
+            'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
+            'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
             }
 
@@ -241,6 +243,47 @@ class Api(object):
         else:
             self.id = kwargs['id']
         self.data = audioRename(kwargs['id'])
+
+    def _writeAllOPF(self, **kwargs):
+        myDB = database.DBConnection()
+        books = myDB.select('select BookID from books where BookFile is not null')
+        counter = 0
+        if books:
+            for book in books:
+                bookid = book['BookID']
+                if 'refresh' in kwargs:
+                    self._writeOPF(id=bookid, refresh=True)
+                else:
+                    self._writeOPF(id=bookid)
+                try:
+                    if self.data[1] is True:
+                        counter += 1
+                except IndexError:
+                    counter = counter
+        self.data = 'Updated opf for %s book%s' % (counter, plural(counter))
+
+    def _writeOPF(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+            myDB = database.DBConnection()
+            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookFile'
+            cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+            res = myDB.match(cmd, (kwargs['id'],))
+            if not res:
+                self.data = 'No data found for bookid %s' % kwargs['id']
+                return
+            if not res['BookFile']:
+                self.data = 'No bookfile found for bookid %s' % kwargs['id']
+                return
+            dest_path = os.path.dirname(res['BookFile'])
+            global_name = os.path.splitext(os.path.basename(res['BookFile']))[0]
+            refresh = False
+            if 'refresh' in kwargs:
+                refresh = True
+            self.data = processOPF(dest_path, res, global_name, refresh)
 
     @staticmethod
     def _dumpMonths():
