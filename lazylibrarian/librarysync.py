@@ -733,7 +733,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # location may have changed on rename
                                             if book_filename and book_filename != check_status['BookFile']:
-                                                if str(check_status['BookFile']) != 'None':
+                                                if check_status['BookFile'] and check_status['BookFile'] != 'None':
                                                     modified_count += 1
                                                     logger.warn("Updating book location for %s %s from %s to %s" %
                                                                 (author, book, check_status['BookFile'], book_filename))

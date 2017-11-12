@@ -23,7 +23,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
-    is_valid_booktype, check_int
+    is_valid_booktype, check_int, getList
 from lib.fuzzywuzzy import fuzz
 
 
@@ -185,7 +185,45 @@ def bookRename(bookid):
         else:
             book_basename, prefextn = os.path.splitext(os.path.basename(f))
             new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
-            new_basename = new_basename.replace('$Author', exists['AuthorName']).replace('$Title', exists['BookName'])
+            seriesinfo = ''
+            if '$Series' in lazylibrarian.CONFIG['EBOOK_DEST_FILE']:
+                cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
+                res = myDB.match(cmd, (bookid,))
+                if res:
+                    seriesid = res['SeriesID']
+                    serieslist = getList(res['SeriesNum'])
+                    seriesnum = ''
+                    # might be "Book 3.5" or similar, just get the numeric part
+                    while serieslist:
+                        seriesnum = serieslist.pop()
+                        try:
+                            _ = float(seriesnum)
+                            break
+                        except ValueError:
+                            seriesnum = ''
+                            pass
+
+                    if not seriesnum:
+                        # couldn't figure out number, keep everything we got, could be something like "Book Two"
+                        serieslist = res['SeriesNum']
+
+                    cmd = 'SELECT SeriesName from series WHERE seriesid=?'
+                    res = myDB.match(cmd, (seriesid,))
+                    if res:
+                        seriesname = res['SeriesName']
+                        if not seriesnum:
+                            # add what we got to series name
+                            seriesinfo = "%s %s" % (seriesname, serieslist)
+                        else:
+                            seriesinfo = "%s #%s" % (seriesname, seriesnum)
+                    seriesinfo = seriesinfo.strip()
+                    if seriesinfo:
+                        seriesinfo = "(%s)" % seriesinfo
+
+            new_basename = new_basename.replace('$Author', exists['AuthorName']) \
+                .replace('$Title', exists['BookName']).replace('$Series', seriesinfo)
+            new_basename = new_basename.strip()
+
             if book_basename != new_basename:
                 # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
                 for fname in os.listdir(r):
