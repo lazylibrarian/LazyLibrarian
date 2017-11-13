@@ -179,7 +179,7 @@ CONFIG_DEFINITIONS = {
     'HTTP_PASS': ('str', 'General', ''),
     'HTTP_PROXY': ('bool', 'General', 0),
     'HTTP_ROOT': ('str', 'General', ''),
-    'HTTP_LOOK': ('str', 'General', 'default'),
+    'HTTP_LOOK': ('str', 'General', 'bookstrap'),
     'HTTPS_ENABLED': ('bool', 'General', 0),
     'HTTPS_CERT': ('str', 'General', ''),
     'HTTPS_KEY': ('str', 'General', ''),
