@@ -155,7 +155,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, \
                 UNIQUE (SeriesID,AuthorID))')
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS users (UserID INTEGER UNIQUE, UserName TEXT UNIQUE, \
+                    myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
                 Password TEXT, Email TEXT, Name TEXT, Perms INTEGER)')
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin', hashlib.md5('admin').hexdigest(), '', 65535))

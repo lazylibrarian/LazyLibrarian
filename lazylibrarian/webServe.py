@@ -1959,18 +1959,20 @@ class WebInterface(object):
     def magWall(self, title=None):
         self.label_thread('MAGWALL')
         myDB = database.DBConnection()
-        cmd = 'SELECT IssueFile,IssueID from issues'
+        cmd = 'SELECT IssueFile,IssueID,IssueDate from issues'
         args = None
         if title:
             cmd += ' WHERE Title=?'
             args = (title,)
         cmd += ' order by IssueAcquired DESC'
         issues = myDB.select(cmd, args)
-
+        title = "Recent Issues"
         if not len(issues):
             raise cherrypy.HTTPRedirect("magazines")
         else:
             mod_issues = []
+            count = 0
+            maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
             for issue in issues:
                 magfile = issue['IssueFile']
                 extn = os.path.splitext(magfile)[1]
@@ -1992,8 +1994,13 @@ class WebInterface(object):
                 this_issue = dict(issue)
                 this_issue['Cover'] = magimg
                 mod_issues.append(this_issue)
+                count += 1
+                if maxcount and count >= maxcount:
+                    title = "%s (Top %i)" % (title, count)
+                    break
+
         return serve_template(
-            templatename="coverwall.html", title="Recent Issues", results=mod_issues, redirect="magazines",
+            templatename="coverwall.html", title=title, results=mod_issues, redirect="magazines",
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
@@ -2001,14 +2008,18 @@ class WebInterface(object):
         self.label_thread('BOOKWALL')
         myDB = database.DBConnection()
         if have == '1':
-            cmd = 'SELECT BookLink,BookImg,BookID from books where Status="Open" order by BookLibrary DESC'
+            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books where Status="Open" order by BookLibrary DESC'
             title = 'Recently Downloaded Books'
         else:
-            cmd = 'SELECT BookLink,BookImg,BookID from books order by BookAdded DESC'
+            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books order by BookAdded DESC'
             title = 'Recently Added Books'
         results = myDB.select(cmd)
         if not len(results):
             raise cherrypy.HTTPRedirect("books")
+        maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
+        if maxcount and len(results) > maxcount:
+            results = results[:maxcount]
+            title = "%s (Top %i)" % (title, len(results))
         return serve_template(
             templatename="coverwall.html", title=title, results=results, redirect="books", have=have,
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
@@ -2018,11 +2029,16 @@ class WebInterface(object):
         self.label_thread('AUDIOWALL')
         myDB = database.DBConnection()
         results = myDB.select(
-            'SELECT AudioFile,BookImg,BookID from books where AudioStatus="Open" order by AudioLibrary DESC')
+            'SELECT AudioFile,BookImg,BookID,BookName from books where AudioStatus="Open" order by AudioLibrary DESC')
         if not len(results):
             raise cherrypy.HTTPRedirect("audio")
+        title = "Recent AudioBooks"
+        maxcount = check_int(lazylibrarian.CONFIG['MAX_WALL'], 0)
+        if maxcount and len(results) > maxcount:
+            results = results[:maxcount]
+            title = "%s (Top %i)" % (title, len(results))
         return serve_template(
-            templatename="coverwall.html", title="Recent AudioBooks", results=results, redirect="audio",
+            templatename="coverwall.html", title=title, results=results, redirect="audio",
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose

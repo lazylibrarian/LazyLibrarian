@@ -110,7 +110,7 @@ def initialize(options=None):
             })
         })
         conf['/api'] = {'tools.auth_basic.on': False}
-    print(conf['/'])
+
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
     cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)

@@ -88,7 +88,7 @@ class GoodReads:
 
                         try:
                             authorNameResult = author.find('./best_book/author/name').text
-                            # Goodreads sometimes puts extra whitepase in the author names!
+                            # Goodreads sometimes puts extra whitespace in the author names!
                             authorNameResult = ' '.join(authorNameResult.split())
                         except (KeyError, AttributeError):
                             authorNameResult = ""

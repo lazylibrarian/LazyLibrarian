@@ -1516,19 +1516,24 @@
                       <input type="text" id="max_bookpages" name="max_bookpages" value="${lazylibrarian.CONFIG['MAX_BOOKPAGES']}" class="form-control">
                       <span class="help-block">Maximum pages of books by an author to load</span>
                     </div>
+                  <div class="form-group">
+                    <label for="dload_ratio">Maximum Coverwall Images:</label>
+                    <div class="input-group">
+                      <input type="text" id="max_wall" name="max_wall" value="${lazylibrarian.CONFIG['MAX_WALL']}" class="form-control">
+                      <span class="help-block">Maximum results to show on coverwall</span>
+                    </div>
                   </div>
                 </fieldset>
                 <fieldset>
                   <div class="form-group">
                     <label for="git_program">git program:</label>
                     <input type="text" placeholder="git program" id="git_program" name="git_program" value="${lazylibrarian.CONFIG['GIT_PROGRAM']}" class="form-control">
-                    <span class="help-block">Git program, unless already in your path. Usually leave this blank</span>
+                    <span class="help-block">Git program unless already in your path. Usually leave this blank</span>
                   </div>
                   <div class="form-group">
                     <label for="imp_convert">Cover creation program:</label>
                     <input type="text" placeholder="Cover creation program" id="imp_convert" name="imp_convert" value="${lazylibrarian.CONFIG['IMP_CONVERT']}" class="form-control">
-                    <span class="help-block">Program for creating magazine covers (see wiki for details)<br/>
-                      Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put None to disable cover creation</span>
+                    <span class="help-block">Program for creating magazine covers (see wiki for details)  Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put None to disable cover creation</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1540,7 +1545,7 @@
                     <label for="full_scan" class="control-label">
                       <input type="checkbox" id="full_scan" name="full_scan" value="1" ${checked} />
                       Full scan</label>
-                    <span class="help-block">This will remove entries if ebooks are not found in the download location</span>
+                    <span class="help-block">This will remove database entries for ebooks not found in the download location</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1551,8 +1556,8 @@
                         %>
                     <label for="imp_singlebook" class="control-label">
                       <input type="checkbox" id="imp_singlebook" name="imp_singlebook" value="1" ${checked} />
-                      One book per directory</label>
-                    <span class="help-block">This imports one book per directory, tick if you keep multiple formats of the same book in the same directory</span>
+                      Import one book per directory</label>
+                    <span class="help-block">Tick this if you keep multiple formats of the same book in the same directory</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1563,7 +1568,7 @@
                         %>
                     <label for="imp_rename" class="control-label">
                       <input type="checkbox" id="imp_rename" name="imp_rename" value="1" ${checked} />
-                      Rename existing books</label>
+                      Rename existing books on libraryscan</label>
                     <span class="help-block">This renames existing files to match eBook/AudioBook Filename Patterns</span>
                   </div>
                   <div class="checkbox">
@@ -1600,8 +1605,7 @@
                     <label for="imp_autosearch" class="control-label">
                       <input type="checkbox" id="imp_autosearch" name="imp_autosearch" value="1" ${checked} />
                       Search when added</label>
-                    <span class="help-block">This will auto search for books/mags as soon as you add them to the database.<br>
-                      Leave unticked to search for them later.</span>
+                    <span class="help-block">This will auto search for books/mags as soon as you add them to the database.  Leave unticked to search for them later.</span>
                   </div>
               </div>
             </div>

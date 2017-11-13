@@ -193,7 +193,9 @@ def find_book_in_db(author, book):
         partname_id = 0
         partname = 0
 
+        dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '', "'": "", '"': ''}
         book_lower = unaccented(book.lower())
+        book_lower = replace_all(book_lower, dic)
         book_partname, book_sub = split_title(author, book_lower)
         if book_partname == book_lower:
             book_partname = ''
@@ -205,6 +207,7 @@ def find_book_in_db(author, book):
             # tidy up everything to raise fuzziness scores
             # still need to lowercase for matching against partial_name later on
             a_book_lower = unaccented(a_book['BookName'].lower())
+            a_book_lower = replace_all(a_book_lower, dic)
             #
             # token sort ratio allows "Lord Of The Rings, The"   to match  "The Lord Of The Rings"
             ratio = fuzz.token_sort_ratio(book_lower, a_book_lower)
@@ -244,7 +247,7 @@ def find_book_in_db(author, book):
         if best_ratio > 90:
             logger.debug("Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
             return ratio_id
-        if best_partial > 85:
+        if best_partial > 90:
             logger.debug("Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
             return partial_id
         if best_partname > 95:
@@ -656,10 +659,16 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 logger.warn("Error requesting GoodReads for %s" % searchname)
                                                 logger.debug(set_url)
                                             else:
+                                                book, _ = split_title(author, book)
+                                                dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '',
+                                                       "'": "", '"': ''}
+                                                book = replace_all(book, dic)
                                                 resultxml = rootxml.getiterator('work')
                                                 for item in resultxml:
                                                     try:
                                                         booktitle = item.find('./best_book/title').text
+                                                        booktitle, _ = split_title(author, booktitle)
+                                                        booktitle = replace_all(booktitle, dic)
                                                     except (KeyError, AttributeError):
                                                         booktitle = ""
                                                     book_fuzz = fuzz.token_set_ratio(booktitle, book)
@@ -733,7 +742,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # location may have changed on rename
                                             if book_filename and book_filename != check_status['BookFile']:
-                                                if str(check_status['BookFile']) != 'None':
+                                                if check_status['BookFile'] and check_status['BookFile'] != 'None':
                                                     modified_count += 1
                                                     logger.warn("Updating book location for %s %s from %s to %s" %
                                                                 (author, book, check_status['BookFile'], book_filename))
