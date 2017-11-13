@@ -247,7 +247,7 @@ def find_book_in_db(author, book):
         if best_ratio > 90:
             logger.debug("Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
             return ratio_id
-        if best_partial > 85:
+        if best_partial > 90:
             logger.debug("Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
             return partial_id
         if best_partname > 95:
@@ -660,7 +660,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 logger.debug(set_url)
                                             else:
                                                 book, _ = split_title(author, book)
-                                                dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '', "'": "", '"': ''}
+                                                dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '',
+                                                       "'": "", '"': ''}
                                                 book = replace_all(book, dic)
                                                 resultxml = rootxml.getiterator('work')
                                                 for item in resultxml:

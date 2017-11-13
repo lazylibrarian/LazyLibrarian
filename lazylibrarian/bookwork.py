@@ -216,13 +216,25 @@ def bookRename(bookid):
                             seriesinfo = "%s %s" % (seriesname, serieslist)
                         else:
                             seriesinfo = "%s #%s" % (seriesname, seriesnum)
-                    seriesinfo = seriesinfo.strip()
+                    seriesinfo = seriesinfo.replace('/','_').strip()
                     if seriesinfo:
                         seriesinfo = "(%s)" % seriesinfo
 
             new_basename = new_basename.replace('$Author', exists['AuthorName']) \
                 .replace('$Title', exists['BookName']).replace('$Series', seriesinfo)
             new_basename = new_basename.strip()
+
+            # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
+            slash = new_basename.find('/')
+            while slash > 0:
+                if new_basename[slash - 1] != ' ':
+                    if new_basename[slash + 1] != ' ':
+                        new_basename = new_basename[:slash] + '_' + new_basename[slash+1:]
+                slash = new_basename.find('/', slash + 1)
+
+            if ' / ' in new_basename:  # used as a separator in goodreads omnibus
+                logger.warn("bookRename [%s] looks like an omnibus? Not renaming %s" % (new_basename, book_basename))
+                new_basename = book_basename
 
             if book_basename != new_basename:
                 # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
