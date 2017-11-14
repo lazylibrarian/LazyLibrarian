@@ -2004,7 +2004,7 @@ class WebInterface(object):
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
-    def bookWall(self, have='1'):
+    def bookWall(self, have='0'):
         self.label_thread('BOOKWALL')
         myDB = database.DBConnection()
         if have == '1':
@@ -2042,7 +2042,7 @@ class WebInterface(object):
             columns=lazylibrarian.CONFIG['WALL_COLUMNS'])
 
     @cherrypy.expose
-    def wallColumns(self, redirect=None, count=None):
+    def wallColumns(self, redirect=None, count=None, have=0):
         columns = check_int(lazylibrarian.CONFIG['WALL_COLUMNS'], 6)
         if count == 'up' and columns <= 12:
             columns += 1
@@ -2052,7 +2052,7 @@ class WebInterface(object):
         if redirect == 'audio':
             raise cherrypy.HTTPRedirect('audioWall')
         elif redirect == 'books':
-            raise cherrypy.HTTPRedirect('bookWall')
+            raise cherrypy.HTTPRedirect('bookWall?have=%s' % have)
         elif redirect == 'magazines':
             raise cherrypy.HTTPRedirect('magWall')
         else:
