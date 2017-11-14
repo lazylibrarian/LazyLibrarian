@@ -49,10 +49,11 @@ def audioRename(bookid):
 
     cnt = 0
     parts = []
-    author = book = track = ''
+    author = book = track = audio_file = ''
     for f in os.listdir(r):
         if is_valid_booktype(f, booktype='audiobook'):
             cnt += 1
+            audio_file = f
             try:
                 id3r = id3reader.Reader(os.path.join(r, f))
                 author = id3r.getValue('performer')
@@ -66,7 +67,10 @@ def audioRename(bookid):
                 logger.debug("id3reader %s %s" % (type(e).__name__, str(e)))
                 pass
 
-    logger.debug("%s found %s audiofiles" % (exists['BookName'], cnt))
+    logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
+
+    if cnt == 1 and not parts:  # single file audiobook
+        parts = ['1', exists['BookName'], exists['AuthorName'], audio_file]
 
     if cnt != len(parts):
         logger.debug("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
@@ -80,13 +84,14 @@ def audioRename(bookid):
             return book_filename
 
     # check all parts have the same author and title
-    for part in parts:
-        if part[1] != book:
-            logger.debug("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
-            return book_filename
-        if part[2] != author:
-            logger.debug("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
-            return book_filename
+    if len(parts) > 1:
+        for part in parts:
+            if part[1] != book:
+                logger.debug("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
+                return book_filename
+            if part[2] != author:
+                logger.debug("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
+                return book_filename
 
     # strip out just part number
     for part in parts:
@@ -216,7 +221,7 @@ def bookRename(bookid):
                             seriesinfo = "%s %s" % (seriesname, serieslist)
                         else:
                             seriesinfo = "%s #%s" % (seriesname, seriesnum)
-                    seriesinfo = seriesinfo.replace('/','_').strip()
+                    seriesinfo = seriesinfo.replace('/', '_').strip()
                     if seriesinfo:
                         seriesinfo = "(%s)" % seriesinfo
 
@@ -229,7 +234,7 @@ def bookRename(bookid):
             while slash > 0:
                 if new_basename[slash - 1] != ' ':
                     if new_basename[slash + 1] != ' ':
-                        new_basename = new_basename[:slash] + '_' + new_basename[slash+1:]
+                        new_basename = new_basename[:slash] + '_' + new_basename[slash + 1:]
                 slash = new_basename.find('/', slash + 1)
 
             if ' / ' in new_basename:  # used as a separator in goodreads omnibus
