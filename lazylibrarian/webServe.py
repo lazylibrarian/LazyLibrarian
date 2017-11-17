@@ -1962,6 +1962,7 @@ class WebInterface(object):
         cmd = 'SELECT IssueFile,IssueID,IssueDate from issues'
         args = None
         if title:
+            title = title.replace('&amp;', '&')
             cmd += ' WHERE Title=?'
             args = (title,)
         cmd += ' order by IssueAcquired DESC'
@@ -3104,6 +3105,7 @@ class WebInterface(object):
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 if title:
+                    title = title.replace('&amp;', '&')
                     self.searchForMag(bookid=title)
                 elif 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
