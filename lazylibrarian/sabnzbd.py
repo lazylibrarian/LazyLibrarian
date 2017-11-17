@@ -26,7 +26,7 @@ def checkLink():
     # connection test, check host/port
     auth = SABnzbd(nzburl='auth')
     if not auth:
-        return "Unable to talk to SABnzbd, check HOST/PORT"
+        return "Unable to talk to SABnzbd, check HOST/PORT/SUBDIR"
     # check apikey is valid
     cats = SABnzbd(nzburl='get_cats')  # type: dict
     if not cats:
