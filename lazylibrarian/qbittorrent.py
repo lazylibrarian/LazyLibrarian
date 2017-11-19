@@ -111,7 +111,8 @@ class qbittorrentclient(object):
                         for line in response:
                             resp = resp + line
                         logger.debug("QBitTorrent returned %s" % resp)
-                        return False
+                        if resp != 'Ok.':
+                            return False
             return True
         except urllib2.URLError as err:
             logger.debug('Failed URL: %s' % url)

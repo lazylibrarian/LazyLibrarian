@@ -1398,8 +1398,8 @@
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
-                    <span class="help-block">Options include $Author, $Title, any string.<br/>
-                      Current limitation: each title has to be in unique subfolder</span>
+                    <span class="help-block">Options include $Author, $Title, $Series, any string.<br/>
+                      Current limitations: Each title has to be in unique subfolder. If using calibredb, calibre may override this setting</span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
