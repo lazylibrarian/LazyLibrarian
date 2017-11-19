@@ -273,7 +273,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         logger.debug("Sending %s to qbittorrent" % tor_title)
         Source = "QBITTORRENT"
         hashid = CalcTorrentHash(torrent)
-        status = qbittorrent.addTorrent(tor_url)  # returns hash or False
+        status = qbittorrent.addTorrent(tor_url)  # returns hash or True or False
         if status:
             downloadID = hashid
             tor_title = qbittorrent.getName(hashid)
