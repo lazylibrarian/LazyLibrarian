@@ -30,7 +30,7 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
-from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
+from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors, getBookCover
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
     aaUpdate, csv_file, saveLog, pwd_generator, pwd_check, isValidEmail
@@ -1162,7 +1162,8 @@ class WebInterface(object):
         if action.startswith('a_'):
             library = 'AudioBook'
         return serve_template(templatename="manualsearch.html", title=library + ' Search Results: "' +
-                              searchterm + '"', bookid=bookid, results=results, library=library)
+                              searchterm + '"', bookid=bookid, results=results,
+                              library=library)
 
     @cherrypy.expose
     def countProviders(self):
@@ -1724,6 +1725,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def editBook(self, bookid=None):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         self.label_thread('EDIT_BOOK')
         myDB = database.DBConnection()
         authors = myDB.select(
@@ -1735,17 +1737,24 @@ class WebInterface(object):
         cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
         seriesdict = myDB.select(cmd, (bookid,))
         if bookdata:
+            covers = []
+            for source in ['current', 'cover', 'goodreads', 'librarything', 'google']:
+                cover = getBookCover(bookid, source)
+                if cover:
+                    covers.append([source, cover])
+
             return serve_template(templatename="editbook.html", title="Edit Book",
-                                  config=bookdata, seriesdict=seriesdict, authors=authors)
+                                  config=bookdata, seriesdict=seriesdict, authors=authors, covers=covers)
         else:
             logger.info('Missing book %s' % bookid)
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
-                   manual='0', authorname='', **kwargs):
+                   manual='0', authorname='', cover='', **kwargs):
+
         myDB = database.DBConnection()
         if bookid:
-            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,books.Manual,AuthorName,books.AuthorID '
             cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
             bookdata = myDB.match(cmd, (bookid,))
             if bookdata:
@@ -1767,6 +1776,25 @@ class WebInterface(object):
                 if not (bookdata["AuthorName"] == authorname):
                     moved = True
 
+                covertype = ''
+                if cover == 'librarything':
+                    covertype = '_lt'
+                if cover == 'goodreads':
+                    covertype = '_gr'
+                if cover == 'google':
+                    covertype = '_gb'
+
+                if covertype:
+                    cachedir = lazylibrarian.CACHEDIR
+                    coverlink = 'cache/book/' + bookid + covertype + '.jpg'
+                    coverfile = os.path.join(cachedir, "book", bookid + '.jpg')
+                    newcoverfile = os.path.join(cachedir, "book", bookid + covertype + '.jpg')
+                    if os.path.exists(newcoverfile):
+                        copyfile(newcoverfile, coverfile)
+                    edited += 'Cover '
+                else:
+                    coverlink = bookdata['BookImg']
+
                 if edited:
                     controlValueDict = {'BookID': bookid}
                     newValueDict = {
@@ -1774,6 +1802,7 @@ class WebInterface(object):
                         'BookSub': booksub,
                         'BookGenre': bookgenre,
                         'BookLang': booklang,
+                        'BookImg': coverlink,
                         'Manual': bool(manual)
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
@@ -1835,9 +1864,9 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
+    def markBooks(self, library, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         if 'library' in args:
-            library = args['library']
+            library = library
         else:
             library = 'eBook'
             if redirect == 'audio':
@@ -2637,8 +2666,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def show_Jobs(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs in the log
         resultlist = showJobs()
         result = ''
@@ -2772,8 +2800,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def clearblocked(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # clear any currently blocked providers
         num = len(lazylibrarian.PROVIDER_BLOCKLIST)
         lazylibrarian.PROVIDER_BLOCKLIST = []
@@ -2783,8 +2810,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def showblocked(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show any currently blocked providers
         result = ''
         for line in lazylibrarian.PROVIDER_BLOCKLIST:
@@ -2801,8 +2827,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def cleardownloads(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # clear download counters
         myDB = database.DBConnection()
         count = myDB.match('SELECT COUNT(Provider) as counter FROM downloads')
@@ -2817,8 +2842,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def showdownloads(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show provider download totals
         myDB = database.DBConnection()
         result = ''
@@ -2873,16 +2897,12 @@ class WebInterface(object):
 
     @cherrypy.expose
     def twitterStep1(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
-
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         return notifiers.twitter_notifier._get_authorization()
 
     @cherrypy.expose
     def twitterStep2(self, key):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
-
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         result = notifiers.twitter_notifier._get_credentials(key)
         logger.info("result: " + str(result))
         if result:
@@ -2892,9 +2912,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def testTwitter(self):
-        cherrypy.response.headers[
-            'Cache-Control'] = "max-age=0,no-cache,no-store"
-
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         result = notifiers.twitter_notifier.test_notify()
         if result:
             return "Tweet successful, check your twitter to make sure it worked"
@@ -3115,7 +3133,7 @@ class WebInterface(object):
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
             else:
-                logger-debug('forceSearch called but no download methods set')
+                logger - debug('forceSearch called but no download methods set')
         else:
             logger.debug("forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

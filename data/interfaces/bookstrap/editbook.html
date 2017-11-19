@@ -14,7 +14,7 @@
               <select class="booksearch form-control input-sm" id="action" name="action">
                 // would be nice to use fontawesome icons here but options are not styleable
                 // and some browsers don't show them, eg linux firefox, android chrome
-                // They only show icons on closed select, not in dropdown 
+                // They only show icons on closed select, not in dropdown
                 <option value="e_full">eBook Title/Author</option>
                 <option value="e_title">eBook Title</option>
                 <option value="e_author">eBook Author</option>
@@ -79,6 +79,32 @@
                 <input type="text" id="series[new][name]" name="series[new][name]" value="" class="form-control" placeholder="Series Name">
                 <input type="text" id="series[new][number]" name="series[new][number]" value="" class="form-control" placeholder="Number">
             </div>
+        <div class="table-responsive">
+          <table class="display table table-bordered" id="book_table">
+            <thead>
+              <tr>
+              </tr>
+            </thead>
+            <tbody>
+            <tr>
+            %for item in covers:
+                <td class="bookart text-center"><a href="${item[1]}" target="_blank" rel="noreferrer"><img src="${item[1]}" alt="cover" class="bookcover-sm"></a><br>${item[0]}</td>
+            %endfor
+            </tr>
+            </tbody>
+          </table>
+            <div class="form-group">
+                <label for="changeCover" class="control-label">Change cover to: </label>
+                <select id="changeCover" class="changeCover form-control input" name="cover">
+                %for item in covers:
+                    <option value="${item[0]}"
+                    %if item[0] == 'current':
+                        selected = "selected"
+                    %endif
+                    >${item[0]}</option>
+                %endfor
+                </select>
+            </div>
         </fieldset>
             <div class="checkbox">
                 <%
@@ -102,7 +128,6 @@
   <script type="text/javascript">
     function initThisPage()
     {
-        "use strict";
     }
 
     $(document).ready(function() {

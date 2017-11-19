@@ -99,7 +99,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'readCFG': '&name=&group= read value of config variable "name" in section "group"',
             'writeCFG': '&name=&group=&value= set config variable "name" in section "group" to value',
             'loadCFG': 'reload config from file',
-            'getBookCover': '&id= fetch a cover link from bookfolder/cache/librarything/goodreads/google for a BookID',
+            'getBookCover': '&id= [&src=] fetch cover link from cache/cover/librarything/goodreads/google for BookID',
             'getAllBooks': 'list all books in the database',
             'getNoLang': 'list all books in the database with unknown language',
             'listIgnoredAuthors': 'list all authors in the database marked ignored',
@@ -968,7 +968,10 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = getBookCover(self.id)
+        if 'src' in kwargs:
+            self.data = getBookCover(self.id, kwargs['src'])
+        else:
+            self.data = getBookCover(self.id)
 
     def _getAuthorImage(self, **kwargs):
         if 'id' not in kwargs:
