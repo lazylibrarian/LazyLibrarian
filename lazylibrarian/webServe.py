@@ -240,6 +240,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -629,6 +632,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -1411,6 +1417,9 @@ class WebInterface(object):
                               row[6], row[13], row[5], row[16]])
             rows = d
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getBooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -2231,6 +2240,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -2746,7 +2758,9 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(lazylibrarian.LOGLIST),
                   'aaData': rows,
