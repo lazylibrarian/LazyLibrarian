@@ -240,6 +240,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -629,6 +632,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -1162,8 +1168,7 @@ class WebInterface(object):
         if action.startswith('a_'):
             library = 'AudioBook'
         return serve_template(templatename="manualsearch.html", title=library + ' Search Results: "' +
-                              searchterm + '"', bookid=bookid, results=results,
-                              library=library)
+                              searchterm + '"', bookid=bookid, results=results, library=library)
 
     @cherrypy.expose
     def countProviders(self):
@@ -1411,6 +1416,9 @@ class WebInterface(object):
                               row[6], row[13], row[5], row[16]])
             rows = d
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getBooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -1864,9 +1872,9 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def markBooks(self, library, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         if 'library' in args:
-            library = library
+            library = args['library']
         else:
             library = 'eBook'
             if redirect == 'audio':
@@ -2231,6 +2239,9 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
                   'aaData': rows,
@@ -2746,7 +2757,9 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(lazylibrarian.LOGLIST),
                   'aaData': rows,

@@ -786,6 +786,7 @@ def cleanCache():
     kept = 0
     if os.path.isdir(cache):
         # we can clear the magazine cache, it gets rebuilt as required
+        # this does not delete our magazine cover files, only the small cached copy
         for cached_file in os.listdir(cache):
             target = os.path.join(cache, cached_file)
             if target.endswith('.jpg'):
