@@ -1168,8 +1168,7 @@ class WebInterface(object):
         if action.startswith('a_'):
             library = 'AudioBook'
         return serve_template(templatename="manualsearch.html", title=library + ' Search Results: "' +
-                              searchterm + '"', bookid=bookid, results=results,
-                              library=library)
+                              searchterm + '"', bookid=bookid, results=results, library=library)
 
     @cherrypy.expose
     def countProviders(self):
@@ -1873,9 +1872,9 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def markBooks(self, library, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
+    def markBooks(self, AuthorID=None, seriesid=None, action=None, redirect=None, **args):
         if 'library' in args:
-            library = library
+            library = args['library']
         else:
             library = 'eBook'
             if redirect == 'audio':
