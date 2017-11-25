@@ -530,6 +530,8 @@ def grsync(status, shelf):
                     # print content
 
         # "to-read" books need adding to lazylibrarian as "wanted" if not already Open/Have,
+        # if in "to-read" and already marked "Open/Have", optionally delete from "to-read"
+        # (depending on user prefs, to-read and wanted might not be the same thing)
         # "owned" need adding as "Have" as librarysync will pick up "Open" ones or change Have to Open
 
         for book in not_in_ll:
@@ -539,6 +541,19 @@ def grsync(status, shelf):
             if result:
                 if result['Status'] in ['Have', 'Open']:  # don't change status if we have it
                     logger.debug("%10s is already marked %s" % (book, result['Status']))
+                    if lazylibrarian.CONFIG['GR_UNIQUE']:
+                        try:
+                            res, content = GA.BookToList(book, shelf, action='remove')
+                        except Exception as e:
+                            logger.debug("Error in BookToList: %s %s" % (type(e).__name__, str(e)))
+                            res = None
+                        if res:
+                            logger.debug("%10s removed from %s shelf" % (book, shelf))
+                            # print content
+                        else:
+                            logger.debug("Failed to remove %s from %s shelf" % (book, shelf))
+                            # print content
+
                 elif shelf == 'owned':
                     myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
                 else:

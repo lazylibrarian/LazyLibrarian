@@ -18,14 +18,13 @@ import json
 import os
 import shutil
 import time
-import lib.requests as requests
-
 from xml.etree import ElementTree
 
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import getList, check_int
+from lazylibrarian.formatter import check_int
 
 
 def fetchURL(URL, headers=None, retry=True):

@@ -31,7 +31,7 @@ import sqlite3
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
-    searchmag, magazinescan, bookwork, importer, grsync
+    searchmag, magazinescan, bookwork, importer
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
@@ -152,7 +152,7 @@ CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM',
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
-                     'GR_OWNED', 'GR_WANTED', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
+                     'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -433,6 +433,7 @@ CONFIG_DEFINITIONS = {
     'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
     'GR_WANTED': ('str', 'API', ''),  # sync wanted to this shelf
     'GR_OWNED': ('str', 'API', ''),  # sync open/have to this shelf
+    'GR_UNIQUE': ('bool', 'API', 0), # delete from wanted if already owned
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
     'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own

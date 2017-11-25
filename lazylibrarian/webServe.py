@@ -2723,10 +2723,10 @@ class WebInterface(object):
         # >2 extra debugging
         self.label_thread()
         if lazylibrarian.LOGLEVEL > 1:
-            lazylibrarian.LOGLEVEL -= 2
+            lazylibrarian.LOGLEVEL = 1
         else:
             if lazylibrarian.LOGLEVEL < 2:
-                lazylibrarian.LOGLEVEL += 2
+                lazylibrarian.LOGLEVEL = 2
         if lazylibrarian.LOGLEVEL < 2:
             logger.info('Debug log OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
         else:

@@ -171,8 +171,10 @@ def month2num(month):
         return 4
     elif month == "summer":
         return 7
-    elif month == "fall" or month == "autumn":
+    elif month in ["fall", "autumn"]:
         return 10
+    elif month == "christmas":
+        return 12
     else:
         return 0
 
