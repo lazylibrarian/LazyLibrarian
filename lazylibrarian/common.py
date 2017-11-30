@@ -553,6 +553,7 @@ def logHeader():
     for item in lazylibrarian.CONFIG_GIT:
         header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
+    # noinspection PyDeprecation
     header += "Distribution: %s\n" % str(platform.dist())
     header += "System: %s\n" % str(platform.system())
     header += "Machine: %s\n" % str(platform.machine())

@@ -68,6 +68,7 @@ class TwitterNotifier:
         if resp['status'] != '200':
             logger.info('Invalid respond from Twitter requesting temp token: %s' % resp['status'])
         else:
+            # noinspection PyDeprecation
             request_token = dict(parse_qsl(content))
 
             lazylibrarian.CONFIG['TWITTER_USERNAME'] = request_token['oauth_token']
@@ -93,6 +94,7 @@ class TwitterNotifier:
         resp, content = oauth_client.request(self.ACCESS_TOKEN_URL, method='POST', body='oauth_verifier=%s' % key)
         logger.info('resp, content: ' + str(resp) + ',' + str(content))
 
+        # noinspection PyDeprecation
         access_token = dict(parse_qsl(content))
         logger.info('access_token: ' + str(access_token))
 
