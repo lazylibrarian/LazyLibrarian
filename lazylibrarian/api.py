@@ -193,11 +193,11 @@ class Api(object):
 
         if self.data == 'OK':
             if 'X-Forwarded-For' in cherrypy.request.headers:
-                remote_ip => cherrypy.request.headers['X-Forwarded-For']  # apache2
+                remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
             elif 'X-Host' in cherrypy.request.headers:
-                remote_ip => cherrypy.request.headers['X-Host']  # lighthttpd
+                remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
             elif 'Host' in cherrypy.request.headers:
-                remote_ip => cherrypy.request.headers['Host']  # nginx
+                remote_ip = cherrypy.request.headers['Host']  # nginx
             else:
                 remote_ip = cherrypy.request.remote.ip
             logger.info('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))

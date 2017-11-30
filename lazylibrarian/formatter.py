@@ -32,7 +32,7 @@ def bookSeries(bookname):
 
     \(            Must have (
     ([\S\s]+      followed by a group of one or more non whitespace
-    [^\)])        not ending in )
+    [^)])        not ending in )
     ,? #?         followed by optional comma, then space optional hash
     (             start next group
     \d+           must have one or more digits
@@ -45,7 +45,7 @@ def bookSeries(bookname):
     series = ""
     seriesNum = ""
 
-    result = re.search(r"\(([\S\s]+[^\)]),? #?(\d+\.?-?\d*[;,])", bookname)
+    result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
         series = result.group(1)
         while series[-1] in ',)':
@@ -54,7 +54,7 @@ def bookSeries(bookname):
         while seriesNum[-1] in ';,':
             seriesNum = seriesNum[:-1]
     else:
-        result = re.search(r"\(([\S\s]+[^\)]),? #?(\d+\.?-?\d*)", bookname)
+        result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*)", bookname)
         if result:
             series = result.group(1)
             while series[-1] in ',)':
