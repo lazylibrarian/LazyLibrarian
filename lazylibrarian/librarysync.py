@@ -26,7 +26,7 @@ import lib.id3reader as id3reader
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
-from lazylibrarian.common import opf_file
+from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
     cleanName, replace_all, split_title, now
 from lazylibrarian.gb import GoogleBooks
@@ -795,13 +795,15 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 myDB.action('UPDATE books set AudioFile=? where BookID=?',
                                                             (book_filename, bookid))
 
-                                        # update cover file to cover.jpg in book folder (if exists)
+                                        # update cover file to any .jpg in book folder, prefer cover.jpg
                                         if book_filename:
                                             bookdir = os.path.dirname(book_filename)
+                                            cachedir = lazylibrarian.CACHEDIR
+                                            cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
                                             coverimg = os.path.join(bookdir, 'cover.jpg')
-                                            if os.path.isfile(coverimg):
-                                                cachedir = lazylibrarian.CACHEDIR
-                                                cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
+                                            if not os.path.isfile(coverimg):
+                                                coverimg = any_file(bookdir, '.jpg')
+                                            if coverimg:
                                                 shutil.copyfile(coverimg, cacheimg)
                                 else:
                                     if library == 'eBook':
