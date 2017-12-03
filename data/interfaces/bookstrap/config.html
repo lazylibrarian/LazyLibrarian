@@ -325,6 +325,11 @@
                       </div>
                     </fieldset>
                     <br>
+                    <fieldset>
+                      <div class="form-group">
+                        <input type="button" value="System info" id="sysinfo" class="btn btn-default" />
+                      </div>
+                    </fieldset>
                   </fieldset>
                 </div>
               </div>
@@ -3317,6 +3322,11 @@
                 {
                         $("#emailoptions").slideUp();
                 }
+        });
+
+        $('#sysinfo').click(function () {
+            $.get("logHeader", {},
+                function (data) { window.alert(data) });
         });
 
         $('#testgrauth').click(function () {

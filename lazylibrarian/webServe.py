@@ -33,7 +33,7 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors, getBookCover
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    aaUpdate, csv_file, saveLog, pwd_generator, pwd_check, isValidEmail
+    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
@@ -2705,6 +2705,12 @@ class WebInterface(object):
         result = clearLog()
         logger.info(result)
         raise cherrypy.HTTPRedirect("logs")
+
+    @cherrypy.expose
+    def logHeader(self):
+        # Return the log header info
+        result = logHeader()
+        return result
 
     @cherrypy.expose
     def saveLog(self):

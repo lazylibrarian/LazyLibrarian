@@ -967,9 +967,9 @@ def calibredb(cmd=None, prelib=None, postlib=None):
             params.extend(postlib)
         logger.debug(str(params))
         try:
-            p = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = p.communicate()
-            rc = p.returncode
+            q = Popen(params, stdout=PIPE, stderr=PIPE)
+            res, err = q.communicate()
+            rc = q.returncode
             if rc:
                 logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
         except Exception as e:
