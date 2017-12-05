@@ -1190,12 +1190,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         # link to the first part of multi-part audiobooks
         elif booktype == 'audiobook':
             tokmatch = ''
-            for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
+            for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                 if tokmatch:
                     break
                 for f in os.listdir(pp_path):
                     if is_valid_booktype(f, booktype='audiobook') and token in f:
                         firstfile = os.path.join(pp_path, f)
+                        logger.debug("Link to preferred part [%s], %s" % (token, f))
                         tokmatch = token
                         break
         if firstfile:

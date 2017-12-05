@@ -770,7 +770,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             book_filename = os.path.join(r, files)
                                             # link to the first part of multi-part audiobooks
                                             tokmatch = ''
-                                            for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
+                                            for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                                                 if tokmatch:
                                                     break
                                                 for e in os.listdir(r):
@@ -790,7 +790,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # location may have changed since last scan
                                             if book_filename and book_filename != check_status['AudioFile']:
-                                                if str(check_status['AudioFile']) != 'None':
+                                                if check_status['AudioFile'] and \
+                                                        str(check_status['AudioFile']) != 'None':
                                                     modified_count += 1
                                                     logger.warn("Updating audiobook location for %s %s from %s to %s" %
                                                                 (author, book, check_status['AudioFile'],
