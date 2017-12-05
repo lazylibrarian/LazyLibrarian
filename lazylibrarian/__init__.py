@@ -756,6 +756,9 @@ def config_read(reloaded=False):
     CONFIG['REJECT_MAGS'] = CONFIG['REJECT_MAGS'].lower()
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
+    if CONFIG['HTTP_LOOK'] == 'default':
+         logger.warn('default interface is deprecated, new features are in bookstrap')
+         CONFIG['HTTP_LOOK'] = 'legacy'
 
     myDB = database.DBConnection()
     # check if we have an active database yet, not a fresh install
@@ -784,8 +787,8 @@ def config_read(reloaded=False):
         SHOW_MAGS = 1
     else:
         SHOW_MAGS = 0
-    # Suppress audio tab if on default interface
-    if CONFIG['HTTP_LOOK'] == 'default':
+    # Suppress audio tab if on legacy interface
+    if CONFIG['HTTP_LOOK'] == 'legacy':
         SHOW_AUDIO = 0
     # or if disabled
     elif CONFIG['AUDIO_TAB']:
@@ -818,7 +821,7 @@ def config_write():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
             value = CONFIG[key]
-        elif key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
+        elif key not in CONFIG_NONWEB and not (interface == 'legacy' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
@@ -919,7 +922,7 @@ def config_write():
     if not CONFIG['MAG_TAB']:
         SHOW_MAGS = 0
 
-    if CONFIG['HTTP_LOOK'] == 'default':
+    if CONFIG['HTTP_LOOK'] == 'legacy':
         SHOW_AUDIO = 0
     elif CONFIG['AUDIO_TAB']:
         SHOW_AUDIO = 1
@@ -1286,7 +1289,7 @@ def start():
                 SHOW_SERIES = 1
             SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
 
-            if CONFIG['HTTP_LOOK'] == 'default':
+            if CONFIG['HTTP_LOOK'] == 'legacy':
                 SHOW_AUDIO = 0
             elif CONFIG['AUDIO_TAB']:
                 SHOW_AUDIO = 1

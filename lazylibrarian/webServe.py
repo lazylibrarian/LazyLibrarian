@@ -58,8 +58,8 @@ def serve_template(templatename, **kwargs):
     interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
     template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
     if not os.path.isdir(template_dir):
-        logger.error("Unable to locate template [%s], reverting to default" % template_dir)
-        lazylibrarian.CONFIG['HTTP_LOOK'] = 'default'
+        logger.error("Unable to locate template [%s], reverting to legacy" % template_dir)
+        lazylibrarian.CONFIG['HTTP_LOOK'] = 'legacy'
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
@@ -69,7 +69,7 @@ def serve_template(templatename, **kwargs):
             return template.render(perm=0, message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
 
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             template = _hplookup.get_template(templatename)
             return template.render(perm=lazylibrarian.perm_admin, **kwargs)
 
@@ -215,7 +215,7 @@ class WebInterface(object):
 
                 nrow.append(percent)  # convert have/total into a float
                 nrow.extend(arow[4:])
-                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                     bar = '<div class="progress-container %s">' % css
                     bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
                     bar += '%s/%s</span></div>' % (havebooks, totalbooks)
@@ -795,10 +795,10 @@ class WebInterface(object):
                 if key in lazylibrarian.CONFIG_NONWEB or key in lazylibrarian.CONFIG_GIT:
                     pass
                 # default interface doesn't know about other interfaces variables
-                elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
+                elif interface == 'legacy' and key in lazylibrarian.CONFIG_NONDEFAULT:
                     pass
                 # default interface doesn't know about download priorities
-                elif interface == 'default' and 'dlpriority' in key.lower():
+                elif interface == 'legacy' and 'dlpriority' in key.lower():
                     pass
                 # no key is returned for empty tickboxes...
                 elif item_type == 'bool':
@@ -877,7 +877,7 @@ class WebInterface(object):
                 'newznab[%i][updated]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'newznab[%i][manual]' % count, False))
-            if interface != 'default':
+            if interface != 'legacy':
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'newznab[%i][dlpriority]' % count, 0), 0)
             count += 1
@@ -910,7 +910,7 @@ class WebInterface(object):
                 'torznab[%i][updated]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'torznab[%i][manual]' % count, False))
-            if interface != 'default':
+            if interface != 'legacy':
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'torznab[%i][dlpriority]' % count, 0), 0)
             count += 1
@@ -919,7 +919,7 @@ class WebInterface(object):
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
             lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
-            if interface != 'default':
+            if interface != 'legacy':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'rss[%i][dlpriority]' % count, 0), 0)
             count += 1
@@ -1241,7 +1241,7 @@ class WebInterface(object):
         #     print arg, kwargs[arg]
 
         myDB = database.DBConnection()
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
             perm = 0
@@ -1572,7 +1572,7 @@ class WebInterface(object):
         self.label_thread('OPEN_BOOK')
         # we need to check the user priveleges and see if they can download the book
         myDB = database.DBConnection()
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
             perm = 0
@@ -2134,7 +2134,7 @@ class WebInterface(object):
                 this_mag['safetitle'] = urllib.quote_plus(temp_title)
                 mags.append(this_mag)
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                 if not lazylibrarian.CONFIG['MAG_IMG']:
                     covercount = 0
             else:
@@ -2177,7 +2177,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                 if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
                     covercount = 0
             elif not lazylibrarian.CONFIG['TOGGLES']:
@@ -2641,7 +2641,7 @@ class WebInterface(object):
             message = 'IMPORTCSV already running'
             logger.debug(message)
 
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
             raise cherrypy.HTTPRedirect("manage")
         else:
             return message
@@ -2651,7 +2651,7 @@ class WebInterface(object):
         self.label_thread('EXPORTCSV')
         message = export_CSV(lazylibrarian.CONFIG['ALTERNATE_DIR'])
         message = message.replace('\n', '<br>')
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
             raise cherrypy.HTTPRedirect("manage")
         else:
             return message
