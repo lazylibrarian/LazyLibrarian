@@ -55,14 +55,20 @@ def get_book_info(fname):
 
         author = book.author()
         title = book.title()
+        language = book.language()
+        isbn = book.isbn()
         if isinstance(author, str) and hasattr(author, "decode"):
             author = author.decode(lazylibrarian.SYS_ENCODING)
         if isinstance(title, str) and hasattr(title, "decode"):
             title = title.decode(lazylibrarian.SYS_ENCODING)
+        if isinstance(language, str) and hasattr(language, "decode"):
+            language = language.decode(lazylibrarian.SYS_ENCODING)
+        if isinstance(isbn, str) and hasattr(isbn, "decode"):
+            isbn = isbn.decode(lazylibrarian.SYS_ENCODING)
         res['creator'] = author
         res['title'] = title
-        res['language'] = book.language()
-        res['identifier'] = book.isbn()
+        res['language'] = language
+        res['identifier'] = isbn
         return res
 
         # noinspection PyUnreachableCode
@@ -141,16 +147,14 @@ def get_book_info(fname):
             tag = tag.split('}')[1]
             txt = tree[0][n].text
             attrib = str(tree[0][n].attrib).lower()
+            if isinstance(txt, str) and hasattr(txt, "decode"):
+                txt = txt.decode(lazylibrarian.SYS_ENCODING)
             if 'title' in tag:
-                if isinstance(txt, str) and hasattr(txt, "decode"):
-                    txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['title'] = txt
             elif 'language' in tag:
                 res['language'] = txt
             elif 'creator' in tag and 'creator' not in res:
                 # take the first author name if multiple authors
-                if isinstance(txt, str) and hasattr(txt, "decode"):
-                    txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['creator'] = txt
             elif 'identifier' in tag and 'isbn' in attrib:
                 if is_valid_isbn(txt):
@@ -379,7 +383,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 booktypes = booktypes + '|' + book_type
 
         matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace(
-            "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)") + '\.[' + booktypes + ']'
+            "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)").replace(
+            "\\$\\S\\e\\r\\i\\e\\s", "") + '\.[' + booktypes + ']'  # ignore any series, we just want author/title
+
         pattern = re.compile(matchString, re.VERBOSE)
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
