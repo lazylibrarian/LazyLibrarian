@@ -211,10 +211,10 @@ class GoodReads:
                             resultxml = None
 
             except Exception as err:
-                if err.code == 404:
+                if hasattr(err, 'code') and err.code == 404:
                     logger.error('Received a 404 error when searching for author')
-                if err.code == 403:
-                    logger.warn('Access to api is denied: usage exceeded')
+                elif hasattr(err, 'code') and err.code == 403:
+                    logger.warn('Access to api is denied 403: usage exceeded')
                 else:
                     logger.error('An unexpected error has occurred when searching for an author: %s' % str(err))
 

@@ -440,6 +440,7 @@ CONFIG_DEFINITIONS = {
 }
 
 
+# noinspection PyUnresolvedReferences
 def check_section(sec):
     """ Check if INI section exists, if not create it """
     if CFG.has_section(sec):
@@ -454,6 +455,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
     my_val = def_val
     if cfg_type == 'int':
         try:
+            # noinspection PyUnresolvedReferences
             my_val = CFG.getint(cfg_name, item_name)
         except ConfigParser.Error:
             # no such item, might be a new entry
@@ -465,6 +467,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
     elif cfg_type == 'bool':
         try:
+            # noinspection PyUnresolvedReferences
             my_val = CFG.getboolean(cfg_name, item_name)
         except ConfigParser.Error:
             my_val = bool(def_val)
@@ -475,6 +478,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
     elif cfg_type == 'str':
         try:
+            # noinspection PyUnresolvedReferences
             my_val = CFG.get(cfg_name, item_name)
             # Old config file format had strings in quotes. ConfigParser doesn't.
             if my_val.startswith('"') and my_val.endswith('"'):
@@ -492,6 +496,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
                 my_val = my_val.decode(SYS_ENCODING)
 
     check_section(cfg_name)
+    # noinspection PyUnresolvedReferences
     CFG.set(cfg_name, item_name, my_val)
     if log:
         logger.debug("%s : %s -> %s" % (cfg_name, item_name, my_val))
@@ -603,6 +608,7 @@ def initialize():
                 logger.warn(item)
 
         try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
+            # noinspection PyUnresolvedReferences
             from dbcheck import dbcheck
             dbcheck()
         except ImportError:
@@ -615,6 +621,7 @@ def initialize():
         return True
 
 
+# noinspection PyUnresolvedReferences
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
         CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
@@ -757,8 +764,8 @@ def config_read(reloaded=False):
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
     if CONFIG['HTTP_LOOK'] == 'default':
-         logger.warn('default interface is deprecated, new features are in bookstrap')
-         CONFIG['HTTP_LOOK'] = 'legacy'
+        logger.warn('default interface is deprecated, new features are in bookstrap')
+        CONFIG['HTTP_LOOK'] = 'legacy'
 
     myDB = database.DBConnection()
     # check if we have an active database yet, not a fresh install
@@ -808,6 +815,7 @@ def config_read(reloaded=False):
         logger.info('Config file loaded')
 
 
+# noinspection PyUnresolvedReferences
 def config_write():
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
         TORZNAB_PROV, RSS_PROV
@@ -960,6 +968,7 @@ def config_write():
         logger.info(msg)
 
 
+# noinspection PyUnresolvedReferences
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
     if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
@@ -988,6 +997,7 @@ def add_newz_slot():
                 CFG.set(prov_name, item, empty[item])
 
 
+# noinspection PyUnresolvedReferences
 def add_torz_slot():
     count = len(TORZNAB_PROV)
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
@@ -1050,6 +1060,7 @@ def DIRECTORY(dirname):
     return usedir
 
 
+# noinspection PyUnresolvedReferences
 def add_rss_slot():
     count = len(RSS_PROV)
     if count == 0 or len(CFG.get('RSS_%i' % int(count - 1), 'HOST')):

@@ -125,9 +125,13 @@ class GoogleBooks:
                             else:
                                 pass
                         except Exception as err:
+                            if hasattr(err, 'reason'):
+                                errmsg = err.reason
+                            else:
+                                errmsg = str(err)
                             logger.warn(
                                 'Google Books API Error [%s]: Check your API key or wait a while' %
-                                err.reason)
+                                errmsg)
                             break
 
                         startindex += 40
@@ -342,7 +346,11 @@ class GoogleBooks:
                                 api_hits += 1
                             number_results = jsonresults['totalItems']
                     except Exception as err:
-                        logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % err.reason)
+                        if hasattr(err, 'reason'):
+                            errmsg = err.reason
+                        else:
+                            errmsg = str(err)
+                        logger.warn('Google Books API Error [%s]: Check your API key or wait a while' % errmsg)
                         break
 
                     if number_results == 0:

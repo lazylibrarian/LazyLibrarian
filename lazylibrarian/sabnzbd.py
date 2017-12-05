@@ -14,12 +14,12 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import urllib
-import lib.requests as requests
 
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger
-from lazylibrarian.formatter import check_int, unaccented_str, getList
 from lazylibrarian.common import proxyList
+from lazylibrarian.formatter import check_int, unaccented_str
 
 
 def checkLink():

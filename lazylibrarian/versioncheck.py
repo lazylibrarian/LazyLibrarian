@@ -14,6 +14,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
+
 import os
 import platform
 import re
@@ -21,12 +22,12 @@ import subprocess
 import tarfile
 import threading
 import time
-import lib.requests as requests
 
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import getList, check_int
+from lazylibrarian.formatter import check_int
 
 
 def logmsg(level, msg):

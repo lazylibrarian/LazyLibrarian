@@ -41,6 +41,7 @@ class SearchResult:
         if self.provider is None:
             return "Invalid provider, unable to print self"
 
+        # noinspection PyUnresolvedReferences
         myString = self.provider.name + " @ " + self.url + "\n"
         myString += "Extra Info:\n"
         for extra in self.extraInfo:
