@@ -349,16 +349,16 @@ def search_for(searchterm):
     """
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(searchterm)
-        queue = Queue.Queue()
-        search_api = threading.Thread(target=GB.find_results, name='GB-RESULTS', args=[searchterm, queue])
+        myqueue = Queue.Queue()
+        search_api = threading.Thread(target=GB.find_results, name='GB-RESULTS', args=[searchterm, myqueue])
         search_api.start()
     else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-        queue = Queue.Queue()
+        myqueue = Queue.Queue()
         GR = GoodReads(searchterm)
-        search_api = threading.Thread(target=GR.find_results, name='GR-RESULTS', args=[searchterm, queue])
+        search_api = threading.Thread(target=GR.find_results, name='GR-RESULTS', args=[searchterm, myqueue])
         search_api.start()
 
     search_api.join()
-    searchresults = queue.get()
+    searchresults = myqueue.get()
     sortedlist = sorted(searchresults, key=itemgetter('highest_fuzz', 'num_reviews'), reverse=True)
     return sortedlist
