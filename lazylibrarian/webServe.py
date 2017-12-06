@@ -1097,9 +1097,18 @@ class WebInterface(object):
             else:  # if library == 'eBook':
                 authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
-                # books might not be in exact same authorname folder
-                # eg Calibre puts books into folder "Eric van Lustbader", but
-                # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
+                # books might not be in exact same authorname folder due to capitalisation
+                # eg Calibre puts books into folder "Eric Van Lustbader", but
+                # goodreads told lazylibrarian he's "Eric van Lustbader", note the lowercase 'v'
+                # or calibre calls "Neil deGrasse Tyson" "Neil DeGrasse Tyson" with a capital 'D'
+                # so convert the name and try again...
+                AuthorName = ' '.join(word[0].upper() + word[1:] for word in AuthorName.split())
+                if library == 'AudioBook':
+                    authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
+                else:  # if library == 'eBook':
+                    authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
+            if not os.path.isdir(authordir):
+                # if still not found, see if we have a book by them, and what directory it's in
                 if library == 'AudioBook':
                     sourcefile = 'AudioFile'
                 else:
@@ -1182,6 +1191,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID=?', (bookid,))
         if bookdata:
+            size_temp = check_int(size, 1000)  # Need to cater for when this is NONE (Issue 35)
+            size = round(float(size_temp) / 1048576, 2)
             controlValueDict = {"NZBurl": url}
             newValueDict = {
                 "NZBprov": provider,
@@ -1191,7 +1202,7 @@ class WebInterface(object):
                 "NZBtitle": bookdata["BookName"],
                 "NZBmode": mode,
                 "AuxInfo": library,
-                "Status": "Skipped"
+                "Status": "Snatched"
             }
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
