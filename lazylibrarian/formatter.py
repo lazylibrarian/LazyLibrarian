@@ -405,7 +405,7 @@ def unaccented(str_or_unicode):
 
 def unaccented_str(str_or_unicode):
     if not str_or_unicode:
-        return ''
+        return ''.encode('ASCII')  # ensure bytestring for python3
     try:
         cleaned = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
@@ -423,7 +423,7 @@ def unaccented_str(str_or_unicode):
     stripped = replace_all(stripped, dic)
     # now get rid of any other non-ascii
     return stripped.encode('ASCII', 'ignore')
-    # returns str
+    # returns bytestring
 
 
 def replace_all(text, dic):

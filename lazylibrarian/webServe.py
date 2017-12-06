@@ -36,8 +36,8 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
     aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
-    cleanName, unaccented_str, surnameFirst, sortDefinite
+from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
+    safe_unicode, cleanName, surnameFirst, sortDefinite
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for

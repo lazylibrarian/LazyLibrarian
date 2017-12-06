@@ -27,8 +27,8 @@ from lazylibrarian import database, logger, utorrent, transmission, qbittorrent,
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
-    unaccented, getList, surnameFirst
+from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
+    replace_all, getList, surnameFirst
 from lazylibrarian.bookwork import audioRename
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
@@ -450,7 +450,6 @@ def processDir(reset=False):
                                     dest_path = os.path.join(dest_dir, dest_path)
 
                                 dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
-
                                 authorname = None
                                 bookname = None
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(

@@ -156,9 +156,10 @@ def dbupgrade(db_current_version):
                 UNIQUE (SeriesID,AuthorID))')
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
-                Password TEXT, Email TEXT, Name TEXT, Perms INTEGER)')
+                                Password TEXT, Email TEXT, Name TEXT, Perms INTEGER)')
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
-                    myDB.action(cmd, (pwd_generator(), 'admin', 'admin', hashlib.md5('admin').hexdigest(), '', 65535))
+                    myDB.action(cmd, (pwd_generator(), 'admin', 'admin',
+                                hashlib.md5('admin').hexdigest(), '', 65535))
                     logger.debug('Added admin user')
 
                 # These are the incremental changes before database versioning was introduced.

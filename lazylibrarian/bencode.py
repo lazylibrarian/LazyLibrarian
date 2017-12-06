@@ -4,16 +4,14 @@
 # You are free to use this code in anyway you see fit, on the basis
 # that if it is used, modified, or distributed, proper accreditation
 # of the original author remains.
+# Note: Bencoding specification:
+# http://www.bittorrent.org/beps/bep_0003.html
+# Phil Borman added encode for datatypes set tuple basestring unicode long
 
 """ This module deals with the encoding and decoding of bencoded data.
 decode() and encode() are the major functions available, to decode
 and encode data. """
 
-
-# Note: Bencoding specification:
-# http://www.bittorrent.org/beps/bep_0003.html
-
-# Phil Borman added encode for datatypes set tuple basestring unicode long
 
 def collapse(data):
     """ Given an homogenous list, returns the items of that list

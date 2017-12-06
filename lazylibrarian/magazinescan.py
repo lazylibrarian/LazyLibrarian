@@ -178,7 +178,7 @@ def create_cover(issuefile=None, refresh=False):
                     logger.debug('Exception in gswin create_cover: %s' % traceback.format_exc())
         else:  # not windows
             try:
-                # noinspection PyUnresolvedReferences,PyUnresolvedReferences,PyUnresolvedReferences
+                # noinspection PyUnresolvedReferences
                 from wand.image import Image
                 interface = "wand"
             except ImportError:
@@ -271,7 +271,6 @@ def magazineScan():
             mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
 
         mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
-
         if lazylibrarian.CONFIG['FULL_SCAN']:
             mags = myDB.select('select * from Issues')
             # check all the issues are still there, delete entry if not

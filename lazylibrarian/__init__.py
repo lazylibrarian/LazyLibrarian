@@ -31,7 +31,7 @@ import sqlite3
 
 import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
-    searchmag, magazinescan, bookwork, importer
+    searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
@@ -1265,13 +1265,14 @@ def daemonize():
         raise RuntimeError("2st fork failed: %s [%d]" %
                            (e.strerror, e.errno))
 
-    dev_null = file('/dev/null', 'r')
+    dev_null = open('/dev/null', 'r')
     os.dup2(dev_null.fileno(), sys.stdin.fileno())
 
     if PIDFILE:
         pid = str(os.getpid())
         logger.debug("Writing PID " + pid + " to " + str(PIDFILE))
-        file(PIDFILE, 'w').write("%s\n" % pid)
+        with open(PIDFILE, 'w') as pidfile:
+            pidfile.write("%s\n" % pid)
 
 
 def launch_browser(host, port, root):

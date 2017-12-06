@@ -188,7 +188,6 @@ def getTorrentFolder(torrentid):
                                 "id": 23})
 
         post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
         # save_path = json.loads(response.text)['result']['save_path']

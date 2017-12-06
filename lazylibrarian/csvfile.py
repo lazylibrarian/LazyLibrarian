@@ -170,7 +170,8 @@ def import_CSV(search_dir=None):
             bookcount = 0
             authcount = 0
             skipcount = 0
-            logger.debug(u"CSV: Found %s book%s in csv file" % (len(content.keys()), plural(len(content.keys()))))
+            logger.debug(u"CSV: Found %s book%s in csv file" % (
+                         len(content.keys()), plural(len(content.keys()))))
             for item in content.keys():
                 authorname = content[item]['Author']
                 if isinstance(authorname, str) and hasattr(authorname, "decode"):
