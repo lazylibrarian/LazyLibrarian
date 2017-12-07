@@ -102,7 +102,7 @@ class RotatingLogger(object):
         elif level == 'INFO':
             logger.info(message)
         elif level == 'WARNING':
-            logger.warn(message)
+            logger.warning(message)
         else:
             logger.error(message)
 

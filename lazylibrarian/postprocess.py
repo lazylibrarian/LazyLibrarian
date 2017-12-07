@@ -27,8 +27,8 @@ from lazylibrarian import database, logger, utorrent, transmission, qbittorrent,
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
-from lazylibrarian.formatter import plural, now, today, is_valid_booktype, unaccented_str, replace_all, \
-    unaccented, getList, surnameFirst
+from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
+    replace_all, getList, surnameFirst
 from lazylibrarian.bookwork import audioRename
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
@@ -422,7 +422,7 @@ def processDir(reset=False):
                             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
                                 '$Author', authorname).replace('$Title', bookname)
                             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
-                                '$Author', authorname).replace('$Title', bookname)
+                                '$Author', authorname).replace('$Title', bookname).replace('$Series', '').strip()
                             global_name = unaccented(global_name)
                             dest_path = unaccented_str(replace_all(dest_path, __dic__))
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
@@ -450,12 +450,10 @@ def processDir(reset=False):
                                     dest_path = os.path.join(dest_dir, dest_path)
 
                                 dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
-
                                 authorname = None
                                 bookname = None
-                                global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate',
-                                                                                            book['AuxInfo']).replace(
-                                    '$Title', mag_name)
+                                global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
+                                    '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
                                 global_name = unaccented(global_name)
                             else:  # not recognised, maybe deleted
                                 logger.debug('Nothing in database matching "%s"' % book['BookID'])
@@ -788,8 +786,8 @@ def import_book(pp_path=None, bookID=None):
                                                                                                          bookname)
             # global_name is only used for ebooks to ensure book/cover/opf all have the same basename
             # audiobooks are usually multi part so can't be renamed this way
-            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace('$Author', authorname).replace('$Title',
-                                                                                                         bookname)
+            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
+                '$Author', authorname).replace('$Title', bookname).replace('$Series', '').strip()
             global_name = unaccented(global_name)
             dest_path = unaccented_str(replace_all(dest_path, __dic__))
             dest_path = os.path.join(dest_dir, dest_path)
@@ -967,9 +965,9 @@ def calibredb(cmd=None, prelib=None, postlib=None):
             params.extend(postlib)
         logger.debug(str(params))
         try:
-            p = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = p.communicate()
-            rc = p.returncode
+            q = Popen(params, stdout=PIPE, stderr=PIPE)
+            res, err = q.communicate()
+            rc = q.returncode
             if rc:
                 logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
         except Exception as e:
@@ -1190,12 +1188,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         # link to the first part of multi-part audiobooks
         elif booktype == 'audiobook':
             tokmatch = ''
-            for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
+            for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                 if tokmatch:
                     break
                 for f in os.listdir(pp_path):
                     if is_valid_booktype(f, booktype='audiobook') and token in f:
                         firstfile = os.path.join(pp_path, f)
+                        logger.debug("Link to preferred part [%s], %s" % (token, f))
                         tokmatch = token
                         break
         if firstfile:

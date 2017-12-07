@@ -12,7 +12,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
-
 #
 # Stolen from Sick-Beard's classes.py ##
 #
@@ -41,6 +40,7 @@ class SearchResult:
         if self.provider is None:
             return "Invalid provider, unable to print self"
 
+        # noinspection PyUnresolvedReferences
         myString = self.provider.name + " @ " + self.url + "\n"
         myString += "Extra Info:\n"
         for extra in self.extraInfo:

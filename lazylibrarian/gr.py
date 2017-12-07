@@ -211,10 +211,10 @@ class GoodReads:
                             resultxml = None
 
             except Exception as err:
-                if err.code == 404:
+                if hasattr(err, 'code') and err.code == 404:
                     logger.error('Received a 404 error when searching for author')
-                if err.code == 403:
-                    logger.warn('Access to api is denied: usage exceeded')
+                elif hasattr(err, 'code') and err.code == 403:
+                    logger.warn('Access to api is denied 403: usage exceeded')
                 else:
                     logger.error('An unexpected error has occurred when searching for an author: %s' % str(err))
 
@@ -230,7 +230,8 @@ class GoodReads:
     def find_author_id(self, refresh=False):
         author = self.name
         author = formatAuthorName(unaccented(author))
-        URL = 'https://www.goodreads.com/api/author_url/' + urllib.quote(author) + '?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/api/author_url/' + urllib.quote(author) + \
+              '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
         if isinstance(author, str) and hasattr(author, "decode"):
@@ -443,7 +444,8 @@ class GoodReads:
                                 try:
                                     if book.find(find_field).text:
                                         BOOK_URL = 'https://www.goodreads.com/book/show?id=' + \
-                                                   book.find(find_field).text + '&' + urllib.urlencode(self.params)
+                                                   book.find(find_field).text + \
+                                                   '&' + urllib.urlencode(self.params)
                                         logger.debug("Book URL: " + BOOK_URL)
 
                                         time_now = int(time.time())

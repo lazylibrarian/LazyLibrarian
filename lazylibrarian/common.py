@@ -544,6 +544,7 @@ def reverse_readline(filename, buf_size=8192):
             yield segment
 
 
+# noinspection PyUnresolvedReferences
 def logHeader():
     popen_list = [sys.executable, lazylibrarian.FULL_PATH]
     popen_list += lazylibrarian.ARGS
@@ -553,6 +554,7 @@ def logHeader():
     for item in lazylibrarian.CONFIG_GIT:
         header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
+    # noinspection PyDeprecation
     header += "Distribution: %s\n" % str(platform.dist())
     header += "System: %s\n" % str(platform.system())
     header += "Machine: %s\n" % str(platform.machine())
@@ -569,7 +571,9 @@ def logHeader():
     try:
         # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
         # attribute is only present on those versions.
+        # noinspection PyUnresolvedReferences
         import OpenSSL
+        # noinspection PyUnresolvedReferences
         from OpenSSL.crypto import X509
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
@@ -587,7 +591,9 @@ def logHeader():
     try:
         # get_extension_for_class method added in `cryptography==1.1`; not available in older versions
         # but need cryptography >= 1.3.4 for access from pyopenssl >= 0.14
+        # noinspection PyUnresolvedReferences
         import cryptography
+        # noinspection PyUnresolvedReferences
         from cryptography.x509.extensions import Extensions
         if getattr(Extensions, "get_extension_for_class", None) is None:
             header += "cryptography: module missing required functionality. Try upgrading to v1.3.4 or newer. You have "

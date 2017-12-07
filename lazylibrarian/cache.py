@@ -18,14 +18,13 @@ import json
 import os
 import shutil
 import time
-import lib.requests as requests
-
 from xml.etree import ElementTree
 
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import getList, check_int
+from lazylibrarian.formatter import check_int
 
 
 def fetchURL(URL, headers=None, retry=True):
@@ -44,7 +43,9 @@ def fetchURL(URL, headers=None, retry=True):
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True
-        return "Response status %s: %s" % (r.status_code, r.content), False
+        # noinspection PyProtectedMember
+        return "Response status %s: %s: %s" % (
+                r.status_code, r.content, requests.status_codes._codes[r.content][0]), False
     except requests.exceptions.Timeout as e:
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
@@ -55,7 +56,8 @@ def fetchURL(URL, headers=None, retry=True):
     except Exception as e:
         if hasattr(e, 'reason'):
             return "Exception %s: Reason: %s" % (type(e).__name__, str(e.reason)), False
-        return "Exception %s: %s" % (type(e).__name__, str(e)), False
+        # noinspection PyProtectedMember
+        return "Exception %s: %s: %s" % (type(e).__name__, str(e), requests.status_codes._codes[e][0]), False
 
 
 def cache_img(img_type, img_ID, img_url, refresh=False):

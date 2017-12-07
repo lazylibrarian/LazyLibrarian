@@ -33,11 +33,11 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors, getBookCover
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    aaUpdate, csv_file, saveLog, pwd_generator, pwd_check, isValidEmail
+    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
-from lazylibrarian.formatter import plural, now, today, check_int, replace_all, safe_unicode, unaccented, \
-    cleanName, unaccented_str, surnameFirst, sortDefinite
+from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
+    safe_unicode, cleanName, surnameFirst, sortDefinite
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -58,8 +58,8 @@ def serve_template(templatename, **kwargs):
     interface_dir = os.path.join(str(lazylibrarian.PROG_DIR), 'data/interfaces/')
     template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
     if not os.path.isdir(template_dir):
-        logger.error("Unable to locate template [%s], reverting to default" % template_dir)
-        lazylibrarian.CONFIG['HTTP_LOOK'] = 'default'
+        logger.error("Unable to locate template [%s], reverting to legacy" % template_dir)
+        lazylibrarian.CONFIG['HTTP_LOOK'] = 'legacy'
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
@@ -69,7 +69,7 @@ def serve_template(templatename, **kwargs):
             return template.render(perm=0, message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
 
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             template = _hplookup.get_template(templatename)
             return template.render(perm=lazylibrarian.perm_admin, **kwargs)
 
@@ -215,7 +215,7 @@ class WebInterface(object):
 
                 nrow.append(percent)  # convert have/total into a float
                 nrow.extend(arow[4:])
-                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+                if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                     bar = '<div class="progress-container %s">' % css
                     bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
                     bar += '%s/%s</span></div>' % (havebooks, totalbooks)
@@ -240,7 +240,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -632,7 +632,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -795,10 +795,10 @@ class WebInterface(object):
                 if key in lazylibrarian.CONFIG_NONWEB or key in lazylibrarian.CONFIG_GIT:
                     pass
                 # default interface doesn't know about other interfaces variables
-                elif interface == 'default' and key in lazylibrarian.CONFIG_NONDEFAULT:
+                elif interface == 'legacy' and key in lazylibrarian.CONFIG_NONDEFAULT:
                     pass
                 # default interface doesn't know about download priorities
-                elif interface == 'default' and 'dlpriority' in key.lower():
+                elif interface == 'legacy' and 'dlpriority' in key.lower():
                     pass
                 # no key is returned for empty tickboxes...
                 elif item_type == 'bool':
@@ -877,7 +877,7 @@ class WebInterface(object):
                 'newznab[%i][updated]' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'newznab[%i][manual]' % count, False))
-            if interface != 'default':
+            if interface != 'legacy':
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'newznab[%i][dlpriority]' % count, 0), 0)
             count += 1
@@ -910,7 +910,7 @@ class WebInterface(object):
                 'torznab[%i][updated]' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'torznab[%i][manual]' % count, False))
-            if interface != 'default':
+            if interface != 'legacy':
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'torznab[%i][dlpriority]' % count, 0), 0)
             count += 1
@@ -919,7 +919,7 @@ class WebInterface(object):
         while count < len(lazylibrarian.RSS_PROV):
             lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
             lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
-            if interface != 'default':
+            if interface != 'legacy':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'rss[%i][dlpriority]' % count, 0), 0)
             count += 1
@@ -1097,9 +1097,18 @@ class WebInterface(object):
             else:  # if library == 'eBook':
                 authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
-                # books might not be in exact same authorname folder
-                # eg Calibre puts books into folder "Eric van Lustbader", but
-                # goodreads told lazylibrarian he's "Eric Van Lustbader", note the capital 'V'
+                # books might not be in exact same authorname folder due to capitalisation
+                # eg Calibre puts books into folder "Eric Van Lustbader", but
+                # goodreads told lazylibrarian he's "Eric van Lustbader", note the lowercase 'v'
+                # or calibre calls "Neil deGrasse Tyson" "Neil DeGrasse Tyson" with a capital 'D'
+                # so convert the name and try again...
+                AuthorName = ' '.join(word[0].upper() + word[1:] for word in AuthorName.split())
+                if library == 'AudioBook':
+                    authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
+                else:  # if library == 'eBook':
+                    authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
+            if not os.path.isdir(authordir):
+                # if still not found, see if we have a book by them, and what directory it's in
                 if library == 'AudioBook':
                     sourcefile = 'AudioFile'
                 else:
@@ -1182,6 +1191,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         bookdata = myDB.match('SELECT AuthorID, BookName from books WHERE BookID=?', (bookid,))
         if bookdata:
+            size_temp = check_int(size, 1000)  # Need to cater for when this is NONE (Issue 35)
+            size = round(float(size_temp) / 1048576, 2)
             controlValueDict = {"NZBurl": url}
             newValueDict = {
                 "NZBprov": provider,
@@ -1191,7 +1202,7 @@ class WebInterface(object):
                 "NZBtitle": bookdata["BookName"],
                 "NZBmode": mode,
                 "AuxInfo": library,
-                "Status": "Skipped"
+                "Status": "Snatched"
             }
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
@@ -1241,7 +1252,7 @@ class WebInterface(object):
         #     print arg, kwargs[arg]
 
         myDB = database.DBConnection()
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
             perm = 0
@@ -1416,7 +1427,7 @@ class WebInterface(object):
                               row[6], row[13], row[5], row[16]])
             rows = d
 
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getBooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -1572,7 +1583,7 @@ class WebInterface(object):
         self.label_thread('OPEN_BOOK')
         # we need to check the user priveleges and see if they can download the book
         myDB = database.DBConnection()
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
             perm = 0
@@ -2134,7 +2145,7 @@ class WebInterface(object):
                 this_mag['safetitle'] = urllib.quote_plus(temp_title)
                 mags.append(this_mag)
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                 if not lazylibrarian.CONFIG['MAG_IMG']:
                     covercount = 0
             else:
@@ -2177,7 +2188,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                 if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
                     covercount = 0
             elif not lazylibrarian.CONFIG['TOGGLES']:
@@ -2239,7 +2250,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -2641,7 +2652,7 @@ class WebInterface(object):
             message = 'IMPORTCSV already running'
             logger.debug(message)
 
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
             raise cherrypy.HTTPRedirect("manage")
         else:
             return message
@@ -2651,7 +2662,7 @@ class WebInterface(object):
         self.label_thread('EXPORTCSV')
         message = export_CSV(lazylibrarian.CONFIG['ALTERNATE_DIR'])
         message = message.replace('\n', '<br>')
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'default':
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
             raise cherrypy.HTTPRedirect("manage")
         else:
             return message
@@ -2707,6 +2718,12 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("logs")
 
     @cherrypy.expose
+    def logHeader(self):
+        # Return the log header info
+        result = logHeader()
+        return result
+
+    @cherrypy.expose
     def saveLog(self):
         # Save the debug log to a zipfile
         self.label_thread('SAVELOG')
@@ -2723,10 +2740,10 @@ class WebInterface(object):
         # >2 extra debugging
         self.label_thread()
         if lazylibrarian.LOGLEVEL > 1:
-            lazylibrarian.LOGLEVEL -= 2
+            lazylibrarian.LOGLEVEL = 1
         else:
             if lazylibrarian.LOGLEVEL < 2:
-                lazylibrarian.LOGLEVEL += 2
+                lazylibrarian.LOGLEVEL = 2
         if lazylibrarian.LOGLEVEL < 2:
             logger.info('Debug log OFF, loglevel is %s' % lazylibrarian.LOGLEVEL)
         else:
@@ -2757,7 +2774,7 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -3146,7 +3163,7 @@ class WebInterface(object):
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
             else:
-                logger - debug('forceSearch called but no download methods set')
+                logger.debug('forceSearch called but no download methods set')
         else:
             logger.debug("forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

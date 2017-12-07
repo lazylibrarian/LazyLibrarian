@@ -152,7 +152,7 @@ CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM',
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
-                     'GR_OWNED', 'GR_WANTED', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
+                     'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -433,12 +433,14 @@ CONFIG_DEFINITIONS = {
     'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
     'GR_WANTED': ('str', 'API', ''),  # sync wanted to this shelf
     'GR_OWNED': ('str', 'API', ''),  # sync open/have to this shelf
+    'GR_UNIQUE': ('bool', 'API', 0),  # delete from wanted if already owned
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
     'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own
 }
 
 
+# noinspection PyUnresolvedReferences
 def check_section(sec):
     """ Check if INI section exists, if not create it """
     if CFG.has_section(sec):
@@ -453,6 +455,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
     my_val = def_val
     if cfg_type == 'int':
         try:
+            # noinspection PyUnresolvedReferences
             my_val = CFG.getint(cfg_name, item_name)
         except ConfigParser.Error:
             # no such item, might be a new entry
@@ -464,6 +467,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
     elif cfg_type == 'bool':
         try:
+            # noinspection PyUnresolvedReferences
             my_val = CFG.getboolean(cfg_name, item_name)
         except ConfigParser.Error:
             my_val = bool(def_val)
@@ -474,6 +478,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
 
     elif cfg_type == 'str':
         try:
+            # noinspection PyUnresolvedReferences
             my_val = CFG.get(cfg_name, item_name)
             # Old config file format had strings in quotes. ConfigParser doesn't.
             if my_val.startswith('"') and my_val.endswith('"'):
@@ -491,6 +496,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
                 my_val = my_val.decode(SYS_ENCODING)
 
     check_section(cfg_name)
+    # noinspection PyUnresolvedReferences
     CFG.set(cfg_name, item_name, my_val)
     if log:
         logger.debug("%s : %s -> %s" % (cfg_name, item_name, my_val))
@@ -602,6 +608,7 @@ def initialize():
                 logger.warn(item)
 
         try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
+            # noinspection PyUnresolvedReferences
             from dbcheck import dbcheck
             dbcheck()
         except ImportError:
@@ -614,6 +621,7 @@ def initialize():
         return True
 
 
+# noinspection PyUnresolvedReferences
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
         CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
@@ -755,6 +763,9 @@ def config_read(reloaded=False):
     CONFIG['REJECT_MAGS'] = CONFIG['REJECT_MAGS'].lower()
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
+    if CONFIG['HTTP_LOOK'] == 'default':
+        logger.warn('default interface is deprecated, new features are in bookstrap')
+        CONFIG['HTTP_LOOK'] = 'legacy'
 
     myDB = database.DBConnection()
     # check if we have an active database yet, not a fresh install
@@ -783,8 +794,8 @@ def config_read(reloaded=False):
         SHOW_MAGS = 1
     else:
         SHOW_MAGS = 0
-    # Suppress audio tab if on default interface
-    if CONFIG['HTTP_LOOK'] == 'default':
+    # Suppress audio tab if on legacy interface
+    if CONFIG['HTTP_LOOK'] == 'legacy':
         SHOW_AUDIO = 0
     # or if disabled
     elif CONFIG['AUDIO_TAB']:
@@ -804,6 +815,7 @@ def config_read(reloaded=False):
         logger.info('Config file loaded')
 
 
+# noinspection PyUnresolvedReferences
 def config_write():
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
         TORZNAB_PROV, RSS_PROV
@@ -817,7 +829,7 @@ def config_write():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
             value = CONFIG[key]
-        elif key not in CONFIG_NONWEB and not (interface == 'default' and key in CONFIG_NONDEFAULT):
+        elif key not in CONFIG_NONWEB and not (interface == 'legacy' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
@@ -918,7 +930,7 @@ def config_write():
     if not CONFIG['MAG_TAB']:
         SHOW_MAGS = 0
 
-    if CONFIG['HTTP_LOOK'] == 'default':
+    if CONFIG['HTTP_LOOK'] == 'legacy':
         SHOW_AUDIO = 0
     elif CONFIG['AUDIO_TAB']:
         SHOW_AUDIO = 1
@@ -956,6 +968,7 @@ def config_write():
         logger.info(msg)
 
 
+# noinspection PyUnresolvedReferences
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
     if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
@@ -984,6 +997,7 @@ def add_newz_slot():
                 CFG.set(prov_name, item, empty[item])
 
 
+# noinspection PyUnresolvedReferences
 def add_torz_slot():
     count = len(TORZNAB_PROV)
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
@@ -1046,6 +1060,7 @@ def DIRECTORY(dirname):
     return usedir
 
 
+# noinspection PyUnresolvedReferences
 def add_rss_slot():
     count = len(RSS_PROV)
     if count == 0 or len(CFG.get('RSS_%i' % int(count - 1), 'HOST')):
@@ -1250,13 +1265,14 @@ def daemonize():
         raise RuntimeError("2st fork failed: %s [%d]" %
                            (e.strerror, e.errno))
 
-    dev_null = file('/dev/null', 'r')
+    dev_null = open('/dev/null', 'r')
     os.dup2(dev_null.fileno(), sys.stdin.fileno())
 
     if PIDFILE:
         pid = str(os.getpid())
         logger.debug("Writing PID " + pid + " to " + str(PIDFILE))
-        file(PIDFILE, 'w').write("%s\n" % pid)
+        with open(PIDFILE, 'w') as pidfile:
+            pidfile.write("%s\n" % pid)
 
 
 def launch_browser(host, port, root):
@@ -1285,7 +1301,7 @@ def start():
                 SHOW_SERIES = 1
             SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
 
-            if CONFIG['HTTP_LOOK'] == 'default':
+            if CONFIG['HTTP_LOOK'] == 'legacy':
                 SHOW_AUDIO = 0
             elif CONFIG['AUDIO_TAB']:
                 SHOW_AUDIO = 1

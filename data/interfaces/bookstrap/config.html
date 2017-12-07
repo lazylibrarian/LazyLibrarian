@@ -325,6 +325,11 @@
                       </div>
                     </fieldset>
                     <br>
+                    <fieldset>
+                      <div class="form-group">
+                        <input type="button" value="System info" id="sysinfo" class="btn btn-default" />
+                      </div>
+                    </fieldset>
                   </fieldset>
                 </div>
               </div>
@@ -379,6 +384,17 @@
                       <input type="text" id="gr_wanted" name="gr_wanted" value="${lazylibrarian.CONFIG['GR_WANTED']}" class="form-control" placeholder="eg: to-read">
                       <label for="gr_owned">Sync Open/Have to Goodreads shelf:</label>
                       <input type="text" id="gr_owned" name="gr_owned" value="${lazylibrarian.CONFIG['GR_OWNED']}" class="form-control" placeholder="eg: owned">
+                        <div class="checkbox">
+                          <%
+                            if lazylibrarian.CONFIG['GR_UNIQUE'] == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                          %>
+                          <label for="gr_unique" class="control-label">
+                            <input type="checkbox" id="gr_unique" name="gr_unique" value="1" ${checked} />
+                            Delete from first GoodReads shelf if book is also on second shelf</label>
+                        </div>
                       <div class="form-group">
                         <label for="goodreads_interval" class="control-label">Goodreads Sync Interval:</label>
                         <div class="input-group">
@@ -921,11 +937,6 @@
                         <input type="checkbox" id="keep_seeding" name="keep_seeding" value="1" ${checked} />
                         Keep seeding after processing</label>
                     </div>
-                    <div class="form-group">
-                      <label for="download_dir" class="control-label">Download Directories:</label>
-                      <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
-                      <span class="help-block">Comma separated list of folders where books are downloaded</span>
-                    </div>
                   </fieldset>
                 </fieldset>
               </div>
@@ -1377,6 +1388,11 @@
               <div class="col-md-4">
                 <fieldset>
                   <legend>Folders</legend>
+                  <div class="form-group">
+                    <label for="download_dir" class="control-label">Download Directories:</label>
+                    <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
+                    <span class="help-block">Comma separated list of folders where downloaders place books</span>
+                  </div>
                   <div class="form-group">
                     <label for="ebook_dir" class="control-label">eBook Library Folder:</label>
                     <input type="text" id="ebook_dir" name="ebook_dir" value="${lazylibrarian.CONFIG['EBOOK_DIR']}" class="form-control" placeholder="eBook Library Folder">
@@ -3306,6 +3322,11 @@
                 {
                         $("#emailoptions").slideUp();
                 }
+        });
+
+        $('#sysinfo').click(function () {
+            $.get("logHeader", {},
+                function (data) { window.alert(data) });
         });
 
         $('#testgrauth').click(function () {

@@ -128,6 +128,7 @@ class DBConnection:
         # UPDATE and INSERT statements so we use suppress=unique to log any conflicts
 
         if self.connection.total_changes == changesBefore:
-            query = "INSERT INTO " + tableName + " (" + ", ".join(valueDict.keys() + keyDict.keys()) + ")" + \
-                    " VALUES (" + ", ".join(["?"] * len(valueDict.keys() + keyDict.keys())) + ")"
+            query = "INSERT INTO " + tableName + " ("
+            query += ", ".join(valueDict.keys() + keyDict.keys()) + ") VALUES ("
+            query += ", ".join(["?"] * len(valueDict.keys() + keyDict.keys())) + ")"
             self.action(query, valueDict.values() + keyDict.values(), suppress="UNIQUE")

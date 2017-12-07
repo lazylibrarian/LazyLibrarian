@@ -32,7 +32,7 @@ def bookSeries(bookname):
 
     \(            Must have (
     ([\S\s]+      followed by a group of one or more non whitespace
-    [^\)])        not ending in )
+    [^)])        not ending in )
     ,? #?         followed by optional comma, then space optional hash
     (             start next group
     \d+           must have one or more digits
@@ -45,7 +45,7 @@ def bookSeries(bookname):
     series = ""
     seriesNum = ""
 
-    result = re.search(r"\(([\S\s]+[^\)]),? #?(\d+\.?-?\d*[;,])", bookname)
+    result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
         series = result.group(1)
         while series[-1] in ',)':
@@ -54,7 +54,7 @@ def bookSeries(bookname):
         while seriesNum[-1] in ';,':
             seriesNum = seriesNum[:-1]
     else:
-        result = re.search(r"\(([\S\s]+[^\)]),? #?(\d+\.?-?\d*)", bookname)
+        result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*)", bookname)
         if result:
             series = result.group(1)
             while series[-1] in ',)':
@@ -171,8 +171,10 @@ def month2num(month):
         return 4
     elif month == "summer":
         return 7
-    elif month == "fall" or month == "autumn":
+    elif month in ["fall", "autumn"]:
         return 10
+    elif month == "christmas":
+        return 12
     else:
         return 0
 
@@ -403,7 +405,7 @@ def unaccented(str_or_unicode):
 
 def unaccented_str(str_or_unicode):
     if not str_or_unicode:
-        return ''
+        return ''.encode('ASCII')  # ensure bytestring for python3
     try:
         cleaned = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
@@ -421,7 +423,7 @@ def unaccented_str(str_or_unicode):
     stripped = replace_all(stripped, dic)
     # now get rid of any other non-ascii
     return stripped.encode('ASCII', 'ignore')
-    # returns str
+    # returns bytestring
 
 
 def replace_all(text, dic):

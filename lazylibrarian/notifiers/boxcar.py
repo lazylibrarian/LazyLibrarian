@@ -16,12 +16,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
-import lib.requests as requests
-
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, proxyList
-from lazylibrarian.formatter import getList, check_int
+from lazylibrarian.formatter import check_int
 
 # from lazylibrarian.exceptions import ex
 
@@ -110,6 +109,7 @@ class BoxcarNotifier:
             if not hasattr(e, 'code'):
                 logger.error("BOXCAR: Boxcar notification failed: %s" % str(e))
             else:
+                # noinspection PyUnresolvedReferences
                 logger.error("BOXCAR: Boxcar notification failed. Error code: %s" % str(e.code))
             return False
 

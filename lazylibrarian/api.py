@@ -192,7 +192,14 @@ class Api(object):
             threading.currentThread().name = "API"
 
         if self.data == 'OK':
-            remote_ip = cherrypy.request.remote.ip
+            if 'X-Forwarded-For' in cherrypy.request.headers:
+                remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
+            elif 'X-Host' in cherrypy.request.headers:
+                remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
+            elif 'Host' in cherrypy.request.headers:
+                remote_ip = cherrypy.request.headers['Host']  # nginx
+            else:
+                remote_ip = cherrypy.request.remote.ip
             logger.info('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
@@ -678,17 +685,17 @@ class Api(object):
         authorname = formatAuthorName(kwargs['name'])
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(authorname)
-            queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, queue])
+            myqueue = Queue.Queue()
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, myqueue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             GR = GoodReads(authorname)
-            queue = Queue.Queue()
-            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, queue])
+            myqueue = Queue.Queue()
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, myqueue])
             search_api.start()
 
         search_api.join()
-        self.data = queue.get()
+        self.data = myqueue.get()
 
     def _findBook(self, **kwargs):
         if 'name' not in kwargs:
@@ -697,17 +704,17 @@ class Api(object):
 
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
-            queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], queue])
+            myqueue = Queue.Queue()
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], myqueue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             GR = GoodReads(kwargs['name'])
-            queue = Queue.Queue()
-            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], queue])
+            myqueue = Queue.Queue()
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], myqueue])
             search_api.start()
 
         search_api.join()
-        self.data = queue.get()
+        self.data = myqueue.get()
 
     def _addBook(self, **kwargs):
         if 'id' not in kwargs:

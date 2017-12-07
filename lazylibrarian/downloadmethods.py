@@ -13,17 +13,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import gzip
 import os
 import re
-import socket
 import unicodedata
-import lib.requests as requests
-
 from base64 import b16encode, b32decode
 from hashlib import sha1
 
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL
@@ -116,7 +113,10 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
         logger.warn('Timeout fetching file from url: %s' % tor_url)
         return False
     except Exception as e:
-        logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+        if hasattr(e, 'reason'):
+            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+        else:
+            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
         return False
 
     bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
@@ -192,7 +192,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             logger.warn('Timeout fetching file from url: %s' % tor_url)
             return False
         except Exception as e:
-            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+            if hasattr(e, 'reason'):
+                logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+            else:
+                logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
             return False
 
         torrent = r.content

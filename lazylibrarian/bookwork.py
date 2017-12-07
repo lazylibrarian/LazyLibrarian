@@ -73,24 +73,24 @@ def audioRename(bookid):
         parts = ['1', exists['BookName'], exists['AuthorName'], audio_file]
 
     if cnt != len(parts):
-        logger.debug("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
+        logger.warn("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
         return book_filename
 
     # does the track include total (eg 1/12)
     if '/' in track:
         a, b = track.split('/')
         if check_int(b, 0) and check_int(b, 0) != cnt:
-            logger.debug("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))
+            logger.warn("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))
             return book_filename
 
     # check all parts have the same author and title
     if len(parts) > 1:
         for part in parts:
             if part[1] != book:
-                logger.debug("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
+                logger.warn("%s: Inconsistent title: [%s][%s]" % (exists['BookName'], part[1], book))
                 return book_filename
             if part[2] != author:
-                logger.debug("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
+                logger.warn("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
                 return book_filename
 
     # strip out just part number
@@ -102,7 +102,7 @@ def audioRename(bookid):
     if check_int(parts[0][0], 0) == 0:
         tokmatch = ''
         # try to extract part information from filename. Search for token style of part 1 in this order...
-        for token in ['001.', '01.', '1.', ' 01 ', '01']:
+        for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
             if tokmatch:
                 break
             for part in parts:
@@ -113,14 +113,18 @@ def audioRename(bookid):
             cnt = 0
             while cnt < len(parts):
                 cnt += 1
-                if tokmatch == '001.':
-                    pattern = '%s.' % str(cnt).zfill(3)
-                elif tokmatch == '01.':
-                    pattern = '%s.' % str(cnt).zfill(2)
-                elif tokmatch == '1.':
-                    pattern = '%s.' % str(cnt)
+                if tokmatch == ' 001.':
+                    pattern = ' %s.' % str(cnt).zfill(3)
+                elif tokmatch == ' 01.':
+                    pattern = ' %s.' % str(cnt).zfill(2)
+                elif tokmatch == ' 1.':
+                    pattern = ' %s.' % str(cnt)
+                elif tokmatch == ' 001 ':
+                    pattern = ' %s ' % str(cnt).zfill(3)
                 elif tokmatch == ' 01 ':
                     pattern = ' %s ' % str(cnt).zfill(2)
+                elif tokmatch == ' 1 ':
+                    pattern = ' %s ' % str(cnt)
                 else:
                     pattern = '%s' % str(cnt).zfill(2)
                 # standardise numbering of the parts
@@ -140,7 +144,7 @@ def audioRename(bookid):
                 found = True
                 break
         if not found:
-            logger.debug("%s: No part %i found" % (exists['BookName'], cnt))
+            logger.warn("%s: No part %i found" % (exists['BookName'], cnt))
             return book_filename
 
     # if we get here, looks like we have all the parts needed to rename properly

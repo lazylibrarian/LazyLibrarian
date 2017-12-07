@@ -26,7 +26,7 @@ import lib.id3reader as id3reader
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
-from lazylibrarian.common import opf_file
+from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
     cleanName, replace_all, split_title, now
 from lazylibrarian.gb import GoogleBooks
@@ -55,14 +55,20 @@ def get_book_info(fname):
 
         author = book.author()
         title = book.title()
+        language = book.language()
+        isbn = book.isbn()
         if isinstance(author, str) and hasattr(author, "decode"):
             author = author.decode(lazylibrarian.SYS_ENCODING)
         if isinstance(title, str) and hasattr(title, "decode"):
             title = title.decode(lazylibrarian.SYS_ENCODING)
+        if isinstance(language, str) and hasattr(language, "decode"):
+            language = language.decode(lazylibrarian.SYS_ENCODING)
+        if isinstance(isbn, str) and hasattr(isbn, "decode"):
+            isbn = isbn.decode(lazylibrarian.SYS_ENCODING)
         res['creator'] = author
         res['title'] = title
-        res['language'] = book.language()
-        res['identifier'] = book.isbn()
+        res['language'] = language
+        res['identifier'] = isbn
         return res
 
         # noinspection PyUnreachableCode
@@ -141,16 +147,14 @@ def get_book_info(fname):
             tag = tag.split('}')[1]
             txt = tree[0][n].text
             attrib = str(tree[0][n].attrib).lower()
+            if isinstance(txt, str) and hasattr(txt, "decode"):
+                txt = txt.decode(lazylibrarian.SYS_ENCODING)
             if 'title' in tag:
-                if isinstance(txt, str) and hasattr(txt, "decode"):
-                    txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['title'] = txt
             elif 'language' in tag:
                 res['language'] = txt
             elif 'creator' in tag and 'creator' not in res:
                 # take the first author name if multiple authors
-                if isinstance(txt, str) and hasattr(txt, "decode"):
-                    txt = txt.decode(lazylibrarian.SYS_ENCODING)
                 res['creator'] = txt
             elif 'identifier' in tag and 'isbn' in attrib:
                 if is_valid_isbn(txt):
@@ -379,7 +383,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 booktypes = booktypes + '|' + book_type
 
         matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace(
-            "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)") + '\.[' + booktypes + ']'
+            "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)").replace(
+            "\\$\\S\\e\\r\\i\\e\\s", "") + '\.[' + booktypes + ']'  # ignore any series, we just want author/title
+
         pattern = re.compile(matchString, re.VERBOSE)
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
@@ -764,7 +770,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             book_filename = os.path.join(r, files)
                                             # link to the first part of multi-part audiobooks
                                             tokmatch = ''
-                                            for token in [' 001.', ' 01.', ' 1.', ' 01 ', '01']:
+                                            for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                                                 if tokmatch:
                                                     break
                                                 for e in os.listdir(r):
@@ -784,7 +790,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                             # location may have changed since last scan
                                             if book_filename and book_filename != check_status['AudioFile']:
-                                                if str(check_status['AudioFile']) != 'None':
+                                                if check_status['AudioFile'] and \
+                                                        str(check_status['AudioFile']) != 'None':
                                                     modified_count += 1
                                                     logger.warn("Updating audiobook location for %s %s from %s to %s" %
                                                                 (author, book, check_status['AudioFile'],
@@ -795,13 +802,15 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 myDB.action('UPDATE books set AudioFile=? where BookID=?',
                                                             (book_filename, bookid))
 
-                                        # update cover file to cover.jpg in book folder (if exists)
+                                        # update cover file to any .jpg in book folder, prefer cover.jpg
                                         if book_filename:
                                             bookdir = os.path.dirname(book_filename)
+                                            cachedir = lazylibrarian.CACHEDIR
+                                            cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
                                             coverimg = os.path.join(bookdir, 'cover.jpg')
-                                            if os.path.isfile(coverimg):
-                                                cachedir = lazylibrarian.CACHEDIR
-                                                cacheimg = os.path.join(cachedir, 'book', bookid + '.jpg')
+                                            if not os.path.isfile(coverimg):
+                                                coverimg = any_file(bookdir, '.jpg')
+                                            if coverimg:
                                                 shutil.copyfile(coverimg, cacheimg)
                                 else:
                                     if library == 'eBook':

@@ -124,7 +124,9 @@ def get_capabilities(provider):
             #
             search = data.find('searching/search')
             if search is not None:
+                # noinspection PyUnresolvedReferences
                 if 'available' in search.attrib:
+                    # noinspection PyUnresolvedReferences
                     if search.attrib['available'] == 'yes':
                         provider['GENERALSEARCH'] = 'search'
             categories = data.getiterator('category')
@@ -147,7 +149,9 @@ def get_capabilities(provider):
                             # but check in case
                             search = data.find('searching/book-search')
                             if search is not None:
+                                # noinspection PyUnresolvedReferences
                                 if 'available' in search.attrib:
+                                    # noinspection PyUnresolvedReferences
                                     if search.attrib['available'] == 'yes':
                                         provider['BOOKSEARCH'] = 'book'
                                     else:
@@ -158,7 +162,9 @@ def get_capabilities(provider):
                             # but check in case
                             search = data.find('searching/book-search')
                             if search:
+                                # noinspection PyUnresolvedReferences
                                 if 'available' in search.attrib:
+                                    # noinspection PyUnresolvedReferences
                                     if search.attrib['available'] == 'yes':
                                         provider['BOOKSEARCH'] = 'book'
                                     else:
@@ -200,6 +206,8 @@ def ProviderIsBlocked(name):
 
 def BlockProvider(who, why):
     delay = check_int(lazylibrarian.CONFIG['BLOCKLIST_TIMER'], 3600)
+    if len(why) > 40:
+        why = why[:40] + '...'
     if delay == 0:
         logger.debug('Not blocking %s,%s as timer is zero' % (who, why))
     else:
