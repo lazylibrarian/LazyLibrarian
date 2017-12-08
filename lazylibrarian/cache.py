@@ -43,11 +43,11 @@ def fetchURL(URL, headers=None, retry=True):
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True
-            try:
-                # noinspection PyProtectedMember
-                msg = requests.status_codes._codes[r.content][0]
-            except:
-                msg = str(r.content)
+        try:
+            # noinspection PyProtectedMember
+            msg = requests.status_codes._codes[r.content][0]
+        except (KeyError, IndexError):
+            msg = str(r.content)
         return "Response status %s: %s" % (r.status_code, msg), False
     except requests.exceptions.Timeout as e:
         if not retry:
