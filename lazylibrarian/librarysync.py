@@ -510,7 +510,14 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                 try:
                                     id3r = id3reader.Reader(filename)
-                                    author = id3r.getValue('performer')
+                                    performer = id3r.getValue('performer')
+                                    composer = id3r.getValue('TCOM')
+                                    if composer:  # if present, should be author
+                                        author = composer
+                                    elif performer:  # author, or narrator if composer == author
+                                        author = performer
+                                    else:
+                                        author = None
                                     book = id3r.getValue('album')
                                     if author and book:
                                         match = True
