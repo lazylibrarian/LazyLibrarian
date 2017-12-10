@@ -45,8 +45,8 @@ def fetchURL(URL, headers=None, retry=True):
             return r.content, True
         try:
             # noinspection PyProtectedMember
-            msg = requests.status_codes._codes[r.content][0]
-        except (KeyError, IndexError):
+            msg = requests.status_codes._codes[r.status_code][0]
+        except Exception:
             msg = str(r.content)
         return "Response status %s: %s" % (r.status_code, msg), False
     except requests.exceptions.Timeout as e:
