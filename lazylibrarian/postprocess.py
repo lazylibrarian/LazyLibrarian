@@ -20,6 +20,8 @@ import shutil
 import threading
 import time
 import traceback
+import tarfile
+import lib.zipfile as zipfile
 from subprocess import Popen, PIPE
 
 import lazylibrarian
@@ -37,6 +39,7 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
+
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
@@ -139,6 +142,7 @@ def processAlternate(source_dir=None):
             else:
                 logger.warn('Book %s has no metadata, unable to import' % new_book)
         else:
+            # could check if an archive in this directory?
             logger.warn("No book file found in %s" % source_dir)
         return False
     except Exception:
@@ -148,8 +152,9 @@ def processAlternate(source_dir=None):
 def try_rename(directory, filename):
     # Shouldn't really need to do this, there must be a better way...
     # When we call listdir with unicode it returns unicode when it can,
-    # or 8bit ascii str if it can't convert the filename to unicode
+    # or 8bit ascii str if it can't convert the filename to unicode using sys encoding
     # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
+    # which decodes in latin-1 but not utf-8, same problem with sone scandinavian characters
     # Return the new filename or empty string if failed
     if int(lazylibrarian.LOGLEVEL) > 2:
         logger.debug("try_rename %s %s %s %s" % (type(filename), repr(filename), type(directory), repr(directory)))
@@ -203,6 +208,92 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                                  (ourfile, targetdir, type(why).__name__, str(why)))
 
 
+def unpack_archive(pp_path, download_dir, title):
+    """ See if pp_path is an archive containing a book
+        returns new directory in download_dir with book in it, or empty string """
+    try:
+        from lib.unrar import rarfile
+        gotrar = True
+    except Exception:
+        gotrar = False
+
+    targetdir = ''
+    if zipfile.is_zipfile(pp_path):
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug('%s is a zip file' % pp_path)
+        z = zipfile.ZipFile(pp_path)
+        namelist = z.namelist()
+        for item in namelist:
+            if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
+                    or is_valid_booktype(item, booktype="mag"):
+                if not targetdir:
+                    targetdir = os.path.join(download_dir, title + '.unpack')
+                if not os.path.isdir(targetdir):
+                    try:
+                        os.makedirs(targetdir)
+                        setperm(targetdir)
+                    except OSError as why:
+                        if not os.path.isdir(targetdir):
+                            logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            return ''
+                with open(os.path.join(targetdir, item), 'wb') as f:
+                    logger.debug('Extracting %s to %s' % (item, targetdir))
+                    f.write(z.read(item))
+            else:
+                logger.debug('Skipping zipped file %s' % item)
+
+    elif tarfile.is_tarfile(os.path.join(pp_path)):
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug('%s is a tar file' % pp_path)
+        z = tarfile.TarFile(pp_path)
+        namelist = z.getnames()
+        for item in namelist:
+            if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
+                    or is_valid_booktype(item, booktype="mag"):
+                if not targetdir:
+                    targetdir = os.path.join(download_dir, title + '.unpack')
+                if not os.path.isdir(targetdir):
+                    try:
+                        os.makedirs(targetdir)
+                        setperm(targetdir)
+                    except OSError as why:
+                        if not os.path.isdir(targetdir):
+                            logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            return ''
+                with open(os.path.join(targetdir, item), 'wb') as f:
+                    logger.debug('Extracting %s to %s' % (item, targetdir))
+                    f.write(z.extractfile(item).read())
+            else:
+                logger.debug('Skipping tarred file %s' % item)
+
+    elif gotrar and rarfile.is_rarfile(pp_path):
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug('%s is a rar file' % pp_path)
+        z = rarfile.RarFile(pp_path)
+        namelist = z.namelist()
+        for item in namelist:
+            if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
+                    or is_valid_booktype(item, booktype="mag"):
+                if not targetdir:
+                    targetdir = os.path.join(download_dir, title + '.unpack')
+                if not os.path.isdir(targetdir):
+                    try:
+                        os.makedirs(targetdir)
+                        setperm(targetdir)
+                    except OSError as why:
+                        if not os.path.isdir(targetdir):
+                            logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            return ''
+                with open(os.path.join(targetdir, item), 'wb') as f:
+                    logger.debug('Extracting %s to %s' % (item, targetdir))
+                    f.write(z.read(item))
+            else:
+                logger.debug('Skipping rarred file %s' % item)
+    else:
+        logger.debug('[%s] Not a recognised archive' % pp_path)
+    return targetdir
+
+
 def cron_processDir():
     if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
         processDir()
@@ -215,7 +306,7 @@ def processDir(reset=False):
             threading.currentThread().name = "POSTPROCESS"
         ppcount = 0
         myDB = database.DBConnection()
-        skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb']
+        skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb', '.unpack']
 
         templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'], ',')
         if len(templist) and lazylibrarian.DIRECTORY("Download") != templist[0]:
@@ -284,7 +375,7 @@ def processDir(reset=False):
                         myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
                         matchtitle = torrentname
 
-                    # here we could also check percentage downloaded or eta or status?
+                    # here we could also check percentage downloaded or eta or status, or download directory?
                     # If downloader says it hasn't completed, no need to look for it.
 
                     matches = []
@@ -334,11 +425,11 @@ def processDir(reset=False):
                                     logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
 
                                 if os.path.isfile(pp_path):
-                                    # handle single file downloads here. Book/mag file in download root.
+                                    # Check for single file downloads first. Book/mag file in download root.
                                     # move the file into it's own subdirectory so we don't move/delete
                                     # things that aren't ours
-                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug('%s is a file' % fname)
+                                    # note that epub are zipfiles so check booktype first
+                                    #
                                     if is_valid_booktype(fname, booktype="book") \
                                             or is_valid_booktype(fname, booktype="audiobook") \
                                             or is_valid_booktype(fname, booktype="mag"):
@@ -347,17 +438,18 @@ def processDir(reset=False):
                                         if bts_file(download_dir):
                                             logger.debug("Skipping %s, found a .bts file" % download_dir)
                                         else:
-                                            fname = os.path.splitext(fname)[0]
-                                            while fname[-1] in '. ':
-                                                fname = fname[:-1]
-                                            targetdir = os.path.join(download_dir, fname)
-                                            try:
-                                                os.makedirs(targetdir)
-                                                setperm(targetdir)
-                                            except OSError as why:
-                                                if not os.path.isdir(targetdir):
-                                                    logger.debug('Failed to create directory [%s], %s' %
-                                                                 (targetdir, why.strerror))
+                                            aname = os.path.splitext(fname)[0]
+                                            while aname[-1] in '. ':
+                                                aname = aname[:-1]
+                                            targetdir = os.path.join(download_dir, aname)
+                                            if not os.path.isdir(targetdir):
+                                                try:
+                                                    os.makedirs(targetdir)
+                                                    setperm(targetdir)
+                                                except OSError as why:
+                                                    if not os.path.isdir(targetdir):
+                                                        logger.debug('Failed to create directory [%s], %s' %
+                                                                     (targetdir, why.strerror))
                                             if os.path.isdir(targetdir):
                                                 if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
                                                         lazylibrarian.CONFIG['KEEP_SEEDING']:
@@ -365,6 +457,13 @@ def processDir(reset=False):
                                                 else:
                                                     move_into_subdir(download_dir, targetdir, fname)
                                                 pp_path = targetdir
+                                    else:
+                                        # Is file an archive, if so look inside and extract to new dir
+                                        res = unpack_archive(pp_path, download_dir, matchtitle)
+                                        if res:
+                                            pp_path = res
+                                        else:
+                                            logger.debug('Skipping unhandled file %s' % fname)
 
                                 if os.path.isdir(pp_path):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
@@ -520,6 +619,7 @@ def processDir(reset=False):
                             if lazylibrarian.CONFIG['KEEP_SEEDING']:
                                 logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
                                 to_delete = False
+
                         if to_delete:
                             # ask downloader to delete the torrent, but not the files
                             # we may delete them later, depending on other settings
@@ -533,8 +633,15 @@ def processDir(reset=False):
                                 delete_task(book['Source'], book['DownloadID'], False)
 
                         if to_delete:
-                            # only delete the files if not in download root dir and if DESTINATION_COPY not set
-                            if not lazylibrarian.CONFIG['DESTINATION_COPY'] and (pp_path != download_dir):
+                            # only delete the files if not in download root dir and DESTINATION_COPY not set
+                            # always delete files we unpacked from an archive
+                            if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                                to_delete = False
+                            if pp_path == download_dir:
+                                to_delete = False
+                            if pp_path.endswith('.unpack'):
+                                to_delete = True
+                            if to_delete:
                                 if os.path.isdir(pp_path):
                                     # calibre might have already deleted it?
                                     try:
