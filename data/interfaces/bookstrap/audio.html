@@ -150,22 +150,26 @@
                     return str ;} },
                 { targets: [8], 'render': function(data, type, row) {
                     var btn = row[11]
-                    if ( btn == 'Open' ) {
+                    var flag = ''
+                    if ( btn.indexOf('+') >= 0) { flag = '&nbsp;<i class="fa fa-bookmark-o"></i>' }
+                    if ( btn.indexOf('=') >= 0) { flag = '&nbsp;<i class="fa fa-bookmark"></i>' }
+                    btn = btn.replace('=','').replace('+','') + flag
+                    if ( btn.indexOf('Open') >= 0 ) {
                         btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
-                                '&library=AudioBook" target="_self"><i class="fa fa-book"></i>Open</a>'}
-                    else if ( btn == 'Wanted' ) {
+                                '&library=AudioBook" target="_self"><i class="fa fa-book"></i>' + btn + '</a>'}
+                    else if ( btn.indexOf('Wanted') >= 0 ) {
                         %if perm&lazylibrarian.perm_force:
-                            btn = '<p><a class="a btn btn-xs btn-danger">Wanted</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=AudioBook" target="_self"><i class="fa fa-search"></i> Search</a></p>'
+                            btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=AudioBook" target="_self"><i class="fa fa-search"></i> Search</a></p>'
                         %else:
-                            btn = '<a class="button btn btn-xs btn-default grey">Wanted</a>'
+                            btn = '<a class="button btn btn-xs btn-default grey">' + btn + '</a>'
                         %endif
                     }
-                    else if ( btn == 'Snatched' ) {
-                        btn = '<a class="button btn btn-xs btn-info">Snatched</a>'}
-                    else if ( btn == 'Have' ) {
-                        btn = '<a class="button btn btn-xs btn-info">Have</a>'}
+                    else if ( btn.indexOf('Snatched') >= 0 ) {
+                        btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
+                    else if ( btn.indexOf('Have') >= 0 ) {
+                        btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
                     else {
-                        btn = '<a class="button btn btn-xs btn-default grey">' + row[11] + '</a>'}
+                        btn = '<a class="button btn btn-xs btn-default grey">' + btn + '</a>'}
                     return btn;} }
                 ],
             "oLanguage": {
