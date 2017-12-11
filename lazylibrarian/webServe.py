@@ -1290,8 +1290,13 @@ class WebInterface(object):
         status_type = 'books.status'
         args = []
         if kwargs['source'] == "Manage":
-            cmd += ' and books.STATUS=?'
-            args.append(kwargs['whichStatus'])
+            if kwargs['whichStatus'] == 'ToRead':
+                cmd += ' and books.bookID in (%s)' % ', '.join(ToRead)
+            elif kwargs['whichStatus'] == 'Read':
+                cmd += ' and books.bookID in (%s)' % ', '.join(HaveRead)
+            else:
+                cmd += ' and books.STATUS=?'
+                args.append(kwargs['whichStatus'])
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
@@ -1929,16 +1934,19 @@ class WebInterface(object):
                                         ToRead.remove(bookid)
                                     if bookid in HaveRead:
                                         HaveRead.remove(bookid)
+                                    logger.debug('Status set to "unread" for "%s"' % bookid)
                                 elif action == "Read":
                                     if bookid in ToRead:
                                         ToRead.remove(bookid)
                                     if bookid not in HaveRead:
                                         HaveRead.append(bookid)
+                                    logger.debug('Status set to "read" for "%s"' % bookid)
                                 elif action == "ToRead":
                                     if bookid not in ToRead:
                                         ToRead.append(bookid)
                                     if bookid in HaveRead:
                                         HaveRead.remove(bookid)
+                                    logger.debug('Status set to "to read" for "%s"' % bookid)
                                 myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
                                             (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
 

@@ -50,6 +50,18 @@
                 %endif
             >${item}</option>
         %endfor
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Read"
+            %if whichStatus == "Read":
+                selected = "selected"
+            %endif
+            >Read</option>
+        <option value="ToRead"
+            %if whichStatus == "ToRead":
+                selected = "selected"
+            %endif
+            >To Read</option >
+        %endif
       </select>
     </div>
     <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
@@ -82,6 +94,11 @@
         %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
         <option value="${item}">${item}</option>
         %endfor
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Unread">Unread</option>
+        <option value="Read">Read</option>
+        <option value="ToRead">To Read</option>
+        %endif
       </select>
     </div>
     <input type="submit" class="markBooks btn btn-sm btn-default" value="Go">
