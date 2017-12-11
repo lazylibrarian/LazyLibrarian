@@ -935,6 +935,7 @@ def db_v23(myDB, upgradelog):
         logger.debug('Added admin user %s' % user)
     upgradelog.write("%s v23: complete\n" % time.ctime())
 
+
 def db_v24(myDB, upgradelog):
     if not has_column(myDB, "users", "HaveRead"):
         lazylibrarian.UPDATE_MSG = 'Adding read lists to Users table'

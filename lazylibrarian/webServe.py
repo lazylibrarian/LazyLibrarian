@@ -1260,7 +1260,8 @@ class WebInterface(object):
             perm = 0
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in cookie.keys():
-                res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+                res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
+                                 (cookie['ll_uid'].value,))
                 if res:
                     perm = check_int(res['Perms'], 0)
                     ToRead = getList(res['ToRead'])

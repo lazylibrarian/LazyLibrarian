@@ -216,6 +216,7 @@ def unpack_archive(pp_path, download_dir, title):
         gotrar = True
     except Exception:
         gotrar = False
+        rarfile = None
 
     targetdir = ''
     if zipfile.is_zipfile(pp_path):
