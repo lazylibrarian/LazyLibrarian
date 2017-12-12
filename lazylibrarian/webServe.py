@@ -1291,9 +1291,9 @@ class WebInterface(object):
         args = []
         if kwargs['source'] == "Manage":
             if kwargs['whichStatus'] == 'ToRead':
-                cmd += ' and books.bookID in (%s)' % ', '.join(ToRead)
+                cmd += ' and books.bookID in (' + res['ToRead'] + ')'
             elif kwargs['whichStatus'] == 'Read':
-                cmd += ' and books.bookID in (%s)' % ', '.join(HaveRead)
+                cmd += ' and books.bookID in (' + res['HaveRead'] + ')'
             else:
                 cmd += ' and books.STATUS=?'
                 args.append(kwargs['whichStatus'])
