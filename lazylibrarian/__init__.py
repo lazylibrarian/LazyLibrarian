@@ -834,7 +834,7 @@ def config_write():
             value = CONFIG[key]
             if key == 'LOGLEVEL':
                 LOGLEVEL = check_int(value, 1)
-            elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWLOAD_DIR',
+            elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWNLOAD_DIR',
                          'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
                 value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:

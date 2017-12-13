@@ -92,7 +92,7 @@
             <td class="authorname hidden">${result['AuthorName']}</td>
             %endif
             <td class="date text-center">${result['SeriesNum']}</td>
-            %if result['Status'] == 'Open':
+            %if 'Open' in result['Status']:
             <td class="status text-center">
             <a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['BookID']}&library=eBook"
             target="_self"><i class="fa fa-book"></i> Open</a>
@@ -101,7 +101,7 @@
             %endif
             % if lazylibrarian.SHOW_AUDIO != 0:
               <br>
-              %if result['AudioStatus'] == 'Open':
+              %if 'Open' in result['AudioStatus']:
                 <a class="button green btn btn-xs btn-warning" href="openBook?bookid=${result['BookID']}&library=AudioBook"
                 target="_self"><i class="fa fa-headphones"></i> Open</a>
               %else:

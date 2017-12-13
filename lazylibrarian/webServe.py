@@ -37,7 +37,7 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
-    safe_unicode, cleanName, surnameFirst, sortDefinite
+    safe_unicode, cleanName, surnameFirst, sortDefinite, getList
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -1252,15 +1252,20 @@ class WebInterface(object):
         #     print arg, kwargs[arg]
 
         myDB = database.DBConnection()
+        ToRead = []
+        HaveRead = []
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
             perm = 0
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in cookie.keys():
-                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+                res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
+                                 (cookie['ll_uid'].value,))
                 if res:
                     perm = check_int(res['Perms'], 0)
+                    ToRead = getList(res['ToRead'])
+                    HaveRead = getList(res['HaveRead'])
 
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1285,8 +1290,13 @@ class WebInterface(object):
         status_type = 'books.status'
         args = []
         if kwargs['source'] == "Manage":
-            cmd += ' and books.STATUS=?'
-            args.append(kwargs['whichStatus'])
+            if kwargs['whichStatus'] == 'ToRead':
+                cmd += ' and books.bookID in (' + res['ToRead'] + ')'
+            elif kwargs['whichStatus'] == 'Read':
+                cmd += ' and books.bookID in (' + res['HaveRead'] + ')'
+            else:
+                cmd += ' and books.STATUS=?'
+                args.append(kwargs['whichStatus'])
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
@@ -1418,6 +1428,12 @@ class WebInterface(object):
 
                 if not lazylibrarian.GROUP_CONCAT:
                     row.append('')  # empty string for series links as no group_concat
+
+                if row[6] in ToRead:
+                    row[5] = row[5] + '+'  # + want to read, converted to empty bookmark in html
+                elif row[6] in HaveRead:
+                    row[5] = row[5] + '='  # = have read it, converted to full bookmark in html
+
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
@@ -1428,7 +1444,8 @@ class WebInterface(object):
             rows = d
 
         if lazylibrarian.LOGLEVEL > 3:
-            logger.debug("getBooks returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getBooks %s returning %s to %s" % (
+                         kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
@@ -1903,8 +1920,37 @@ class WebInterface(object):
         if action:
             for bookid in args:
                 # ouch dirty workaround...
-                if not bookid == 'book_table_length':
-                    if action in ["Wanted", "Have", "Ignored", "Skipped"]:
+                if bookid not in ['book_table_length', 'ignored', 'library', 'booklang']:
+                    if action in ["Unread", "Read", "ToRead"]:
+                        cookie = cherrypy.request.cookie
+                        if cookie and 'll_uid' in cookie.keys():
+                            res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
+                                            (cookie['ll_uid'].value,))
+                            if res:
+                                ToRead = getList(res['ToRead'])
+                                HaveRead = getList(res['HaveRead'])
+                                if action == "Unread":
+                                    if bookid in ToRead:
+                                        ToRead.remove(bookid)
+                                    if bookid in HaveRead:
+                                        HaveRead.remove(bookid)
+                                    logger.debug('Status set to "unread" for "%s"' % bookid)
+                                elif action == "Read":
+                                    if bookid in ToRead:
+                                        ToRead.remove(bookid)
+                                    if bookid not in HaveRead:
+                                        HaveRead.append(bookid)
+                                    logger.debug('Status set to "read" for "%s"' % bookid)
+                                elif action == "ToRead":
+                                    if bookid not in ToRead:
+                                        ToRead.append(bookid)
+                                    if bookid in HaveRead:
+                                        HaveRead.remove(bookid)
+                                    logger.debug('Status set to "to read" for "%s"' % bookid)
+                                myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
+                                            (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
+
+                    elif action in ["Wanted", "Have", "Ignored", "Skipped"]:
                         title = myDB.match('SELECT BookName from books WHERE BookID=?', (bookid,))
                         if title:
                             bookname = title['BookName']
@@ -1914,7 +1960,7 @@ class WebInterface(object):
                             elif library == 'AudioBook':
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
                                 logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
-                    if action in ["Remove", "Delete"]:
+                    elif action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
                         if bookdata:

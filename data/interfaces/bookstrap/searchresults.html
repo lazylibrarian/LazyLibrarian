@@ -82,16 +82,16 @@
                                     valid_id = item['BookID']
 
 
-                            if value2 == 'Open':
+                            if 'Open' in value2:
                                 destination2 = "openBook?bookid="+valid_id
                                 but_class2 = "btn-warning"
-                            elif value2 == 'Wanted':
+                            elif 'Wanted' in value2:
                                 destination2 = "searchForBook?bookid="+valid_id
                                 but_class2 = "btn-success"
-                            elif value2 == 'Have' or value2 == 'Snatched':
+                            elif 'Have' in value2 or 'Snatched' in value2:
                                 destination2 = "#"
                                 but_class2 = "btn-info"
-                            elif value2 == 'Skipped':
+                            elif 'Skipped' in value2:
                                 destination2 = "addBook?bookid="+result['bookid']
                                 value2 = "Add Book"
                                 but_class2 = "btn-success"

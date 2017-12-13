@@ -56,11 +56,17 @@ def audioRename(bookid):
             audio_file = f
             try:
                 id3r = id3reader.Reader(os.path.join(r, f))
-                author = id3r.getValue('performer')
+                performer = id3r.getValue('performer')
+                composer = id3r.getValue('TCOM')
                 book = id3r.getValue('album')
                 track = id3r.getValue('track')
+
                 if not track:
                     track = '0'
+                if composer:  # if present, should be author
+                    author = composer
+                elif performer:  # author, or narrator if composer == author
+                    author = performer
                 if author and book:
                     parts.append([track, book, author, f])
             except Exception as e:

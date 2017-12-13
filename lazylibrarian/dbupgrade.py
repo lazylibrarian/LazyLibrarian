@@ -73,8 +73,9 @@ def upgrade_needed():
     # 21 add audiofile audiolibrary date and audiostatus to books table
     # 22 add goodreads "follow" to author table
     # 23 add user accounts
+    # 24 add HaveRead and ToRead to user accounts
 
-    db_current_version = 23
+    db_current_version = 24
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -156,10 +157,11 @@ def dbupgrade(db_current_version):
                 UNIQUE (SeriesID,AuthorID))')
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
-                                Password TEXT, Email TEXT, Name TEXT, Perms INTEGER)')
-                    cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
+                                Password TEXT, Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT)')
+                    cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms, Read)'
+                    cmd += ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin',
-                                hashlib.md5('admin').hexdigest(), '', 65535))
+                                hashlib.md5('admin').hexdigest(), '', 65535, '', ''))
                     logger.debug('Added admin user')
 
                 # These are the incremental changes before database versioning was introduced.
@@ -320,7 +322,7 @@ def dbupgrade(db_current_version):
 
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
-                                    db_v21, db_v22, db_v23
+                                    db_v21, db_v22, db_v23, db_v24
                                     ]
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index + 2 <= db_current_version:
@@ -932,3 +934,12 @@ def db_v23(myDB, upgradelog):
                           lazylibrarian.perm_admin))
         logger.debug('Added admin user %s' % user)
     upgradelog.write("%s v23: complete\n" % time.ctime())
+
+
+def db_v24(myDB, upgradelog):
+    if not has_column(myDB, "users", "HaveRead"):
+        lazylibrarian.UPDATE_MSG = 'Adding read lists to Users table'
+        upgradelog.write("%s v24: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE users ADD COLUMN HaveRead TEXT')
+        myDB.action('ALTER TABLE users ADD COLUMN ToRead TEXT')
+    upgradelog.write("%s v24: complete\n" % time.ctime())

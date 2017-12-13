@@ -144,10 +144,11 @@
     <input type="hidden" name="booklang" value=${booklang}>
     <input type="hidden" name="library" value=${library}>
     <input type="hidden" name="ignored" value=${ignored}>
-    %if perm&lazylibrarian.perm_status:
+    %if perm&lazylibrarian.perm_status or  lazylibrarian.CONFIG['USER_ACCOUNTS']:
     <div class="form-group">
       <label for="action" class="">Mark selected as</label>
       <select class="markBooks form-control input-sm" id="action" name="action">
+        %if perm&lazylibrarian.perm_status:
         <option value="Wanted">Wanted</option>
         <option value="Have">Have</option>
         <option value="Ignored">Ignored</option>
@@ -155,10 +156,16 @@
         <option value="Remove">Remove</option>
         <option value="Delete">Delete</option>
         <option value="Leave" hidden>Leave</option>
+        % endif
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Unread">Unread</option>
+        <option value="Read">Read</option>
+        <option value="ToRead">To Read</option>
+        %endif
       </select>
     </div>
     <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
-    % endif
+    %endif
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="7">Status</a>
     <p>&nbsp;</p>
@@ -168,11 +175,7 @@
     <table class="display table table-striped table-hover table-bordered" id="book_table">
       <thead>
         <tr>
-          %if perm&lazylibrarian.perm_status:
-            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-          %else:
-            <th class="hidden"></th>
-          %endif
+          <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
           <th class="bookart text-center no-sort hidden-xs">Cover</th>
           <th class="authorname hidden">Author</th>
           <th class="bookname">Title</th>
@@ -253,16 +256,20 @@
                         return str ;} },
                     { targets: [8], 'render': function(data, type, row) {
                         var btn = row[11]
-                        if ( btn == 'Open' ) {
+                        var flag = ''
+                        if ( btn.indexOf('+') >= 0) { flag = '&nbsp;<i class="fa fa-bookmark-o"></i>' }
+                        if ( btn.indexOf('=') >= 0) { flag = '&nbsp;<i class="fa fa-bookmark"></i>' }
+                        btn = btn.replace('=','').replace('+','') + flag
+                        if ( btn.indexOf('Open') >= 0 ) {
                             btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
-                                    '&library=${library}" target="_self"><i class="fa fa-book"></i>Open</a>'}
-                        else if ( btn == 'Wanted' ) {
-                            btn = '<p><a class="a btn btn-xs btn-danger">Wanted</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=${library}" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
-                        else if ( btn == 'Snatched' ) {
-                            btn = '<a class="button btn btn-xs btn-info">Snatched</a>'}
-                        else if ( btn == 'Have' ) {
+                                    '&library=${library}" target="_self"><i class="fa fa-book"></i> ' + btn + '</a>'}
+                        else if ( btn.indexOf('Wanted') >= 0 ) {
+                            btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=${library}" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
+                        else if ( btn.indexOf('Snatched') >= 0 ) {
+                            btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
+                        else if ( btn.indexOf('Have') >= 0 ) {
                             %if perm&lazylibrarian.perm_status:
-                            btn = '<a class="button btn btn-xs btn-info">Have</a>'
+                            btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'
                             %else:
                             btn = '<p><a class="button btn btn-xs btn-default grey" href="requestBook?bookid=' + row[9] + '&library=${library}" target="_self">Request</a></p>'
                             %endif
@@ -291,11 +298,7 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    %if perm&lazylibrarian.perm_status:
                     $('td', nRow).eq(0).addClass("text-center");
-                    %else:
-                    $('td', nRow).eq(0).addClass("hidden");
-                    %endif
                     $('td', nRow).eq(1).addClass('text-center');
                     $('td', nRow).eq(5).addClass('text-center');
                     $('td', nRow).eq(6).addClass('text-center');
