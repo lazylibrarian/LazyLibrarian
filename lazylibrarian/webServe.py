@@ -75,20 +75,21 @@ def serve_template(templatename, **kwargs):
 
         username = ''  # anyone logged in yet?
         perm = 0
+        res = None
+        myDB = database.DBConnection()
 
-        cookie = cherrypy.request.cookie
-        if lazylibrarian.LOGLEVEL > 4:
-            for name in cookie.keys():
-                logger.debug("name: %s, value: %s" % (name, cookie[name].value))
-                for item in cookie[name].keys():
-                    logger.debug("item: %s, value: %s" % (item, cookie[name][item]))
+        cnt = myDB.match("select count('UserID') as counter from users")
+        users = cnt['counter']
 
-        if cookie and 'll_uid' in cookie.keys():
-            myDB = database.DBConnection()
-            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
-            if res:
-                perm = check_int(res['Perms'], 0)
-                username = res['UserName']
+        if users == 1 and lazylibrarian.CONFIG['SINGLE_USER']:
+            res = myDB.match('SELECT UserName,Perms from users')
+        else:
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in cookie.keys():
+                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+        if res:
+            perm = check_int(res['Perms'], 0)
+            username = res['UserName']
 
         if perm == 0 and templatename != "register.html" and templatename != "response.html":
             templatename = "login.html"

@@ -153,10 +153,11 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
-                     'AUDIOBOOK_DEST_FILE']
+                     'AUDIOBOOK_DEST_FILE', 'SINGLE_USER']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
+    'SINGLE_USER': ('bool', 'General', 0),
     'ADMIN_EMAIL': ('str', 'General', ''),
     'LOGDIR': ('str', 'General', ''),
     'LOGLIMIT': ('int', 'General', 500),
@@ -667,7 +668,7 @@ def config_read(reloaded=False):
                              "HOST": check_setting('str', newz_name, 'host', ''),
                              "API": check_setting('str', newz_name, 'api', ''),
                              "GENERALSEARCH": check_setting('str', newz_name, 'generalsearch', 'search'),
-                             "BOOKSEARCH": check_setting('str', newz_name, 'booksearch', 'book'),
+                             "BOOKSEARCH": check_setting('str', newz_name, 'booksearch', ''),
                              "MAGSEARCH": check_setting('str', newz_name, 'magsearch', ''),
                              "AUDIOSEARCH": check_setting('str', newz_name, 'audiosearch', ''),
                              "BOOKCAT": check_setting('str', newz_name, 'bookcat', '7000,7020'),
@@ -703,7 +704,7 @@ def config_read(reloaded=False):
                              "HOST": check_setting('str', torz_name, 'host', ''),
                              "API": check_setting('str', torz_name, 'api', ''),
                              "GENERALSEARCH": check_setting('str', torz_name, 'generalsearch', 'search'),
-                             "BOOKSEARCH": check_setting('str', torz_name, 'booksearch', 'book'),
+                             "BOOKSEARCH": check_setting('str', torz_name, 'booksearch', ''),
                              "MAGSEARCH": check_setting('str', torz_name, 'magsearch', ''),
                              "AUDIOSEARCH": check_setting('str', torz_name, 'audiosearch', ''),
                              "BOOKCAT": check_setting('str', torz_name, 'bookcat', '8000,8010'),
@@ -782,6 +783,11 @@ def config_read(reloaded=False):
     series_list = ''
     if version:  # if zero, there is no series table yet
         series_list = myDB.select('SELECT SeriesID from series')
+
+    if CONFIG['SINGLE_USER']:
+        SINGLE_USER = 1
+    else:
+        SINGLE_USER = 0
 
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
