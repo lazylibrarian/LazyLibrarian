@@ -38,7 +38,7 @@
                 %endif
               %else:
                 %if redirect == 'audio':
-                  <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&library=AudioBook" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><<br>${result['BookName']}</td>
+                  <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&library=AudioBook" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
                 %else:
                   <td class="bookart text-center"><a href="openMag?bookid=${result['IssueID']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a><br>${result['IssueDate']}</td>
                 %endif
