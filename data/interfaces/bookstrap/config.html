@@ -136,6 +136,12 @@
                       <label for="user_accounts" title="Enable user accounts">
                       <input type="checkbox" id="user_accounts" name="user_accounts" value="1" ${checked} />
                       Enable user accounts&nbsp;&nbsp;</label>
+                      <%
+                        if lazylibrarian.CONFIG['SINGLE_USER'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
                       <label for="single_user" title="Single user">
                       <input type="checkbox" id="single_user" name="single_user" value="1" ${checked} />
                       Single user bypass login</label>

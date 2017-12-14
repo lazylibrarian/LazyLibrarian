@@ -77,16 +77,15 @@ def serve_template(templatename, **kwargs):
         perm = 0
         res = None
         myDB = database.DBConnection()
-
-        cnt = myDB.match("select count('UserID') as counter from users")
-        users = cnt['counter']
-
-        if users == 1 and lazylibrarian.CONFIG['SINGLE_USER']:
-            res = myDB.match('SELECT UserName,Perms from users')
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
         else:
-            cookie = cherrypy.request.cookie
-            if cookie and 'll_uid' in cookie.keys():
-                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+            cnt = myDB.match("select count('UserID') as counter from users")
+            if cnt['counter'] == 1 and lazylibrarian.CONFIG['SINGLE_USER']:
+                res = myDB.match('SELECT UserName,Perms,UserID from users')
+                cherrypy.response.cookie['ll_uid'] = res['UserID']
+                logger.debug("Auto-login for %s" % res['UserName'])
         if res:
             perm = check_int(res['Perms'], 0)
             username = res['UserName']
