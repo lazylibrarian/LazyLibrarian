@@ -683,16 +683,12 @@ class WebInterface(object):
 
         ToRead = []
         HaveRead = []
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
-            perm = lazylibrarian.perm_admin
-        else:
-            perm = 0
+        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and lazylibrarian.CONFIG['USER_ACCOUNTS']:
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in cookie.keys():
                 res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
                                  (cookie['ll_uid'].value,))
                 if res:
-                    perm = check_int(res['Perms'], 0)
                     ToRead = getList(res['ToRead'])
                     HaveRead = getList(res['HaveRead'])
 
@@ -709,18 +705,9 @@ class WebInterface(object):
                     flag = '&nbsp;<i class="fa fa-bookmark"></i>'
                 else:
                     flag = ''
-                newrow = {}
-                newrow['BookID'] = entry[0]
-                newrow['BookName'] = entry[1]
-                newrow['SeriesNum'] = entry[2]
-                newrow['BookImg'] = entry[3]
-                newrow['Status'] = entry[4]
-                newrow['AuthorName'] = entry[5]
-                newrow['AuthorID'] = entry[6]
-                newrow['BookLink'] = entry[7]
-                newrow['WorkPage'] = entry[8]
-                newrow['AudioStatus'] = entry[9]
-                newrow['Flag'] = flag
+                newrow = {'BookID': entry[0], 'BookName': entry[1], 'SeriesNum': entry[2], 'BookImg': entry[3],
+                          'Status': entry[4], 'AuthorName': entry[5], 'AuthorID': entry[6], 'BookLink': entry[7],
+                          'WorkPage': entry[8], 'AudioStatus': entry[9], 'Flag': flag}
                 rows.append(newrow)  # add the new dict to the masterlist
 
         return serve_template(templatename="members.html", title=series['SeriesName'],
@@ -744,7 +731,7 @@ class WebInterface(object):
                         cookie = cherrypy.request.cookie
                         if cookie and 'll_uid' in cookie.keys():
                             res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
-                                            (cookie['ll_uid'].value,))
+                                             (cookie['ll_uid'].value,))
                             if res:
                                 ToRead = getList(res['ToRead'])
                                 HaveRead = getList(res['HaveRead'])
@@ -2002,7 +1989,7 @@ class WebInterface(object):
                         cookie = cherrypy.request.cookie
                         if cookie and 'll_uid' in cookie.keys():
                             res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
-                                            (cookie['ll_uid'].value,))
+                                             (cookie['ll_uid'].value,))
                             if res:
                                 ToRead = getList(res['ToRead'])
                                 HaveRead = getList(res['HaveRead'])

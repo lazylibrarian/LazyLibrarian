@@ -784,11 +784,6 @@ def config_read(reloaded=False):
     if version:  # if zero, there is no series table yet
         series_list = myDB.select('SELECT SeriesID from series')
 
-    if CONFIG['SINGLE_USER']:
-        SINGLE_USER = 1
-    else:
-        SINGLE_USER = 0
-
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:
         SHOW_SERIES = 1
