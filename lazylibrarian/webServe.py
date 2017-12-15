@@ -680,8 +680,51 @@ class WebInterface(object):
                 if not authorid == item['AuthorID']:
                     multi = "True"
                     break
+
+        ToRead = []
+        HaveRead = []
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            perm = lazylibrarian.perm_admin
+        else:
+            perm = 0
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in cookie.keys():
+                res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
+                                 (cookie['ll_uid'].value,))
+                if res:
+                    perm = check_int(res['Perms'], 0)
+                    ToRead = getList(res['ToRead'])
+                    HaveRead = getList(res['HaveRead'])
+
+        # turn the sqlite rowlist into a list of lists
+        rows = []
+
+        if len(members):
+            # the masterlist to be filled with the row data
+            for row in members:  # iterate through the sqlite3.Row objects
+                entry = list(row)
+                if entry[0] in ToRead:
+                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                elif entry[0] in HaveRead:
+                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                else:
+                    flag = ''
+                newrow = {}
+                newrow['BookID'] = entry[0]
+                newrow['BookName'] = entry[1]
+                newrow['SeriesNum'] = entry[2]
+                newrow['BookImg'] = entry[3]
+                newrow['Status'] = entry[4]
+                newrow['AuthorName'] = entry[5]
+                newrow['AuthorID'] = entry[6]
+                newrow['BookLink'] = entry[7]
+                newrow['WorkPage'] = entry[8]
+                newrow['AudioStatus'] = entry[9]
+                newrow['Flag'] = flag
+                rows.append(newrow)  # add the new dict to the masterlist
+
         return serve_template(templatename="members.html", title=series['SeriesName'],
-                              members=members, series=series, multi=multi)
+                              members=rows, series=series, multi=multi)
 
     @cherrypy.expose
     def markSeries(self, action=None, **args):
@@ -1430,17 +1473,19 @@ class WebInterface(object):
                     row.append('')  # empty string for series links as no group_concat
 
                 if row[6] in ToRead:
-                    row[5] = row[5] + '+'  # + want to read, converted to empty bookmark in html
+                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
                 elif row[6] in HaveRead:
-                    row[5] = row[5] + '='  # = have read it, converted to full bookmark in html
+                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                else:
+                    flag = ''
 
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
-                              row[6], row[15], row[14], row[16]])
+                              row[6], row[15], row[14], row[16], flag])
                 else:
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                              row[6], row[13], row[5], row[16]])
+                              row[6], row[13], row[5], row[16], flag])
             rows = d
 
         if lazylibrarian.LOGLEVEL > 3:
