@@ -75,6 +75,11 @@
         %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
         <option value="${item}">${item}</option>
         %endfor
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Unread">Unread</option>
+        <option value="Read">Read</option>
+        <option value="ToRead">To Read</option>
+        %endif
       </select>
     </div>
     <input type="submit" class="markSeries btn btn-sm btn-default" value="Go">

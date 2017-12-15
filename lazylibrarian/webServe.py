@@ -740,6 +740,38 @@ class WebInterface(object):
                             logger.debug('Status set to "%s" for "%s"' % (action, match['SeriesName']))
                             if action in ['Wanted', 'Active']:
                                 threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
+                    elif action in ["Unread", "Read", "ToRead"]:
+                        cookie = cherrypy.request.cookie
+                        if cookie and 'll_uid' in cookie.keys():
+                            res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
+                                            (cookie['ll_uid'].value,))
+                            if res:
+                                ToRead = getList(res['ToRead'])
+                                HaveRead = getList(res['HaveRead'])
+                                members = myDB.select('SELECT bookid from member where seriesid=?', (seriesid,))
+                                if members:
+                                    for item in members:
+                                        bookid = item['bookid']
+                                        if action == "Unread":
+                                            if bookid in ToRead:
+                                                ToRead.remove(bookid)
+                                            if bookid in HaveRead:
+                                                HaveRead.remove(bookid)
+                                            logger.debug('Status set to "unread" for "%s"' % bookid)
+                                        elif action == "Read":
+                                            if bookid in ToRead:
+                                                ToRead.remove(bookid)
+                                            if bookid not in HaveRead:
+                                                HaveRead.append(bookid)
+                                            logger.debug('Status set to "read" for "%s"' % bookid)
+                                        elif action == "ToRead":
+                                            if bookid not in ToRead:
+                                                ToRead.append(bookid)
+                                            if bookid in HaveRead:
+                                                HaveRead.remove(bookid)
+                                            logger.debug('Status set to "to read" for "%s"' % bookid)
+                                    myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
+                                                (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
             if "redirect" in args:
                 if not args['redirect'] == 'None':
                     raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])
