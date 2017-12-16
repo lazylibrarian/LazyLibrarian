@@ -284,13 +284,13 @@ def bookRename(bookid):
             dest_dir = lazylibrarian.DIRECTORY('eBook')
             dest_path = os.path.join(dest_dir, dest_path)
 
-        if r != dest_path:
-            try:
-                shutil.move(r, dest_path)
-                r = dest_path
-            except Exception as why:
-                if not os.path.isdir(dest_path):
-                    logger.debug('Unable to create directory %s: %s' % (dest_path, why))
+            if r != dest_path:
+                try:
+                    shutil.move(r, dest_path)
+                    r = dest_path
+                except Exception as why:
+                    if not os.path.isdir(dest_path):
+                        logger.debug('Unable to create directory %s: %s' % (dest_path, why))
 
             book_basename, prefextn = os.path.splitext(os.path.basename(f))
             new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
