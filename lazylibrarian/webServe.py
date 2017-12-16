@@ -1316,6 +1316,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         ToRead = []
         HaveRead = []
+        flagTo = flagHave = 0
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
@@ -1328,6 +1329,10 @@ class WebInterface(object):
                     perm = check_int(res['Perms'], 0)
                     ToRead = getList(res['ToRead'])
                     HaveRead = getList(res['HaveRead'])
+
+                    if lazylibrarian.LOGLEVEL > 3:
+                        logger.debug("getBooks userid %s read %s,%s" % (
+                                     cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1353,12 +1358,11 @@ class WebInterface(object):
         args = []
         if kwargs['source'] == "Manage":
             if kwargs['whichStatus'] == 'ToRead':
-                cmd += ' and books.bookID in (' + res['ToRead'] + ')'
+                cmd += ' and books.bookID in (' + ', '.join(ToRead) + ')'
             elif kwargs['whichStatus'] == 'Read':
-                cmd += ' and books.bookID in (' + res['HaveRead'] + ')'
+                cmd += ' and books.bookID in (' + ', '.join(HaveRead) + ')'
             else:
-                cmd += ' and books.STATUS=?'
-                args.append(kwargs['whichStatus'])
+                cmd += ' and books.STATUS="' + kwargs['whichStatus'] + '"'
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
@@ -1392,6 +1396,7 @@ class WebInterface(object):
             cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
 
         rowlist = myDB.select(cmd, tuple(args))
+
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
         rows = []
@@ -1493,8 +1498,10 @@ class WebInterface(object):
 
                 if row[6] in ToRead:
                     flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                    flagTo += 1
                 elif row[6] in HaveRead:
                     flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                    flagHave += 1
                 else:
                     flag = ''
 
@@ -1508,8 +1515,8 @@ class WebInterface(object):
             rows = d
 
         if lazylibrarian.LOGLEVEL > 3:
-            logger.debug("getBooks %s returning %s to %s" % (
-                         kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
+                         kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
