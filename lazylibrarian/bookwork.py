@@ -256,86 +256,88 @@ def bookRename(bookid):
     if not exists:
         logger.debug("Invalid bookid in bookRename %s" % bookid)
         return ''
-    else:
-        f = exists['BookFile']
-        if not f:
-            logger.debug("No filename for %s in BookRename %s" % bookid)
-            return ''
-        r = os.path.dirname(f)
-        try:
-            calibreid = r.rsplit('(', 1)[1].split(')')[0]
-            if not calibreid.isdigit():
-                calibreid = ''
-        except IndexError:
+
+    f = exists['BookFile']
+    if not f:
+        logger.debug("No filename for %s in BookRename %s" % bookid)
+        return ''
+
+    r = os.path.dirname(f)
+    try:
+        calibreid = r.rsplit('(', 1)[1].split(')')[0]
+        if not calibreid.isdigit():
             calibreid = ''
+    except IndexError:
+        calibreid = ''
 
-        if calibreid:
-            msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
-            logger.debug(msg)
-        else:
-            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
-                '$Author', exists['AuthorName']).replace(
-                '$Title', exists['BookName']).replace(
-                '$Series', seriesInfo(bookid)).replace(
-                '$SerName', seriesInfo(bookid, 'Name')).replace(
-                '$SerNum', seriesInfo(bookid, 'Num'))
-            dest_path = ' '.join(dest_path.split()).strip()
-            dest_path = replace_all(dest_path, __dic__)
-            dest_dir = lazylibrarian.DIRECTORY('eBook')
-            dest_path = os.path.join(dest_dir, dest_path)
-
-            if r != dest_path:
-                try:
-                    shutil.move(r, dest_path)
-                    r = dest_path
-                except Exception as why:
-                    if not os.path.isdir(dest_path):
-                        logger.debug('Unable to create directory %s: %s' % (dest_path, why))
-
-            book_basename, prefextn = os.path.splitext(os.path.basename(f))
-            new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
-            new_basename = new_basename.replace(
-                '$Author', exists['AuthorName']).replace(
-                '$Title', exists['BookName']).replace(
-                '$Series', seriesInfo(bookid)).replace(
-                '$SerName', seriesInfo(bookid, 'Name')).replace(
-                '$SerNum', seriesInfo(bookid, 'Num'))
-            new_basename = ' '.join(new_basename.split()).strip()
-
-            # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
-            slash = new_basename.find('/')
-            while slash > 0:
-                if new_basename[slash - 1] != ' ':
-                    if new_basename[slash + 1] != ' ':
-                        new_basename = new_basename[:slash] + '_' + new_basename[slash + 1:]
-                slash = new_basename.find('/', slash + 1)
-
-            if ' / ' in new_basename:  # used as a separator in goodreads omnibus
-                logger.warn("bookRename [%s] looks like an omnibus? Not renaming %s" % (new_basename, book_basename))
-                new_basename = book_basename
-
-            if book_basename != new_basename:
-                # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
-                for fname in os.listdir(r):
-                    extn = ''
-                    if is_valid_booktype(fname, booktype='ebook'):
-                        extn = os.path.splitext(fname)[1]
-                    elif fname.endswith('.opf') and not fname == 'metadata.opf':
-                        extn = '.opf'
-                    elif fname.endswith('.jpg') and not fname == 'cover.jpg':
-                        extn = '.jpg'
-                    if extn:
-                        ofname = os.path.join(r, fname)
-                        nfname = os.path.join(r, new_basename + extn)
-                        try:
-                            shutil.move(ofname, nfname)
-                            logger.debug("bookRename %s to %s" % (ofname, nfname))
-                            if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
-                                f = nfname
-                        except Exception as e:
-                            logger.error('Unable to rename [%s] to [%s] %s %s' %
-                                         (ofname, nfname, type(e).__name__, str(e)))
+    if calibreid:
+        msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
+        logger.debug(msg)
         return f
+
+    dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
+        '$Author', exists['AuthorName']).replace(
+        '$Title', exists['BookName']).replace(
+        '$Series', seriesInfo(bookid)).replace(
+        '$SerName', seriesInfo(bookid, 'Name')).replace(
+        '$SerNum', seriesInfo(bookid, 'Num'))
+    dest_path = ' '.join(dest_path.split()).strip()
+    dest_path = replace_all(dest_path, __dic__)
+    dest_dir = lazylibrarian.DIRECTORY('eBook')
+    dest_path = os.path.join(dest_dir, dest_path)
+
+    if r != dest_path:
+        try:
+            shutil.move(r, dest_path)
+            r = dest_path
+        except Exception as why:
+            if not os.path.isdir(dest_path):
+                logger.debug('Unable to create directory %s: %s' % (dest_path, why))
+
+    book_basename, prefextn = os.path.splitext(os.path.basename(f))
+    new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
+    new_basename = new_basename.replace(
+        '$Author', exists['AuthorName']).replace(
+        '$Title', exists['BookName']).replace(
+        '$Series', seriesInfo(bookid)).replace(
+        '$SerName', seriesInfo(bookid, 'Name')).replace(
+        '$SerNum', seriesInfo(bookid, 'Num'))
+    new_basename = ' '.join(new_basename.split()).strip()
+
+    # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
+    slash = new_basename.find('/')
+    while slash > 0:
+        if new_basename[slash - 1] != ' ':
+            if new_basename[slash + 1] != ' ':
+                new_basename = new_basename[:slash] + '_' + new_basename[slash + 1:]
+        slash = new_basename.find('/', slash + 1)
+
+    if ' / ' in new_basename:  # used as a separator in goodreads omnibus
+        logger.warn("bookRename [%s] looks like an omnibus? Not renaming %s" % (new_basename, book_basename))
+        new_basename = book_basename
+
+    if book_basename != new_basename:
+        # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
+        for fname in os.listdir(r):
+            extn = ''
+            if is_valid_booktype(fname, booktype='ebook'):
+                extn = os.path.splitext(fname)[1]
+            elif fname.endswith('.opf') and not fname == 'metadata.opf':
+                extn = '.opf'
+            elif fname.endswith('.jpg') and not fname == 'cover.jpg':
+                extn = '.jpg'
+            if extn:
+                ofname = os.path.join(r, fname)
+                nfname = os.path.join(r, new_basename + extn)
+                try:
+                    shutil.move(ofname, nfname)
+                    logger.debug("bookRename %s to %s" % (ofname, nfname))
+                    if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
+                        f = nfname
+                except Exception as e:
+                    logger.error('Unable to rename [%s] to [%s] %s %s' %
+                                 (ofname, nfname, type(e).__name__, str(e)))
+    return f
 
 
 def setAllBookAuthors():
