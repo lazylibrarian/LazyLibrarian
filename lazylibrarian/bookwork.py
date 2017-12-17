@@ -206,6 +206,9 @@ def audioRename(bookid):
 
 
 def seriesInfo(bookid, part=None):
+    """ Return series info for a bookid as a formatted string (seriesname #number)
+        or (seriesname number) if no numeric part, or if not numeric eg "Book Two"
+        If part is "Name" or "Num" just return relevant part of result """
     seriesinfo = ''
     myDB = database.DBConnection()
     cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
@@ -239,12 +242,11 @@ def seriesInfo(bookid, part=None):
                 seriesinfo = "%s #%s" % (seriesname, seriesnum)
         seriesinfo = seriesinfo.replace('/', '_').strip()
         if part == 'Name':
-            if not seriesnum:
-                return seriesinfo
-            return seriesname
+            if seriesnum:
+                seriesinfo = seriesname
         elif part == 'Num':
-            return seriesnum
-        if seriesinfo:
+            seriesinfo = seriesnum
+        elif seriesinfo:
             seriesinfo = "(%s)" % seriesinfo
     return seriesinfo
 
