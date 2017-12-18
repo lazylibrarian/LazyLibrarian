@@ -308,6 +308,7 @@ class GoodReads:
 
     def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped",
                          entrystatus='Active', refresh=False):
+        # noinspection PyBroadException
         try:
             api_hits = 0
             gr_lang_hits = 0

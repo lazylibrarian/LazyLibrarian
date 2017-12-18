@@ -59,6 +59,7 @@ def update_downloads(provider):
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
+    # noinspection PyBroadException
     try:
         if not source_dir or not os.path.isdir(source_dir):
             logger.warn("Alternate Directory not configured")
@@ -301,6 +302,7 @@ def cron_processDir():
 
 
 def processDir(reset=False):
+    # noinspection PyBroadException
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -849,6 +851,7 @@ def delete_task(Source, DownloadID, remove_data):
 
 
 def import_book(pp_path=None, bookID=None):
+    # noinspection PyBroadException
     try:
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag

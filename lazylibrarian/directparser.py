@@ -33,7 +33,7 @@ def url_fix(s, charset='utf-8'):
     return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
 
 
-# noinspection PyProtectedMember,PyProtectedMember
+# noinspection PyProtectedMember
 def redirect_url(genhost, url):
     """ libgen.io might have dns blocked, but user can bypass using genhost 93.174.95.27 in config
         libgen might send us a book url that still contains http://libgen.io/  or /libgen.io/

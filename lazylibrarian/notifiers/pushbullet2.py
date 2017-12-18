@@ -148,6 +148,7 @@ class PushBullet:
         """
 
         if not file_type:
+            # noinspection PyBroadException
             try:
                 # noinspection PyUnresolvedReferences
                 import magic

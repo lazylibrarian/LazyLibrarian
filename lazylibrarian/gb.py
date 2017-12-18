@@ -49,6 +49,7 @@ class GoogleBooks:
             'key': lazylibrarian.CONFIG['GB_API']
         }
 
+    # noinspection PyBroadException
     def find_results(self, searchterm=None, queue=None):
         """ GoogleBooks performs much better if we search for author OR title
             not both at once, so if searchterm is not isbn, two searches needed.
@@ -299,9 +300,9 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
-    # noinspection PyUnboundLocalVariable
     def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped",
                          entrystatus='Active', refresh=False):
+        # noinspection PyBroadException
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
             # google doesnt like accents in author names

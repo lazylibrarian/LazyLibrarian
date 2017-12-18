@@ -43,6 +43,7 @@ def fetchURL(URL, headers=None, retry=True):
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
             return r.content, True
+        # noinspection PyBroadException
         try:
             # noinspection PyProtectedMember
             msg = requests.status_codes._codes[r.status_code][0]

@@ -74,6 +74,7 @@ class grauth:
     @staticmethod
     def goodreads_oauth2():
         global request_token, consumer, token, client
+        # noinspection PyBroadException
         try:
             token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
         except Exception:
@@ -459,6 +460,7 @@ def grfollow(authorid, follow=True):
 
 
 def grsync(status, shelf):
+    # noinspection PyBroadException
     try:
         shelf = shelf.lower()
         logger.info('Syncing %s to %s shelf' % (status, shelf))

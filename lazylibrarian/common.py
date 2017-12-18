@@ -346,6 +346,7 @@ def authorUpdate():
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "AUTHORUPDATE"
+    # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
@@ -359,7 +360,6 @@ def authorUpdate():
                 logger.info('Starting update for %s' % author['AuthorName'])
                 authorid = author['AuthorID']
                 logger.debug(msg)
-                # noinspection PyUnresolvedReferences
                 lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
             else:
                 # don't nag. Show info message no more than every 12 hrs, debug message otherwise
@@ -375,6 +375,7 @@ def authorUpdate():
 
 
 def aaUpdate(refresh=False):
+    # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorID from authors WHERE Status="Active" or Status="Loading" or Status="Wanted"'
@@ -384,7 +385,6 @@ def aaUpdate(refresh=False):
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
         for author in activeauthors:
             authorid = author['AuthorID']
-            # noinspection PyUnresolvedReferences
             lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=authorid)
         logger.info('Active author update complete')
         lazylibrarian.AUTHORS_UPDATE = False
