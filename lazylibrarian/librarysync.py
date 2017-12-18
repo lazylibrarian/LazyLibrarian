@@ -281,6 +281,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
         return 0
 
     myDB = database.DBConnection()
+    # noinspection PyBroadException
     try:
         # keep statistics of full library scans
         if startdir == destdir:
@@ -423,6 +424,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
+                elif not os.path.isdir(r):
+                    logger.debug("[%s] missing (renamed?)" % r)
                 else:
                     # If this is a book, try to get author/title/isbn/language
                     # if epub or mobi, read metadata from the book
@@ -666,6 +669,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
                                         searchterm = urllib.quote_plus(searchname)
                                         set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+                                        # noinspection PyBroadException
                                         try:
                                             rootxml, in_cache = get_xml_request(set_url)
                                             if rootxml is None:

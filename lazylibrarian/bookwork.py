@@ -209,47 +209,47 @@ def seriesInfo(bookid, part=None):
     """ Return series info for a bookid as a formatted string (seriesname #number)
         or (seriesname number) if no numeric part, or if not numeric eg "Book Two"
         If part is "Name" or "Num" just return relevant part of result """
-    seriesinfo = ''
     myDB = database.DBConnection()
     cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
     res = myDB.match(cmd, (bookid,))
+    if not res:
+        return ''
+
+    seriesid = res['SeriesID']
+    serieslist = getList(res['SeriesNum'])
+    seriesnum = seriesname = ''
+    # might be "Book 3.5" or similar, just get the numeric part
+    while serieslist:
+        seriesnum = serieslist.pop()
+        try:
+            _ = float(seriesnum)
+            break
+        except ValueError:
+            seriesnum = ''
+            pass
+
+    if not seriesnum:
+        # couldn't figure out number, keep everything we got, could be something like "Book Two"
+        serieslist = res['SeriesNum']
+
+    cmd = 'SELECT SeriesName from series WHERE seriesid=?'
+    res = myDB.match(cmd, (seriesid,))
     if res:
-        seriesid = res['SeriesID']
-        serieslist = getList(res['SeriesNum'])
-        seriesnum = ''
-        # might be "Book 3.5" or similar, just get the numeric part
-        while serieslist:
-            seriesnum = serieslist.pop()
-            try:
-                _ = float(seriesnum)
-                break
-            except ValueError:
-                seriesnum = ''
-                pass
-
+        seriesname = res['SeriesName']
         if not seriesnum:
-            # couldn't figure out number, keep everything we got, could be something like "Book Two"
-            serieslist = res['SeriesNum']
+            # add what we got back to end of series name
+            if serieslist:
+                seriesname = "%s %s" % (seriesname, serieslist)
 
-        cmd = 'SELECT SeriesName from series WHERE seriesid=?'
-        res = myDB.match(cmd, (seriesid,))
-        if res:
-            seriesname = res['SeriesName']
-            if not seriesnum:
-                # add what we got to series name
-                seriesinfo = "%s %s" % (seriesname, serieslist)
-            else:
-                seriesinfo = "%s #%s" % (seriesname, seriesnum)
-        seriesinfo = seriesinfo.replace('/', '_').strip()
-        if part == 'Name':
-            if seriesnum:
-                seriesinfo = seriesname
-        elif part == 'Num':
-            seriesinfo = seriesnum
-        elif seriesinfo:
-            seriesinfo = "(%s)" % seriesinfo
-    return seriesinfo
-
+    if part == 'Name' and seriesname:
+        return lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
+    elif part == 'Num' and seriesnum:
+        return lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
+    elif seriesname or seriesnum:
+        return lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+            '$SerName', seriesname).replace('$$', ' ')
+    else:
+        return ''
 
 def bookRename(bookid):
     myDB = database.DBConnection()
@@ -298,6 +298,7 @@ def bookRename(bookid):
 
     book_basename, prefextn = os.path.splitext(os.path.basename(f))
     new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
+
     new_basename = new_basename.replace(
         '$Author', exists['AuthorName']).replace(
         '$Title', exists['BookName']).replace(
@@ -696,6 +697,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
             librarything_wait()
             result, success = fetchURL(URL)
             if bookID and success:
+                # noinspection PyBroadException
                 try:
                     workpage = result.split('<link>')[1].split('</link>')[0]
                     librarything_wait()
@@ -711,6 +713,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                         librarything_wait()
                         result, success = fetchURL(URL)
                         if success:
+                            # noinspection PyBroadException
                             try:
                                 workpage = result.split('<link>')[1].split('</link>')[0]
                                 librarything_wait()

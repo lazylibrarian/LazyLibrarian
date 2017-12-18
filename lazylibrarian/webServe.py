@@ -63,6 +63,7 @@ def serve_template(templatename, **kwargs):
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
+    # noinspection PyBroadException
     try:
         if lazylibrarian.UPDATE_MSG:
             template = _hplookup.get_template("dbupdate.html")
@@ -140,7 +141,7 @@ def serve_template(templatename, **kwargs):
         return exceptions.html_error_template().render()
 
 
-# noinspection PyProtectedMember,PyProtectedMember
+# noinspection PyProtectedMember
 class WebInterface(object):
     @cherrypy.expose
     def index(self):
@@ -1016,8 +1017,8 @@ class WebInterface(object):
             booklist.append(item['BookID'])
 
         searchresults = search_for(name)
-        return serve_template(templatename="searchresults.html", title='Search Results: "' +
-                              name + '"', searchresults=searchresults, authorlist=authorlist,
+        return serve_template(templatename="searchresults.html", title='Search Results: "' + name + '"',
+                              searchresults=searchresults, authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
@@ -1332,7 +1333,7 @@ class WebInterface(object):
 
                     if lazylibrarian.LOGLEVEL > 3:
                         logger.debug("getBooks userid %s read %s,%s" % (
-                                     cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
+                            cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1516,7 +1517,7 @@ class WebInterface(object):
 
         if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
-                         kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
+                kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),

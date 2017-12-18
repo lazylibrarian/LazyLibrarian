@@ -1416,6 +1416,22 @@
                     <span class="help-block">Directory for wishlists and manually importing books<br>
                       <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span>
                   </div>
+                  <legend>Name Formatting</legend>
+                  <div class="form-group">
+                    <label for="fmt_series">Series Pattern:</label>
+                    <input type="text" id="fmt_series" name="fmt_series" value="${lazylibrarian.CONFIG['FMT_SERIES']}" class="form-control" placeholder="eg ($SerName #$SerNum)">
+                    <span class="help-block">Options: $SerName, $SerNum, $$, any string.</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="fmt_sername">Series Name Pattern:</label>
+                    <input type="text" id="fmt_sername" name="fmt_sername" value="${lazylibrarian.CONFIG['FMT_SERNAME']}" class="form-control" placeholder="eg $SerName$$">
+                    <span class="help-block">Options: $SerName, $$, any string.</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="fmt_sernum">Series Number Pattern:</label>
+                    <input type="text" id="fmt_sernum" name="fmt_sernum" value="${lazylibrarian.CONFIG['FMT_SERNUM']}" class="form-control" placeholder="eg Book #$SerNum$$">
+                    <span class="help-block">Options: $SerNum, $$, any string.</span>
+                  </div>
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
@@ -1425,7 +1441,7 @@
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                     <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, any string.<br/>
-                      Current limitations: Each title has to be in unique subfolder. If using calibredb, calibre may override this setting</span>
+                      Current limitations: Each title has to be in unique subfolder. Calibre may override ebook folder and filename patterns</span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
