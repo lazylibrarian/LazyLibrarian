@@ -31,6 +31,7 @@ def cron_search_rss_book():
         search_rss_book()
 
 
+# noinspection PyBroadException
 def search_rss_book(books=None, library=None):
     """
     books is a list of new books to add, or None for backlog search
@@ -130,7 +131,6 @@ def search_rss_book(books=None, library=None):
 
                     if not bookmatch:
                         msg = "Skipping book %s by %s" % (item['Title'], book['rss_author'])
-                        # noinspection PyUnboundLocalVariable
                         if not results:
                             msg += ', No results returned'
                             logger.warn(msg)

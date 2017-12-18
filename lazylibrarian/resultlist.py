@@ -54,6 +54,7 @@ def findBestResult(resultlist, book, searchtype, source):
         source:     nzb, tor, rss, direct
         return:     highest scoring match, or None if no match
     """
+    # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
         dictrepl = {'...': '', '.': ' ', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', ' + ': ' ', '"': '',
@@ -212,6 +213,7 @@ def downloadResult(match, book):
         book:   book we are downloading
         return: True if already snatched, False if failed to snatch, >True if we snatched it
     """
+    # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
 
