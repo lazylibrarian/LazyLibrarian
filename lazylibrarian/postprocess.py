@@ -526,7 +526,8 @@ def processDir(reset=False):
                                 '$Title', bookname).replace(
                                 '$Series', seriesInfo(book['BookID'])).replace(
                                 '$SerName', seriesInfo(book['BookID'], 'Name')).replace(
-                                '$SerNum', seriesInfo(book['BookID'], 'Num'))
+                                '$SerNum', seriesInfo(book['BookID'], 'Num')).replace (
+                                '$$', ' ')
                             dest_path = ' '.join(dest_path.split()).strip()
                             dest_path = replace_all(dest_path, __dic__)
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
@@ -539,7 +540,8 @@ def processDir(reset=False):
                                 '$Title', bookname).replace(
                                 '$Series', '').replace(
                                 '$SerName', '').replace(
-                                '$SerNum', '')
+                                '$SerNum', '').replace (
+                                '$$', ' ')
                             global_name = ' '.join(global_name.split()).strip()
                         else:
                             data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
@@ -907,7 +909,8 @@ def import_book(pp_path=None, bookID=None):
                             '$Title', bookname).replace(
                             '$Series', seriesInfo(bookID)).replace(
                             '$SerName', seriesInfo(bookID, 'Name')).replace(
-                            '$SerNum', seriesInfo(bookID, 'Num'))
+                            '$SerNum', seriesInfo(bookID, 'Num')).replace (
+                            '$$', ' ')
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
             dest_path = os.path.join(dest_dir, dest_path)
@@ -918,7 +921,8 @@ def import_book(pp_path=None, bookID=None):
                 '$Title', bookname).replace(
                 '$Series', '').replace(
                 '$SerName', '').replace(
-                '$SerNum', '')
+                '$SerNum', '').replace (
+                '$$', ' ')
             global_name = ' '.join(global_name.split()).strip()
 
             if int(lazylibrarian.LOGLEVEL) > 2:

@@ -385,7 +385,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
         matchString = matchString.replace("\\$\\A\\u\\t\\h\\o\\r", "(?P<author>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<book>.*?)").replace(
-            "\\$\\S\\e\\r\\i\\e\\s", "") + '\.[' + booktypes + ']'  # ignore any series, we just want author/title
+            "\\$\\S\\e\\r\\i\\e\\s", "").replace(
+            "\\$\\S\\e\\r\\N\\u\\m", "").replace(
+            "\\$\\S\\e\\r\\N\\a\\m\\e", "").replace(
+            "\\$\\$", "") + '\.[' + booktypes + ']'  # ignore any series, we just want author/title
 
         pattern = re.compile(matchString, re.VERBOSE)
 

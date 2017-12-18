@@ -1417,6 +1417,7 @@
                       <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span>
                   </div>
                   <legend>Name Formatting</legend>
+                    <span class="help-block">Note: Calibre may override ebook folder and filename patterns</span>
                   <div class="form-group">
                     <label for="fmt_series">Series Pattern:</label>
                     <input type="text" id="fmt_series" name="fmt_series" value="${lazylibrarian.CONFIG['FMT_SERIES']}" class="form-control" placeholder="eg ($SerName #$SerNum)">
@@ -1435,18 +1436,18 @@
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, any string.</span>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $$, any string.</span>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, any string.<br/>
-                      Current limitations: Each title has to be in unique subfolder. Calibre may override ebook folder and filename patterns</span>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $$, any string.<br/>
+                      Current limitation: Each title has to be in unique subfolder</span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
                     <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Part, $Total, any string.<br/>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Part, $Total, $$, any string.<br/>
                       Current limitation: Has to include $Title and $Part</span>
                   </div>
                   <div class="checkbox">

@@ -166,7 +166,8 @@ def audioRename(bookid):
         '$Title', book).replace(
         '$Series', seriesInfo(bookid)).replace(
         '$SerName', seriesInfo(bookid, 'Name')).replace(
-        '$SerNum', seriesInfo(bookid, 'Num'))
+        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('Audio')
@@ -188,7 +189,8 @@ def audioRename(bookid):
             '$Total', str(len(parts))).replace(
             '$Series', seriesInfo(bookid)).replace(
             '$SerName', seriesInfo(bookid, 'Name')).replace(
-            '$SerNum', seriesInfo(bookid, 'Num'))
+            '$SerNum', seriesInfo(bookid, 'Num')).replace (
+            '$$', ' ')
         pattern = ' '.join(pattern.split()).strip()
 
         n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
@@ -282,7 +284,8 @@ def bookRename(bookid):
         '$Title', exists['BookName']).replace(
         '$Series', seriesInfo(bookid)).replace(
         '$SerName', seriesInfo(bookid, 'Name')).replace(
-        '$SerNum', seriesInfo(bookid, 'Num'))
+        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('eBook')
@@ -304,7 +307,8 @@ def bookRename(bookid):
         '$Title', exists['BookName']).replace(
         '$Series', seriesInfo(bookid)).replace(
         '$SerName', seriesInfo(bookid, 'Name')).replace(
-        '$SerNum', seriesInfo(bookid, 'Num'))
+        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$$', ' ')
     new_basename = ' '.join(new_basename.split()).strip()
 
     # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
