@@ -195,7 +195,7 @@ def datecompare(nzbdate, control_date):
         date2 = datetime.date(y2, m2, d2)
         dtage = date1 - date2
         return dtage.days
-    except Exception:
+    except (AttributeError, IndexError, TypeError, ValueError):
         return 0
 
 

@@ -212,6 +212,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
 def unpack_archive(pp_path, download_dir, title):
     """ See if pp_path is an archive containing a book
         returns new directory in download_dir with book in it, or empty string """
+    # noinspection PyBroadException
     try:
         from lib.unrar import rarfile
         gotrar = True
@@ -526,7 +527,7 @@ def processDir(reset=False):
                                 '$Title', bookname).replace(
                                 '$Series', seriesInfo(book['BookID'])).replace(
                                 '$SerName', seriesInfo(book['BookID'], 'Name')).replace(
-                                '$SerNum', seriesInfo(book['BookID'], 'Num')).replace (
+                                '$SerNum', seriesInfo(book['BookID'], 'Num')).replace(
                                 '$$', ' ')
                             dest_path = ' '.join(dest_path.split()).strip()
                             dest_path = replace_all(dest_path, __dic__)
@@ -540,7 +541,7 @@ def processDir(reset=False):
                                 '$Title', bookname).replace(
                                 '$Series', '').replace(
                                 '$SerName', '').replace(
-                                '$SerNum', '').replace (
+                                '$SerNum', '').replace(
                                 '$$', ' ')
                             global_name = ' '.join(global_name.split()).strip()
                         else:
@@ -909,7 +910,7 @@ def import_book(pp_path=None, bookID=None):
                             '$Title', bookname).replace(
                             '$Series', seriesInfo(bookID)).replace(
                             '$SerName', seriesInfo(bookID, 'Name')).replace(
-                            '$SerNum', seriesInfo(bookID, 'Num')).replace (
+                            '$SerNum', seriesInfo(bookID, 'Num')).replace(
                             '$$', ' ')
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
@@ -921,7 +922,7 @@ def import_book(pp_path=None, bookID=None):
                 '$Title', bookname).replace(
                 '$Series', '').replace(
                 '$SerName', '').replace(
-                '$SerNum', '').replace (
+                '$SerNum', '').replace(
                 '$$', ' ')
             global_name = ' '.join(global_name.split()).strip()
 

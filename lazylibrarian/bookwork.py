@@ -166,7 +166,7 @@ def audioRename(bookid):
         '$Title', book).replace(
         '$Series', seriesInfo(bookid)).replace(
         '$SerName', seriesInfo(bookid, 'Name')).replace(
-        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$SerNum', seriesInfo(bookid, 'Num')).replace(
         '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
     dest_path = replace_all(dest_path, __dic__)
@@ -189,7 +189,7 @@ def audioRename(bookid):
             '$Total', str(len(parts))).replace(
             '$Series', seriesInfo(bookid)).replace(
             '$SerName', seriesInfo(bookid, 'Name')).replace(
-            '$SerNum', seriesInfo(bookid, 'Num')).replace (
+            '$SerNum', seriesInfo(bookid, 'Num')).replace(
             '$$', ' ')
         pattern = ' '.join(pattern.split()).strip()
 
@@ -253,6 +253,7 @@ def seriesInfo(bookid, part=None):
     else:
         return ''
 
+
 def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -284,7 +285,7 @@ def bookRename(bookid):
         '$Title', exists['BookName']).replace(
         '$Series', seriesInfo(bookid)).replace(
         '$SerName', seriesInfo(bookid, 'Name')).replace(
-        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$SerNum', seriesInfo(bookid, 'Num')).replace(
         '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
     dest_path = replace_all(dest_path, __dic__)
