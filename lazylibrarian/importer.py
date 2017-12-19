@@ -119,6 +119,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "AddAuthorToDB"
+    # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
         match = False

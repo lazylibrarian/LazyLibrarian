@@ -304,6 +304,7 @@ def encode(data):
     """ Dispatches data to appropriate encode function. """
 
     try:
+        # noinspection PyCallingNonCallable
         return encode_functions[type(data)](data)
     except KeyError:
         raise BencodeError("Encode", "Unknown data type", data)
@@ -313,6 +314,7 @@ def decode(data):
     """ Dispatches data to appropriate decode function. """
 
     try:
+        # noinspection PyCallingNonCallable
         return decode_functions[ben_type(data)](data)
     except KeyError:
         raise BencodeError("Decode", "Unknown data type", data)

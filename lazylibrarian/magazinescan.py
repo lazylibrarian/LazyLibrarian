@@ -162,6 +162,7 @@ def create_cover(issuefile=None, refresh=False):
                 logger.debug("No gswin found")
                 generator = "(no windows ghostscript found)"
             else:
+                # noinspection PyBroadException
                 try:
                     params = [GS, "--version"]
                     res = subprocess.check_output(params, stderr=subprocess.STDOUT)
@@ -192,13 +193,11 @@ def create_cover(issuefile=None, refresh=False):
             try:
                 if interface == 'wand':
                     generator = "wand interface"
-                    # noinspection PyUnboundLocalVariable
                     with Image(filename=issuefile + '[0]') as img:
                         img.save(filename=coverfile)
 
                 elif interface == 'pythonmagick':
                     generator = "pythonmagick interface"
-                    # noinspection PyUnboundLocalVariable,PyArgumentList
                     img = PythonMagick.Image()
                     # PythonMagick requires filenames to be str, not unicode
                     if type(issuefile) is unicode:
@@ -259,6 +258,7 @@ def create_id(issuename=None):
 
 def magazineScan():
     lazylibrarian.MAG_UPDATE = 1
+    # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
 
@@ -338,6 +338,7 @@ def magazineScan():
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
                     issuedate = ''
+                    # noinspection PyBroadException
                     try:
                         match = title_pattern.match(fname)
                         if match:

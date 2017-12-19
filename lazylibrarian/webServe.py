@@ -63,6 +63,7 @@ def serve_template(templatename, **kwargs):
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
 
     _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
+    # noinspection PyBroadException
     try:
         if lazylibrarian.UPDATE_MSG:
             template = _hplookup.get_template("dbupdate.html")
@@ -140,7 +141,7 @@ def serve_template(templatename, **kwargs):
         return exceptions.html_error_template().render()
 
 
-# noinspection PyProtectedMember,PyProtectedMember
+# noinspection PyProtectedMember
 class WebInterface(object):
     @cherrypy.expose
     def index(self):
@@ -680,8 +681,38 @@ class WebInterface(object):
                 if not authorid == item['AuthorID']:
                     multi = "True"
                     break
+
+        ToRead = []
+        HaveRead = []
+        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in cookie.keys():
+                res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
+                                 (cookie['ll_uid'].value,))
+                if res:
+                    ToRead = getList(res['ToRead'])
+                    HaveRead = getList(res['HaveRead'])
+
+        # turn the sqlite rowlist into a list of lists
+        rows = []
+
+        if len(members):
+            # the masterlist to be filled with the row data
+            for row in members:  # iterate through the sqlite3.Row objects
+                entry = list(row)
+                if entry[0] in ToRead:
+                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                elif entry[0] in HaveRead:
+                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                else:
+                    flag = ''
+                newrow = {'BookID': entry[0], 'BookName': entry[1], 'SeriesNum': entry[2], 'BookImg': entry[3],
+                          'Status': entry[4], 'AuthorName': entry[5], 'AuthorID': entry[6], 'BookLink': entry[7],
+                          'WorkPage': entry[8], 'AudioStatus': entry[9], 'Flag': flag}
+                rows.append(newrow)  # add the new dict to the masterlist
+
         return serve_template(templatename="members.html", title=series['SeriesName'],
-                              members=members, series=series, multi=multi)
+                              members=rows, series=series, multi=multi)
 
     @cherrypy.expose
     def markSeries(self, action=None, **args):
@@ -697,6 +728,38 @@ class WebInterface(object):
                             logger.debug('Status set to "%s" for "%s"' % (action, match['SeriesName']))
                             if action in ['Wanted', 'Active']:
                                 threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
+                    elif action in ["Unread", "Read", "ToRead"]:
+                        cookie = cherrypy.request.cookie
+                        if cookie and 'll_uid' in cookie.keys():
+                            res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
+                                             (cookie['ll_uid'].value,))
+                            if res:
+                                ToRead = getList(res['ToRead'])
+                                HaveRead = getList(res['HaveRead'])
+                                members = myDB.select('SELECT bookid from member where seriesid=?', (seriesid,))
+                                if members:
+                                    for item in members:
+                                        bookid = item['bookid']
+                                        if action == "Unread":
+                                            if bookid in ToRead:
+                                                ToRead.remove(bookid)
+                                            if bookid in HaveRead:
+                                                HaveRead.remove(bookid)
+                                            logger.debug('Status set to "unread" for "%s"' % bookid)
+                                        elif action == "Read":
+                                            if bookid in ToRead:
+                                                ToRead.remove(bookid)
+                                            if bookid not in HaveRead:
+                                                HaveRead.append(bookid)
+                                            logger.debug('Status set to "read" for "%s"' % bookid)
+                                        elif action == "ToRead":
+                                            if bookid not in ToRead:
+                                                ToRead.append(bookid)
+                                            if bookid in HaveRead:
+                                                HaveRead.remove(bookid)
+                                            logger.debug('Status set to "to read" for "%s"' % bookid)
+                                    myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
+                                                (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
             if "redirect" in args:
                 if not args['redirect'] == 'None':
                     raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])
@@ -954,8 +1017,8 @@ class WebInterface(object):
             booklist.append(item['BookID'])
 
         searchresults = search_for(name)
-        return serve_template(templatename="searchresults.html", title='Search Results: "' +
-                              name + '"', searchresults=searchresults, authorlist=authorlist,
+        return serve_template(templatename="searchresults.html", title='Search Results: "' + name + '"',
+                              searchresults=searchresults, authorlist=authorlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
@@ -1254,6 +1317,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         ToRead = []
         HaveRead = []
+        flagTo = flagHave = 0
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
@@ -1266,6 +1330,10 @@ class WebInterface(object):
                     perm = check_int(res['Perms'], 0)
                     ToRead = getList(res['ToRead'])
                     HaveRead = getList(res['HaveRead'])
+
+                    if lazylibrarian.LOGLEVEL > 3:
+                        logger.debug("getBooks userid %s read %s,%s" % (
+                            cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
@@ -1291,12 +1359,11 @@ class WebInterface(object):
         args = []
         if kwargs['source'] == "Manage":
             if kwargs['whichStatus'] == 'ToRead':
-                cmd += ' and books.bookID in (' + res['ToRead'] + ')'
+                cmd += ' and books.bookID in (' + ', '.join(ToRead) + ')'
             elif kwargs['whichStatus'] == 'Read':
-                cmd += ' and books.bookID in (' + res['HaveRead'] + ')'
+                cmd += ' and books.bookID in (' + ', '.join(HaveRead) + ')'
             else:
-                cmd += ' and books.STATUS=?'
-                args.append(kwargs['whichStatus'])
+                cmd += ' and books.STATUS="' + kwargs['whichStatus'] + '"'
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
@@ -1330,6 +1397,7 @@ class WebInterface(object):
             cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
 
         rowlist = myDB.select(cmd, tuple(args))
+
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
         # turn the sqlite rowlist into a list of lists
         rows = []
@@ -1430,22 +1498,26 @@ class WebInterface(object):
                     row.append('')  # empty string for series links as no group_concat
 
                 if row[6] in ToRead:
-                    row[5] = row[5] + '+'  # + want to read, converted to empty bookmark in html
+                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                    flagTo += 1
                 elif row[6] in HaveRead:
-                    row[5] = row[5] + '='  # = have read it, converted to full bookmark in html
+                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                    flagHave += 1
+                else:
+                    flag = ''
 
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
-                              row[6], row[15], row[14], row[16]])
+                              row[6], row[15], row[14], row[16], flag])
                 else:
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                              row[6], row[13], row[5], row[16]])
+                              row[6], row[13], row[5], row[16], flag])
             rows = d
 
         if lazylibrarian.LOGLEVEL > 3:
-            logger.debug("getBooks %s returning %s to %s" % (
-                         kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
+                kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
                   'iTotalRecords': len(rowlist),
@@ -1925,7 +1997,7 @@ class WebInterface(object):
                         cookie = cherrypy.request.cookie
                         if cookie and 'll_uid' in cookie.keys():
                             res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
-                                            (cookie['ll_uid'].value,))
+                                             (cookie['ll_uid'].value,))
                             if res:
                                 ToRead = getList(res['ToRead'])
                                 HaveRead = getList(res['HaveRead'])

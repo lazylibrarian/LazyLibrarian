@@ -31,7 +31,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst
-from lazylibrarian.bookwork import audioRename
+from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -44,7 +44,7 @@ from lib.fuzzywuzzy import fuzz
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
 __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
-           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': ''}
+           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
 
 def update_downloads(provider):
@@ -59,6 +59,7 @@ def update_downloads(provider):
 
 def processAlternate(source_dir=None):
     # import a book from an alternate directory
+    # noinspection PyBroadException
     try:
         if not source_dir or not os.path.isdir(source_dir):
             logger.warn("Alternate Directory not configured")
@@ -211,6 +212,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
 def unpack_archive(pp_path, download_dir, title):
     """ See if pp_path is an archive containing a book
         returns new directory in download_dir with book in it, or empty string """
+    # noinspection PyBroadException
     try:
         from lib.unrar import rarfile
         gotrar = True
@@ -301,6 +303,7 @@ def cron_processDir():
 
 
 def processDir(reset=False):
+    # noinspection PyBroadException
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -520,16 +523,27 @@ def processDir(reset=False):
                                     'EBOOK_DEST_FOLDER'].replace('/', '\\')
                             # Default destination path, should be allowed change per config file.
                             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
-                                '$Author', authorname).replace('$Title', bookname)
-                            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
-                                '$Author', authorname).replace('$Title', bookname).replace('$Series', '').strip()
-                            global_name = unaccented(global_name)
-                            dest_path = unaccented_str(replace_all(dest_path, __dic__))
+                                '$Author', authorname).replace(
+                                '$Title', bookname).replace(
+                                '$Series', seriesInfo(book['BookID'])).replace(
+                                '$SerName', seriesInfo(book['BookID'], 'Name')).replace(
+                                '$SerNum', seriesInfo(book['BookID'], 'Num')).replace(
+                                '$$', ' ')
+                            dest_path = ' '.join(dest_path.split()).strip()
+                            dest_path = replace_all(dest_path, __dic__)
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
                                 dest_dir = lazylibrarian.DIRECTORY('Audio')
                             dest_path = os.path.join(dest_dir, dest_path)
-                            dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
+
+                            global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
+                                '$Author', authorname).replace(
+                                '$Title', bookname).replace(
+                                '$Series', '').replace(
+                                '$SerName', '').replace(
+                                '$SerNum', '').replace(
+                                '$$', ' ')
+                            global_name = ' '.join(global_name.split()).strip()
                         else:
                             data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                             if data:  # it's a magazine
@@ -840,6 +854,7 @@ def delete_task(Source, DownloadID, remove_data):
 
 
 def import_book(pp_path=None, bookID=None):
+    # noinspection PyBroadException
     try:
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
@@ -890,16 +905,26 @@ def import_book(pp_path=None, bookID=None):
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
-            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('$Author', authorname).replace('$Title',
-                                                                                                         bookname)
+            dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
+                            '$Author', authorname).replace(
+                            '$Title', bookname).replace(
+                            '$Series', seriesInfo(bookID)).replace(
+                            '$SerName', seriesInfo(bookID, 'Name')).replace(
+                            '$SerNum', seriesInfo(bookID, 'Num')).replace(
+                            '$$', ' ')
+            dest_path = ' '.join(dest_path.split()).strip()
+            dest_path = replace_all(dest_path, __dic__)
+            dest_path = os.path.join(dest_dir, dest_path)
             # global_name is only used for ebooks to ensure book/cover/opf all have the same basename
             # audiobooks are usually multi part so can't be renamed this way
             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
-                '$Author', authorname).replace('$Title', bookname).replace('$Series', '').strip()
-            global_name = unaccented(global_name)
-            dest_path = unaccented_str(replace_all(dest_path, __dic__))
-            dest_path = os.path.join(dest_dir, dest_path)
-            dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
+                '$Author', authorname).replace(
+                '$Title', bookname).replace(
+                '$Series', '').replace(
+                '$SerName', '').replace(
+                '$SerNum', '').replace(
+                '$$', ' ')
+            global_name = ' '.join(global_name.split()).strip()
 
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("processDestination %s" % pp_path)
@@ -1198,7 +1223,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug(
                         '%s set identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
 
-            # calibre does not like quotes in author names
+            # calibre does not like accents or quotes in names
             if authorname.endswith('.'):  # calibre replaces trailing dot with underscore eg Jr. becomes Jr_
                 authorname = authorname[:-1] + '_'
             calibre_dir = os.path.join(dest_dir, unaccented_str(authorname.replace('"', '_')), '')

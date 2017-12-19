@@ -27,6 +27,7 @@ from lazylibrarian.librarysync import find_book_in_db
 
 def export_CSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
+    # noinspection PyBroadException
     try:
         if not search_dir:
             msg = "Alternate Directory not configured"
@@ -124,6 +125,7 @@ def import_CSV(search_dir=None):
         adding authors to the database if not found
         and marking the books as "Wanted"
     """
+    # noinspection PyBroadException
     try:
         if not search_dir:
             msg = "Alternate Directory not configured"

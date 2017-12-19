@@ -94,6 +94,7 @@ def has_column(myDB, table, column):
 
 def dbupgrade(db_current_version):
     with open(os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'dbupgrade.log'), 'a') as upgradelog:
+        # noinspection PyBroadException
         try:
             myDB = database.DBConnection()
             db_version = 0

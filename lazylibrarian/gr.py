@@ -45,6 +45,7 @@ class GoodReads:
         self.params = {"key": lazylibrarian.CONFIG['GR_API']}
 
     def find_results(self, searchterm=None, queue=None):
+        # noinspection PyBroadException
         try:
             resultlist = []
             api_hits = 0
@@ -308,6 +309,7 @@ class GoodReads:
 
     def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped",
                          entrystatus='Active', refresh=False):
+        # noinspection PyBroadException
         try:
             api_hits = 0
             gr_lang_hits = 0

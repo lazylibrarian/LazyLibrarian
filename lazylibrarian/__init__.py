@@ -153,7 +153,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
-                     'AUDIOBOOK_DEST_FILE', 'SINGLE_USER']
+                     'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -437,7 +437,10 @@ CONFIG_DEFINITIONS = {
     'GR_UNIQUE': ('bool', 'API', 0),  # delete from wanted if already owned
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
-    'GB_API': ('str', 'API', '')  # API key has daily limits, each user needs their own
+    'GB_API': ('str', 'API', ''),  # API key has daily limits, each user needs their own
+    'FMT_SERNAME': ('str', 'FMT', '$SerName'),
+    'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
+    'FMT_SERIES': ('str', 'FMT', '( $SerName $SerNum )')
 }
 
 
@@ -783,11 +786,6 @@ def config_read(reloaded=False):
     series_list = ''
     if version:  # if zero, there is no series table yet
         series_list = myDB.select('SELECT SeriesID from series')
-
-    if CONFIG['SINGLE_USER']:
-        SINGLE_USER = 1
-    else:
-        SINGLE_USER = 0
 
     SHOW_SERIES = len(series_list)
     if CONFIG['ADD_SERIES']:

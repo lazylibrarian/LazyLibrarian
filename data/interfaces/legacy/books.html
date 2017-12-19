@@ -120,7 +120,6 @@
                     },
                     { "fnRender": function ( oObj ) {
                         var btn = oObj.aData[11]
-                        btn = btn.replace('=','').replace('+','')
                         if ( btn.indexOf('Open') >= 0 ) {
                             btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '&library=eBook" target="_self">' + btn + '</a>'}
                         else if ( btn.indexOf('Wanted') >= 0 ) {

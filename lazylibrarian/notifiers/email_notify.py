@@ -111,6 +111,10 @@ class EmailNotifier:
         return False
 
     def notify_download(self, title, bookid=None, force=False):
+        # suppress notifications if the notifier is disabled but the notify options are checked
+        if not lazylibrarian.CONFIG['USE_EMAIL'] and not force:
+            return False
+
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
             files = None
             event = notifyStrings[NOTIFY_DOWNLOAD]

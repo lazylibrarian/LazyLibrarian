@@ -1416,20 +1416,38 @@
                     <span class="help-block">Directory for wishlists and manually importing books<br>
                       <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span>
                   </div>
+                  <legend>Name Formatting</legend>
+                    <span class="help-block">Note: Calibre may override ebook folder and filename patterns</span>
+                  <div class="form-group">
+                    <label for="fmt_series">Series Pattern:</label>
+                    <input type="text" id="fmt_series" name="fmt_series" value="${lazylibrarian.CONFIG['FMT_SERIES']}" class="form-control" placeholder="eg ($SerName #$SerNum)">
+                    <span class="help-block">Options: $SerName, $SerNum, $$, any string.</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="fmt_sername">Series Name Pattern:</label>
+                    <input type="text" id="fmt_sername" name="fmt_sername" value="${lazylibrarian.CONFIG['FMT_SERNAME']}" class="form-control" placeholder="eg $SerName$$">
+                    <span class="help-block">Options: $SerName, $$, any string.</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="fmt_sernum">Series Number Pattern:</label>
+                    <input type="text" id="fmt_sernum" name="fmt_sernum" value="${lazylibrarian.CONFIG['FMT_SERNUM']}" class="form-control" placeholder="eg Book #$SerNum$$">
+                    <span class="help-block">Options: $SerNum, $$, any string.</span>
+                  </div>
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $$, any string.</span>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
-                    <span class="help-block">Options include $Author, $Title, $Series, any string.<br/>
-                      Current limitations: Each title has to be in unique subfolder. If using calibredb, calibre may override this setting</span>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $$, any string.<br/>
+                      Current limitation: Each title has to be in unique subfolder</span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
                     <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
-                    <span class="help-block">Options include $Author, $Title, $Part, $Total, any string.<br/>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Part, $Total, $$, any string.<br/>
                       Current limitation: Has to include $Title and $Part</span>
                   </div>
                   <div class="checkbox">
@@ -1461,7 +1479,7 @@
                   <div class="form-group">
                     <label for="mag_dest_file">Magazine Filename Pattern:</label>
                     <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
-                    <span class="help-block">Options include $Title, $IssueDate, any string
+                    <span class="help-block">Options: $Title, $IssueDate, any string
                       <BR>Current limitations: Issue Filename must contain IssueDate
                       <BR>If Issue Filename does not contain Title, Foldername is used as Title</span>
                   </div>

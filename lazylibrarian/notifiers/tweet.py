@@ -21,6 +21,7 @@ import lazylibrarian
 from lazylibrarian import logger, common, formatter
 
 # parse_qsl moved to urlparse module in v2.6
+# noinspection PyBroadException
 try:
     from urlparse import parse_qsl  # @UnusedImport
 except Exception:

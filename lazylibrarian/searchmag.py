@@ -38,6 +38,7 @@ def cron_search_magazines():
 
 def search_magazines(mags=None, reset=False):
     # produce a list of magazines to search for, tor, nzb, torznab, rss
+    # noinspection PyBroadException
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:

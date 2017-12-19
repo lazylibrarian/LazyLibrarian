@@ -59,6 +59,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'setBookImage': '&id= &img= set a new image for this book',
             'getAuthorImages': '[&wait] get images for all authors without one',
             'getWanted': 'list wanted books',
+            'getRead': 'list read books for current user',
+            'getToRead': 'list to-read books for current user',
             'getSnatched': 'list snatched books',
             'getHistory': 'list history',
             'getLogs': 'show current log',
@@ -301,6 +303,28 @@ class Api(object):
     def _getWanted(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
+
+    def _getRead(self):
+        userid = None
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            userid = cookie['ll_uid'].value
+        if not userid:
+            self.data = 'No userid'
+        else:
+            self.data = self._dic_from_query(
+                "SELECT haveread from users WHERE userid='%s'" % userid)
+
+    def _getToRead(self):
+        userid = None
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            userid = cookie['ll_uid'].value
+        if not userid:
+            self.data = 'No userid'
+        else:
+            self.data = self._dic_from_query(
+                "SELECT toread from users WHERE userid='%s'" % userid)
 
     def _vacuum(self):
         self.data = self._dic_from_query("vacuum; pragma integrity_check")

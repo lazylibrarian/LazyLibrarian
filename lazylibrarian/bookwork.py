@@ -23,8 +23,14 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
-    is_valid_booktype, check_int, getList
+    is_valid_booktype, check_int, getList, replace_all
 from lib.fuzzywuzzy import fuzz
+
+
+# Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
+# as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+__dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
+           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
 
 def audioRename(bookid):
@@ -155,11 +161,38 @@ def audioRename(bookid):
 
     # if we get here, looks like we have all the parts needed to rename properly
 
+    dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
+        '$Author', author).replace(
+        '$Title', book).replace(
+        '$Series', seriesInfo(bookid)).replace(
+        '$SerName', seriesInfo(bookid, 'Name')).replace(
+        '$SerNum', seriesInfo(bookid, 'Num')).replace(
+        '$$', ' ')
+    dest_path = ' '.join(dest_path.split()).strip()
+    dest_path = replace_all(dest_path, __dic__)
+    dest_dir = lazylibrarian.DIRECTORY('Audio')
+    dest_path = os.path.join(dest_dir, dest_path)
+    if r != dest_path:
+        try:
+            shutil.move(r, dest_path)
+            r = dest_path
+        except Exception as why:
+            if not os.path.isdir(dest_path):
+                logger.debug('Unable to create directory %s: %s' % (dest_path, why))
+
     for part in parts:
         pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
-        pattern = pattern.replace('$Author', author).replace('$Title', book).replace(
+        pattern = pattern.replace(
+            '$Author', author).replace(
+            '$Title', book).replace(
             '$Part', part[0].zfill(len(str(len(parts))))).replace(
-            '$Total', str(len(parts)))
+            '$Total', str(len(parts))).replace(
+            '$Series', seriesInfo(bookid)).replace(
+            '$SerName', seriesInfo(bookid, 'Name')).replace(
+            '$SerNum', seriesInfo(bookid, 'Num')).replace(
+            '$$', ' ')
+        pattern = ' '.join(pattern.split()).strip()
+
         n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
         o = os.path.join(r, part[3])
         if o != n:
@@ -174,6 +207,53 @@ def audioRename(bookid):
     return book_filename
 
 
+def seriesInfo(bookid, part=None):
+    """ Return series info for a bookid as a formatted string (seriesname #number)
+        or (seriesname number) if no numeric part, or if not numeric eg "Book Two"
+        If part is "Name" or "Num" just return relevant part of result """
+    myDB = database.DBConnection()
+    cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
+    res = myDB.match(cmd, (bookid,))
+    if not res:
+        return ''
+
+    seriesid = res['SeriesID']
+    serieslist = getList(res['SeriesNum'])
+    seriesnum = seriesname = ''
+    # might be "Book 3.5" or similar, just get the numeric part
+    while serieslist:
+        seriesnum = serieslist.pop()
+        try:
+            _ = float(seriesnum)
+            break
+        except ValueError:
+            seriesnum = ''
+            pass
+
+    if not seriesnum:
+        # couldn't figure out number, keep everything we got, could be something like "Book Two"
+        serieslist = res['SeriesNum']
+
+    cmd = 'SELECT SeriesName from series WHERE seriesid=?'
+    res = myDB.match(cmd, (seriesid,))
+    if res:
+        seriesname = res['SeriesName']
+        if not seriesnum:
+            # add what we got back to end of series name
+            if serieslist:
+                seriesname = "%s %s" % (seriesname, serieslist)
+
+    if part == 'Name' and seriesname:
+        return lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
+    elif part == 'Num' and seriesnum:
+        return lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
+    elif seriesname or seriesnum:
+        return lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+            '$SerName', seriesname).replace('$$', ' ')
+    else:
+        return ''
+
+
 def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -181,98 +261,91 @@ def bookRename(bookid):
     if not exists:
         logger.debug("Invalid bookid in bookRename %s" % bookid)
         return ''
-    else:
-        f = exists['BookFile']
-        if not f:
-            logger.debug("No filename for %s in BookRename %s" % bookid)
-            return ''
-        r = os.path.dirname(f)
-        try:
-            calibreid = r.rsplit('(', 1)[1].split(')')[0]
-            if not calibreid.isdigit():
-                calibreid = ''
-        except IndexError:
+
+    f = exists['BookFile']
+    if not f:
+        logger.debug("No filename for %s in BookRename %s" % bookid)
+        return ''
+
+    r = os.path.dirname(f)
+    try:
+        calibreid = r.rsplit('(', 1)[1].split(')')[0]
+        if not calibreid.isdigit():
             calibreid = ''
+    except IndexError:
+        calibreid = ''
 
-        if calibreid:
-            msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
-            logger.debug(msg)
-        else:
-            book_basename, prefextn = os.path.splitext(os.path.basename(f))
-            new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
-            seriesinfo = ''
-            if '$Series' in lazylibrarian.CONFIG['EBOOK_DEST_FILE']:
-                cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
-                res = myDB.match(cmd, (bookid,))
-                if res:
-                    seriesid = res['SeriesID']
-                    serieslist = getList(res['SeriesNum'])
-                    seriesnum = ''
-                    # might be "Book 3.5" or similar, just get the numeric part
-                    while serieslist:
-                        seriesnum = serieslist.pop()
-                        try:
-                            _ = float(seriesnum)
-                            break
-                        except ValueError:
-                            seriesnum = ''
-                            pass
-
-                    if not seriesnum:
-                        # couldn't figure out number, keep everything we got, could be something like "Book Two"
-                        serieslist = res['SeriesNum']
-
-                    cmd = 'SELECT SeriesName from series WHERE seriesid=?'
-                    res = myDB.match(cmd, (seriesid,))
-                    if res:
-                        seriesname = res['SeriesName']
-                        if not seriesnum:
-                            # add what we got to series name
-                            seriesinfo = "%s %s" % (seriesname, serieslist)
-                        else:
-                            seriesinfo = "%s #%s" % (seriesname, seriesnum)
-                    seriesinfo = seriesinfo.replace('/', '_').strip()
-                    if seriesinfo:
-                        seriesinfo = "(%s)" % seriesinfo
-
-            new_basename = new_basename.replace('$Author', exists['AuthorName']) \
-                .replace('$Title', exists['BookName']).replace('$Series', seriesinfo)
-            new_basename = new_basename.strip()
-
-            # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
-            slash = new_basename.find('/')
-            while slash > 0:
-                if new_basename[slash - 1] != ' ':
-                    if new_basename[slash + 1] != ' ':
-                        new_basename = new_basename[:slash] + '_' + new_basename[slash + 1:]
-                slash = new_basename.find('/', slash + 1)
-
-            if ' / ' in new_basename:  # used as a separator in goodreads omnibus
-                logger.warn("bookRename [%s] looks like an omnibus? Not renaming %s" % (new_basename, book_basename))
-                new_basename = book_basename
-
-            if book_basename != new_basename:
-                # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
-                for fname in os.listdir(r):
-                    extn = ''
-                    if is_valid_booktype(fname, booktype='ebook'):
-                        extn = os.path.splitext(fname)[1]
-                    elif fname.endswith('.opf') and not fname == 'metadata.opf':
-                        extn = '.opf'
-                    elif fname.endswith('.jpg') and not fname == 'cover.jpg':
-                        extn = '.jpg'
-                    if extn:
-                        ofname = os.path.join(r, fname)
-                        nfname = os.path.join(r, new_basename + extn)
-                        try:
-                            shutil.move(ofname, nfname)
-                            logger.debug("bookRename %s to %s" % (ofname, nfname))
-                            if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
-                                f = nfname
-                        except Exception as e:
-                            logger.error('Unable to rename [%s] to [%s] %s %s' %
-                                         (ofname, nfname, type(e).__name__, str(e)))
+    if calibreid:
+        msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
+        logger.debug(msg)
         return f
+
+    dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
+        '$Author', exists['AuthorName']).replace(
+        '$Title', exists['BookName']).replace(
+        '$Series', seriesInfo(bookid)).replace(
+        '$SerName', seriesInfo(bookid, 'Name')).replace(
+        '$SerNum', seriesInfo(bookid, 'Num')).replace(
+        '$$', ' ')
+    dest_path = ' '.join(dest_path.split()).strip()
+    dest_path = replace_all(dest_path, __dic__)
+    dest_dir = lazylibrarian.DIRECTORY('eBook')
+    dest_path = os.path.join(dest_dir, dest_path)
+
+    if r != dest_path:
+        try:
+            shutil.move(r, dest_path)
+            r = dest_path
+        except Exception as why:
+            if not os.path.isdir(dest_path):
+                logger.debug('Unable to create directory %s: %s' % (dest_path, why))
+
+    book_basename, prefextn = os.path.splitext(os.path.basename(f))
+    new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
+
+    new_basename = new_basename.replace(
+        '$Author', exists['AuthorName']).replace(
+        '$Title', exists['BookName']).replace(
+        '$Series', seriesInfo(bookid)).replace(
+        '$SerName', seriesInfo(bookid, 'Name')).replace(
+        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$$', ' ')
+    new_basename = ' '.join(new_basename.split()).strip()
+
+    # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
+    slash = new_basename.find('/')
+    while slash > 0:
+        if new_basename[slash - 1] != ' ':
+            if new_basename[slash + 1] != ' ':
+                new_basename = new_basename[:slash] + '_' + new_basename[slash + 1:]
+        slash = new_basename.find('/', slash + 1)
+
+    if ' / ' in new_basename:  # used as a separator in goodreads omnibus
+        logger.warn("bookRename [%s] looks like an omnibus? Not renaming %s" % (new_basename, book_basename))
+        new_basename = book_basename
+
+    if book_basename != new_basename:
+        # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
+        for fname in os.listdir(r):
+            extn = ''
+            if is_valid_booktype(fname, booktype='ebook'):
+                extn = os.path.splitext(fname)[1]
+            elif fname.endswith('.opf') and not fname == 'metadata.opf':
+                extn = '.opf'
+            elif fname.endswith('.jpg') and not fname == 'cover.jpg':
+                extn = '.jpg'
+            if extn:
+                ofname = os.path.join(r, fname)
+                nfname = os.path.join(r, new_basename + extn)
+                try:
+                    shutil.move(ofname, nfname)
+                    logger.debug("bookRename %s to %s" % (ofname, nfname))
+                    if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
+                        f = nfname
+                except Exception as e:
+                    logger.error('Unable to rename [%s] to [%s] %s %s' %
+                                 (ofname, nfname, type(e).__name__, str(e)))
+    return f
 
 
 def setAllBookAuthors():
@@ -306,7 +379,7 @@ def setBookAuthors(book):
             authtype = author['type']
             if authtype in ['primary author', 'main author', 'secondary author']:
                 if author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
-                    name = formatAuthorName(unaccented(author['name']))
+                    name = formatAuthorName(author['name'])
                     exists = myDB.match('select authorid from authors where authorname=?', (name,))
                     if exists:
                         authorid = exists['authorid']
@@ -629,6 +702,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
             librarything_wait()
             result, success = fetchURL(URL)
             if bookID and success:
+                # noinspection PyBroadException
                 try:
                     workpage = result.split('<link>')[1].split('</link>')[0]
                     librarything_wait()
@@ -644,6 +718,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                         librarything_wait()
                         result, success = fetchURL(URL)
                         if success:
+                            # noinspection PyBroadException
                             try:
                                 workpage = result.split('<link>')[1].split('</link>')[0]
                                 librarything_wait()
