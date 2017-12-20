@@ -551,11 +551,13 @@ def initialize():
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
             CONFIG['LOGLEVEL'], CONFIG['LOGDIR'], CFGLOGLEVEL))
         if CONFIG['LOGLEVEL'] > 2:
-            logger.info("Screen Log set to FULL DEBUG")
+            logger.info("Screen Log set to EXTENDED DEBUG")
         elif CONFIG['LOGLEVEL'] == 2:
             logger.info("Screen Log set to DEBUG")
+        elif CONFIG['LOGLEVEL'] == 1:
+            logger.info("Screen Log set to INFO")
         else:
-            logger.info("Screen Log set to INFO/WARN/ERROR")
+            logger.info("Screen Log set to WARN/ERROR")
 
         config_read()
 

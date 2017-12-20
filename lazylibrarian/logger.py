@@ -111,11 +111,13 @@ lazylibrarian_log = RotatingLogger('lazylibrarian.log')
 
 
 def debug(message):
-    lazylibrarian_log.log(message, level='DEBUG')
+    if lazylibrarian.LOGLEVEL > 1:
+        lazylibrarian_log.log(message, level='DEBUG')
 
 
 def info(message):
-    lazylibrarian_log.log(message, level='INFO')
+    if lazylibrarian.LOGLEVEL > 0:
+        lazylibrarian_log.log(message, level='INFO')
 
 
 def warn(message):
