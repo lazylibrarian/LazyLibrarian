@@ -308,7 +308,7 @@ def bookRename(bookid):
         '$Title', exists['BookName']).replace(
         '$Series', seriesInfo(bookid)).replace(
         '$SerName', seriesInfo(bookid, 'Name')).replace(
-        '$SerNum', seriesInfo(bookid, 'Num')).replace (
+        '$SerNum', seriesInfo(bookid, 'Num')).replace(
         '$$', ' ')
     new_basename = ' '.join(new_basename.split()).strip()
 
