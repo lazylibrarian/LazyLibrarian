@@ -34,7 +34,7 @@ from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysyn
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader
-from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str
 from lib.apscheduler.scheduler import Scheduler
 
 # Transient globals NOT stored in config
@@ -153,7 +153,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
-                     'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES']
+                     'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
+                     'AUTOADDMAG', 'AUTOADD_MAGONLY']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -207,6 +208,8 @@ CONFIG_DEFINITIONS = {
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
     'IMP_AUTOADD_BOOKONLY': ('bool', 'General', 0),
+    'IMP_AUTOADDMAG': ('str', 'General', ''),
+    'IMP_AUTOADD_MAGONLY': ('bool', 'General', 0),
     'IMP_AUTOSEARCH': ('bool', 'General', 0),
     'IMP_CALIBREDB': ('str', 'General', ''),
     'CALIBRE_USE_SERVER': ('bool', 'General', 0),
@@ -223,7 +226,7 @@ CONFIG_DEFINITIONS = {
     'GIT_USER': ('str', 'Git', 'dobytang'),
     'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
     'GIT_BRANCH': ('str', 'Git', 'master'),
-    'GIT_UPDATED': ('str', 'Git', ''),
+    'GIT_UPDATED': ('int', 'Git', 0),
     'INSTALL_TYPE': ('str', 'Git', ''),
     'CURRENT_VERSION': ('str', 'Git', ''),
     'LATEST_VERSION': ('str', 'Git', ''),
@@ -551,11 +554,13 @@ def initialize():
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
             CONFIG['LOGLEVEL'], CONFIG['LOGDIR'], CFGLOGLEVEL))
         if CONFIG['LOGLEVEL'] > 2:
-            logger.info("Screen Log set to FULL DEBUG")
+            logger.info("Screen Log set to EXTENDED DEBUG")
         elif CONFIG['LOGLEVEL'] == 2:
             logger.info("Screen Log set to DEBUG")
+        elif CONFIG['LOGLEVEL'] == 1:
+            logger.info("Screen Log set to INFO")
         else:
-            logger.info("Screen Log set to INFO/WARN/ERROR")
+            logger.info("Screen Log set to WARN/ERROR")
 
         config_read()
 
@@ -850,6 +855,14 @@ def config_write():
             # if CONFIG['LOGLEVEL'] > 2:
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
+
+        if isinstance(value, unicode):
+            try:
+                value = value.encode(SYS_ENCODING)
+            except UnicodeError:
+                logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
+                value = unaccented_str(value)
+
         CFG.set(section, key.lower(), value)
 
     # sanity check for typos...

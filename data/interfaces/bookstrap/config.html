@@ -91,7 +91,7 @@
                     <div class="form-group">
                       <label for="loglevel">Log Level:</label>
                       <input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="Log      Level">
-                      <span class="help-block">0=Quiet, 1=Normal, 2=Debug</span>
+                      <span class="help-block">0=Errors/Warnings, 1=Normal, 2=Debug</span>
                     </div>
                     <div class="form-group">
                       <label for="displaylength">Table Display Length:</label>
@@ -1377,7 +1377,7 @@
                   </fieldset>
                   <fieldset>
                   <div class="form-group">
-                    <label for="imp_autoadd">Calibre Auto Add Directory:</label>
+                    <label for="imp_autoadd">Calibre Books Auto Add Directory:</label>
                     <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" class="form-control">
                     <span class="help-block">Directory for a copy to be placed for auto add process</span>
                   </div>
@@ -1391,6 +1391,24 @@
                     <label for="imp_autoadd_bookonly">
                       <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value="1" ${checked} />
                       Only add eBook, not opf or jpg</label>
+                  </div>
+                  </fieldset>
+                  <fieldset>
+                  <div class="form-group">
+                    <label for="imp_autoadd">Calibre Magazines Auto Add Directory:</label>
+                    <input type="text" id="imp_autoaddmag" name="imp_autoaddmag" value="${lazylibrarian.CONFIG['IMP_AUTOADDMAG']}" class="form-control">
+                    <span class="help-block">Directory for a copy to be placed for auto add process</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['IMP_AUTOADD_MAGONLY'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="imp_autoadd_magonly">
+                      <input type="checkbox" id="imp_autoadd_magonly" name="imp_autoadd_magonly" value="1" ${checked} />
+                      Only add magazine, not opf or jpg</label>
                   </div>
                   </fieldset>
               </div>
