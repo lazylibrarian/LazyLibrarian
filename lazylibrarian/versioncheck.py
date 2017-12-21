@@ -22,12 +22,15 @@ import subprocess
 import tarfile
 import threading
 import time
+import locale
 
 import lazylibrarian
 import lib.requests as requests
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int
+
+LOCALE_LOCK = threading.Lock()
 
 
 def logmsg(level, msg):
@@ -261,7 +264,16 @@ def getLatestVersion_FromGit():
             logmsg('debug',
                    '(getLatestVersion_FromGit) Retrieving latest version information from github command=[%s]' % url)
 
-            age = lazylibrarian.CONFIG['GIT_UPDATED']
+            timestamp = check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0)
+            age = ''
+            if timestamp:
+                with LOCALE_LOCK:
+                    saved = locale.setlocale(locale.LC_ALL)
+                    try:
+                        locale.setlocale(locale.LC_ALL, 'C')
+                        age = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(timestamp))
+                    finally:
+                        locale.setlocale(locale.LC_ALL, saved)
             try:
                 headers = {'User-Agent': USER_AGENT}
                 if age:
@@ -336,7 +348,6 @@ def getCommitDifferenceFromGit():
             logmsg('info', '[VersionCheck] -  New version is available. You are one commit behind')
         elif commits == 0:
             logmsg('info', '[VersionCheck] -  lazylibrarian is up to date ')
-            # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         elif commits < 0:
             msg = '[VersionCheck] -  You are running an unknown version of lazylibrarian. '
             msg += 'Run the updater to identify your version'
@@ -402,13 +413,12 @@ def update():
                 logmsg('info', '(update) No update available, not updating')
                 logmsg('info', '(update) Output: ' + str(output))
                 success = False
-                # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
             elif 'Aborting' in line or 'local changes' in line:
                 logmsg('error', '(update) Unable to update from git: ' + line)
                 logmsg('info', '(update) Output: ' + str(output))
                 success = False
         if success:
-            lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+            lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
             return True
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
 
@@ -479,7 +489,6 @@ def update():
 
         # Update version.txt
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
-        # lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         return True
     else:
         logmsg('error', "(update) Cannot perform update - Install Type not set")

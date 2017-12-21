@@ -13,6 +13,7 @@ import re
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
+from lazylibrarian.formatter import check_int
 
 # The following should probably be made configurable at the settings level
 # This fix is put in place for systems with broken SSL (like QNAP)
@@ -167,11 +168,12 @@ def main():
         # version check button will still override this if you want to
         lazylibrarian.CONFIG['LATEST_VERSION'] = lazylibrarian.CONFIG['CURRENT_VERSION']
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
-
-    if not lazylibrarian.CONFIG['GIT_UPDATED']:
-        if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
-            if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
-                lazylibrarian.CONFIG['GIT_UPDATED'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+    else:
+        if check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0) == 0:
+            if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
+                if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
+                    lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
+                    logger.debug('Setting update timestamp to now')
 
     version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':

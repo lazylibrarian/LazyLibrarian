@@ -34,7 +34,7 @@ from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysyn
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader
-from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str
 from lib.apscheduler.scheduler import Scheduler
 
 # Transient globals NOT stored in config
@@ -223,7 +223,7 @@ CONFIG_DEFINITIONS = {
     'GIT_USER': ('str', 'Git', 'dobytang'),
     'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
     'GIT_BRANCH': ('str', 'Git', 'master'),
-    'GIT_UPDATED': ('str', 'Git', ''),
+    'GIT_UPDATED': ('int', 'Git', 0),
     'INSTALL_TYPE': ('str', 'Git', ''),
     'CURRENT_VERSION': ('str', 'Git', ''),
     'LATEST_VERSION': ('str', 'Git', ''),
@@ -852,6 +852,14 @@ def config_write():
             # if CONFIG['LOGLEVEL'] > 2:
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
+
+        if isinstance(value, unicode):
+            try:
+                value = value.encode(SYS_ENCODING)
+            except UnicodeError:
+                logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
+                value = unaccented_str(value)
+
         CFG.set(section, key.lower(), value)
 
     # sanity check for typos...
