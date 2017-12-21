@@ -625,6 +625,9 @@ def processDir(reset=False):
                             # create a thumbnail cover for the new issue
                             create_cover(dest_file)
                             processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
+                            if lazylibrarian.CONFIG['IMP_AUTOADDMAG']:
+                                dest_path = os.path.dirname(dest_file)
+                                processAutoAdd(dest_path, booktype='mag')
 
                         # calibre or ll copied/moved the files we want, now delete source files
 
@@ -1028,7 +1031,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     if match:
         update_totals(match['AuthorID'])
 
-    if book_type != 'eBook':  # only do autoadd/img/opf for ebooks
+    elif book_type != 'eBook':  # only do autoadd/img/opf for ebooks
         return
 
     cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
@@ -1335,15 +1338,18 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     return True, newbookfile
 
 
-def processAutoAdd(src_path=None):
+def processAutoAdd(src_path=None, booktype='book'):
     # Called to copy/move the book files to an auto add directory for the likes of Calibre which can't do nested dirs
     # ensure directory is unicode so we get unicode results from listdir
     if isinstance(src_path, str) and hasattr(src_path, "decode"):
         src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
+    if booktype == 'mag':
+        autoadddir = lazylibrarian.CONFIG['IMP_AUTOADDMAG']
 
     if not os.path.exists(autoadddir):
-        logger.error('AutoAdd directory [%s] is missing or not set - cannot perform autoadd' % autoadddir)
+        logger.error('AutoAdd directory for %s [%s] is missing or not set - cannot perform autoadd' % (
+                      booktype, autoadddir))
         return False
     # Now try and copy all the book files into a single dir.
     try:
@@ -1357,7 +1363,7 @@ def processAutoAdd(src_path=None):
         # ignores author/title data in opf file if there is any embedded in book
 
         match = False
-        if lazylibrarian.CONFIG['ONE_FORMAT']:
+        if booktype == 'book' and lazylibrarian.CONFIG['ONE_FORMAT']:
             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
             for booktype in booktype_list:
                 while not match:
@@ -1368,9 +1374,13 @@ def processAutoAdd(src_path=None):
                             break
         copied = False
         for name in names:
-            if match and is_valid_booktype(name, booktype="book") and not name.endswith(match):
+            if match and is_valid_booktype(name, booktype=booktype) and not name.endswith(match):
                 logger.debug('Skipping %s' % os.path.splitext(name)[1])
-            elif lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] and not is_valid_booktype(name, booktype="book"):
+            elif booktype == 'book' and lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] and not \
+                    is_valid_booktype(name, booktype="book"):
+                logger.debug('Skipping %s' % name)
+            elif booktype == 'mag' and lazylibrarian.CONFIG['IMP_AUTOADD_MAGONLY'] and not \
+                    is_valid_booktype(name, booktype="mag"):
                 logger.debug('Skipping %s' % name)
             else:
                 srcname = os.path.join(src_path, name)
