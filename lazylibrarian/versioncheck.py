@@ -22,15 +22,12 @@ import subprocess
 import tarfile
 import threading
 import time
-import locale
 
 import lazylibrarian
 import lib.requests as requests
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int
-
-LOCALE_LOCK = threading.Lock()
 
 
 def logmsg(level, msg):
@@ -267,13 +264,14 @@ def getLatestVersion_FromGit():
             timestamp = check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0)
             age = ''
             if timestamp:
-                with LOCALE_LOCK:
-                    saved = locale.setlocale(locale.LC_ALL)
-                    try:
-                        locale.setlocale(locale.LC_ALL, 'C')
-                        age = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(timestamp))
-                    finally:
-                        locale.setlocale(locale.LC_ALL, saved)
+                # timestring for 'If-Modified-Since' needs to be english short day/month names and in gmt
+                # we already have english month names stored in MONTHNAMES[] but need capitalising
+                # so use hard coded versions here instead
+                DAYNAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                MONNAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                tm = time.gmtime(timestamp)
+                age = "%s, %02d %s %04d %02d:%02d:%02d GMT" %(DAYNAMES[tm.tm_wday], tm.tm_mday,
+                    MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec)
             try:
                 headers = {'User-Agent': USER_AGENT}
                 if age:
@@ -487,8 +485,9 @@ def update():
                     os.remove(new_path)
                 os.renames(old_path, new_path)
 
-        # Update version.txt
+        # Update version.txt and timestamo
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
+        lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
         return True
     else:
         logmsg('error', "(update) Cannot perform update - Install Type not set")
