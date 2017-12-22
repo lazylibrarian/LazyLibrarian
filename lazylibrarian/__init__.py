@@ -639,6 +639,12 @@ def config_read(reloaded=False):
         ebook_dir = check_setting('str', 'General', 'destination_dir', '')
         CFG.set('General', 'ebook_dir', ebook_dir)
         CFG.remove_option('General', 'destination_dir')
+    # legacy type conversion
+    if CFG.has_option('Git', 'git_updated'):
+        val = CFG.get('Git', 'git_updated')
+        newval = check_int(val, 0)
+        if newval != val:
+            CFG.set('Git', 'git_updated', newval)
     # legacy name conversions, separate out host/port
     for provider in ['NZBGet', 'UTORRENT', 'QBITTORRENT', 'TRANSMISSION']:
         if not CFG.has_option(provider, '%s_port' % provider.lower()):
