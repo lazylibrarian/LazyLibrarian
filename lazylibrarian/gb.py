@@ -85,10 +85,10 @@ class GoogleBooks:
                 elif api_value == 'intitle:':
                     searchterm = fullterm
                     if title:  # just search for title
-                        title = title.split(' (')[0]  # with out any series info
+                        # noinspection PyUnresolvedReferences
+                        title = title.split(' (')[0]  # without any series info
                         searchterm = title
-                    searchterm = searchterm.replace("'", "").replace('"', '')  # and no quotes
-                    searchterm = searchterm.strip()
+                    searchterm = searchterm.replace("'", "").replace('"', '').strip()  # and no quotes
                     searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
                     set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
                 elif api_value == 'inauthor:':

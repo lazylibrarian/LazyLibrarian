@@ -17,21 +17,21 @@ import datetime
 import os
 import platform
 import shutil
+import tarfile
 import threading
 import time
 import traceback
-import tarfile
-import lib.zipfile as zipfile
-from subprocess import Popen, PIPE
 
 import lazylibrarian
+import lib.zipfile as zipfile
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
+from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
+from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst
-from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -39,7 +39,6 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
-
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
@@ -1055,60 +1054,6 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     # So take the files you Copied/Moved to Dest_path and copy/move into Calibre auto add folder.
     if lazylibrarian.CONFIG['IMP_AUTOADD']:
         processAutoAdd(dest_path)
-
-
-def calibredb(cmd=None, prelib=None, postlib=None):
-    """ calibre-server needs to be started with --enable-auth and needs user/password to add/remove books
-        only basic features are available without auth. calibre_server should look like  http://address:port/#library
-        default library is used if no #library in the url
-        or calibredb can talk to the database file as long as there is no running calibre """
-    params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
-    if lazylibrarian.CONFIG['CALIBRE_USE_SERVER']:
-        dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
-        if lazylibrarian.CONFIG['CALIBRE_USER'] and lazylibrarian.CONFIG['CALIBRE_PASS']:
-            params.extend(['--username', lazylibrarian.CONFIG['CALIBRE_USER'],
-                           '--password', lazylibrarian.CONFIG['CALIBRE_PASS']])
-    else:
-        dest_url = lazylibrarian.DIRECTORY('eBook')
-
-    if prelib:
-        params.extend(prelib)
-    params.extend(['--with-library', dest_url])
-    if postlib:
-        params.extend(postlib)
-    logger.debug(str(params))
-    res = err = ''
-    try:
-        p = Popen(params, stdout=PIPE, stderr=PIPE)
-        res, err = p.communicate()
-        rc = p.returncode
-        if rc:
-            if 'Errno 111' in err:
-                logger.debug("calibredb returned %s: Connection refused" % rc)
-            else:
-                logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
-    except Exception as e:
-        logger.debug("calibredb exception: %s %s" % (type(e).__name__, str(e)))
-        rc = 1
-
-    if rc and dest_url.startswith('http'):
-        # might be no server running, retry using file
-        params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
-        if prelib:
-            params.extend(prelib)
-        params.extend(['--with-library', lazylibrarian.DIRECTORY('eBook')])
-        if postlib:
-            params.extend(postlib)
-        logger.debug(str(params))
-        try:
-            q = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = q.communicate()
-            rc = q.returncode
-            if rc:
-                logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
-        except Exception as e:
-            logger.debug("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
-    return res, err, rc
 
 
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,

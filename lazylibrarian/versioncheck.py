@@ -270,8 +270,9 @@ def getLatestVersion_FromGit():
                 DAYNAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                 MONNAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 tm = time.gmtime(timestamp)
-                age = "%s, %02d %s %04d %02d:%02d:%02d GMT" %(DAYNAMES[tm.tm_wday], tm.tm_mday,
-                    MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec)
+                age = "%s, %02d %s %04d %02d:%02d:%02d GMT" % (DAYNAMES[tm.tm_wday], tm.tm_mday,
+                                                               MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour,
+                                                               tm.tm_min, tm.tm_sec)
             try:
                 headers = {'User-Agent': USER_AGENT}
                 if age:
