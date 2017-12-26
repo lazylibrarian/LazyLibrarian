@@ -18,6 +18,12 @@ from subprocess import Popen, PIPE
 import lazylibrarian
 from lazylibrarian import logger
 
+# calibredb search "#label":"false"
+# calibredb custom_columns
+# calibredb add_custom_column label name bool
+# calibredb remove_custom_column --force label
+# calibredb set_custom column id value
+
 
 def calibredb(cmd=None, prelib=None, postlib=None):
     """ calibre-server needs to be started with --enable-auth and needs user/password to add/remove books

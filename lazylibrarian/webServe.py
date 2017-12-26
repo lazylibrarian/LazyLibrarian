@@ -16,7 +16,6 @@
 import datetime
 import hashlib
 import os
-import subprocess
 import random
 import re
 import threading
@@ -32,6 +31,7 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors, getBookCover
 from lazylibrarian.cache import cache_img
+from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
     aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
 from lazylibrarian.csvfile import import_CSV, export_CSV
@@ -47,7 +47,6 @@ from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.calibre import calibredb
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup

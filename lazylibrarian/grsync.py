@@ -26,8 +26,8 @@ from string import Template
 import lazylibrarian
 import lib.oauth2 as oauth
 from lazylibrarian import logger, database
+from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.formatter import plural
 
 client = request_token = consumer = token = user_id = ''
 
@@ -415,14 +415,16 @@ def sync_to_gr():
         threading.currentThread().name = 'GRSync'
         if lazylibrarian.CONFIG['GR_WANTED']:
             to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
-            msg += "%s added to %s shelf\n" % (to_read_shelf, lazylibrarian.CONFIG['GR_WANTED'])
-            msg += "%s marked Wanted from GoodReads\n" % ll_wanted
+            msg += "%s change%s to %s shelf\n" % (to_read_shelf, plural(to_read_shelf),
+                                                  lazylibrarian.CONFIG['GR_WANTED'])
+            msg += "%s change%s to Wanted from GoodReads\n" % (ll_wanted, plural(ll_wanted))
         else:
             msg += "Sync Wanted books is disabled\n"
         if lazylibrarian.CONFIG['GR_OWNED']:
             to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
-            msg += "%s added to %s shelf\n" % (to_owned_shelf, lazylibrarian.CONFIG['GR_OWNED'])
-            msg += "%s marked Owned from GoodReads\n" % ll_have
+            msg += "%s change%s to %s shelf\n" % (to_owned_shelf, plural(to_owned_shelf),
+                                                  lazylibrarian.CONFIG['GR_OWNED'])
+            msg += "%s change%s to Owned from GoodReads\n" % (ll_have, plural(ll_have))
         else:
             msg += "Sync Owned books is disabled\n"
         logger.info(msg.strip('\n').replace('\n', ', '))
@@ -485,7 +487,7 @@ def grsync(status, shelf):
             res, msg = GA.create_shelf(shelf=shelf)
             if not res:
                 logger.debug("Unable to create shelf %s: %s" % (shelf, msg))
-                return 0, 0, 0
+                return 0, 0
             else:
                 logger.debug("Created new goodreads shelf: %s" % shelf)
 
@@ -496,80 +498,144 @@ def grsync(status, shelf):
 
         logger.info("There are %s %s books, %s books on goodreads %s shelf" %
                     (len(ll_list), dstatus, len(gr_shelf), shelf))
-        # print ll_list
-        # print gr_shelf
 
-        not_on_shelf = []
-        not_in_ll = []
-        for book in ll_list:
-            if book not in gr_shelf:
-                not_on_shelf.append(book)
-        for book in gr_shelf:
-            if book not in ll_list:
-                not_in_ll.append(book)
+        # Sync method for WANTED:
+        # Get results of last_sync (if any)
+        # For each book in last_sync
+        #    if not in ll_list, new deletion, remove from gr_shelf
+        #    if not in gr_shelf, new deletion, remove from ll_list, mark Skipped
+        # For each book in ll_list
+        #    if not in last_sync, new addition, add to gr_shelf
+        # For each book in gr_shelf
+        #    if not in last sync, new addition, add to ll_list, mark Wanted
+        #
+        # save ll WANTED as last_sync
 
-        to_shelf = 0
-        to_ll = 0
-        # these need adding to shelf
-        if not lazylibrarian.CONFIG['GR_OAUTH_SECRET']:
-            logger.debug('Not connected to goodreads')
-        else:
-            for book in not_on_shelf:
-                # print "%s is not on shelf" % book
-                try:
-                    res, content = GA.BookToList(book, shelf)
-                except Exception as e:
-                    logger.debug("Error in BookToList: %s %s" % (type(e).__name__, str(e)))
-                    res = None
+        # For HAVE/OPEN method is the same, but only change status if HAVE, not OPEN
 
-                if res:
-                    if lazylibrarian.LOGLEVEL > 2:
-                        logger.debug("%10s added to %s shelf" % (book, shelf))
-                        to_shelf += 1
-                        # print content
-                else:
-                    logger.debug("Failed to add %s to %s shelf" % (book, shelf))
-                    # print content
+        cmd = 'select SyncList from sync where UserID="%s" and Label="%s"' % ("goodreads", shelf)
+        res = myDB.match(cmd)
+        last_sync = []
+        shelf_changed = ll_changed = 0
+        if res:
+            last_sync = getList(res['SyncList'])
 
-        # "to-read" books need adding to lazylibrarian as "wanted" if not already Open/Have,
-        # if in "to-read" and already marked "Open/Have", optionally delete from "to-read"
-        # (depending on user prefs, to-read and wanted might not be the same thing)
-        # "owned" need adding as "Have" as librarysync will pick up "Open" ones or change Have to Open
+        added_to_shelf = list(set(gr_shelf) - set(last_sync))
+        removed_from_shelf = list(set(last_sync) - set(gr_shelf))
+        added_to_ll = list(set(ll_list) - set(last_sync))
+        removed_from_ll = list(set(last_sync) - set(ll_list))
 
-        for book in not_in_ll:
-            # print "%s is not marked %s" % (book, status)
-            cmd = 'select Status from books where bookid="%s"' % book
-            result = myDB.match(cmd)
-            if result:
-                if result['Status'] in ['Have', 'Open']:  # don't change status if we have it
-                    logger.debug("%10s is already marked %s" % (book, result['Status']))
-                    if lazylibrarian.CONFIG['GR_UNIQUE']:
-                        try:
-                            res, content = GA.BookToList(book, shelf, action='remove')
-                        except Exception as e:
-                            logger.debug("Error in BookToList: %s %s" % (type(e).__name__, str(e)))
-                            res = None
-                        if res:
-                            logger.debug("%10s removed from %s shelf" % (book, shelf))
-                            # print content
-                        else:
-                            logger.debug("Failed to remove %s from %s shelf" % (book, shelf))
-                            # print content
+        logger.info("%s missing from lazylibrarian %s" % (len(removed_from_ll), shelf))
+        for book in removed_from_ll:
+            # first the deletions since last sync...
+            try:
+                res, content = GA.BookToList(book, shelf, action='remove')
+            except Exception as e:
+                logger.debug("Error removing %s from %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
+                res = None
+                content = ''
+            if res:
+                logger.debug("%10s removed from %s shelf" % (book, shelf))
+                shelf_changed += 1
+            else:
+                logger.warn("Failed to remove %s from %s shelf: %s" % (book, shelf, content))
 
-                elif shelf == 'owned':
-                    myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
-                else:
-                    myDB.action('UPDATE books SET Status=? WHERE BookID=?', (status, book))
-            else:  # add book to database as wanted
+        logger.info("%s missing from goodreads %s" % (len(removed_from_shelf), shelf))
+        for book in removed_from_shelf:
+            # deleted from goodreads
+            cmd = 'select Status from books where BookID="%s"' % book
+            res = myDB.match(cmd)
+            if not res:
                 logger.debug('Adding new book %s to database' % book)
                 if not GR:
                     GR = GoodReads(book)
                 GR.find_book(book)
-                to_ll += 1
+                res = myDB.match(cmd)
+            if not res:
+                logger.warn('Book %s not found in database' % book)
+            else:
+                if res['Status'] in ['Have', 'Wanted']:
+                    myDB.action('UPDATE books SET Status="Skipped" WHERE BookID=?', (book,))
+                    ll_changed += 1
+                    logger.debug("%10s set to Skipped" % book)
+                else:
+                    logger.warn("Not removing %s, book is marked %s" % (book, res['Status']))
+
+        # new additions to lazylibrarian
+        logger.info("%s new in lazylibrarian %s" % (len(added_to_ll), shelf))
+        for book in added_to_ll:
+            try:
+                res, content = GA.BookToList(book, shelf, action='add')
+            except Exception as e:
+                logger.debug("Error adding %s to %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
+                res = None
+                content = ''
+            if res:
+                logger.debug("%10s added to %s shelf" % (book, shelf))
+                shelf_changed += 1
+            else:
+                logger.warn("Failed to add %s to %s shelf: %s" % (book, shelf, content))
+
+        # new additions to goodreads shelf
+        logger.info("%s new in goodreads %s" % (len(added_to_shelf), shelf))
+        for book in added_to_shelf:
+            cmd = 'select Status from books where BookID="%s"' % book
+            res = myDB.match(cmd)
+            if not res:
+                logger.debug('Adding new book %s to database' % book)
+                if not GR:
+                    GR = GoodReads(book)
+                GR.find_book(book)
+                res = myDB.match(cmd)
+            if not res:
+                logger.warn('Book %s not found in database' % book)
+            else:
+                if status == 'Open':
+                    if res['Status'] == 'Open':
+                        logger.warn("Book %s is already marked Open" % book)
+                    else:
+                        myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
+                        ll_changed += 1
+                        logger.debug("%10s set to Have" % book)
+                elif status == 'Wanted':
+                    # if in "wanted" and already marked "Open/Have", optionally delete from "wanted"
+                    # (depending on user prefs, to-read and wanted might not be the same thing)
+                    if lazylibrarian.CONFIG['GR_UNIQUE'] and res['Status'] in ['Open', 'Have']:
+                        try:
+                            res, content = GA.BookToList(book, shelf, action='remove')
+                        except Exception as e:
+                            logger.debug("Error removing %s from %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
+                            res = None
+                            content = ''
+                        if res:
+                            logger.debug("%10s removed from %s shelf" % (book, shelf))
+                            shelf_changed += 1
+                        else:
+                            logger.warn("Failed to remove %s from %s shelf: %s" % (book, shelf, content))
+                    elif res['Status'] != 'Open':
+                        myDB.action('UPDATE books SET Status="Wanted" WHERE BookID=?', (book,))
+                        ll_changed += 1
+                        logger.debug("%10s set to Wanted" % book)
+                    else:
+                        logger.warn("Not setting %s as Wanted, already marked Open" % book)
+
+        # get new definitive list from ll
+        cmd = 'select bookid from books where status="%s"' % status
+        if status == 'Open':
+            cmd += ' or status="Have"'
+        results = myDB.select(cmd)
+        ll_list = []
+        for terms in results:
+            ll_list.append(terms['bookid'])
+
+        # store as comparison for next sync
+        controlValueDict = {"UserID": "goodreads", "Label": shelf}
+        newValueDict = {"Date": str(time.time()), "Synclist": ', '.join(ll_list)}
+        myDB.upsert("sync", newValueDict, controlValueDict)
 
         logger.debug('Sync %s to %s shelf complete' % (status, shelf))
-        return to_shelf, to_ll
+        return shelf_changed, ll_changed
 
     except Exception:
         logger.error('Unhandled exception in grsync: %s' % traceback.format_exc())
-        return 0, 0, 0
+        return 0, 0
