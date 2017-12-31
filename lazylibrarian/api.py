@@ -42,6 +42,7 @@ from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
+from lazylibrarian.calibre import calibreReadList
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -135,6 +136,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
             'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
+            'calibreList': '[&toread=] [&read=] get a list of books from calibre for sync purposes',
             }
 
 
@@ -189,9 +191,7 @@ class Api(object):
     @property
     def fetchData(self):
 
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "API"
+        threading.currentThread().name = "API"
 
         if self.data == 'OK':
             if 'X-Forwarded-For' in cherrypy.request.headers:
@@ -231,6 +231,14 @@ class Api(object):
             rows_as_dic.append(row_as_dic)
 
         return rows_as_dic
+
+    def _calibreList(self, **kwargs):
+        col1 = col2 = None
+        if 'toread' in kwargs:
+            col1 = kwargs['toread']
+        if 'read' in kwargs:
+            col2 = kwargs['read']
+        self.data = calibreReadList(col1, col2)
 
     def _help(self):
         self.data = dict(cmd_dict)
