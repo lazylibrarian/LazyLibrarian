@@ -1415,7 +1415,8 @@ def processMAGOPF(issuefile, title, issue, issueID):
         'BookPub': '',
         'Series': title,
         'Series_index': issue
-    }
+    }  # type: dict
+    # noinspection PyTypeChecker
     _ = processOPF(dest_path, data, global_name, overwrite=True)
 
 

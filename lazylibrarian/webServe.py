@@ -47,6 +47,7 @@ from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.calibre import calibreTest
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -71,6 +72,7 @@ def serve_template(templatename, **kwargs):
 
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             template = _hplookup.get_template(templatename)
+            # noinspection PyArgumentList
             return template.render(perm=lazylibrarian.perm_admin, **kwargs)
 
         username = ''  # anyone logged in yet?
@@ -135,6 +137,7 @@ def serve_template(templatename, **kwargs):
         if templatename == "login.html":
             return template.render(perm=0, title="Redirected")
         else:
+            # noinspection PyArgumentList
             return template.render(perm=perm, **kwargs)
     except Exception:
         return exceptions.html_error_template().render()
@@ -3256,6 +3259,7 @@ class WebInterface(object):
     def api(self, **kwargs):
         from lazylibrarian.api import Api
         a = Api()
+        # noinspection PyArgumentList
         a.checkParams(**kwargs)
         return a.fetchData
 
@@ -3508,5 +3512,4 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         if 'prg' in kwargs and kwargs['prg']:
             lazylibrarian.CONFIG['IMP_CALIBREDB'] = kwargs['prg']
-        res, _, _ = calibredb('--version')
-        return res
+        return calibreTest()
