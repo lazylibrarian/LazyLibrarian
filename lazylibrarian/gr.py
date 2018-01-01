@@ -522,7 +522,9 @@ class GoodReads:
                         booklink = book.find('link').text
                         bookrate = float(book.find('average_rating').text)
                         bookpages = book.find('num_pages').text
-                        booksub = series = seriesNum = ''
+                        booksub = ''
+                        series = ''
+                        seriesNum = ''
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' %
                                          (bookid, authorNameResult))

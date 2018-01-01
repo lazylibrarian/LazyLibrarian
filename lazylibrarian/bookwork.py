@@ -55,7 +55,10 @@ def audioRename(bookid):
 
     cnt = 0
     parts = []
-    author = book = track = audio_file = ''
+    author = ''
+    book = ''
+    track = ''
+    audio_file = ''
     for f in os.listdir(r):
         if is_valid_booktype(f, booktype='audiobook'):
             cnt += 1
@@ -219,7 +222,8 @@ def seriesInfo(bookid, part=None):
 
     seriesid = res['SeriesID']
     serieslist = getList(res['SeriesNum'])
-    seriesnum = seriesname = ''
+    seriesnum = ''
+    seriesname = ''
     # might be "Book 3.5" or similar, just get the numeric part
     while serieslist:
         seriesnum = serieslist.pop()
@@ -1028,7 +1032,8 @@ def getBookCover(bookID=None, src=None):
     cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID=?'
     cmd += ' and books.AuthorID = authors.AuthorID'
     item = myDB.match(cmd, (bookID,))
-    safeparams = booklink = ''
+    safeparams = ''
+    booklink = ''
     if item:
         title = safe_unicode(item['BookName'])
         title = title.encode(lazylibrarian.SYS_ENCODING)

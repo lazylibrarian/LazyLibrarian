@@ -1432,7 +1432,8 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     else:
         scheme = 'GoogleBooks'
 
-    seriesname = seriesnum = ''
+    seriesname = ''
+    seriesnum = ''
     if 'Series_index' not in data:
         # no series details passed in data dictionary, look them up in db
         myDB = database.DBConnection()

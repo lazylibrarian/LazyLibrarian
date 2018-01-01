@@ -57,7 +57,8 @@ def runGit(args):
     if platform.system().lower() == 'darwin':
         git_locations.append('/usr/local/git/bin/git')
 
-    output = err = None
+    output = None
+    err = None
 
     for cur_git in git_locations:
 

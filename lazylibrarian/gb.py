@@ -542,7 +542,8 @@ class GoogleBooks:
                         except KeyError:
                             bookdesc = ""
 
-                        rejected = check_status = False
+                        rejected = False
+                        check_status = False
 
                         bookname = item['volumeInfo']['title']
 

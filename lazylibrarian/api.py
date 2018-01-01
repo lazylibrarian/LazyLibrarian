@@ -233,11 +233,12 @@ class Api(object):
         return rows_as_dic
 
     def _calibreList(self, **kwargs):
-        col1 = col2 = None
+        col1 = None
+        col2 = None
         if 'toread' in kwargs:
-            col1 = kwargs['toread']
+            col2 = kwargs['toread']
         if 'read' in kwargs:
-            col2 = kwargs['read']
+            col1 = kwargs['read']
         self.data = calibreReadList(col1, col2)
 
     def _help(self):

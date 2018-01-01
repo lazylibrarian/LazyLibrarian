@@ -340,7 +340,10 @@ class WebInterface(object):
         cookie = cherrypy.request.cookie
         if not cookie or 'll_uid' not in cookie.keys():
             cherrypy.response.cookie['ll_uid'] = ''
-        username = password = res = pwd = ''
+        username = ''
+        password = ''
+        res = ''
+        pwd = ''
         if 'username' in kwargs:
             username = kwargs['username']
         if 'password' in kwargs:
@@ -1319,7 +1322,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         ToRead = []
         HaveRead = []
-        flagTo = flagHave = 0
+        flagTo = 0
+        flagHave = 0
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
         else:
@@ -2021,6 +2025,9 @@ class WebInterface(object):
                                     if bookid in HaveRead:
                                         HaveRead.remove(bookid)
                                     logger.debug('Status set to "to read" for "%s"' % bookid)
+
+                                ToRead = list(set(ToRead))
+                                HaveRead = list(set(HaveRead))
                                 myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
                                             (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
 

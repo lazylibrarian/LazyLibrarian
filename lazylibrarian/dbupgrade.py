@@ -932,7 +932,8 @@ def db_v23(myDB, upgradelog):
         email = lazylibrarian.CONFIG['ADMIN_EMAIL']
         name = 'admin'
         if not user or not pwd:
-            user = pwd = name = 'admin'
+            user = 'admin'
+            pwd = 'admin'
         myDB.action(cmd, (pwd_generator(), user, name, hashlib.md5(pwd).hexdigest(), email,
                           lazylibrarian.perm_admin))
         logger.debug('Added admin user %s' % user)

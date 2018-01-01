@@ -29,7 +29,11 @@ from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
 
-client = request_token = consumer = token = user_id = ''
+client = ''
+request_token = ''
+consumer = ''
+token = ''
+user_id = ''
 
 
 class grauth:
@@ -516,7 +520,8 @@ def grsync(status, shelf):
         cmd = 'select SyncList from sync where UserID="%s" and Label="%s"' % ("goodreads", shelf)
         res = myDB.match(cmd)
         last_sync = []
-        shelf_changed = ll_changed = 0
+        shelf_changed = 0
+        ll_changed = 0
         if res:
             last_sync = getList(res['SyncList'])
 
