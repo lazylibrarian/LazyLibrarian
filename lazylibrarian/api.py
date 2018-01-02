@@ -42,7 +42,7 @@ from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
-from lazylibrarian.calibre import calibreReadList
+from lazylibrarian.calibre import syncCalibreList, calibreList
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -136,7 +136,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
             'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
-            'calibreList': '[&toread=] [&read=] get a list of books from calibre for sync purposes',
+            'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
+            'syncCalibreList': '[&toread=] [&read=] sync list of read/toread books with calibre',
             }
 
 
@@ -232,6 +233,15 @@ class Api(object):
 
         return rows_as_dic
 
+    def _syncCalibreList(self, **kwargs):
+        col1 = None
+        col2 = None
+        if 'toread' in kwargs:
+            col2 = kwargs['toread']
+        if 'read' in kwargs:
+            col1 = kwargs['read']
+        self.data = syncCalibreList(col1, col2)
+
     def _calibreList(self, **kwargs):
         col1 = None
         col2 = None
@@ -239,7 +249,7 @@ class Api(object):
             col2 = kwargs['toread']
         if 'read' in kwargs:
             col1 = kwargs['read']
-        self.data = calibreReadList(col1, col2)
+        self.data = calibreList(col1, col2)
 
     def _help(self):
         self.data = dict(cmd_dict)
