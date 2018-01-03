@@ -2237,13 +2237,9 @@ class WebInterface(object):
         if magazines:
             for mag in magazines:
                 title = mag['Title']
-
-                count = mag['issue_cnt']
-                if count:
-                    issues = mag['issue_cnt']
-                else:
-                    issues = 0
+                issues = mag['issue_cnt']
                 magimg = mag['LatestCover']
+
                 # special flag to say "no covers required"
                 if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.jpg'
