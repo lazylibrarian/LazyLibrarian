@@ -2231,15 +2231,16 @@ class WebInterface(object):
     def magazines(self):
         myDB = database.DBConnection()
 
-        magazines = myDB.select('SELECT * from magazines ORDER by Title')
+        magazines = myDB.select('select m.*, count(i.title) as issue_cnt from magazines m , issues i where m.Title = i.Title ORDER by Title')
         mags = []
         covercount = 0
         if magazines:
             for mag in magazines:
                 title = mag['Title']
-                count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
+
+                count = mag['issue_cnt']
                 if count:
-                    issues = count['counter']
+                    issues = mag['issue_cnt']
                 else:
                     issues = 0
                 magimg = mag['LatestCover']
