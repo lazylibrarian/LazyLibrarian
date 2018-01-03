@@ -16,13 +16,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
-
-import urllib
-import urllib2
-
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger
-from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, proxyList
+from lazylibrarian.formatter import check_int
 
 # from lazylibrarian.exceptions import ex
 
@@ -32,6 +30,9 @@ API_URL = 'https://new.boxcar.io/api/notifications'
 
 
 class BoxcarNotifier:
+    def __init__(self):
+        pass
+
     def _sendBoxcar(self, msg, title, token, subscribe=False):
         """
         Sends a boxcar notification to the address provided
@@ -39,7 +40,8 @@ class BoxcarNotifier:
         msg: The message to send (unicode)
         title: The title of the message
         email: The email address to send the message to (or to subscribe with)
-        subscribe: If true then instead of sending a message this function will send a subscription notification (optional, default is False)
+        subscribe: If true then instead of sending a message this function will send
+        a subscription notification (optional, default is False)
 
         returns: True if the message succeeded, False otherwise
         """
@@ -50,77 +52,66 @@ class BoxcarNotifier:
 
         # build up the URL and parameters
         msg = msg.strip()
+        msg = msg.encode(lazylibrarian.SYS_ENCODING)
+        title = title.encode(lazylibrarian.SYS_ENCODING)
         curUrl = API_URL
 
         # if this is a subscription notification then act accordingly
         if subscribe:
-            data = urllib.urlencode({'email': token})
+            data = {'email': token}
             curUrl += "/subscribe"
 
         # for normal requests we need all these parameters
         else:
-            # data = urllib.urlencode({
-            #    'email': email,
-            #    'notification[from_screen_name]': title,
-            #    'notification[message]': msg.encode('utf-8'),
-            #    'notification[from_remote_service_id]': int(time.time())
-            #    })
-            data = urllib.urlencode({
+            data = {
                 'user_credentials': token,
-                'notification[title]': title.encode('utf-8'),
-                'notification[long_message]': msg.encode('utf-8'),
+                'notification[title]': title,
+                'notification[long_message]': msg,
                 'notification[sound]': "done"
-            })
-
+            }
+        proxies = proxyList()
         # send the request to boxcar
         try:
-            # TODO: Use our getURL from helper?
-            req = urllib2.Request(curUrl)
-            handle = urllib2.urlopen(req, data)
-            handle.close()
-
-        except (urllib2.URLError, urllib2.HTTPError) as e:
-            # if we get an error back that doesn't have an error code then who knows what's really happening
-            # URLError doesn't return a code, just a reason. HTTPError gives a code
-            if not hasattr(e, 'code'):
-                logger.error(u"BOXCAR: Boxcar notification failed." + str(e))
-                return False
-            else:
-                logger.error(u"BOXCAR: Boxcar notification failed. Error code: " + str(e.code))
+            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+            r = requests.get(curUrl, params=data, timeout=timeout, proxies=proxies)
+            status = str(r.status_code)
+            if status.startswith('2'):
+                logger.debug("BOXCAR: Notification successful.")
+                return True
 
             # HTTP status 404 if the provided email address isn't a Boxcar user.
-            if e.code == 404:
-                logger.warn(
-                    u"BOXCAR: Username is wrong/not a boxcar email. Boxcar will send an email to it")
-                return False
-
+            if status == '404':
+                logger.warn("BOXCAR: Username is wrong/not a boxcar email. Boxcar will send an email to it")
             # For HTTP status code 401's, it is because you are passing in either an
             # invalid token, or the user has not added your service.
-            elif e.code == 401:
+            elif status == '401':
                 # If the user has already added your service, we'll return an HTTP status code of 401.
                 if subscribe:
-                    logger.error(u"BOXCAR: Already subscribed to service")
-                    # i dont know if this is true or false ... its neither but i also dont
-                    # know how we got here in the first place
-                    return False
-
+                    logger.error("BOXCAR: Already subscribed to service")
                 # HTTP status 401 if the user doesn't have the service added
                 else:
                     subscribeNote = self._sendBoxcar(msg, title, token, True)
                     if subscribeNote:
-                        logger.debug(u"BOXCAR: Subscription sent.")
+                        logger.debug("BOXCAR: Subscription sent.")
                         return True
                     else:
-                        logger.error(u"BOXCAR: Subscription could not be sent.")
-                        return False
-
+                        logger.error("BOXCAR: Subscription could not be sent.")
             # If you receive an HTTP status code of 400, it is because you failed to send the proper parameters
-            elif e.code == 400:
-                logger.error(u"BOXCAR: Wrong data send to boxcar.")
-                return False
+            elif status == '400':
+                logger.error("BOXCAR: Wrong data send to boxcar.")
+            else:
+                logger.error("BOXCAR: Got error code %s" % status)
+            return False
 
-        logger.debug(u"BOXCAR: Boxcar notification successful.")
-        return True
+        except Exception as e:
+            # if we get an error back that doesn't have an error code then who knows what's really happening
+            # URLError doesn't return a code, just a reason. HTTPError gives a code
+            if not hasattr(e, 'code'):
+                logger.error("BOXCAR: Boxcar notification failed: %s" % str(e))
+            else:
+                # noinspection PyUnresolvedReferences
+                logger.error("BOXCAR: Boxcar notification failed. Error code: %s" % str(e.code))
+            return False
 
     def _notify(self, title, message, username=None, force=False):
         """
@@ -139,8 +130,6 @@ class BoxcarNotifier:
         # if no username was given then use the one from the config
         if not username:
             username = lazylibrarian.CONFIG['BOXCAR_TOKEN']
-
-        logger.debug(u"BOXCAR: Sending notification for " + message)
 
         return self._sendBoxcar(message, title, username)
 

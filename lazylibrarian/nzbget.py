@@ -31,7 +31,7 @@ from lazylibrarian.formatter import check_int
 
 def checkLink():
     # socket.setdefaulttimeout(2)
-    test = sendNZB('', cmd="test")
+    test = sendNZB(cmd="test")
     # socket.setdefaulttimeout(None)
     if test:
         return "NZBget connection successful"
@@ -40,11 +40,14 @@ def checkLink():
 
 def deleteNZB(nzbID, remove_data=False):
     if remove_data:
-        return sendNZB('', 'GroupFinalDelete', nzbID)
-    return sendNZB('', 'GroupDelete', nzbID)
+        sendNZB(cmd='GroupFinalDelete', nzbID=nzbID)
+        return sendNZB(cmd='HistoryFinalDelete', nzbID=nzbID)
+    else:
+        sendNZB(cmd='GroupDelete', nzbID=nzbID)
+        return sendNZB(cmd='HistoryDelete', nzbID=nzbID)
 
 
-def sendNZB(nzb, cmd=None, nzbID=None):
+def sendNZB(nzb=None, cmd=None, nzbID=None):
     # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
     # by setting nzbID and cmd (we currently only use test and delete)
 
@@ -70,7 +73,7 @@ def sendNZB(nzb, cmd=None, nzbID=None):
     try:
         nzbGetRPC = xmlrpclib.ServerProxy(url)
     except Exception as e:
-        logger.debug("NZBget connection to %s failed: %s" % (url, str(e)))
+        logger.debug("NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e)))
         return False
 
     if cmd == "test":
@@ -82,28 +85,28 @@ def sendNZB(nzb, cmd=None, nzbID=None):
 
     try:
         if nzbGetRPC.writelog("INFO", msg):
-            logger.debug(u"Successfully connected to NZBget")
+            logger.debug("Successfully connected to NZBget")
             if cmd == "test":
                 # should check nzbget category is valid
                 return True
         else:
             if nzbID is not None:
-                logger.debug(u"Successfully connected to NZBget, unable to send message")
+                logger.debug("Successfully connected to NZBget, unable to send message")
                 return False
             else:
-                logger.info(u"Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
+                logger.info("Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
 
     except httplib.socket.error as e:
-        logger.error(u"Please check your NZBget host and port (if it is running). \
+        logger.error("Please check your NZBget host and port (if it is running). \
             NZBget is not responding to this combination: %s" % e)
-        logger.error(u"NZBget url set to [%s]" % url)
+        logger.error("NZBget url set to [%s]" % url)
         return False
 
     except xmlrpclib.ProtocolError as e:
         if e.errmsg == "Unauthorized":
-            logger.error(u"NZBget password is incorrect.")
+            logger.error("NZBget password is incorrect.")
         else:
-            logger.error(u"Protocol Error: %s" % e.errmsg)
+            logger.error("Protocol Error: %s" % e.errmsg)
         return False
 
     if nzbID is not None:
@@ -120,8 +123,8 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         data = nzb.extraInfo[0]
         nzbcontent64 = standard_b64encode(data)
 
-    logger.info(u"Sending NZB to NZBget")
-    logger.debug(u"URL: " + url)
+    logger.info("Sending NZB to NZBget")
+    logger.debug("URL: " + url)
 
     dupekey = ""
     dupescore = 0
@@ -162,9 +165,10 @@ def sendNZB(nzb, cmd=None, nzbID=None):
         # also the return value has changed from boolean to integer
         # (Positive number representing NZBID of the queue item. 0 and negative numbers represent error codes.)
         elif nzbget_version >= 13:
-            nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None
-                else nzb.url, lazylibrarian.CONFIG['NZBGET_CATEGORY'], lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, False, dupekey,
-                                             dupescore, "score")
+            nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", nzbcontent64 if nzbcontent64 is not None else nzb.url,
+                                             lazylibrarian.CONFIG['NZBGET_CATEGORY'],
+                                             lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, False, dupekey, dupescore,
+                                             "score")
             if nzbget_result <= 0:
                 nzbget_result = False
         else:
@@ -176,11 +180,12 @@ def sendNZB(nzb, cmd=None, nzbID=None):
                                                     lazylibrarian.CONFIG['NZBGET_PRIORITY'], False, nzb.url)
 
         if nzbget_result:
-            logger.debug(u"NZB sent to NZBget successfully")
+            logger.debug("NZB sent to NZBget successfully")
             return nzbget_result
         else:
-            logger.error(u"NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
+            logger.error("NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
             return False
     except Exception as e:
-        logger.error(u"Connect Error to NZBget: could not add %s to the queue: %s" % (nzb.name + ".nzb", str(e)))
+        logger.error("Connect Error to NZBget: could not add %s to the queue: %s %s" %
+                     (nzb.name + ".nzb", type(e).__name__, str(e)))
         return False

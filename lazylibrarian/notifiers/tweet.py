@@ -21,9 +21,11 @@ import lazylibrarian
 from lazylibrarian import logger, common, formatter
 
 # parse_qsl moved to urlparse module in v2.6
+# noinspection PyBroadException
 try:
     from urlparse import parse_qsl  # @UnusedImport
-except:
+except Exception:
+    # noinspection PyDeprecation
     from cgi import parse_qsl  # @Reimport
 
 import lib.oauth2 as oauth
@@ -31,6 +33,9 @@ import lib.pythontwitter as twitter
 
 
 class TwitterNotifier:
+
+    def __init__(self):
+        pass
 
     consumer_key = "208JPTMMnZjtKWA4obcH8g"
     consumer_secret = "BKaHzaQRd5PK6EH8EqPZ1w8mz6NSk9KErArarinHutk"
@@ -64,6 +69,7 @@ class TwitterNotifier:
         if resp['status'] != '200':
             logger.info('Invalid respond from Twitter requesting temp token: %s' % resp['status'])
         else:
+            # noinspection PyDeprecation
             request_token = dict(parse_qsl(content))
 
             lazylibrarian.CONFIG['TWITTER_USERNAME'] = request_token['oauth_token']
@@ -73,7 +79,8 @@ class TwitterNotifier:
 
     def _get_credentials(self, key):
         request_token = {'oauth_token': lazylibrarian.CONFIG['TWITTER_USERNAME'],
-                         'oauth_token_secret': lazylibrarian.CONFIG['TWITTER_PASSWORD'], 'oauth_callback_confirmed': 'true'}
+                         'oauth_token_secret': lazylibrarian.CONFIG['TWITTER_PASSWORD'],
+                         'oauth_callback_confirmed': 'true'}
 
         token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
         token.set_verifier(key)
@@ -88,6 +95,7 @@ class TwitterNotifier:
         resp, content = oauth_client.request(self.ACCESS_TOKEN_URL, method='POST', body='oauth_verifier=%s' % key)
         logger.info('resp, content: ' + str(resp) + ',' + str(content))
 
+        # noinspection PyDeprecation
         access_token = dict(parse_qsl(content))
         logger.info('access_token: ' + str(access_token))
 
@@ -128,5 +136,6 @@ class TwitterNotifier:
             return False
 
         return self._send_tweet(prefix + ": " + message)
+
 
 notifier = TwitterNotifier

@@ -13,6 +13,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 import os
 import sys
 
@@ -23,7 +24,6 @@ from lazylibrarian.webServe import WebInterface
 
 
 def initialize(options=None):
-
     if options is None:
         options = {}
     https_enabled = options['https_enabled']
@@ -44,6 +44,7 @@ def initialize(options=None):
         'tools.encode.on': True,
         'tools.encode.encoding': 'utf-8',
         'tools.decode.on': True,
+        'error_page.401': lazylibrarian.common.error_page_401,
     }
 
     if https_enabled:
@@ -59,9 +60,10 @@ def initialize(options=None):
 
     conf = {
         '/': {
-            'tools.staticdir.on': True,
-            'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
-            'tools.proxy.on': options['http_proxy']
+            # 'tools.staticdir.on': True,
+            # 'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data'),
+            'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
+            'tools.proxy.on': options['http_proxy']  # pay attention to X-Forwarded-Proto header
         },
         '/interfaces': {
             'tools.staticdir.on': True,
@@ -85,10 +87,19 @@ def initialize(options=None):
         },
         '/favicon.ico': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': "images/favicon.ico"
+            # 'tools.staticfile.filename': "images/favicon.ico"
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'images', 'favicon.ico')
         }
     }
 
+    if lazylibrarian.CONFIG['PROXY_LOCAL']:
+        conf['/'].update({
+            # NOTE default if not specified is to use apache style X-Forwarded-Host
+            # 'tools.proxy.local': 'X-Forwarded-Host'  # this is for apache2
+            # 'tools.proxy.local': 'Host'  # this is for nginx
+            # 'tools.proxy.local': 'X-Host'  # this is for lighthttpd
+            'tools.proxy.local': lazylibrarian.CONFIG['PROXY_LOCAL']
+            })
     if options['http_pass'] != "":
         logger.info("Web server authentication is enabled, username is '%s'" % options['http_user'])
         conf['/'].update({
@@ -110,7 +121,7 @@ def initialize(options=None):
         cherrypy.process.servers.check_port(str(options['http_host']), options['http_port'])
         cherrypy.server.start()
     except IOError:
-        print 'Failed to start on port: %i. Is something else running?' % (options['http_port'])
+        print('Failed to start on port: %i. Is something else running?' % (options['http_port']))
         sys.exit(1)
 
     cherrypy.server.wait()

@@ -16,7 +16,6 @@
 import datetime
 import os
 import re
-import shlex
 import string
 import time
 import unicodedata
@@ -32,7 +31,8 @@ def bookSeries(bookname):
     if no match, try single series, eg Mrs Bradshaws Handbook (Discworld, #40.5)
 
     \(            Must have (
-    ([\S\s]+)     followed by a group of one or more non whitespace
+    ([\S\s]+      followed by a group of one or more non whitespace
+    [^)])        not ending in )
     ,? #?         followed by optional comma, then space optional hash
     (             start next group
     \d+           must have one or more digits
@@ -45,19 +45,19 @@ def bookSeries(bookname):
     series = ""
     seriesNum = ""
 
-    result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*[;,])", bookname)
+    result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
         series = result.group(1)
-        if series[-1] == ',':
+        while series[-1] in ',)':
             series = series[:-1]
         seriesNum = result.group(2)
-        if seriesNum[-1] in ';,':
+        while seriesNum[-1] in ';,':
             seriesNum = seriesNum[:-1]
     else:
-        result = re.search(r"\(([\S\s]+),? #?(\d+\.?-?\d*)", bookname)
+        result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*)", bookname)
         if result:
             series = result.group(1)
-            if series[-1] == ',':
+            while series[-1] in ',)':
                 series = series[:-1]
             seriesNum = result.group(2)
 
@@ -72,7 +72,8 @@ def bookSeries(bookname):
     if series.lower().strip('.') == 'vol':
         series = ''
     if series.lower().strip('.').endswith('vol'):
-        series = series[:-4].strip()
+        series = series.strip('.')
+        series = series[:-3].strip()
     return series, seriesNum
 
 
@@ -151,7 +152,7 @@ def nzbdate2format(nzbdate):
             month = 1  # hopefully won't hit this, but return a default value rather than error
         year = nzbdate.split()[3]
         return "%s-%02d-%s" % (year, month, day)
-    except Exception:
+    except IndexError:
         return "1970-01-01"
 
 
@@ -170,26 +171,32 @@ def month2num(month):
         return 4
     elif month == "summer":
         return 7
-    elif month == "fall" or month == "autumn":
+    elif month in ["fall", "autumn"]:
         return 10
+    elif month == "christmas":
+        return 12
     else:
         return 0
 
 
 def datecompare(nzbdate, control_date):
     """
-    Return how many days between two dates given in yy-mm-dd format
+    Return how many days between two dates given in yy-mm-dd format or yyyy-mm-dd format
+    or zero if error (not a valid date)
     """
-    y1 = int(nzbdate.split('-')[0])
-    m1 = int(nzbdate.split('-')[1])
-    d1 = int(nzbdate.split('-')[2])
-    y2 = int(control_date.split('-')[0])
-    m2 = int(control_date.split('-')[1])
-    d2 = int(control_date.split('-')[2])
-    date1 = datetime.date(y1, m1, d1)
-    date2 = datetime.date(y2, m2, d2)
-    dtage = date1 - date2
-    return dtage.days
+    try:
+        y1 = int(nzbdate.split('-')[0])
+        m1 = int(nzbdate.split('-')[1])
+        d1 = int(nzbdate.split('-')[2])
+        y2 = int(control_date.split('-')[0])
+        m2 = int(control_date.split('-')[1])
+        d2 = int(control_date.split('-')[2])
+        date1 = datetime.date(y1, m1, d1)
+        date2 = datetime.date(y2, m2, d2)
+        dtage = date1 - date2
+        return dtage.days
+    except (AttributeError, IndexError, TypeError, ValueError):
+        return 0
 
 
 def plural(var):
@@ -219,7 +226,7 @@ def is_valid_isbn(isbn):
     Return True if parameter looks like a valid isbn
     either 13 digits, 10 digits, or 9 digits followed by 'x'
     """
-    isbn = re.sub('[- ]', '', isbn)
+    isbn = isbn.replace('-', '').replace(' ', '')
     if len(isbn) == 13:
         if isbn.isdigit():
             return True
@@ -237,6 +244,8 @@ def is_valid_booktype(filename, booktype=None):
     """
     if booktype == 'mag':  # default is book
         booktype_list = getList(lazylibrarian.CONFIG['MAG_TYPE'])
+    elif booktype == 'audiobook':
+        booktype_list = getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE'])
     else:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
     extn = os.path.splitext(filename)[1].lstrip('.')
@@ -245,19 +254,21 @@ def is_valid_booktype(filename, booktype=None):
     return False
 
 
-def getList(st):
-    # split a string into a list on whitespace or plus or comma
-    # quotes treated as part of word in case unpaired
-    # could maybe strip them out?
-
+def getList(st, c=None):
+    # split a string/unicode into a list on whitespace or plus or comma
+    # or single character split eg filenames with spaces split on comma only
+    # Returns list of same type as st
+    lst = []
     if st:
-        st = unaccented_str(st)
-        lex = shlex.shlex(st)
-        lex.whitespace += ',+'
-        lex.quotes = ''
-        lex.whitespace_split = True
-        return list(lex)
-    return []
+        if c is not None and len(c) == 1:
+            x = st.split(c)
+            for item in x:
+                lst.append(item.strip())
+        else:
+            st = st.replace(',', ' ').replace('+', ' ')
+            lst = ' '.join(st.split()).split()
+    return lst
+
 
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
@@ -298,7 +309,7 @@ def split_title(author, book):
         endbrace = book.find(')')
         endbrace += 1
         if endbrace:
-            if ' ' not in book[brace:endbrace-1]:
+            if ' ' not in book[brace:endbrace - 1]:
                 brace = 0
     if colon and brace:
         if colon < brace:
@@ -317,6 +328,66 @@ def split_title(author, book):
     return bookname, booksub
 
 
+def formatAuthorName(author):
+    """ get authorame in a consistent format """
+    if isinstance(author, str) and hasattr(author, "decode"):
+        author = author.decode(lazylibrarian.SYS_ENCODING)
+
+    if "," in author:
+        postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])
+        words = author.split(',')
+        if len(words) == 2:
+            # Need to handle names like "L. E. Modesitt, Jr." or "J. Springmann, Phd"
+            # use an exceptions list for now, there might be a better way...
+            if words[1].strip().strip('.').strip('_').lower() in postfix:
+                surname = words[1].strip()
+                forename = words[0].strip()
+            else:
+                # guess its "surname, forename" or "surname, initial(s)" so swap them round
+                forename = words[1].strip()
+                surname = words[0].strip()
+            if author != forename + ' ' + surname:
+                lazylibrarian.logger.debug('Formatted authorname [%s] to [%s %s]' % (author, forename, surname))
+                author = forename + ' ' + surname
+    # reformat any initials, we want to end up with L.E. Modesitt Jr
+    if len(author) > 2 and author[1] in '. ':
+        surname = author
+        forename = ''
+        while len(surname) > 2 and surname[1] in '. ':
+            forename = forename + surname[0] + '.'
+            surname = surname[2:].strip()
+        if author != forename + ' ' + surname:
+            lazylibrarian.logger.debug('Stripped authorname [%s] to [%s %s]' % (author, forename, surname))
+            author = forename + ' ' + surname
+
+    return ' '.join(author.split())  # ensure no extra whitespace
+
+
+def sortDefinite(title):
+    if not title:
+        return ''
+    if title[:4] == 'The ':
+        return title[4:] + ', The'
+    if title[2:] == 'A ':
+        return title[2:] + ', A'
+    return title
+
+
+def surnameFirst(authorname):
+    """ swap authorname round into surname, forenames for display and sorting"""
+    if not authorname:
+        return ''
+    words = getList(authorname)
+
+    if len(words) < 2:
+        return authorname
+    res = words.pop()
+
+    if res.strip('.').lower in getList(lazylibrarian.CONFIG['NAME_POSTFIX']):
+        res = words.pop() + ' ' + res
+    return res + ', ' + ' '.join(words)
+
+
 def cleanName(name, extras=None):
     validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:
@@ -333,21 +404,29 @@ def unaccented(str_or_unicode):
 
 
 def unaccented_str(str_or_unicode):
+    if not str_or_unicode:
+        return ''.encode('ASCII')  # ensure bytestring for python3
     try:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode)
+        cleaned = unicodedata.normalize('NFKD', str_or_unicode)
     except TypeError:
-        nfkd_form = unicodedata.normalize('NFKD', str_or_unicode.decode(lazylibrarian.SYS_ENCODING, 'replace'))
+        cleaned = unicodedata.normalize('NFKD', str_or_unicode.decode('utf-8', 'replace'))
+
     # turn accented chars into non-accented
-    stripped = ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    stripped = u''.join([c for c in cleaned if not unicodedata.combining(c)])
     # replace all non-ascii quotes/apostrophes with ascii ones eg "Collector's"
     dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
+    # Other characters not converted by unicodedata.combining
+    # c6 Ae, d0 Eth, d7 multiply, d8 Ostroke, de Thorn, df sharpS
+    dic.update({u'\xc6': 'A', u'\xd0': 'D', u'\xd7': '*', u'\xd8': 'O', u'\xde': 'P', u'\xdf': 's'})
+    # e6 ae, f0 eth, f7 divide, f8 ostroke, fe thorn
+    dic.update({u'\xe6': 'a', u'\xf0': 'o', u'\xf7': '/', u'\xf8': 'o', u'\xfe': 'p'})
     stripped = replace_all(stripped, dic)
     # now get rid of any other non-ascii
     return stripped.encode('ASCII', 'ignore')
-    # returns str
+    # returns bytestring
 
 
 def replace_all(text, dic):
-    for i, j in dic.iteritems():
-        text = text.replace(i, j)
+    for item in dic:
+        text = text.replace(item, dic[item])
     return text

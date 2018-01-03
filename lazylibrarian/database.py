@@ -50,7 +50,7 @@ class DBConnection:
                     break
 
                 except sqlite3.OperationalError as e:
-                    if "unable to open database file" in e.message or "database is locked" in e.message:
+                    if "unable to open database file" in str(e) or "database is locked" in str(e):
                         logger.warn('Database Error: %s' % e)
                         logger.debug("Attempted db query: [%s]" % query)
                         attempt += 1
@@ -63,20 +63,23 @@ class DBConnection:
                         logger.error("Failed query: [%s]" % query)
                         raise
 
-                except  sqlite3.IntegrityError as e:
-                        # we could ignore unique errors in sqlite by using "insert or ignore into" statements
-                        # but this would also ignore null values as we can't specify which errors to ignore :-(
-                        # The python interface to sqlite only returns english text messages, not error codes
-                        msg = e.message
-                        msg = msg.lower()
-                        if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
-                            logger.debug('Suppressed [%s] %s' % (query, e.message))
-                            self.connection.commit()
-                            break
-                        else:
-                            logger.error('Database Integrity error: %s' % e)
-                            logger.error("Failed query: [%s]" % query)
-                            raise
+                except sqlite3.IntegrityError as e:
+                    # we could ignore unique errors in sqlite by using "insert or ignore into" statements
+                    # but this would also ignore null values as we can't specify which errors to ignore :-(
+                    # The python interface to sqlite only returns english text messages, not error codes
+                    msg = str(e)
+                    msg = msg.lower()
+                    if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug('Suppressed [%s] %s' % (query, e))
+                            logger.debug("Suppressed args: [%s]" % str(args))
+                        self.connection.commit()
+                        break
+                    else:
+                        logger.error('Database Integrity error: %s' % e)
+                        logger.error("Failed query: [%s]" % query)
+                        logger.error("Failed args: [%s]" % str(args))
+                        raise
 
                 except sqlite3.DatabaseError as e:
                     logger.error('Fatal error executing %s :: %s' % (query, e))
@@ -88,7 +91,7 @@ class DBConnection:
         try:
             # if there are no results, action() returns None and .fetchone() fails
             sqlResults = self.action(query, args).fetchone()
-        except Exception:
+        except sqlite3.Error:
             return []
         if not sqlResults:
             return []
@@ -99,7 +102,7 @@ class DBConnection:
         try:
             # if there are no results, action() returns None and .fetchall() fails
             sqlResults = self.action(query, args).fetchall()
-        except Exception:
+        except sqlite3.Error:
             return []
         if not sqlResults:
             return []
@@ -120,7 +123,12 @@ class DBConnection:
 
         self.action(query, valueDict.values() + keyDict.values())
 
+        # This version of upsert is not thread safe, each action() is thread safe,
+        # but it's possible for another thread to jump in between the
+        # UPDATE and INSERT statements so we use suppress=unique to log any conflicts
+
         if self.connection.total_changes == changesBefore:
-            query = "INSERT INTO " + tableName + " (" + ", ".join(valueDict.keys() + keyDict.keys()) + ")" + \
-                    " VALUES (" + ", ".join(["?"] * len(valueDict.keys() + keyDict.keys())) + ")"
-            self.action(query, valueDict.values() + keyDict.values())
+            query = "INSERT INTO " + tableName + " ("
+            query += ", ".join(valueDict.keys() + keyDict.keys()) + ") VALUES ("
+            query += ", ".join(["?"] * len(valueDict.keys() + keyDict.keys())) + ")"
+            self.action(query, valueDict.values() + keyDict.values(), suppress="UNIQUE")

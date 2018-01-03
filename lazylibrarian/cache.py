@@ -1,5 +1,5 @@
 #  This file is part of Lazylibrarian.
-#
+
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
@@ -16,77 +16,85 @@
 import hashlib
 import json
 import os
-import socket
+import shutil
 import time
-import urllib2
 from xml.etree import ElementTree
 
 import lazylibrarian
+import lib.requests as requests
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.formatter import check_int
 
 
 def fetchURL(URL, headers=None, retry=True):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
         Allow one retry on timeout by default"""
-    request = urllib2.Request(URL)
-    if lazylibrarian.CONFIG['PROXY_HOST']:
-        request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
-        request.add_header('User-Agent', USER_AGENT)
-    else:
-        for item in headers:
-            request.add_header(item, headers[item])
+        headers = {'User-Agent': USER_AGENT}
+    proxies = proxyList()
     try:
-        resp = urllib2.urlopen(request, timeout=30)
-        if str(resp.getcode()).startswith("2"):  # (200 OK etc)
-            try:
-                result = resp.read()
-            except socket.error as e:
-                return str(e), False
-            return result, True
-        return str(resp.getcode()), False
-    except socket.timeout as e:
+        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+        r = requests.get(URL, headers=headers, timeout=timeout, proxies=proxies)
+
+        if str(r.status_code).startswith('2'):  # (200 OK etc)
+            return r.content, True
+        # noinspection PyBroadException
+        try:
+            # noinspection PyProtectedMember
+            msg = requests.status_codes._codes[r.status_code][0]
+        except Exception:
+            msg = str(r.content)
+        return "Response status %s: %s" % (r.status_code, msg), False
+    except requests.exceptions.Timeout as e:
         if not retry:
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
-            return str(e), False
-        logger.warn(u"fetchURL: retrying - got timeout on %s" % URL)
+            return "Timeout %s" % str(e), False
+        logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False)
         return result, success
     except Exception as e:
         if hasattr(e, 'reason'):
-            return e.reason, False
-        return str(e), False
+            return "Exception %s: Reason: %s" % (type(e).__name__, str(e.reason)), False
+        return "Exception %s: %s" % (type(e).__name__, str(e)), False
 
 
 def cache_img(img_type, img_ID, img_url, refresh=False):
-    """ Cache the image from the given URL in the local images cache
+    """ Cache the image from the given filename or URL in the local images cache
         linked to the id, return the link to the cached file, True
         or error message, False if failed to cache """
 
     if img_type not in ['book', 'author']:
-        logger.warn('Internal error in cache_img, img_type = [%s]' % img_type)
+        logger.debug('Internal error in cache_img, img_type = [%s]' % img_type)
         img_type = 'book'
-    cachedir = lazylibrarian.CACHEDIR
-    coverfile = os.path.join(cachedir, img_type, img_ID + '.jpg')
+
+    cachefile = os.path.join(lazylibrarian.CACHEDIR, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
-    if os.path.isfile(coverfile) and not refresh:  # overwrite any cached image
-       return link, True
+    if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
+        return link, True
 
-    result, success = fetchURL(img_url)
-
-    if success:
+    if img_url.startswith('http'):
+        result, success = fetchURL(img_url)
+        if success:
+            try:
+                with open(cachefile, 'wb') as img:
+                    img.write(result)
+                return link, True
+            except Exception as e:
+                logger.debug("%s writing image to %s, %s" % (type(e).__name__, cachefile, str(e)))
+                return str(e), False
+        return result, False
+    else:
         try:
-            with open(coverfile, 'wb') as img:
-                img.write(result)
+            shutil.copyfile(img_url, cachefile)
             return link, True
         except Exception as e:
-            logger.debug("Error writing image to %s, %s" % (coverfile, str(e)))
+            logger.debug("%s copying image to %s, %s" % (type(e).__name__, cachefile, str(e)))
             return str(e), False
-    return result, False
 
 
 def get_xml_request(my_url, useCache=True):
@@ -130,8 +138,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
         if cache == "JSON":
             try:
                 source = json.load(open(hashfilename))
-            except Exception:
-                logger.warn(u"Error decoding json from %s" % hashfilename)
+            except ValueError:
+                logger.debug(u"Error decoding json from %s" % hashfilename)
                 return None, False
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
@@ -139,10 +147,10 @@ def get_cached_request(url, useCache=True, cache="XML"):
             if result and result.startswith('<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
-                except Exception:
+                except ElementTree.ParseError:
                     source = None
             if source is None:
-                logger.warn(u"Error reading xml from %s" % hashfilename)
+                logger.debug(u"Error reading xml from %s" % hashfilename)
                 os.remove(hashfilename)
                 return None, False
     else:
@@ -154,7 +162,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 try:
                     source = json.loads(result)
                 except Exception as e:
-                    logger.warn(u"Error decoding json from %s" % url)
+                    logger.debug(u"%s decoding json from %s" % (type(e).__name__, url))
                     logger.debug(u"%s : %s" % (e, result))
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
@@ -162,16 +170,16 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 if result and result.startswith('<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
-                    except Exception:
-                        logger.warn(u"Error parsing xml from %s" % url)
+                    except ElementTree.ParseError:
+                        logger.debug(u"Error parsing xml from %s" % url)
                         source = None
                 if source is not None:
                     with open(hashfilename, "w") as cachefile:
                         cachefile.write(result)
                 else:
-                    logger.warn(u"Error getting xml data from %s" % url)
+                    logger.debug(u"Error getting xml data from %s" % url)
                     return None, False
         else:
-            logger.warn(u"Got error response for %s: %s" % (url, result))
+            logger.debug(u"Got error response for %s: %s" % (url, result))
             return None, False
     return source, valid_cache

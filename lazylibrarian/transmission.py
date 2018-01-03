@@ -16,10 +16,12 @@
 import json
 import time
 import urlparse
+import lib.requests as requests
 
 import lazylibrarian
-from lazylibrarian import logger, request
+from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
+from lazylibrarian.common import proxyList
 
 
 # This is just a simple script to send torrents to transmission. The
@@ -31,17 +33,11 @@ from lazylibrarian.formatter import check_int
 
 def addTorrent(link, directory=None):
     method = 'torrent-add'
-    # print type(link), link
-    # if link.endswith('.torrent'):
-    #    with open(link, 'rb') as f:
-    #        metainfo = str(base64.b64encode(f.read()))
-    #    arguments = {'metainfo': metainfo }
-    # else:
     if directory is None:
         directory = lazylibrarian.DIRECTORY('Download')
     arguments = {'filename': link, 'download-dir': directory}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
 
     if not response:
         return False
@@ -54,7 +50,7 @@ def addTorrent(link, directory=None):
         else:
             retid = False
 
-        logger.debug(u"Torrent sent to Transmission successfully")
+        logger.debug("Torrent sent to Transmission successfully")
         return retid
 
     else:
@@ -67,7 +63,7 @@ def getTorrentFolder(torrentid):  # uses hashid
     arguments = {'ids': [torrentid], 'fields': ['name', 'percentDone']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)
+        response = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
             percentdone = response['arguments']['torrents'][0]['percentDone']
             if percentdone:
@@ -88,7 +84,7 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
     arguments = {'fields': ['name', 'percentDone', 'id']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)
+        response = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
             tor = 0
             while tor < len(response['arguments']['torrents']):
@@ -116,7 +112,7 @@ def setSeedRatio(torrentid, ratio):
     else:
         arguments = {'seedRatioMode': 2, 'ids': [torrentid]}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
     if not response:
         return False
 
@@ -126,7 +122,7 @@ def removeTorrent(torrentid, remove_data=False):
     method = 'torrent-get'
     arguments = {'ids': [torrentid], 'fields': ['isFinished', 'name']}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
     if not response:
         return False
 
@@ -147,7 +143,7 @@ def removeTorrent(torrentid, remove_data=False):
             logger.debug('%s has not finished seeding yet, torrent will not be removed, \
                         will try again on next run' % name)
     except Exception as e:
-        logger.debug('Unable to remove torrent %s, %s' % (torrentid, str(e)))
+        logger.debug('Unable to remove torrent %s, %s %s' % (torrentid, type(e).__name__, str(e)))
         return False
 
     return False
@@ -158,7 +154,7 @@ def checkLink():
     method = 'session-stats'
     arguments = {}
 
-    response = torrentAction(method, arguments)
+    response = torrentAction(method, arguments)  # type: dict
     if response:
         if response['result'] == 'success':
             # does transmission handle labels?
@@ -201,8 +197,9 @@ def torrentAction(method, arguments):
 
     # Retrieve session id
     auth = (username, password) if username and password else None
-    response = request.request_response(host, auth=auth,
-                                        whitelist_status_code=[401, 409])
+    proxies = proxyList()
+    timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+    response = requests.get(host, auth=auth, proxies=proxies, timeout=timeout)
 
     if response is None:
         logger.error("Error getting Transmission session ID")
@@ -227,12 +224,14 @@ def torrentAction(method, arguments):
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
-
+    proxies = proxyList()
+    timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     try:
-        response = request.request_json(host, method="POST", data=json.dumps(data),
-                                        headers=headers, auth=auth)
+        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies, 
+                                 auth=auth, timeout=timeout)
+        response = response.json()
     except Exception as e:
-        logger.debug('Transmission error %s' % str(e))
+        logger.debug('Transmission %s: %s' % (type(e).__name__, str(e)))
         response = ''
 
     if not response:

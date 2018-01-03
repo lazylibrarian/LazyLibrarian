@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <ul id="subhead_menu">
@@ -85,69 +84,66 @@
                     totalbooks = '0'
                     css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
             %>
-            <span title="${percent}">${css}</span>
-            <div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
-        </ul>
-    </div>
-    <p class="indented">
-        <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
-            <input type="hidden" name="redirect" value="author">
-            <input type="hidden" name="booklang" value="booklang">
-            <input type="hidden" name="ignored" value="ignored">
-            <label>&nbsp;&nbsp;Mark selected books as: </label>
-            <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
-                <option value="Wanted">Wanted</option>
-                <option value="Have">Have</option>
-                <option value="Ignored">Ignored</option>
-                <option value="Skipped">Skipped</option>
-                <option value="Remove">Remove</option>
-                <option value="Delete">Delete</option>
-                <option value="Leave" class="hidden">Leave</option>
-            </select>
-        <input type="submit" class="markBooks" value="Go">
-    </p>
-    <table class="display" id="book_table">
-        <thead>
-            <%
-            if lazylibrarian.CONFIG['BOOK_IMG'] == True:
-                hidden = ''
-            else:
-                hidden = 'class="hidden"'
-            %>
-            <tr>
-                <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th id="bookart" ${hidden}>Cover</th>
-                <th id="authorname" class="hidden">Title</th>
-                <th id="bookname">Title</th>
-                <th id="series">Series</th>
-                <th id="stars">Rating</th>
-                <th id="date">Released</th>
-                <th id="status">Status</th>
-            </tr>
-        </thead>
-    </table>
-<p>&nbsp;</p>
-<p>&nbsp;</p>
-    </form>
+<span title="${percent}">${css}</span>
+<div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+</ul>
+</div>
+<p class="indented">
+  <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
+    <input type="hidden" name="redirect" value="author">
+    <input type="hidden" name="booklang" value="booklang">
+    <input type="hidden" name="ignored" value="ignored">
+    <label>&nbsp;&nbsp;Mark selected books as: </label>
+    <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
+      <option value="Wanted">Wanted</option>
+      <option value="Have">Have</option>
+      <option value="Ignored">Ignored</option>
+      <option value="Skipped">Skipped</option>
+      <option value="Remove">Remove</option>
+      <option value="Delete">Delete</option>
+      <option value="Leave" class="hidden">Leave</option>
+    </select>
+    <input type="submit" class="markBooks" value="Go">
+  </p>
+  <table class="display" id="book_table">
+    <thead>
+      <tr>
+        <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+        <th id="bookart">Cover</th>
+        <th id="authorname" class="hidden">Title</th>
+        <th id="bookname">Title</th>
+        <th id="series">Series</th>
+        <th id="stars">Rating</th>
+        <th id="date">Released</th>
+        <th id="date">Added</th>
+        <th id="select">Status</th>
+      </tr>
+    </thead>
+  </table>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+</form>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
-    %if author['Status'] == 'Loading':
-    <meta http-equiv="refresh" content="12">
-    <script>
-        $(document).ready(function () {
-            showMsg("Getting Author's Books", true);
-        });
-     </script>
-    %endif
+  <link rel="stylesheet" href="css/data_table.css">
+  %if author['Status'] == 'Loading':
+  <meta http-equiv="refresh" content="12">
+  <script>
+    $(document).ready(function () {
+        showMsg("Getting Author's Books", true);
+    });
+  </script>
+  %endif
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
         var oTable = $('#book_table').dataTable(
             {
                 "bAutoWidth": false,
@@ -158,11 +154,17 @@
                       }
                     },
                     {"bSortable": false,
+                     "bVisible": showimg,
                       "fnRender": function ( oObj ) {
                         return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
                       }
                     },
-                    null,
+                    {"fnRender": function ( oObj ) {
+                        var col = 2
+                        if ( showimg === false ) { col = 3 }
+                        return  oObj.aData[col]
+                      }
+                    },
                     null,
                     { "sType": "natural" },
                     { "fnRender": function ( oObj ) {
@@ -171,18 +173,25 @@
                     },
                     null,
                     { "fnRender": function ( oObj ) {
-                        var btn = oObj.aData[7]
-                        if ( btn == 'Open' ) {
-                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '" target="_self">Open</a>'}
-                        else if ( btn == 'Wanted' ) {
+                        var dtime = oObj.aData[10]
+                        var str = String(dtime).substr(0, 10)
+                        if (str === "null"){ str = ""}
+                        return str
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        var btn = oObj.aData[11]
+                        if ( btn.indexOf('Open') >= 0 ) {
+                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '&library=eBook" target="_self">' + btn + '</a>'}
+                        else if ( btn.indexOf('Wanted') >= 0 ) {
                             btn = '<a class="button red" href="searchForBook?bookid=' + oObj.aData[9] +
-                                    '" target="_self"><span class="a">Wanted</span><span class="b">Search</span></a>'}
-                        else if ( btn == 'Snatched' ) {
-                            btn = '<a class="button">Snatched</a>'}
-                        else if ( btn == 'Have' ) {
-                            btn = '<a class="button">Have</a>'}
+                                    '&library=eBook" target="_self"><span class="a">' + btn + '</span><span class="b">Search</span></a>'}
+                        else if ( btn.indexOf('Snatched') >= 0 ) {
+                            btn = '<a class="button">' + btn + '</a>'}
+                        else if ( btn.indexOf('Have') >= 0 ) {
+                            btn = '<a class="button">' + btn + '</a>'}
                         else {
-                            btn = '<a class="button grey">' + oObj.aData[7] + '</a>'}
+                            btn = '<a class="button grey">' + btn + '</a>'}
                         return btn
                       }
                     }
@@ -204,33 +213,61 @@
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $(nRow).addClass("gradeZ");
                     $('td', nRow).eq(0).addClass('center');
-                    $('td', nRow).eq(2).addClass('hidden');
-                    $('td', nRow).eq(6).addClass('center');
-                    $('td', nRow).eq(7).addClass('center');
-                    var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
-                    if ( show != '1' )
-                    {
-                        $('td', nRow).eq(1).addClass('hidden');
-                    }
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('center');
+                            $('td', nRow).eq(6).addClass('center');
+                            $('td', nRow).eq(7).addClass('center');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('center');
+                            $('td', nRow).eq(7).addClass('center');
+                            $('td', nRow).eq(8).addClass('center');
+                        }
+
                     var w = window.innerWidth;
                     if ( w < 1024 )
-                    {   // hide stars,date on medium devices
-                        $('td', nRow).eq(5).addClass('hidden');
-                        $('td', nRow).eq(6).addClass('hidden');
+                    {   // hide stars,released,added on medium devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                            $('td', nRow).eq(7).addClass('hidden');
+                        }
+
                     }
                     if ( w < 768 )
-                    {   // hide cover,stars,date on small devices
-                        $('td', nRow).eq(1).addClass('hidden');
+                    {   // hide cover on small devices
+                        if ( show == '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
                     }
                     if ( w < 640 )
-                    {   // hide cover,series,stars,date on smaller devices
-                        $('td', nRow).eq(4).addClass('hidden');
+                    {   // hide series on smaller devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                        }
                     }
                     return nRow;
                 },
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
-        $(window).resize(function() {oTable.fnDraw(false)});
+        //$(window).resize(function() {oTable.fnDraw(false)});
     });
-    </script>
+  </script>
 </%def>

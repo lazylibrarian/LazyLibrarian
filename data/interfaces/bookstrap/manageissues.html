@@ -2,74 +2,76 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
+  <div id="subhead_container">
+    <div id="subhead_menu">
+        <label for="wallColumns" class="">&nbsp;&nbsp;</label>
     </div>
+  </div>
 </%def>
-
 <%def name="body()">
-<h1>${title}</h1>
-
-<form action="pastIssues" method="get" class="form-inline">
+  <h1>${title}</h1>
+  <form action="pastIssues" method="get" class="form-inline">
     <div class="form-group">
-        <label for="whichStatus" class="control-label">Manage Issues with status: </label>
-        <select name="whichStatus" id="whichStatus" class="form-control input-sm">
-            %for item in ['Skipped', 'Have', 'Ignored']:
-                <option value="${item}"
+      <label for="whichStatus" class="control-label">Manage Issues with status: </label>
+      <select name="whichStatus" id="whichStatus" class="form-control input-sm">
+        %for item in ['Skipped', 'Ignored', 'Wanted', 'Snatched']:
+        <option value="${item}"
                     %if whichStatus == item:
                         selected = "selected"
                     %endif
                 >${item}</option>
-            %endfor
-        </select>
+        %endfor
+      </select>
     </div>
     <input  class="btn btn-sm btn-primary" type="submit" value="Manage" />
-</form>
-
-<h3>Magazines with status ${whichStatus}</h3>
-<br>
-<form action="markPastIssues" method="get" class="form-inline">
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Title</a> - <a class="toggle-vis" data-column="2">Date</a> - <a class="toggle-vis" data-column="3">Issue</a> - <a class="toggle-vis" data-column="4">Provider</a>
+    %endif
+  </form>
+  <h3>Magazines with status ${whichStatus}</h3>
+  <br>
+  <form action="markPastIssues" method="get" class="form-inline">
     <input type="hidden" name="redirect" value="manageissues">
     <table class="display table table-striped table hover table-bordered" id="book_table">
-        <thead>
-            <tr>
-                <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th class="magtitle">Title</th>
-                <th class="lastacquired text-center">NZB&nbsp;Date</th>
-                <th class="issuedate text-center">Issue&nbsp;Date</th>
-                <th class="Provider">Provider</th>
-           </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th class="magtitle">Title</th>
+          <th class="lastacquired text-center">NZB&nbsp;Date</th>
+          <th class="issuedate text-center">Issue&nbsp;Date</th>
+          <th class="Provider">Provider</th>
+        </tr>
+      </thead>
     </table>
-    <p>
-    <div class="form-group">
+      %if perm%lazylibrarian.perm_status:
+      <p>
+      <div class="form-group">
         <label class="control-label">Change selected magazines to:</label>
         <select class="form-control input-sm" name="action">
-        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored', 'Remove']:
-            %if whichStatus != item:
-                <option value="${item}">${item}</option>
-            %endif
-        %endfor
+          %for item in ['Skipped', 'Wanted', 'Ignored', 'Remove']:
+          %if whichStatus != item:
+          <option value="${item}">${item}</option>
+          %endif
+          %endfor
         </select>
-    </div>
-    <button type="submit" class="btn btn-sm btn-default" id="markPastIssues" value="Go">Go</button>
+      </div>
+      <button type="submit" class="btn btn-sm btn-default" id="markPastIssues" value="Go">Go</button>
     </p>
-</form>
-
+    %endif
+  </form>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function() {
-        $('#book_table').dataTable(
+        var table = $('#book_table').DataTable(
             {
                 "responsive": true,
                 "order": [[ 1, 'asc']],
+                "bAutoWidth": false,
+                "stateSave": true,
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
                     { targets: [0], 'render': function(data, type, row) {
@@ -78,6 +80,7 @@
                     ]
                 ,
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No matching issues found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
@@ -89,10 +92,15 @@
                 "aaSorting": [[1, 'asc']],
                 "bServerSide": true,
                 // need to pass requested status filter
-                "sAjaxSource": 'getPastIssues?whichStatus="${whichStatus}"',
+                "sAjaxSource": 'getPastIssues?whichStatus=${whichStatus}',
                 "bFilter": true,
             });
-            $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $('.dataTables_filter input').attr("placeholder", "Results filter");
+            $('a.toggle-vis').click(function (e) {
+                e.preventDefault();
+                var column = table.column( $(this).attr('data-column') );
+                column.visible( ! column.visible() );
+            } );
     });
-    </script>
+  </script>
 </%def>

@@ -2,16 +2,32 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container" class="row">
-        <div id="subhead_menu" class="form-inline">
-            <div class="col-xs-10">
-                <a id="manualbook" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}&author=${config['AuthorName']}"><i id="mb_icon" class="fa fa-refresh"></i> Author/Title Search</a>
-                <a id="manualtitle" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&title=${config['BookName']}"><i id="mt_icon" class="fa fa-refresh"></i> Title Search</a>
-                <a id="manualauthor" class="btn btn-sm btn-primary" href="booksearch?bookid=${config['BookID']}&author=${config['AuthorName']}"><i id="ma_icon" class="fa fa-refresh"></i> Author Search</a>
+          <form action="booksearch" method="get" class="form-inline">
+            <div class="indented">
+            <input type="hidden" name="bookid" value=${config['BookID']}>
+            <input type="hidden" name="title" value="${config['BookName']}">
+            <input type="hidden" name="author" value="${config['AuthorName']}">
+            <div class="form-group">
+              <label for="booksearch" class="control-label">Searches: </label>
+              <select class="booksearch form-control input-sm" id="action" name="action">
+                // would be nice to use fontawesome icons here but options are not styleable
+                // and some browsers don't show them, eg linux firefox, android chrome
+                // They only show icons on closed select, not in dropdown
+                <option value="e_full">eBook Title/Author</option>
+                <option value="e_title">eBook Title</option>
+                <option value="e_author">eBook Author</option>
+                <option value="g_full">General Search</option>
+                % if lazylibrarian.SHOW_AUDIO != 0:
+                  <option value="a_full">Audio Title/Author</option>
+                  <option value="a_title">Audio Title</option>
+                  <option value="a_author">Audio Author</option>
+                % endif
+              </select>
             </div>
-        </div>
+            <input type="submit" class="booksearch btn btn-sm btn-primary" id="go" value="Go">
+      </form>
     </div>
 </%def>
 <%def name="body()">
@@ -63,6 +79,32 @@
                 <input type="text" id="series[new][name]" name="series[new][name]" value="" class="form-control" placeholder="Series Name">
                 <input type="text" id="series[new][number]" name="series[new][number]" value="" class="form-control" placeholder="Number">
             </div>
+        <div class="table-responsive">
+          <table class="display table table-bordered" id="book_table">
+            <thead>
+              <tr>
+              </tr>
+            </thead>
+            <tbody>
+            <tr>
+            %for item in covers:
+                <td class="bookart text-center"><a href="${item[1]}" target="_blank" rel="noreferrer"><img src="${item[1]}" alt="cover" class="bookcover-sm"></a><br>${item[0]}</td>
+            %endfor
+            </tr>
+            </tbody>
+          </table>
+            <div class="form-group">
+                <label for="changeCover" class="control-label">Change cover to: </label>
+                <select id="changeCover" class="changeCover form-control input" name="cover">
+                %for item in covers:
+                    <option value="${item[0]}"
+                    %if item[0] == 'current':
+                        selected = "selected"
+                    %endif
+                    >${item[0]}</option>
+                %endfor
+                </select>
+            </div>
         </fieldset>
             <div class="checkbox">
                 <%
@@ -71,48 +113,26 @@
                     else:
                         checked = ''
                 %>
-                <label for="manual" class="control-label">
-                <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
-                Lock settings</label>
-            </div>
-
-        <div class="table_wrapper_button">
-            <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-        </div>
-        <p>&nbsp;</p>
-    </div>
+<label for="manual" class="control-label">
+  <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
+  Lock settings</label>
+</div>
+<div class="table_wrapper_button">
+  <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+</div>
+<p>&nbsp;</p>
+</div>
 </form>
-
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script type="text/javascript">
+  <script type="text/javascript">
     function initThisPage()
     {
-        "use strict";
-
-        $('#manualbook').click(function () {
-        //    $.get("countProviders",
-        //        function (data) { window.alert(data) });
-            $('#mb_icon').addClass("fa-spin");
-        });
-        $('#manualtitle').click(function () {
-        //    $.get("countProviders",
-        //        function (data) { window.alert(data) });
-            $('#mt_icon').addClass("fa-spin");
-        });
-        $('#manualauthor').click(function () {
-        //    $.get("countProviders",
-        //        function (data) { window.alert(data) });
-            $('#ma_icon').addClass("fa-spin");
-        });
-
     }
 
     $(document).ready(function() {
         initThisPage();
     });
-    </script>
+  </script>
 </%def>
 <html><head></head><body></body></html>

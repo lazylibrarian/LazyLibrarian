@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: UTF-8 -*-
+# first line tries to force python2 in case system defaults to python3 (eg freenas)
 import ConfigParser
 import locale
 import os
@@ -12,6 +13,7 @@ import re
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
+from lazylibrarian.formatter import check_int
 
 # The following should probably be made configurable at the settings level
 # This fix is put in place for systems with broken SSL (like QNAP)
@@ -19,7 +21,6 @@ opt_out_of_certificate_verification = True
 if opt_out_of_certificate_verification:
     try:
         import ssl
-
         ssl._create_default_https_context = ssl._create_unverified_context
     except:
         pass
@@ -31,6 +32,7 @@ if opt_out_of_certificate_verification:
 def main():
     # rename this thread
     threading.currentThread().name = "MAIN"
+
     # Set paths
     if hasattr(sys, 'frozen'):
         lazylibrarian.FULL_PATH = os.path.abspath(sys.executable)
@@ -86,7 +88,7 @@ def main():
 
     lazylibrarian.LOGLEVEL = 1
     if options.debug:
-        lazylibrarian.LOGLEVEL = 2
+        lazylibrarian.LOGLEVEL = 3
 
     if options.quiet:
         lazylibrarian.LOGLEVEL = 0
@@ -97,13 +99,25 @@ def main():
             # lazylibrarian.LOGLEVEL = 0
             lazylibrarian.daemonize()
         else:
-            print "Daemonize not supported under Windows, starting normally"
+            print("Daemonize not supported under Windows, starting normally")
 
     if options.nolaunch:
         lazylibrarian.CONFIG['LAUNCH_BROWSER'] = False
 
     if options.update:
         lazylibrarian.SIGNAL = 'update'
+        # This is the "emergency recovery" update in case lazylibrarian won't start.
+        # Set up some dummy values for the update as we have not read the config file yet
+        lazylibrarian.CONFIG['GIT_PROGRAM'] = ''
+        lazylibrarian.CONFIG['GIT_USER'] = 'dobytang'
+        lazylibrarian.CONFIG['GIT_REPO'] = 'lazylibrarian'
+        lazylibrarian.CONFIG['LOGLIMIT'] = 2000
+        versioncheck.getInstallType()
+        if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
+            lazylibrarian.SIGNAL = None
+            print('Cannot update, not a git or source installation')
+        else:
+            lazylibrarian.shutdown(restart=True, update=True)
 
     if options.datadir:
         lazylibrarian.DATADIR = str(options.datadir)
@@ -129,6 +143,9 @@ def main():
     if not os.access(lazylibrarian.DATADIR, os.W_OK):
         raise SystemExit('Cannot write to the data directory: ' + lazylibrarian.DATADIR + '. Exit ...')
 
+    print "Lazylibrarian is starting up..."
+    time.sleep(4)  # allow a bit of time for old task to exit if restarting. Needs to free logfile and server port.
+
     # create database and config
     lazylibrarian.DBFILE = os.path.join(lazylibrarian.DATADIR, 'lazylibrarian.db')
     lazylibrarian.CFG = ConfigParser.RawConfigParser()
@@ -145,6 +162,19 @@ def main():
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
         lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
 
+    if lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'] == 0:
+        logger.debug('Automatic update checks are disabled')
+        # pretend we're up to date so we don't keep warning the user
+        # version check button will still override this if you want to
+        lazylibrarian.CONFIG['LATEST_VERSION'] = lazylibrarian.CONFIG['CURRENT_VERSION']
+        lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
+    else:
+        if check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0) == 0:
+            if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
+                if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
+                    lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
+                    logger.debug('Setting update timestamp to now')
+
     version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so force update
@@ -158,11 +188,6 @@ def main():
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
 
-    if lazylibrarian.SIGNAL == 'update':
-        if lazylibrarian.CONFIG['INSTALL_TYPE'] not in ['git', 'source']:
-            lazylibrarian.SIGNAL = None
-            logger.debug('Not updating, not a git or source installation')
-
     if options.port:
         lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)
         logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
@@ -175,11 +200,11 @@ def main():
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
-    # Try to start the server.
     curr_ver = dbupgrade.upgrade_needed()
     if curr_ver:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s' % curr_ver
 
+    # Try to start the server.
     webStart.initialize({
         'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
         'http_host': lazylibrarian.CONFIG['HTTP_HOST'],

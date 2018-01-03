@@ -23,13 +23,13 @@ import urlparse
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 class utorrentclient(object):
     TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
 
-    # noinspection PyUnusedLocal,PyUnusedLocal,PyUnusedLocal
+    # noinspection PyUnusedLocal
     def __init__(self, base_url='',  # lazylibrarian.CONFIG['UTORRENT_HOST'],
                  username='',  # lazylibrarian.CONFIG['UTORRENT_USER'],
                  password='',):  # lazylibrarian.CONFIG['UTORRENT_PASS']):
@@ -77,7 +77,7 @@ class utorrentclient(object):
             response = self.opener.open(url)
         except Exception as err:
             logger.debug('URL: %s' % url)
-            logger.debug('Error getting Token. uTorrent responded with: %s' % str(err))
+            logger.debug('%s getting Token. uTorrent responded with: %s' % (type(err).__name__, str(err)))
             return None
         match = re.search(utorrentclient.TOKEN_REGEX, response.read())
         return match.group(1)
@@ -147,7 +147,8 @@ class utorrentclient(object):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
         request = urllib2.Request(url)
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
         request.add_header('User-Agent', USER_AGENT)
 
         if body:
@@ -177,7 +178,7 @@ def checkLink():
             return "uTorrent login successful"
         return "uTorrent login FAILED\nCheck debug log"
     except Exception as err:
-        return "uTorrent login FAILED: %s" % str(err)
+        return "uTorrent login FAILED: %s %s" % (type(err).__name__, str(err))
 
 
 def labelTorrent(hashid):

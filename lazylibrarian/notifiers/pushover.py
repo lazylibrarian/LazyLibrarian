@@ -28,6 +28,9 @@ from lazylibrarian.formatter import unaccented
 
 class PushoverNotifier:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def _sendPushover(message=None, event=None, pushover_apitoken=None, pushover_keys=None,
                       pushover_device=None, notificationType=None, method=None, force=False):
@@ -59,11 +62,13 @@ class PushoverNotifier:
 
         http_handler = HTTPSConnection('api.pushover.net')
 
+        message = message.encode(lazylibrarian.SYS_ENCODING)
+        event = event.encode(lazylibrarian.SYS_ENCODING)
         try:
             data = {'token': pushover_apitoken,
                     'user': pushover_keys,
-                    'title': event.encode('utf-8'),
-                    'message': message.encode("utf-8"),
+                    'title': event,
+                    'message': message,
                     'device': pushover_device,
                     'priority': lazylibrarian.CONFIG['PUSHOVER_PRIORITY']}
             http_handler.request(method,
@@ -80,6 +85,7 @@ class PushoverNotifier:
         request_status = response.status
         logger.debug("Pushover Response: %s" % request_status)
         logger.debug("Pushover Reason: %s" % response.reason)
+
         if request_status == 200:
             if testMessage:
                 logger.debug(request_body)
@@ -90,7 +96,7 @@ class PushoverNotifier:
             else:
                 return True
         elif 400 <= request_status < 500:
-            logger.error("Pushover request failed: %s" % response.reason)
+            logger.error("Pushover request failed: %s" % str(request_body))
             return False
         else:
             logger.error("Pushover notification failed: %s" % request_status)
@@ -116,7 +122,8 @@ class PushoverNotifier:
 
         logger.debug("Pushover: Sending notification " + str(message))
 
-        return self._sendPushover(message, event, pushover_apitoken, pushover_keys, pushover_device, notificationType, method, force)
+        return self._sendPushover(message, event, pushover_apitoken, pushover_keys,
+                                  pushover_device, notificationType, method, force)
 
 #
 # Public functions
@@ -131,9 +138,11 @@ class PushoverNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note')
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title, notificationType=None, force=True)
+        return self._notify(message="This is a test notification from LazyLibrarian",
+                            event=title, notificationType=None, force=True)
 
     def update_library(self, showName=None):
         pass
+
 
 notifier = PushoverNotifier

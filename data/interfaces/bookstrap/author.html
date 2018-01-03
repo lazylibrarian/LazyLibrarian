@@ -2,38 +2,70 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <form id="subhead_menu" class="form-inline">
-            <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
-            <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Library Scan</a>
-            <a href="removeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Remove Author</a>
+        %if perm&lazylibrarian.perm_force:
             %if author['Status'] == 'Paused':
-                <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Resume Author</a>
+                <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-pause"></i> Paused</a>
             %else:
-                <a href="pauseAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-pause"></i> Pause Author</a>
+              %if author['Status'] == 'Active':
+                <a href="wantAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Active</a>
+              %else:
+                %if author['Status'] == 'Wanted':
+                  <a href="ignoreAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-plus"></i> Wanted</a>
+                %else:
+                  <a href="pauseAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored</a>
+                %endif
+              %endif
             %endif
-            %if author['Status'] != 'Ignored':
-                <a href="ignoreAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignore Author</a>
-            %else:
-                <a href="resumeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-play"></i> Unignore Author</a>
+            <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
+            <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=eBook" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> eBook Scan</a>
+          % if lazylibrarian.SHOW_AUDIO > 0:
+            %if perm&lazylibrarian.perm_force:
+                <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=AudioBook" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> AudioBook Scan</a>
             %endif
+          % endif
+            <a href="removeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Remove Author</a>
             <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
+            %endif
             %if showseries >= 1:
-            <a href="series?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Series</a>
+              %if perm&lazylibrarian.perm_series:
+              <a href="series?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Series</a>
+              %endif
             %endif
-            %if len(languages) >= 1:
-                <div class="form-group pull-right">
-                    <label for="chooselanguage"><small>Language</small></label>
-                    <select class="form-control input-sm" name="chooselanguage" onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
-                        <option value="">All</option>
-                        %for language in languages:
-                        <option value="${language['BookLang']}">${language['BookLang']}</option>
-                        %endfor
-                    </select>
-                </div>
+            %if lazylibrarian.CONFIG['GR_FOLLOW'] == True:
+              %if author['GRfollow']:
+                %if author['GRfollow'] != '0':
+                <a href="unfollowAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-check"></i> Following</a>
+                %else:
+                <a href="followAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-times"></i> Not Following</a>
+                %endif
+              %else:
+                <a href="followAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-times"></i> Not Following</a>
+              %endif
             %endif
+            <div class="form-group pull-right">
+            %if len(types) > 1:
+              %if  perm&lazylibrarian.perm_audio:
+                <label for="chooselib"><small>&nbsp;Library</small></label>
+                <select class="form-control input-sm" name="chooselib" id="chooselib">
+                  %for library in types:
+                    <option value="${library}">${library}</option>
+                  %endfor
+                </select>
+              %endif
+            %endif
+            %if len(languages) > 1:
+              <label for="chooselanguage"><small>Language</small></label>
+              <select class="form-control input-sm" name="chooselanguage" id="chooselanguage">
+                <option value="">All</option>
+                %for language in languages:
+                  <option value="${language['BookLang']}">${language['BookLang']}</option>
+                %endfor
+              </select>
+            %endif
+            </div>
         </form>
     </div>
 <script type="text/javascript">
@@ -51,7 +83,10 @@
     <div id="authorhead_container" class="col-md-9">
         <div id="authorhead_menu">
             <h1><a href="${author['AuthorLink']}" target="_blank" rel="noreferrer">${author['AuthorName']}</a>
-            <a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new"><small><i>Edit</i></small></a></h1>
+            %if perm&lazylibrarian.perm_edit:
+            <a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new"><small><i>Edit</i></small></a>
+            %endif
+            </h1>
             %if author['AuthorDeath']:
             <p><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b> ${author['AuthorDeath']}</p>
             %else:
@@ -86,119 +121,168 @@
                     totalbooks = '0'
                     css = "bg-danger"
             %>
-            <div class="row" title="${percent}">
-                <div class="col-xs-4"><strong>Progress:</strong></div>
-                <div class="col-xs-4">
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
-                        <span class="sr-only">${percent}% Complete</span>
-                    </div>
-                </div>
-                </div>
-                <div class="col-xs-4">
-                    <span class="progressbar-front-text">${havebooks} / ${totalbooks}</span>
-                </div>
-            </div>
-        </div>
+<div class="row" title="${percent}">
+  <div class="col-xs-4"><strong>Progress:</strong></div>
+  <div class="col-xs-4">
+    <div class="progress">
+      <div class="progress-bar" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
+        <span class="sr-only">${percent}% Complete</span>
+      </div>
     </div>
+  </div>
+  <div class="col-xs-4">
+    <span class="progressbar-front-text">${havebooks} / ${totalbooks}</span>
+  </div>
 </div>
-
+</div>
+</div>
+</div>
 <form action="markBooks" method="get" class="form-inline">
-    <div class="indented">
-
-            <input type="hidden" name="AuthorID" value="${author['AuthorID']}">
-            <input type="hidden" name="redirect" value="author">
-            <input type="hidden" name="booklang" value="booklang">
-            <input type="hidden" name="ignored" value="ignored">
-            <div class="form-group">
-                <label for="action" class="">Mark selected as</label>
-                <select class="markBooks form-control input-sm" id="action" name="action">
-                <option value="Wanted">Wanted</option>
-                <option value="Have">Have</option>
-                <option value="Ignored">Ignored</option>
-                <option value="Skipped">Skipped</option>
-                <option value="Remove">Remove</option>
-                <option value="Delete">Delete</option>
-                <option value="Leave" hidden>Leave</option>
-                </select>
-            </div>
-            <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
-
+  <div class="indented">
+    <input type="hidden" name="AuthorID" value="${author['AuthorID']}">
+    <input type="hidden" name="redirect" value="author">
+    <input type="hidden" name="booklang" value=${booklang}>
+    <input type="hidden" name="library" value=${library}>
+    <input type="hidden" name="ignored" value=${ignored}>
+    %if perm&lazylibrarian.perm_status or  lazylibrarian.CONFIG['USER_ACCOUNTS']:
+    <div class="form-group">
+      <label for="action" class="">Mark selected as</label>
+      <select class="markBooks form-control input-sm" id="action" name="action">
+        %if perm&lazylibrarian.perm_status:
+        <option value="Wanted">Wanted</option>
+        <option value="Have">Have</option>
+        <option value="Ignored">Ignored</option>
+        <option value="Skipped">Skipped</option>
+        <option value="Remove">Remove</option>
+        <option value="Delete">Delete</option>
+        <option value="Leave" hidden>Leave</option>
+        % endif
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Unread">Unread</option>
+        <option value="Read">Read</option>
+        <option value="ToRead">To Read</option>
+        %endif
+      </select>
     </div>
+    <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
+    %endif
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="7">Status</a>
     <p>&nbsp;</p>
-<div class="table-responsive">
+    %endif
+  </div>
+  <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="book_table">
-        <%
-        if lazylibrarian.CONFIG['BOOK_IMG'] == True:
-            hidden = ''
-        else:
-            hidden = 'hidden'
-        %>
-        <thead>
-            <tr>
-                <th class="select no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                <th class="bookart text-center no-sort hidden-xs ${hidden}">Cover</th>
-                <th class="authorname hidden">Author</th>
-                <th class="bookname">Title</th>
-                <th class="series">Series</th>
-                <th class="stars text-center hidden-xs">Rating</th>
-                <th class="date text-center hidden-xs">Released</th>
-                <th class="status text-center">Status</th>
-            </tr>
-        </thead>
+      <thead>
+        <tr>
+          <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th class="bookart text-center no-sort hidden-xs">Cover</th>
+          <th class="authorname hidden">Author</th>
+          <th class="bookname">Title</th>
+          <th class="series">Series</th>
+          <th class="stars text-center hidden-xs">Rating</th>
+          <th class="date text-center hidden-xs">Released</th>
+          <th class="date text-center hidden-xs">Added</th>
+          <th class="status text-center">Status</th>
+        </tr>
+      </thead>
     </table>
-</div>
+  </div>
 </form>
 <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-
-    %if author['Status'] == 'Loading':
-    <meta http-equiv="refresh" content="12">
-    <script type="text/javascript">
-        $(document).ready(function () {
-                    /// bootbox.dialog({
-                    ///    title: "Getting Author's Books",
-                    ///    message: '<pre>'+'Please wait...'+'</pre>',
-                    /// });
-        });
-     </script>
-    %endif
+  %if author['Status'] == 'Loading':
+  <meta http-equiv="refresh" content="12">
+  %endif
 </%def>
-
 <%def name="javascriptIncludes()">
-<script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
-        var oTable = $('#book_table').dataTable(
+        $('#chooselanguage').change(function(){
+            new_settings = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + $(this).val()
+            if (typeof $("#chooselib").val() != 'undefined') {
+            new_settings += '&library=' + $("#chooselib").val() }
+            window.location = new_settings
+        })
+        $('#chooselib').change(function(){
+            new_settings = 'authorPage?AuthorID=${author['AuthorID']}&library=' + $(this).val()
+            if (typeof $("#chooselanguage").val() != 'undefined') {
+            new_settings += '&BookLang=' + $("#chooselanguage").val() }
+            window.location = new_settings
+        })
+        $('#chooselanguage').val(getUrlVars()['BookLang']);
+        $('#chooselib').val(getUrlVars()['library']);
+        if ($("#chooselib").val() != 'AudioBook') {
+            $('#chooselib').val('eBook')
+        }
+
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        var oTable = $('#book_table').DataTable(
             {
                 "order": [[ 6, 'desc' ]],
+                "bAutoWidth": false,
+                "stateSave": true,
                 "columnDefs":[
                     { targets: 'no-sort', orderable: false },
                     { targets: [0], 'render': function(data, type, row) {
                         return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
-                    { targets: [1], 'render': function(data, type, row) {
+                    { targets: [1],
+                        'visible': showimg,
+                        'render': function(data, type, row) {
                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                     { targets: [2], class: "hidden" },
+                    { targets: [4], 'render': function(data, type, row){
+                        if (row[12] === null ) { return data; }
+                        if (row[12] === '' ) { return row[4]; }
+                        var series = row[12].split('^');
+                        var output = [];
+                        for (var index=0; index < series.length; ++index) {
+                            var link_data = series[index].split("~");
+                            output.push('<a href=seriesMembers?seriesid=' + link_data[0] + '>' + link_data[1] + '</a>')
+                        }
+                        return output.join('<br>');
+                    }},
                     { targets: [5], 'render': function(data, type, row) {
                         return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
                     { targets: [7], 'render': function(data, type, row) {
-                        var btn = data
-                        if ( btn == 'Open' ) {
+                        var dtime = row[10];
+                        var str = String(dtime).substr(0, 10);
+                        if (str === "null"){ str = ""}
+                        return str ;} },
+                    { targets: [8], 'render': function(data, type, row) {
+                        var btn = row[11]
+                        var flag = row[13]
+                        btn = btn + flag
+                        if ( btn.indexOf('Open') >= 0 ) {
                             btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
-                                    '" target="_self"><i class="fa fa-book"></i>Open</a>'}
-                        else if ( btn == 'Wanted' ) {
-                            btn = '<p><a class="a btn btn-xs btn-danger">Wanted</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
-                        else if ( btn == 'Snatched' ) {
-                            btn = '<a class="button btn btn-xs btn-info">Snatched</a>'}
-                        else if ( btn == 'Have' ) {
-                            btn = '<a class="button btn btn-xs btn-info">Have</a>'}
+                                    '&library=${library}" target="_self"><i class="fa fa-book"></i> ' + btn + '</a>'}
+                        else if ( btn.indexOf('Wanted') >= 0 ) {
+                            btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=${library}" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
+                        else if ( btn.indexOf('Snatched') >= 0 ) {
+                            btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
+                        else if ( btn.indexOf('Have') >= 0 ) {
+                            %if perm&lazylibrarian.perm_status:
+                            btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'
+                            %else:
+                            btn = '<p><a class="button btn btn-xs btn-default grey" href="requestBook?bookid=' + row[9] + '&library=${library}" target="_self">Request</a></p>'
+                            %endif
+                            }
                         else {
-                            btn = '<a class="button btn btn-xs btn-default grey">' + row[7] + '</a>'}
+                            %if perm&lazylibrarian.perm_status:
+                            btn = '<a class="button btn btn-xs btn-default grey">' + btn + '</a>'
+                            %else:
+                            btn = '<p><a class="button btn btn-xs btn-default grey" href="requestBook?bookid=' + row[9] + '&library=${library}" target="_self">Request</a></p>'
+                            %endif
+                            }
                         return btn;} }
                     ],
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No books found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
@@ -207,16 +291,12 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[6, 'desc']],
                 "bServerSide": true,
-                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&ignored=${ignored}',
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&library=${library}&ignored=${ignored}',
                 "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    var show = ${lazylibrarian.CONFIG['BOOK_IMG']};
-                    if ( show != '1' )
-                    {
-                        $('td', nRow).eq(1).addClass('hidden');
-                    }
+                    $('td', nRow).eq(0).addClass("text-center");
                     $('td', nRow).eq(1).addClass('text-center');
                     $('td', nRow).eq(5).addClass('text-center');
                     $('td', nRow).eq(6).addClass('text-center');
@@ -225,11 +305,28 @@
                     $('td', nRow).eq(1).addClass('hidden-xs');
                     $('td', nRow).eq(5).addClass('hidden-xs');
                     $('td', nRow).eq(6).addClass('hidden-xs');
+                    $('td', nRow).eq(7).addClass('hidden-xs');
                     return nRow;
                 },
             });
-        $('.dataTables_filter input').attr("placeholder", "Search filter");
-        $(window).resize(function() {oTable.fnDraw(false)});
+        $('.dataTables_filter input').attr("placeholder", "Results Filter");
+        //$(window).resize(function() {oTable.draw(false)});
+        $('a.toggle-vis').click(function (e) {
+            e.preventDefault();
+            var column = oTable.column( $(this).attr('data-column') );
+            column.visible( ! column.visible() );
+        } );
     });
-</script>
+    // Read a page's GET URL variables and return them as an associative array.
+    function getUrlVars() {
+        var vars = [], hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
+    }
+  </script>
 </%def>

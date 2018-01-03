@@ -2,113 +2,137 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <div id="subhead_menu">
+    <div id="subhead_container" class="row">
+      <form action="search" method="get">
+        <div id="subhead_menu"  class="col-xs-12 col-md-8">
+            %if perm&lazylibrarian.perm_force:
             <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
-            <a href="libraryScan" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
+            %endif
+            %if lazylibrarian.IGNORED_AUTHORS == True:
+              <a href="toggleAuth" class="button btn btn-sm btn-primary"><i class="fa fa-user"></i> Show Active Authors</a>
+            %else:
+              <a href="toggleAuth" class="button btn btn-sm btn-primary"><i class="fa fa-user-secret"></i> Show Ignored Authors</a>
+            %endif
         </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        %if perm&lazylibrarian.perm_search:
+        <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Search</label>
+          <div class="input-group">
+            <input type="text"  id="name" name="name" placeholder="Title / Author / ISBN" name="title" class="form-control input-sm col-xs-12">
+            <!--input type="text" class="form-control input-sm col-xs-12" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox" name="searchbox"-->
+            <span class="input-group-btn">
+              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        </div>
+        %endif
+      </form>
     </div>
 </%def>
 
 <%def name="body()">
 <h1>${title}</h1>
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Author Refresh in progress ...</p>
+  %endif
 <div class="table-responsive">
+%if lazylibrarian.CONFIG['TOGGLES'] == True:
+Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Latest</a> - <a class="toggle-vis" data-column="3">Released</a> - <a class="toggle-vis" data-column="4">Downloaded</a> - <a class="toggle-vis" data-column="5">Status</a>
+<p>&nbsp;</p>
+%endif
     <table class="display table table-striped table-hover table-bordered" id="author_table">
         <%
-        if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+        if lazylibrarian.CONFIG['TOGGLES'] == True:
             hidden = ''
         else:
-            hidden = 'hidden'
+            if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'hidden'
         %>
-        <thead>
-            <tr>
-                <th class="authorimg no-sort col-xs-1 ${hidden}">Image</th>
-                <th class="authorname col-xs-3">Author</th>
-                <th class="bookname col-xs-4">Latest Book</th>
-                <th class="date col-xs-1 text-center">Released</th>
-                <th class="have col-xs-3 text-center">Downloaded</th>
-                <th class="status col-xs-1 text-center">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-        %for author in authors:
-            <%
-                totalbooks = author['UnignoredBooks']
-                havebooks = author['HaveBooks']
-                if not havebooks:
-                    havebooks = 0
-                try:
-                    percent = (havebooks*100.0)/totalbooks
-                    if percent > 100:
-                        percent = 100
-                    if percent <= 100:
-                        css = 'success'
-                    if percent <= 75:
-                        css = 'info'
-                    if percent <= 50:
-                        css = 'warning'
-                    if percent <= 25:
-                        css = 'danger'
-                except (ZeroDivisionError, TypeError):
-                    percent = 0
-                    totalbooks = '0'
-                    css = 'danger'
-
-                if author['Status'] == 'Paused':
-                    grade = 'X'
-            %>
-            <tr>
-                <td class="name text-center ${hidden}"><a href="${author['AuthorImg']}" target="_blank" rel="noreferrer"><img src="${author['AuthorImg']}" alt="Cover" class="bookcover-sm"></a></td>
-                <td class="name"><a href="authorPage?AuthorID=${author['AuthorID']|u}">${author['AuthorName']}</a></td>
-                <td class="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
-                <td class="date text-center">${author['LastDate']}</td>
-                <td class="have "><span title="${percent}" class="sr-only">${percent}% Complete</span>
-                    <div class="progress center-block" style="width: 150px;">
-                        <div class="progress-bar-${css} progress-bar progress-bar-striped" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
-                            <span class="sr-only">${percent}% Complete</span><span class="progressbar-front-text">${havebooks}/${totalbooks}</span>
-                        </div>
-                    </div>
-                </td>
-
-                <td class="status text-center">${author['Status']}</td>
-            </tr>
-        %endfor
-        </tbody>
-    </table>
+<thead>
+  <tr>
+    <th class="authorimg no-sort col-xs-1 ${hidden}">Image</th>
+    <th class="authorname col-xs-3">Author</th>
+    <th class="bookname col-xs-4">Latest Book</th>
+    <th class="date col-xs-1 text-center">Released</th>
+    <th class="have col-xs-3 text-center">Downloaded</th>
+    <th class="status col-xs-1 text-center">Status</th>
+  </tr>
+</thead>
+</table>
 </div>
 </%def>
-
 <%def name="headIncludes()">
-
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <meta http-equiv="refresh" content="20">
+  %endif
 </%def>
-
 <%def name="javascriptIncludes()">
-
-    <script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
-        $('#author_table').dataTable(
+        var show = ""+${lazylibrarian.CONFIG['AUTHOR_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        var table = $('#author_table').DataTable(
             {
                 "responsive": true,
+                "bAutoWidth": false,
+                "stateSave": true,
                 "order": [[ 1, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
-                     { type: 'natural', targets: 3 },
+                     { targets: [0],
+                         'visible': showimg,
+                         'render': function(data, type, row) {
+                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm"></a>';} },
+                     { targets: [1], 'render': function(data, type, row) {
+                     %if perm&lazylibrarian.perm_authorbooks:
+                        btn = '<a href="authorPage?AuthorID=' + row[10] + '">' + data + '</a>'
+                     %else:
+                        btn = '<a>' + data + '</a>'
+                     %endif
+                     return btn ;}
+                     },
+                     { targets: [2], 'render': function(data, type, row) {
+                        if (data == null) {return ''};
+                         return '<a href="' + row[7] + '" target="_new">' + data + '</a>';} },
+                     { targets: [4], 'render': function(data, type, row) {
+                         return row[11];} },
                      { type: 'natural-nohtml', targets: 4 }],
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No authors found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "bServerSide": true,
+                "sAjaxSource": 'getIndex',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(3).addClass('text-center');
+                    $('td', nRow).eq(4).addClass('text-center');
+                    $('td', nRow).eq(5).addClass('text-center');
+                    return nRow;
+                },
                 "aaSorting": [[1, 'asc']],
             });
-        $('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Results filter");
+        $('a.toggle-vis').click(function (e) {
+            e.preventDefault();
+            var column = table.column( $(this).attr('data-column') );
+            column.visible( ! column.visible() );
+        } );
     });
-    </script>
+  </script>
 </%def>

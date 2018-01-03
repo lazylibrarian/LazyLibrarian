@@ -27,6 +27,9 @@ from pushbullet2 import PushBullet
 
 class PushbulletNotifier:
 
+    def __init__(self):
+        pass
+
     @staticmethod
     def _sendPushbullet(message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
 
@@ -58,7 +61,7 @@ class PushbulletNotifier:
             push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
             return push
 
-    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None):
+    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
         """
         Sends a pushbullet notification based on the provided info or LL config
 
@@ -73,12 +76,11 @@ class PushbulletNotifier:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.CONFIG['USE_PUSHBULLET']:
+        if not lazylibrarian.CONFIG['USE_PUSHBULLET'] and not force:
             return False
-
         logger.debug("Pushbullet: Sending notification " + str(message))
 
-        return self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid)
+        return self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid, force=force)
 
 #
 # Public functions
@@ -93,9 +95,10 @@ class PushbulletNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="LLTest"):
-        return self._notify("This test notification asks for the device list", event=title)
+        return self._notify("This test notification asks for the device list", event=title, force=True)
 
     def update_library(self, showName=None):
         pass
+
 
 notifier = PushbulletNotifier

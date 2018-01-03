@@ -13,24 +13,25 @@ Bookstrap Styles
     margin-bottom: 20px;
 }
 #subnav {
-/*    position: fixed; 
-    top: 60px; 
+/*    position: fixed;
+    top: 60px;
     z-index: 1030; */
     position: relative;
     float: bottom;
-    width: 100%; 
-    padding-top: 10px; 
-    padding-bottom: 5px; 
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 5px;
 }
 #headercontainer {
-/*    position: fixed; 
-    top: 60px; 
+/*    position: fixed;
+    top: 60px;
     z-index: 1030; */
     position: relative;
     float: top;
-    width: 100%; 
-    padding-top: 10px;  
+    width: 100%;
+    padding-top: 10px;
 }
+
 .bookcover-sm {
     width: 100px;
     margin: auto auto;
@@ -49,7 +50,7 @@ Bookstrap Styles
 .progress {
     height: auto;
 }
-.progress .progress-bar {    
+.progress .progress-bar {
     font-size: inherit;
     line-height: inherit;
     min-height: 10px;
@@ -61,4 +62,7 @@ body.modal-open-noscroll {
 }
 .modal-open-noscroll .navbar-fixed-top, .modal-open .navbar-fixed-bottom {
   margin-right: 0!important;
+}
+select {
+    font-family: 'FontAwesome', 'sans-serif';
 }

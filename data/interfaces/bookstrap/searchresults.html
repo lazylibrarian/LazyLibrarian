@@ -2,7 +2,28 @@
 <%!
     import lazylibrarian
 %>
-
+<%def name="headerIncludes()">
+    <div id="subhead_container" class="row">
+      <form action="search" method="get">
+        <div id="subhead_menu"  class="col-xs-12 col-md-8">
+        </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        %if perm&lazylibrarian.perm_search:
+        <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Search</label>
+          <div class="input-group">
+            <input type="text" class="form-control deletable input-sm col-xs-12" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox" name="searchbox">
+            <span class="input-group-btn">
+              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        </div>
+        %endif
+      </form>
+    </div>
+</%def>
 <%def name="body()">
 
 <h1>${title}</h1>
@@ -40,7 +61,7 @@
                     else:
                         starimg = '0-stars.png'
 
-                    if authorlist and result['authorname'] in authorlist:
+                    if authorlist and result['authorid'] in authorlist:
                         destination = "authorPage?AuthorID="+result['authorid']
                         value = "Have Author"
                         but_class = "btn-info"
@@ -61,16 +82,16 @@
                                     valid_id = item['BookID']
 
 
-                            if value2 == 'Open':
+                            if 'Open' in value2:
                                 destination2 = "openBook?bookid="+valid_id
                                 but_class2 = "btn-warning"
-                            elif value2 == 'Wanted':
+                            elif 'Wanted' in value2:
                                 destination2 = "searchForBook?bookid="+valid_id
                                 but_class2 = "btn-success"
-                            elif value2 == 'Have' or value2 == 'Snatched':
+                            elif 'Have' in value2 or 'Snatched' in value2:
                                 destination2 = "#"
                                 but_class2 = "btn-info"
-                            elif value2 == 'Skipped':
+                            elif 'Skipped' in value2:
                                 destination2 = "addBook?bookid="+result['bookid']
                                 value2 = "Add Book"
                                 but_class2 = "btn-success"
@@ -88,32 +109,30 @@
                         value2 = "Add Book"
                         but_class2 = "btn-success"
                     %>
-                    <tr>
-                    <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover"></a></td>
-                    <td class="authorname">${result['authorname']}</td>
-                    <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
-                    <td class="date text-center">${result['bookdate']}</td>
-                    <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
-                    <td class="addAuthor text-center">
-                        <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
-                        </p><p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
-                    </td>
-                    <td class="fuzz text-right">${result['highest_fuzz']}%</td>
-                    </tr>
-                %endfor
-            %endif
-        </tbody>
-    </table>
+<tr>
+  <td class="bookart text-center"><a href="${result['bookimg']}" target="_blank" rel="noreferrer"><img src="${result['bookimg']}" alt="Cover"></a></td>
+  <td class="authorname">${result['authorname']}</td>
+  <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
+  <td class="date text-center">${result['bookdate']}</td>
+  <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
+  <td class="addAuthor text-center">
+    <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
+    </p>
+    <p><a class="${but_class2} btn btn-xs" href="${destination2}">${value2}</a></p>
+  </td>
+  <td class="fuzz text-right">${result['highest_fuzz']}%</td>
+</tr>
+%endfor
+%endif
+</tbody>
+</table>
 </div>
 <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
         $('#book_table').dataTable(
@@ -133,6 +152,7 @@
                     [{ targets: 'no-sort', orderable: false }]
                 ,
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"Show _MENU_ books per page",
                     "sEmptyTable": "No books found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
@@ -143,5 +163,5 @@
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
-    </script>
+  </script>
 </%def>

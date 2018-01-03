@@ -13,18 +13,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
 import urllib
-from lazylibrarian.formatter import getList, unaccented_str
-from lazylibrarian import logger
-from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites
+
+import lazylibrarian
+from lazylibrarian import logger, database
+from lazylibrarian.formatter import getList, unaccented_str, plural
+from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites, \
+    IterateOverDirectSites
 from lib.fuzzywuzzy import fuzz
 
 
-def searchItem(item=None, bookid=None):
+def searchItem(item=None, bookid=None, cat=None):
     """
-    Call all active search providers asking for a "general" search for item
+    Call all active search providers to search for item
     return a list of results, each entry in list containing percentage_match, title, provider, size, url
+    item = searchterm to use for general search
+    bookid = link to data for book/audio searches
+    cat = category to search [general, book, audio]
     """
     results = []
 
@@ -40,20 +45,37 @@ def searchItem(item=None, bookid=None):
     else:
         book['bookid'] = searchterm
 
-    nproviders = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS()
-    logger.debug('Searching %s providers for %s' % (nproviders, searchterm))
+    if cat in ['book', 'audio']:
+        myDB = database.DBConnection()
+        cmd = 'SELECT authorName,bookName,bookSub from books,authors WHERE books.AuthorID=authors.AuthorID'
+        cmd += ' and bookID=?'
+        match = myDB.match(cmd, (bookid,))
+        if match:
+            book['authorName'] = match['authorName']
+            book['bookName'] = match['bookName']
+            book['bookSub'] = match['bookSub']
+        else:
+            logger.debug('Forcing general search')
+            cat = 'general'
+
+    nprov = lazylibrarian.USE_NZB() + lazylibrarian.USE_TOR() + lazylibrarian.USE_RSS() + lazylibrarian.USE_DIRECT()
+    logger.debug('Searching %s provider%s (%s) for %s' % (nprov, plural(nprov), cat, searchterm))
 
     if lazylibrarian.USE_NZB():
-        resultlist, nproviders = IterateOverNewzNabSites(book, 'general')
-        if nproviders:
+        resultlist, nprov = IterateOverNewzNabSites(book, cat)
+        if nprov:
             results += resultlist
     if lazylibrarian.USE_TOR():
-        resultlist, nproviders = IterateOverTorrentSites(book, 'general')
-        if nproviders:
+        resultlist, nprov = IterateOverTorrentSites(book, cat)
+        if nprov:
+            results += resultlist
+    if lazylibrarian.USE_DIRECT():
+        resultlist, nprov = IterateOverDirectSites(book, cat)
+        if nprov:
             results += resultlist
     if lazylibrarian.USE_RSS():
-        resultlist, nproviders = IterateOverRSSSites()
-        if nproviders:
+        resultlist, nprov = IterateOverRSSSites()
+        if nprov:
             results += resultlist
 
     # reprocess to get consistent results
@@ -97,21 +119,23 @@ def searchItem(item=None, bookid=None):
             if not size:
                 size = '1000'
 
-            # calculate match percentage
-            score = fuzz.token_set_ratio(searchterm, title)
+            # calculate match percentage - torrents might have words_with_underscore_separator
+            score = fuzz.token_set_ratio(searchterm, title.replace('_', ' '))
             # lose a point for each extra word in the title so we get the closest match
             words = len(getList(searchterm))
             words -= len(getList(title))
             score -= abs(words)
             if score >= 40:  # ignore wildly wrong results?
-                url = url.split('?')[0]
+                if not url.startswith('magnet'):
+                    if not mode == 'torznab' and not mode == 'direct':  # what is this split for??
+                        url = url.split('?')[0]
                 result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
                           'url': urllib.quote_plus(url), 'mode': mode}
 
                 searchresults.append(result)
 
-            # from operator import itemgetter
-            # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
+                # from operator import itemgetter
+                # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
 
-    logger.debug('Found %s results for %s' % (len(searchresults), searchterm))
+    logger.debug('Found %s %s results for %s' % (len(searchresults), cat, searchterm))
     return searchresults

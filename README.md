@@ -5,7 +5,7 @@ It uses a combination of [Goodreads](https://www.goodreads.com/) [Librarything](
 Right now it's capable of the following:
 * Import an existing calibre library (optional)
 * Find authors and add them to the database
-* List all books of an author and add them as 'wanted'.
+* List all books of an author and mark ebooks or audiobooks as 'wanted'.
 * LazyLibrarian will search for a nzb-file or a torrent or magnet link for that book
 * If a nzb/torrent/magnet is found it will be sent to a download client or saved in a black hole where your download client can pick it up.
 * Currently supported download clients for usenet are :
@@ -24,7 +24,7 @@ Right now it's capable of the following:
 * AutoAdd feature for book management tools like Calibre which must have books in flattened directory structure, or use calibre to import your books into an existing calibre library
 * LazyLibrarian can also be used to search for and download magazines, and monitor for new issues
 
-##Screenshots
+## Screenshots
 <img src="http://i.imgur.com/O8awy.png" width="600">
 <img src="http://i.imgur.com/fr0yE.png" width="600">
 <img src="http://i.imgur.com/AOgh1.png" width="600">
@@ -73,9 +73,11 @@ Auto update available via interface from master for git and source installs
 
 ## Packages
 rpm deb and snap packages here : https://github.com/DobyTang/LazyLibrarian/releases  
-The snap package is confined to users home directory, so all books and downloads need to be accessible from there too. 
+The snap package is confined to users home directory, so all books and downloads need to be accessible from there too.
+Install the snap package with flags --dangerous --devmode  
 AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
 
 ## Docker packages
-x64 version here  : https://hub.docker.com/r/linuxserver/lazylibrarian/  
-armhf version here: https://hub.docker.com/r/lsioarmhf/lazylibrarian/
+armhf version here : https://hub.docker.com/r/lsioarmhf/lazylibrarian/  
+x64 version here   : https://hub.docker.com/r/linuxserver/lazylibrarian/    
+with calibredb here: https://hub.docker.com/r/thraxis/lazylibrarian-calibre/

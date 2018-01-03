@@ -51,4 +51,3 @@ table#log_table { background-color: white; margin-left:5px; margin-right:5px; ma
 table#log_table th#timestamp, td#timestamp { display:none; }
 table#log_table th#level, td#level {  }
 table#log_table th#message, td#message { text-align: left; }
-

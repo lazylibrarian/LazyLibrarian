@@ -13,13 +13,17 @@
 # You should have received a copy of the GNU General Public License
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import lazylibrarian
 import subprocess
+
+import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 
 
 class CustomNotifier:
+    def __init__(self):
+        pass
+
     @staticmethod
     def _notify(message, event, force=False):
 
@@ -37,9 +41,9 @@ class CustomNotifier:
             data = myDB.match('SELECT * from books')
         else:
             # message is a bookid or a magazineid
-            data = myDB.match('SELECT * from books where BookID="%s"' % message)
+            data = myDB.match('SELECT * from books where BookID=?', (message,))
             if not data:
-                data = myDB.match('SELECT * from magazines where BookID="%s"' % message)
+                data = myDB.match('SELECT * from magazines where BookID=?', (message,))
         dictionary = dict(zip(data.keys(), data))
         dictionary['Event'] = event
 
@@ -73,16 +77,17 @@ class CustomNotifier:
         #
 
     def notify_snatch(self, title):
-        if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:
+        if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH']:
             self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
 
     def notify_download(self, title):
-        if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
+        if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="Test"):
         res = self._notify(message=title, event="Test", force=True)
         logger.debug(res)
         return res
+
 
 notifier = CustomNotifier

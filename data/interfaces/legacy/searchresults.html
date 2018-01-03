@@ -2,7 +2,6 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="body()">
 
 <br><br>
@@ -39,7 +38,7 @@
                     else:
                         starimg = '0-stars.png'
 
-                    if authorlist and result['authorname'] in authorlist:
+                    if authorlist and result['authorid'] in authorlist:
                         destination = "authorPage?AuthorID="+result['authorid']
                         value = "Have Author"
                         but_class = "button green"
@@ -59,13 +58,13 @@
                                     value2 = item['Status']
                                     valid_id = item['BookID']
 
-                            if value2 == 'Open':
+                            if 'Open' in value2:
                                 destination2 = "openBook?bookid="+valid_id
                                 but_class2 = "button green"
-                            elif value2 == 'Wanted':
+                            elif 'Wanted' in value2:
                                 destination2 = "searchForBook?bookid="+valid_id
                                 but_class2 = "button red"
-                            elif value2 == 'Skipped':
+                            elif 'Skipped' in value2:
                                 destination2 = "addBook?bookid="+result['bookid']
                                 value2 = "Add Book"
                                 but_class2 = "button"
@@ -83,30 +82,28 @@
                         value2 = "Add Book"
                         but_class2 = "button"
                     %>
-                    <tr class="gradeZ">
-                    <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" ></a></td>
-                    <td id="authorname">${result['authorname']}</td>
-                    <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-                    <td id="date">${result['bookdate']}</td>
-                    <td id="stars"><img src="images/${starimg}" height="10"></td>
-                    <td id="addAuthor"><a class="${but_class}" href="${destination}">${value}</a>
-                    <BR><BR><a class="${but_class2}" href="${destination2}">${value2}</a>
-                    </td>
-                    <td id="fuzz">${result['highest_fuzz']}%</td>
-                    </tr>
-                %endfor
-            %endif
-        </tbody>
-    </table>
+<tr class="gradeZ">
+  <td id="bookart"><a href="${result['bookimg']}" target="_new"><img src="${result['bookimg']}" height="75" ></a></td>
+  <td id="authorname">${result['authorname']}</td>
+  <td id="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
+  <td id="date">${result['bookdate']}</td>
+  <td id="stars"><img src="images/${starimg}" height="10"></td>
+  <td id="addAuthor"><a class="${but_class}" href="${destination}">${value}</a>
+    <BR><BR><a class="${but_class2}" href="${destination2}">${value2}</a>
+  </td>
+  <td id="fuzz">${result['highest_fuzz']}%</td>
+</tr>
+%endfor
+%endif
+</tbody>
+</table>
 </%def>
-
 <%def name="headIncludes()">
-    <link rel="stylesheet" href="css/data_table.css">
+  <link rel="stylesheet" href="css/data_table.css">
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script src="js/libs/jquery.dataTables.min.js"></script>
-    <script>
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
     $(document).ready(function()
     {
         $('#book_table').dataTable(
@@ -133,5 +130,5 @@
             });
             $('.dataTables_filter input').attr("placeholder", "Search table here");
     });
-    </script>
+  </script>
 </%def>

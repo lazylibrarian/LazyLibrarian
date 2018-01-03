@@ -2,21 +2,17 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="body()">
-    <p>&nbsp;</p>
-    <div id="waiting" class="alert alert-info">
-        <h1><i class="fa fa-circle-o-notch fa-spin"></i> ${message}</h1>
-        <h2 id="countdown">${lazylibrarian.UPDATE_MSG}</h2>
-    </div>
+  <p>&nbsp;</p>
+  <div id="waiting" class="alert alert-info">
+    <h1><i class="fa fa-circle-o-notch fa-spin"></i> ${message}</h1>
+    <h2 id="countdown">${lazylibrarian.UPDATE_MSG}</h2>
+  </div>
 </%def>
-
 <%def name="javascriptIncludes()">
-<script type="text/javascript">
+  <script type="text/javascript">
     $(function(){
         var countdown = ${timer};
         setInterval(function() {
@@ -26,5 +22,5 @@
             }
         }, 1000);
     });
-</script>
+  </script>
 </%def>

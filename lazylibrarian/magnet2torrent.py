@@ -34,14 +34,15 @@ import lazylibrarian
 from lazylibrarian import logger
 
 
+# noinspection PyArgumentList
 def magnet2torrent(magnet, output_name=None):
     try:
         import libtorrent as lt
-    except Exception:
+    except ImportError:
         try:
             # noinspection PyUnresolvedReferences
             from lib.libtorrent import libtorrent as lt
-        except Exception:
+        except ImportError:
             logger.error("Unable to import libtorrent, disabling magnet conversion")
             lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] = False
             return False
@@ -53,7 +54,9 @@ def magnet2torrent(magnet, output_name=None):
         return False
 
     tempdir = tempfile.mkdtemp()
+    # noinspection PyUnresolvedReferences
     ses = lt.session()
+    # noinspection PyUnresolvedReferences
     params = {
         'save_path': tempdir,
         'storage_mode': lt.storage_mode_t(2),
@@ -61,6 +64,7 @@ def magnet2torrent(magnet, output_name=None):
         'auto_managed': True,
         'duplicate_is_error': True
     }
+    # noinspection PyUnresolvedReferences
     handle = lt.add_magnet_uri(ses, magnet, params)
 
     logger.debug("Downloading Metadata (this may take a while)")
@@ -78,12 +82,14 @@ def magnet2torrent(magnet, output_name=None):
         try:
             shutil.rmtree(tempdir)
         except Exception as e:
-            logger.debug("Error removing directory: %s" % str(e))
+            logger.debug("%s removing directory: %s" % (type(e).__name__, str(e)))
         return False
     ses.pause()
 
     torinfo = handle.get_torrent_info()
+    # noinspection PyUnresolvedReferences
     torfile = lt.create_torrent(torinfo)
+    # noinspection PyUnresolvedReferences
     torcontent = lt.bencode(torfile.generate())
     ses.remove_torrent(handle)
 
@@ -96,11 +102,11 @@ def magnet2torrent(magnet, output_name=None):
             output = pt.abspath(output_name)
 
     logger.debug("Saving torrent file here : " + output + " ...")
-    with open(output, "wb") as f:
+    with open(output, 'wb') as f:
         f.write(torcontent)
     logger.debug("Saved! Cleaning up dir: " + tempdir)
     try:
         shutil.rmtree(tempdir)
     except Exception as e:
-        logger.debug("Error removing directory: %s" % str(e))
+        logger.debug("%s removing directory: %s" % (type(e).__name__, str(e)))
     return output

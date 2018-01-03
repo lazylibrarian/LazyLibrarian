@@ -14,14 +14,12 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import socket
 import xmlrpclib
 from time import sleep
 
 import lazylibrarian
 from lazylibrarian import logger
-from magnet2torrent import magnet2torrent
 
 
 def getServer():
@@ -65,15 +63,15 @@ def addTorrent(tor_url, hashID):
 
     directory = lazylibrarian.CONFIG['RTORRENT_DIR']
 
-    if tor_url.startswith('magnet') and directory:
-        # can't send magnets to rtorrent with a directory - not working correctly
-        # convert magnet to torrent instead
-        tor_name = 'meta-' + hashID + '.torrent'
-        tor_file = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
-        torrent = magnet2torrent(tor_url, tor_file)
-        if torrent is False:
-            return False
-        tor_url = torrent
+    # if tor_url.startswith('magnet') and directory:
+    #    can't send magnets to rtorrent with a directory - not working correctly
+    #    convert magnet to torrent instead
+    #    tor_name = 'meta-' + hashID + '.torrent'
+    #    tor_file = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
+    #    torrent = magnet2torrent(tor_url, tor_file)
+    #    if torrent is False:
+    #       return False
+    #    tor_url = torrent
 
     # socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
 
@@ -89,8 +87,6 @@ def addTorrent(tor_url, hashID):
             sleep(1)
             RETRIES -= 1
 
-        server.d.start(hashID)
-
         label = lazylibrarian.CONFIG['RTORRENT_LABEL']
         if label:
             server.d.set_custom1(hashID, label)
@@ -98,15 +94,17 @@ def addTorrent(tor_url, hashID):
         if directory:
             server.d.set_directory(hashID, directory)
 
-        mainview = server.download_list("", "main")
+        server.d.start(hashID)
+
         # socket.setdefaulttimeout(None)  # reset timeout
 
     except Exception as e:
         # socket.setdefaulttimeout(None)  # reset timeout if failed
-        logger.error("rTorrent Error: %s" % str(e))
+        logger.error("rTorrent Error: %s: %s" % (type(e).__name__, str(e)))
         return False
 
     # For each torrent in the main view
+    mainview = server.download_list("", "main")
     for tor in mainview:
         if tor.upper() == hashID.upper():  # this is us
             # wait a while for download to start, that's when rtorrent fills in the name

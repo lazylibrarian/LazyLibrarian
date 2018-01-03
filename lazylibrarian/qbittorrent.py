@@ -27,7 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 class qbittorrentclient(object):
@@ -70,7 +70,7 @@ class qbittorrentclient(object):
         try:
             _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
-            logger.debug('Error getting SID. qBittorrent responded with error: %s' % str(err))
+            logger.debug('Error getting SID. qBittorrent %s: %s' % (type(err).__name__, str(err)))
             logger.debug('Unable to log in to %s/login' % base_url)
             return
         for cookie in self.cookiejar:
@@ -93,7 +93,8 @@ class qbittorrentclient(object):
         request = urllib2.Request(url, data, headers)
 
         if lazylibrarian.CONFIG['PROXY_HOST']:
-            request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], lazylibrarian.CONFIG['PROXY_TYPE'])
+            for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
+                request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
         request.add_header('User-Agent', USER_AGENT)
 
         try:
@@ -110,7 +111,8 @@ class qbittorrentclient(object):
                         for line in response:
                             resp = resp + line
                         logger.debug("QBitTorrent returned %s" % resp)
-                        return False
+                        if resp != 'Ok.':
+                            return False
             return True
         except urllib2.URLError as err:
             logger.debug('Failed URL: %s' % url)
@@ -171,19 +173,19 @@ def removeTorrent(hashid, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
 
     qbclient = qbittorrentclient()
+    # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
-    if torrentList:
-        for torrent in torrentList:
-            if torrent['hash'].upper() == hashid.upper():
-                if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                    qbclient.remove(hashid, remove_data)
-                    return True
-                else:
-                    logger.info(
-                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                        torrent['name'])
-                    return False
+    for torrent in torrentList:
+        if torrent['hash'].upper() == hashid.upper():
+            if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
+                logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                qbclient.remove(hashid, remove_data)
+                return True
+            else:
+                logger.info(
+                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                    torrent['name'])
+                return False
     return False
 
 
@@ -199,7 +201,7 @@ def checkLink():
             return "qBittorrent login successful"
         return "qBittorrent login FAILED\nCheck debug log"
     except Exception as err:
-        return "qBittorrent login FAILED: %s" % str(err)
+        return "qBittorrent login FAILED: %s %s" % (type(err).__name__, str(err))
 
 
 def addTorrent(link):
@@ -209,6 +211,7 @@ def addTorrent(link):
     args = {'urls': link, 'savepath': lazylibrarian.DIRECTORY('Download')}
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
         args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
+    # noinspection PyProtectedMember
     return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')
 
 
@@ -217,6 +220,7 @@ def addFile(data):
 
     qbclient = qbittorrentclient()
     files = {'torrents': {'filename': '', 'content': data}}
+    # noinspection PyProtectedMember
     return qbclient._command('command/upload', files=files)
 
 
@@ -227,6 +231,7 @@ def getName(hashid):
     RETRIES = 5
     torrents = []
     while RETRIES:
+        # noinspection PyProtectedMember
         torrents = qbclient._get_list()
         if torrents:
             if hashid.upper() in str(torrents).upper():
@@ -246,6 +251,7 @@ def getFolder(hashid):
     qbclient = qbittorrentclient()
 
     # Get Active Directory from settings
+    # noinspection PyProtectedMember
     settings = qbclient._get_settings()
     active_dir = settings['temp_path']
     # completed_dir = settings['save_path']

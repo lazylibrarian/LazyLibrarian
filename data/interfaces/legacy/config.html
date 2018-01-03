@@ -1,0 +1,2720 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a onclick="self.shutdownQA(this)" id="button">Shutdown</a></li>
+            <li><a id="button" onclick="self.restartQA(this, '', '')">Restart</a></li>
+            <li ><a id="button" href="checkForUpdates">Check Version</a></li>
+        </ul>
+    </div>
+</%def>
+<%def name="body()">
+<BR><BR>
+<h1>&nbsp;&nbsp;${title}</h1>
+    <form action="configUpdate" method="post">
+    <div id="form">
+    <div id="tabs">
+        <ul>
+            <li role='presentation' id="1" ><a  href="#tabs-1">Interface</a></li>
+            <li role='presentation' id="2" ><a  href="#tabs-2">Importing</a></li>
+            <li role='presentation' id="3" ><a  href="#tabs-3">Downloaders</a></li>
+            <li role='presentation' id="4" ><a  href="#tabs-4">Providers</a></li>
+            <li role='presentation' id="5" ><a  href="#tabs-5">Processing</a></li>
+            <li role='presentation' id="6" ><a  href="#tabs-6">Notifications</a></li>
+            <li role='presentation' id="7" ><a  href="#tabs-7">Categories</a></li>
+            <li role='presentation' id="8" ><a  href="#tabs-8">Filters</a></li>
+        </ul>
+    </div>
+    <div class="table_wrapper">
+
+        <div class="tabs-1">
+        <table class="configtable" summary="Webinterface">
+            <tr>
+                <td>
+                  <div>
+                  <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
+                  <label>Hostname:</label><input type="text" name="http_host" id="http_host" value="${lazylibrarian.CONFIG['HTTP_HOST']}" size="20">
+                  </div>
+                  <div>
+                  <label>Port:</label><input type="text" name="http_port" id="http_root" value="${lazylibrarian.CONFIG['HTTP_PORT']}" size="10">
+                  </div>
+                  <label>Web Root:</label><input type="text" name="http_root" id="http_root" value="${lazylibrarian.CONFIG['HTTP_ROOT']}" size="20">
+                    <%
+                        if lazylibrarian.CONFIG['HTTP_PROXY'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+<BR>
+<input type="checkbox" id="http_proxy" name="http_proxy" value=1 ${checked} />
+<label>  Enable http proxy</label>
+<%
+  if lazylibrarian.CONFIG['HTTPS_ENABLED'] == True:
+    checked = 'checked="checked"'
+  else:
+    checked = ''
+%>
+<BR>
+<input type="checkbox" id="https_enabled" name="https_enabled" value=1 ${checked} />
+<label>  Enable https access to lazylibrarian</label>
+<fieldset id="https_options">
+  <label>Https Certificate:</label><input type="text" id="https_cert" name="https_cert" value="${lazylibrarian.CONFIG['HTTPS_CERT']}" size="20">
+  <br>
+  <label>Https Key:</label><input type="text" id="https_key" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" size="20">
+</fieldset>
+<br>
+<br>
+<label>Logdir:</label><input type="text" id="logdir" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" size="26"><br>
+<label>Log Limit:</label><input type="text" id="loglimit" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" size="4"><br>
+<i class="smalltext">Size of on-screen log, smaller is faster and uses less memory</i><br>
+<label>Log Level:</label><input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" size="4"><br>
+<i class="smalltext">0=Quiet, 1=Normal, 2=Debug</i>
+<br>
+<label>Table Display Length:</label>
+<select name="displaylength">
+  %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
+  <%
+    if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
+        selected = 'selected="selected"'
+    else:
+        selected = ''
+  %>
+  <option value="${displaylength}" ${selected}>${displaylength}</option>
+  %endfor
+</select><br>
+<i class="smalltext">Use -1 to display all rows</i>
+<br>
+<div>
+  <label>Proxy Host:</label><input type="text" id="proxy_host" name="proxy_host" value="${lazylibrarian.CONFIG['PROXY_HOST']}" size="20"><br>
+  <i class="smalltext">Set this value if you are behind a proxy</i>
+</div>
+<br>
+<div>
+  <label>Proxy Type:</label><input type="text" id="proxy_type" name="proxy_types" value="${lazylibrarian.CONFIG['PROXY_TYPE']}" size="10"><br>
+  <i class="smalltext">Comma separated list http, https, etc</i>
+</div>
+</td>
+<td>
+  <div>
+    <label>Username:</label><input type="text" id="http_user" name="http_user" value="${lazylibrarian.CONFIG['HTTP_USER']}" size="20">
+  </div>
+  <div>
+    <label>Password:</label><input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" size="20">
+  </div>
+  <%
+    if lazylibrarian.CONFIG['LAUNCH_BROWSER'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="launch_browser" name="launch_browser" value=1 ${checked} />
+  <label>  Launch browser</label>
+  <%
+    if lazylibrarian.CONFIG['API_ENABLED'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <div class="row checkbox">
+    <input type="checkbox" id="api_enabled" name="api_enabled" value=1 ${checked} />
+    <label title="Allow remote applications to interface with LazyLibrarian">
+      Enable API
+    </label>
+  </div>
+  <fieldset id="api_options">
+    <div id="api_options" class="row">
+      <label>API key</label>
+      <input type="text" name="api_key" id="api_key" value="${lazylibrarian.CONFIG['API_KEY']}" size="36">
+      <input type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
+      <br>
+      <small>Current API key: <strong>${lazylibrarian.CONFIG['API_KEY']}</strong></small>
+    </div>
+  </fieldset>
+  <h5>Appearance</h5>
+  <%
+    if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="author_img" name="author_img" value=1 ${checked} />
+  <label>  Show Author Images</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['BOOK_IMG'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="book_img" name="book_img" value=1 ${checked} />
+  <label>  Show Book Images</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['MAG_IMG'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="mag_img" name="mag_img" value=1 ${checked} />
+  <label>  Show Magazine Images</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['SERIES_TAB'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="series_tab" name="series_tab" value=1 ${checked} />
+  <label>  Show Series</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['MAG_TAB'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="mag_tab" name="mag_tab" value=1 ${checked} />
+  <label>  Show Magazines</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="sort_definite" name="sort_definite" value=1 ${checked} />
+  <label>  Show titles ignoring definite article (The, A)</label>
+  <br>
+  <%
+    if lazylibrarian.CONFIG['SORT_SURNAME'] == True:
+        checked = 'checked="checked"'
+    else:
+        checked = ''
+  %>
+  <input type="checkbox" id="sort_surname" name="sort_surname" value=1 ${checked} />
+  <label>  Show author surname first</label>
+  <br>
+  <h5>Interface: <select name="http_look" style="float:right;"></h5>
+    %for http_look in config['http_look_list']:
+    <%
+    if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
+        selected = 'selected="selected"'
+    else:
+        selected = ''
+    %>
+    <option value="${http_look}" ${selected}>${http_look}</option>
+    %endfor
+  </select>
+  <br>
+  <div class="row">
+    <input type="button" value="Show Jobs" id="show_Jobs" />
+    <input type="button" value="Restart Jobs" id="restart_Jobs" />
+    <input type="button" value="Stop Jobs" id="stop_Jobs" />
+  </div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="table_wrapper" style="display:none">
+  <div class="tabs-2">
+    <table class="configtable" summary="Importsettings">
+      <tr>
+        <td>
+          <h3>Book API</h3>
+          <BR>
+          <%
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+                gr_selected = 'selected="selected"'
+            else:
+                gr_selected = ''
+
+            if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+                gb_selected = 'selected="selected"'
+            else:
+                gb_selected = ''
+          %>
+          <label>Book Search API           .</label><select name="book_api"  style="float:right;">
+            <option value = "GoodReads" ${gr_selected}>GoodReads</option>
+            <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
+          </select>
+          <BR>
+          <label>Goodreads API:</label><input type="text" id="gr_api" name="gr_api" value="${lazylibrarian.CONFIG['GR_API']}" size="30">
+          <BR>
+          <label>GoogleBooks API:</label><input type="text" id="gb_api" name="gb_api" value="${lazylibrarian.CONFIG['GB_API']}" size="30">
+          <BR>
+          <div>
+            <%
+            if lazylibrarian.CONFIG['NO_FUTURE'] == True:
+                checked = 'checked="checked"'
+            else:
+                checked = ''
+            %>
+            <input type="checkbox" id="no_future" name="no_future" value=1 ${checked} /><label>Ignore unpublished</label>
+            <BR>
+            <small>Ignore books with future publication date
+            </small>
+          </div>
+          <br>
+          <br>
+          <h3>File Formats</h3>
+          <BR>
+          <label>Ebooks:</label><input type="text" id="ebook_type" name="ebook_type" value="${lazylibrarian.CONFIG['EBOOK_TYPE']}" size="0">
+          <br>
+          <small>Comma separated file extensions:
+            <BR>Default: epub, mobi, pdf </small>
+          <BR>
+          <label>Magazines:</label>
+          <input type="text" id="mag_type" name="mag_type" value="${lazylibrarian.CONFIG['MAG_TYPE']}" size="20">
+          <br>
+          <small>Comma separated file extensions:
+            <BR>Default: pdf </small>
+        </td>
+        <td>
+          <h3>Language</h3>
+          <BR>
+          <label>Import languages:</label><input type="text" id="imp_preflang" name="imp_preflang" value="${lazylibrarian.CONFIG['IMP_PREFLANG']}" size="20">
+          <br>
+          <i class="smalltext">Comma separated country shortcodes:
+            <br>
+             GoodReads e.g: eng, en-US, spa, ita
+            <BR> GoogleBooks e.g: en, es, it
+            <BR> Default: en, eng, en-US, en-GB
+            <BR> Try adding "Unknown" to list if GoodReads is missing results, or "All" if you don't want to check for language</i>
+          <BR><BR>
+          <label>Languages for month names:</label><input type="text" id="text" name="imp_monthlang" value="${lazylibrarian.CONFIG['IMP_MONTHLANG']}" size="20">
+          <br>
+          <i class="smalltext">Comma separated language codes for magazine issues:
+            <br>
+             e.g: fr_FR.utf8, es_ES.utf8
+            <BR>Default: blank, English month names are preloaded   Changes to this setting require a restart</i>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+<div class="table_wrapper" style="display:none">
+  <div class="tabs-3">
+    <table class="configtable" summary="Downloadsettings">
+      <tr>
+        <td>
+          <fieldset>
+            <h3>Usenet</h3>
+            <fieldset id="usenet_options">
+              <div class="row checkbox">
+                <%
+                if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
+                <input type="checkbox" name="nzb_downloader_sabnzbd" id="nzb_downloader_sabnzbd" value="1" ${checked} />
+                <label>Use Sabnzbd+</label>
+              </div>
+              <fieldset id="sabnzbd_options">
+                <div class="row">
+                  <label>SABnzbd Host:</label>
+                  <input type="text" id="sab_host" name="sab_host" value="${lazylibrarian.CONFIG['SAB_HOST']}" size="26" align="right">
+                </div>
+                <div class="row">
+                  <label>SABnzbd Port:</label>
+                  <input type="text" id="sab_port" name="sab_port" value="${lazylibrarian.CONFIG['SAB_PORT']}" size="26">
+                </div>
+                <div class="row">
+                  <label>SABnzbd Username</label>
+                  <input type="text" id="sab_user" name="sab_user" value="${lazylibrarian.CONFIG['SAB_USER']}" size="26">
+                </div>
+                <div class="row">
+                  <label>SABnzbd Password:</label>
+                  <input type="password" id="sab_pass" name="sab_pass" value="${lazylibrarian.CONFIG['SAB_PASS']}" size="26">
+                </div>
+                <div class="row">
+                  <label>SABnzbd API:</label>
+                  <input type="text" id="sab_api" name="sab_api" value="${lazylibrarian.CONFIG['SAB_API']}" size="26">
+                </div>
+                <div class="row">
+                  <label>SABnzbd Category:</label>
+                  <input type="text" id="sab_cat" name="sab_cat" value="${lazylibrarian.CONFIG['SAB_CAT']}" size="26">
+                </div>
+                <div class="row">
+                  <label>SABnzbd SubDir:</label>
+                  <input type="text" id="sab_subdir"  name="sab_subdir" value="${lazylibrarian.CONFIG['SAB_SUBDIR']}" size="26">
+                </div>
+                <div class="row">
+                  <label>SABnzb Connection:</label>
+                  <input type="button" value="Test SABnzbd" id="testSABnzbd" style="float:right;">
+                </div>
+              </fieldset>
+              <div class="row checkbox">
+                <%
+                if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
+                <input type="checkbox" name="nzb_downloader_nzbget" id="nzb_downloader_nzbget" value="1" ${checked} />
+                <label>Use NZBGet</label>
+              </div>
+              <fieldset id="nzbget_options">
+                <div class="row">
+                  <label>NZBGet Host:</label>
+                  <input type="text" id="nzbget_host" name="nzbget_host" value="${lazylibrarian.CONFIG['NZBGET_HOST']}" size="26" align="right">
+                </div>
+                <div class="row">
+                  <label>NZBGet Port</label>
+                  <input type="text" id="nzbget_port" name="nzbget_port" value="${lazylibrarian.CONFIG['NZBGET_PORT']}" size="26">
+                </div>
+                <div class="row">
+                  <label>NZBGet Username</label>
+                  <input type="text" id="nzbget_user" name="nzbget_user" value="${lazylibrarian.CONFIG['NZBGET_USER']}" size="26">
+                </div>
+                <div class="row">
+                  <label>NZBGet Password:</label>
+                  <input type="password" id="nzbget_pass" name="nzbget_pass" value="${lazylibrarian.CONFIG['NZBGET_PASS']}" size="26">
+                </div>
+                <div class="row">
+                  <label>NZBGet Category:</label>
+                  <input type="text" id="nzbget_category" name="nzbget_category" value="${lazylibrarian.CONFIG['NZBGET_CATEGORY']}" size="26">
+                </div>
+                <div class="row">
+                  <label>NZBGet Priority:</label>
+                  <input type="text" id="nzbget_priority" name="nzbget_priority" value="${lazylibrarian.CONFIG['NZBGET_PRIORITY']}" size="26">
+                </div>
+                <div class="row">
+                  <label>NZBget Connection:</label>
+                  <input type="button" value="Test NZBget" id="testNZBget" style="float:right;">
+                </div>
+              </fieldset>
+              <div class="row checkbox">
+                <%
+                if lazylibrarian.CONFIG['USE_SYNOLOGY'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
+                <input type="checkbox" name="use_synology" id="use_synology" value="1" ${checked} />
+                <label>Use Synology DownloadStation</label>
+              </div>
+              <fieldset id="synology_options">
+                <div class="row">
+                  <label>Synology Host:</label>
+                  <input type="text" id="synology_host" name="synology_host" value="${lazylibrarian.CONFIG['SYNOLOGY_HOST']}" size="26" align="right">
+                </div>
+                <div class="row">
+                  <label>Synology Port</label>
+                  <input type="text" id="synology_port" name="synology_port" value="${lazylibrarian.CONFIG['SYNOLOGY_PORT']}" size="26">
+                </div>
+                <div class="row">
+                  <label>Synology Username</label>
+                  <input type="text" id="synology_user" name="synology_user" value="${lazylibrarian.CONFIG['SYNOLOGY_USER']}" size="26">
+                </div>
+                <div class="row">
+                  <label>Synology Password:</label>
+                  <input type="password" id="synology_pass" name="synology_pass" value="${lazylibrarian.CONFIG['SYNOLOGY_PASS']}" size="26">
+                </div>
+                <div class="row">
+                  <label>Synology Directory:</label>
+                  <input type="text" id="synology_dir" name="synology_dir" value="${lazylibrarian.CONFIG['SYNOLOGY_DIR']}" size="26">
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="nzb_downloader_synology" id="nzb_downloader_synology" value="1" ${checked} />
+                  <label>Use DownloadStation for usenet</label>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_synology" id="tor_downloader_synology" value="1" ${checked} />
+                  <label>Use DownloadStation for torrents</label>
+                </div>
+                <div class="row">
+                  <label>Synology Connection:</label>
+                  <input type="button" value="Test Synology" id="testSynology" style="float:right;">
+                </div>
+              </fieldset>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                %>
+                <input type="checkbox" name="nzb_downloader_blackhole" id="nzb_downloader_blackhole" value="1" ${checked} />
+                <label>Use NZB Blackhole</label>
+              </div>
+              <fieldset id="nzb_blackhole_options">
+                <div class="row">
+                  <label>NZB Blackhole Directory:</label>
+                  <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" size="26">
+                </fieldset>
+                <div class="row">
+                  <label>Retention Max Age:</label>
+                  <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" size="26">
+                </div>
+              </fieldset>
+            </fieldset>
+          </td>
+          <td>
+            <fieldset>
+              <h3>Torrents</h3>
+              <fieldset id="torrent_options">
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_DELUGE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_deluge" id="tor_downloader_deluge" value="1" ${checked} />
+                  <label>Use Deluge</label>
+                </div>
+                <fieldset id="deluge_options">
+                  <div class="row">
+                    <label>Deluge Host:</label>
+                    <input type="text" id="deluge_host" name="deluge_host" value="${lazylibrarian.CONFIG['DELUGE_HOST']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Deluge Port:</label>
+                    <input type="text" id="deluge_port" name="deluge_port" value="${lazylibrarian.CONFIG['DELUGE_PORT']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Username:</label>
+                    <input type="text" id="deluge_user"  name="deluge_user" value="${lazylibrarian.CONFIG['DELUGE_USER']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Password:</label>
+                    <input type="password" id="deluge_pass" name="deluge_pass" value="${lazylibrarian.CONFIG['DELUGE_PASS']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Deluge Label:</label>
+                    <input type="text" id="deluge_label" name="deluge_label" value="${lazylibrarian.CONFIG['DELUGE_LABEL']}" size="26">
+                  </div>
+                  <div class="row">
+                    <input type="button" value="Test Deluge" id="testDeluge" style="float:right;">
+                  </div>
+                </fieldset>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_transmission" id="tor_downloader_transmission" value="1" ${checked} />
+                  <label>Use Transmission</label>
+                </div>
+                <fieldset id="transmission_options">
+                  <div class="row">
+                    <label>Transmission Host:</label>
+                    <input type="text" id="transmission_host" name="transmission_host" value="${lazylibrarian.CONFIG['TRANSMISSION_HOST']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Transmission Port :</label>
+                    <input type="text" id="transmission_port" name="transmission_port" value="${lazylibrarian.CONFIG['TRANSMISSION_PORT']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Username :</label>
+                    <input type="text" id="transmission_user"  name="transmission_user" value="${lazylibrarian.CONFIG['TRANSMISSION_USER']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Password :</label>
+                    <input type="password" id="transmission_pass" name="transmission_pass" value="${lazylibrarian.CONFIG['TRANSMISSION_PASS']}" size="26">
+                  </div>
+                  <div class="row">
+                    <input type="button" value="Test Transmission" id="testTransmission" style="float:right;">
+                  </div>
+                </fieldset>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_rtorrent" id="tor_downloader_rtorrent" value="1" ${checked} />
+                  <label>Use rTorrent</label>
+                </div>
+                <fieldset id="rtorrent_options">
+                  <div class="row">
+                    <label>rTorrent Host:</label>
+                    <input type="text" id="rtorrent_host" name="rtorrent_host" value="${lazylibrarian.CONFIG['RTORRENT_HOST']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>rTorrent User:</label>
+                    <input type="text" id="rtorrent_user" name="rtorrent_user" value="${lazylibrarian.CONFIG['RTORRENT_USER']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>rTorrent Password:</label>
+                    <input type="password" id="rtorrent_pass" name="rtorrent_pass" value="${lazylibrarian.CONFIG['RTORRENT_PASS']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>rTorrent Label:</label>
+                    <input type="text" id="rtorrent_label" name="rtorrent_label" value="${lazylibrarian.CONFIG['RTORRENT_LABEL']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>rTorrent Directory:</label>
+                    <input type="text" id="rtorrent_dir" name="rtorrent_dir" value="${lazylibrarian.CONFIG['RTORRENT_DIR']}" size="26">
+                    <br>
+                    <small>
+                      Leave rTorrent directory blank to use rtorrent defaults
+                    </small>
+                  </div>
+                  <div class="row">
+                    <input type="button" value="Test rTorrent" id="testrTorrent" style="float:right;">
+                  </div>
+                </fieldset>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_utorrent" id="tor_downloader_utorrent" value="1" ${checked} />
+                  <label>Use uTorrent</label>
+                </div>
+                <fieldset id="utorrent_options">
+                  <div class="row">
+                    <label>uTorrent Host:</label>
+                    <input type="text" id="utorrent_host" name="utorrent_host" value="${lazylibrarian.CONFIG['UTORRENT_HOST']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>uTorrent Port:</label>
+                    <input type="text" id="utorrent_port"  name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Username:</label>
+                    <input type="text" id="utorrent_user"  name="utorrent_user" value="${lazylibrarian.CONFIG['UTORRENT_USER']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Password:</label>
+                    <input type="password" id="utorrent_pass" name="utorrent_pass" value="${lazylibrarian.CONFIG['UTORRENT_PASS']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>uTorrent Label:</label>
+                    <input type="text" id="utorrent_label" name="utorrent_label" value="${lazylibrarian.CONFIG['UTORRENT_LABEL']}" size="26">
+                  </div>
+                  <div class="row">
+                    <input type="button" value="Test uTorrent" id="testuTorrent" style="float:right;">
+                  </div>
+                </fieldset>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_qbittorrent" id="tor_downloader_qbittorrent" value="1" ${checked} />
+                  <label>Use qBittorrent</label>
+                </div>
+                <fieldset id="qbittorrent_options">
+                  <div class="row">
+                    <label>qBittorrent Host:</label>
+                    <input type="text" id="qbittorrent_host" name="qbittorrent_host" value="${lazylibrarian.CONFIG['QBITTORRENT_HOST']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>qBittorrent Port:</label>
+                    <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Username:</label>
+                    <input type="text" id="qbittorrent_user" name="qbittorrent_user" value="${lazylibrarian.CONFIG['QBITTORRENT_USER']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>Password:</label>
+                    <input type="password" id="qbittorrent_pass" name="qbittorrent_pass" value="${lazylibrarian.CONFIG['QBITTORRENT_PASS']}" size="26">
+                  </div>
+                  <div class="row">
+                    <label>qBittorrent Label:</label>
+                    <input type="text" id="qbittorrent_label" name="qbittorrent_label" value="${lazylibrarian.CONFIG['QBITTORRENT_LABEL']}" size="26">
+                  </div>
+                  <div class="row">
+                    <input type="button" value="Test qBittorrent" id="testqBittorrent" style="float:right;">
+                  </div>
+                </fieldset>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="tor_downloader_blackhole" id="tor_downloader_blackhole" value="1" ${checked} />
+                  <label>Use Torrent Blackhole</label>
+                </div>
+                <fieldset id="tor_blackhole_options">
+                  <div class="row">
+                    <label>Torrent Blackhole Directory:</label>
+                    <input type="text" id="torrent_dir" name="torrent_dir" value="${lazylibrarian.CONFIG['TORRENT_DIR']}" size="26">
+                  </div>
+                  <div class="row checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="tor_convert_magnet" id="tor_convert_magnet" value="1" ${checked} />
+                    <label>Convert magnet links into torrent files</label>
+                  </div>
+                </fieldset>
+                  <div class="row checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['PREFER_MAGNET'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <input type="checkbox" name="prefer_magnet" id="prefer_magnet" value="1" ${checked} />
+                    <label>Prefer magnet links to torrent files</label>
+                  </div>
+                <div>
+                  <label>Minimum seeders:</label>
+                  <input type="text" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" size="5">
+                  <BR>
+                  <small>Number of minimum seeders a torrent must have to be accepted</small>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['KEEP_SEEDING'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <input type="checkbox" name="keep_seeding" id="keep_seeding" value="1" ${checked} />
+                  <label>Keep seeding after processing</label>
+                </div>
+              </fieldset>
+            </fieldset>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <div class="table_wrapper" style="display:none">
+    <div class="tabs-4">
+      <table class="configtable" summary="Providers">
+        <tr>
+          <td>
+            <fieldset id="newznab_options">
+              <h3>Newznab Providers</h3>
+              <br>
+              %for prov in lazylibrarian.NEWZNAB_PROV:
+              <%
+                if prov['ENABLED'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+              <input type="text" placeholder="Enter API Here" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
+              <input type="text" placeholder="Enter URL Here" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
+              <br>
+              %endfor
+            </fieldset>
+          </td>
+          <td>
+            <fieldset id="torznab_options">
+              <h3>Torznab Providers</h3>
+              <br>
+              %for prov in lazylibrarian.TORZNAB_PROV:
+              <%
+                if prov['ENABLED'] == True:
+                  checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+              <input type="text" placeholder="Enter API Here" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
+              <input type="text" placeholder="Enter URL Here" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
+              <br>
+              %endfor
+            </fieldset>
+          </tr>
+          <tr>
+            <td>
+              <fieldset id="rss_options">
+                <h3>RSS Providers</h3>
+                <br>
+                %for prov in lazylibrarian.RSS_PROV:
+                <%
+                if prov['ENABLED'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+                %>
+                <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
+                <input type="text" placeholder="Enter URL Here" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input">
+                <br>
+                %endfor
+              </fieldset>
+            </td>
+            <td>
+              <h3>Torrent Providers</h3>
+              <br>
+              <%
+                if lazylibrarian.CONFIG['KAT'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="kat" name="kat" value=1 ${checked} style="margin-bottom:4px;" /> kickass
+              <input type="text" placeholder="Enter URL Here" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" size="26">
+              <br>
+              <%
+                if lazylibrarian.CONFIG['WWT'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="wwt" name="wwt" value=1 ${checked} style="margin-bottom:4px;" /> WorldWideTorrent
+              <input type="text" placeholder="Enter URL Here" id="wwt_host" name="wwt_host" value="${lazylibrarian.CONFIG['WWT_HOST']}" size="26">
+              <br>
+              <%
+                if lazylibrarian.CONFIG['TPB'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="tpb" name="tpb" value=1 ${checked} style="margin-bottom:4px;" /> piratebay
+              <input type="text" placeholder="Enter URL Here" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" size="26">
+              <br>
+              <%
+                if lazylibrarian.CONFIG['ZOO'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="zoo" name="zoo" value=1 ${checked} style="margin-bottom:4px;" /> zooqle
+              <input type="text" placeholder="Enter URL Here" id="zoo_host" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" size="26">
+              <br>
+              <%
+                if lazylibrarian.CONFIG['TDL'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="tdl" name="tdl" value=1 ${checked} style="margin-bottom:4px;" /> torrentdownload
+              <input type="text" placeholder="Enter URL Here" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" size="26">
+              <br>
+              <%
+                if lazylibrarian.CONFIG['LIME'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="lime" name="lime" value=1 ${checked} style="margin-bottom:4px;" /> limetorrent
+              <input type="text" placeholder="Enter URL Here" id="lime_host" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" size="26">
+              <br>
+              <br>
+              <h3>Direct Download Providers</h3>
+              <br>
+              <%
+                if lazylibrarian.CONFIG['GEN'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="gen" name="gen" value=1 ${checked} style="margin-bottom:4px;" /> libgen (1)
+              <input type="text" placeholder="Enter URL Here" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" size="26">
+              <input type="text" placeholder="Search option" id="gen_search" name="gen_search" value="${lazylibrarian.CONFIG['GEN_SEARCH']}" size="26">
+              <br><br>
+              <%
+                if lazylibrarian.CONFIG['GEN2'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="gen2" name="gen2" value=1 ${checked} style="margin-bottom:4px;" /> libgen (2)
+              <input type="text" placeholder="Enter URL Here" id="gen2_host" name="gen2_host" value="${lazylibrarian.CONFIG['GEN2_HOST']}" size="26">
+              <input type="text" placeholder="Search option" id="gen2_search" name="gen2_search" value="${lazylibrarian.CONFIG['GEN2_SEARCH']}" size="26">
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="table_wrapper" style="display:none">
+      <div class="tabs-5">
+        <table class="configtable" summary="Search & Processing">
+          <tr>
+            <td>
+              <h3>Intervals</h3>
+            </td>
+            <td>
+              <h3>Miscellaneous</h3>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div>
+                <label>NZB/Tor Search Interval:</label>
+                <input type="text" id="search_interval" name="search_interval" value="${lazylibrarian.CONFIG['SEARCH_INTERVAL']}" size="8"> (mins)
+              </div>
+              <div>
+                <label>RSS Search Interval:</label>
+                <input type="text" id="searchrss_interval" name="searchrss_interval" value="${lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']}" size="8"> (mins)
+              </div>
+              <div>
+                <label>Post-Processing Interval:</label>
+                <input type="text" id="scan_interval" name="scan_interval" value="${lazylibrarian.CONFIG['SCAN_INTERVAL']}" size="8"> (mins)
+              </div>
+              <div>
+                <label>Version Check Interval:</label>
+                <input type="text" id="versioncheck_interval" name="versioncheck_interval" value="${lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']}" size="8"> (hours)
+              </div>
+              <small>
+                <BR>
+                Changes to the scan intervals only take effect when the jobs are restarted, an interval of zero disables the task
+              </small>
+            </td>
+            <td>
+              <div>
+                <label>Cache expire after:</label>
+                <input type="text" id="cache_age" name="cache_age"  value="${lazylibrarian.CONFIG['CACHE_AGE']}" size="8"> (days)
+              </div>
+              <label>Max Magazine Issue Age:</label>
+              <input type="text" id="mag_age" name="mag_age"  value="${lazylibrarian.CONFIG['MAG_AGE']}" size="8"> (days)
+            </div>
+            <div>
+              <label>Remove failed tasks after:</label>
+              <input type="text" id="task_age" name="task_age"  value="${lazylibrarian.CONFIG['TASK_AGE']}" size="8"> (hours)
+            </div>
+            <div>
+              <label>Search Match Ratio:</label>
+              <input type="text" id="match_ratio" name="match_ratio"  value="${lazylibrarian.CONFIG['MATCH_RATIO']}" size="8"> (percent)
+            </div>
+            <div>
+              <label>Download Match Ratio:</label>
+              <input type="text" id="dload_ratio" name="dload_ratio"  value="${lazylibrarian.CONFIG['DLOAD_RATIO']}" size="8"> (percent)
+            </div>
+            <div>
+              <label>Max search pages:</label>
+              <input type="text" id="max_pages" name="max_pages"  value="${lazylibrarian.CONFIG['MAX_PAGES']}" size="8">
+            </div>
+            <div>
+              <label>Max Author pages:</label>
+              <input type="text" id="max_bookpages" name="max_bookpages"  value="${lazylibrarian.CONFIG['MAX_BOOKPAGES']}" size="8">
+            </div>
+            <div>
+              <label>Max Coverwall Images:</label>
+              <input type="text" id="max_wall" name="max_wall"  value="${lazylibrarian.CONFIG['MAX_WALL']}" size="8">
+            </div>
+            <label>git program:</label>
+            <input type="text" placeholder="git program" id="git_program" name="git_program" value="${lazylibrarian.CONFIG['GIT_PROGRAM']}" size="26">
+            <BR>
+            <small>Path to git program unless already in your path.
+              <BR>You can usually leave this blank</small>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <h3>Folders</h3>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label>Download Directories:</label><input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" size="26">
+            <BR>
+            <small>Comma separated list of folders where downloaders put books</small>
+            <div>
+              <label>eBook Library Folder:</label>
+              <input type="text" id="ebook_dir" name="ebook_dir" value="${lazylibrarian.CONFIG['EBOOK_DIR']}" size="26">
+            </div>
+            <BR>
+          </td>
+          <td>
+             <label>Alternate Import/Export Folder:</label>
+            <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" size="26">
+            <BR>
+            <small>Directory for wishlists and manually importing books<br>
+            <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span></small>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label>eBook Foldername Pattern:</label>
+            <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" size="26">
+            <br>
+            <label>eBook Filename Pattern:</label>
+            <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" size="26">
+            <BR>
+            <small>Options include $Author, $Title, $Series, $SerNum, $SerName, $$, any string
+              <BR>
+              Current limitation: each file has to be in unique subfolder
+            </small>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['DESTINATION_COPY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="destination_copy" name="destination_copy" value=1 ${checked} /><label>Keep original files</label>
+            </div>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['ONE_FORMAT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="one_format" name="one_format" value=1 ${checked} /><label>Import one format</label>
+              <BR>
+              <small>Only import one format of an ebook if multiple formats downloaded
+              </small>
+            </div>
+          </td>
+          <td>
+            <label>Magazine Foldername Pattern:</label>
+            <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" size="26">
+            <br>
+            <label>Magazine Filename Pattern:</label>
+            <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" size="26">
+            <BR>
+            <small>Options include $Title, $IssueDate, any string</small>
+            <small>Current limitation: Issue Filename must contain Title and Date </small>
+            <BR>
+            <%
+                    if lazylibrarian.CONFIG['MAG_RELATIVE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+            <input type="checkbox" id="mag_relative" name="mag_relative" value=1 ${checked} /><label>Magazines inside book folder</label>
+            <BR>
+            <small>Current limitation: If inside book folder, magazine folder must start with _ </small>
+            <br>
+            <%
+                        if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+            <input type="checkbox" id="mag_single" name="mag_single" value=1 ${checked} />
+            <label>  Quick open single issues of magazines</label>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label>Calibredb import program:</label>
+            <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" size="26">
+            <BR>
+            <small>Path to "calibredb" to import books into the library</small>
+            <input type="button" value="Test calibredb" id="testCalibredb" />
+
+            <div class="checkbox">
+            <%
+              if lazylibrarian.CONFIG['CALIBRE_USE_SERVER'] == True:
+                checked = 'checked="checked"'
+              else:
+                checked = ''
+            %>
+            <BR>
+            <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value=1 ${checked} />
+            <label>  Use Calibre Content Server</label>
+            </div>
+            <fieldset id="calibre_options">
+                <label>Calibre Server:</label>
+                <input type="text" id="calibre_server" name="calibre_server" value="${lazylibrarian.CONFIG['CALIBRE_SERVER']}" size="26">
+                <BR>
+                <label>Calibre User:</label>
+                <input type="text" id="calibre_user" name="calibre_user" value="${lazylibrarian.CONFIG['CALIBRE_USER']}" size="26">
+                <BR>
+                <label>Calibre Password:</label>
+                <input type="password" id="calibre_pass" name="calibre_pass" value="${lazylibrarian.CONFIG['CALIBRE_PASS']}" size="26">
+                <BR>
+            </fieldset>
+            <BR>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label>Calibre Auto Add Directory:</label>
+            <input type="text" id="imp_autoadd" name="imp_autoadd" value="${lazylibrarian.CONFIG['IMP_AUTOADD']}" size="26">
+            <BR>
+            <small>Directory for a copy to be placed for auto add process</small>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_autoadd_bookonly" name="imp_autoadd_bookonly" value=1 ${checked} />
+              <label> Autoadd eBook only</label>
+              <BR>
+              <small> Only add eBook, not opf or jpg</small>
+            </div>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['FULL_SCAN'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" name="full_scan" id="fullscan" value=1 ${checked} />
+              <label> Full Scan</label>
+              <br>
+              <small>This will remove entries if ebooks are not found in the download location</small>
+            </div>
+          </td>
+          <td>
+            <label>Cover creation program:</label>
+            <input type="text" placeholder="cover creation program" id="imp_convert" name="imp_convert" value="${lazylibrarian.CONFIG['IMP_CONVERT']}" size="26">
+            <BR>
+            <small>Program for creating magazine covers (see wiki for details)
+              <BR>Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put
+              None  to disable cover creation</small>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_SINGLEBOOK'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_singlebook" name="imp_singlebook" value=1 ${checked} />
+              <label> One book per directory</label>
+              <br>
+              <small>This imports one book per directory, tick if you keep multiple formats of the same book in the same directory</small>
+            </div>
+          </td>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_RENAME'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_rename" name="imp_rename" value=1 ${checked} />
+              <label> Rename existing books</label>
+              <br>
+              <small>This renames existing books to match eBook Filename Pattern</small>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="add_author" name="add_author" value=1 ${checked} />
+              <label> Add Authors</label>
+              <br>
+              <small>This will allow new authors to be added</small>
+            </div>
+          </td>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['ADD_SERIES'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="add_series" name="add_series" value=1 ${checked} />
+              <label> Add Series</label>
+              <br>
+              <small>This will allow new series info to be added</small>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_AUTOSEARCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_autosearch" name="imp_autosearch" value=1 ${checked} />
+              <label> Search when Added</label>
+              <br>
+              <small>This will auto search for books/mags as soon as you add them to the database.<br>
+                Leave unticked to search for them later</small>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label>Missing Book Status:</label>
+            <select name="notfound_status"  style="float:right;">
+              %for nf_status in config['status_list']:
+              <%
+                        selected = ''
+                        if nf_status == lazylibrarian.CONFIG['NOTFOUND_STATUS']:
+                                selected = 'selected="selected"'
+                  %>
+              <option value="${nf_status}" ${selected}>${nf_status}</option>
+              %endfor
+            </select>
+            <br>
+            <small>Status for missing/deleted ebooks</small>
+          </td>
+          <td>
+            <label>New Book Status:</label>
+            <select name="newbook_status"  style="float:right;">
+              %for nb_status in config['status_list']:
+              <%
+                        selected = ''
+                        if nb_status == lazylibrarian.CONFIG['NEWBOOK_STATUS']:
+                                selected = 'selected="selected"'
+                  %>
+              <option value="${nb_status}" ${selected}>${nb_status}</option>
+              %endfor
+            </select>
+            <br>
+            <small>Status for new ebooks by existing authors</small>
+            <div>
+              <br>
+              <label>New Authors Book Status:</label>
+              <select name="newauthor_status"  style="float:right;">
+                %for na_status in config['status_list']:
+                <%
+                        selected = ''
+                        if na_status == lazylibrarian.CONFIG['NEWAUTHOR_STATUS']:
+                                selected = 'selected="selected"'
+                  %>
+                <option value="${na_status}" ${selected}>${na_status}</option>
+                %endfor
+              </select>
+              <br>
+              <small>Status for ebooks by new authors</small>
+            </div>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['NEWAUTHOR_BOOKS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <label>Include other books by new authors:</label>
+              <input type="checkbox" id="newauthor_books" name="newauthor_books" value=1 ${checked} />
+              <br>
+              <small>This will include details for other books by new authors found in wishlists or csv files,<br>
+                or when manually importing a book by a new author</small>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <div class="table_wrapper" style="display:none">
+    <div class="tabs-6">
+      <table class="configtable" summary="Notifications">
+        <tr>
+          <td>
+            <fieldset>
+              <h3>Twitter</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_TWITTER'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_twitter" id="twitter" value="1" ${checked} />
+                <label>Enable Twitter Notifications</label>
+              </div>
+              <div id="twitteroptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="twitter_notify_onsnatch" name="twitter_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="twitter_notify_ondownload" name="twitter_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <input type="button" value="Request Authorization" id="twitterStep1" />
+                </div>
+                <div class="row">
+                  <input type="text" id="twitter_key" value="" size="26" placeholder="Input Authorization Key"/>
+                </div>
+                <div class="row">
+                  <input type="button" value="Verify Key" id="twitterStep2" />
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Twitter" id="testTwitter" />
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>Boxcar2</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_BOXCAR'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_boxcar" id="boxcar" value="1" ${checked} />
+                <label>Enable boxcar Notifications</label>
+              </div>
+              <div id="boxcaroptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="boxcar_notify_onsnatch" name="boxcar_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="boxcar_notify_ondownload" name="boxcar_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <input type="text" id="boxcar_token" name="boxcar_token" value="${lazylibrarian.CONFIG['BOXCAR_TOKEN']}" size="26" placeholder="Boxcar token">
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Boxcar" id="testBoxcar">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>Pushbullet</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_PUSHBULLET'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_pushbullet" id="pushbullet" value="1" ${checked} />
+                <label>Enable Pushbullet Notifications</label>
+              </div>
+              <div id="pushbulletoptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="pushbullet_notify_onsnatch" name="pushbullet_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="pushbullet_notify_ondownload" name="pushbullet_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <input type="text" id="pushbullet_token" name="pushbullet_token" value="${lazylibrarian.CONFIG['PUSHBULLET_TOKEN']}" size="26" placeholder="Pushbullet API">
+                </div>
+                <div class="row">
+                  <input type="text" id="pushbullet_deviceid" name="pushbullet_deviceid" value="${lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']}" size="26" placeholder="Pushbullet DeviceID">
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Pushbullet" id="testPushbullet">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <h3>Pushover</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_PUSHOVER'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_pushover" id="pushover" value="1" ${checked} />
+                <label>Enable Pushover Notifications</label>
+              </div>
+              <div id="pushoveroptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="pushover_onsnatch" name="pushover_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="pushover_ondownload" name="pushover_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <input type="text" id="pushover_apitoken"  name="pushover_apitoken" value="${lazylibrarian.CONFIG['PUSHOVER_APITOKEN']}" size="26" placeholder="Pushover API Token">
+                </div>
+                <div class="row">
+                  <input type="text" id="pushover_keys" name="pushover_keys" value="${lazylibrarian.CONFIG['PUSHOVER_KEYS']}" size="26" placeholder="Pushover Keys">
+                </div>
+                <div class="row">
+                  <input type="text" id="pushover_device" name="pushover_device" value="${lazylibrarian.CONFIG['PUSHOVER_DEVICE']}" size="26" placeholder="Pushover Device">
+                </div>
+                <div class="row">
+                  <input type="text" id="pushover_priority" name="pushover_priority" value="${lazylibrarian.CONFIG['PUSHOVER_PRIORITY']}" size="26" placeholder="Pushover Priority">
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Pushover" id="testPushover">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>AndroidPN</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_ANDROIDPN'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_androidpn" id="androidpn" value="1" ${checked} />
+                <label>Enable AndroidPN Notifications</label>
+              </div>
+              <div id="androidpnoptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="androidpn_notify_onsnatch" name="androidpn_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="androidpn_notify_ondownload" name="androidpn_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" name="androidpn_broadcast" id="androidpn_broadcast" value="1" ${checked} />Broadcast notification
+                </div>
+                <div class="row">
+                  <input type="text" id="androidpn_url" name="androidpn_url" value="${lazylibrarian.CONFIG['ANDROIDPN_URL']}" size="26" placeholder="AndroidPN notification url" />
+                </div>
+                <div class="row" id="androidpn_username">
+                  <input type="text" id="androidpn_username" name="androidpn_username"  value="${lazylibrarian.CONFIG['ANDROIDPN_USERNAME']}" size="26" placeholder="AndroidPN username" />
+                </div>
+                <div class="row">
+                  <input type="button" value="Test AndroidPN" id="testAndroidPN">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>Prowl</h3>
+              <div class="checkbox row">
+                <%
+                    if lazylibrarian.CONFIG['USE_PROWL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_prowl" id="prowl" value="1" ${checked} /><label>Enable Prowl</label>
+              </div>
+              <div id="prowloptions">
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['PROWL_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="prowl_onsnatch" name="prowl_onsnatch" value="1" ${checked} /><label>Notify on snatch?</label>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['PROWL_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="prowl_ondownload" name="prowl_ondownload" value="1" ${checked} /><label>Notify on download?</label>
+                </div>
+                <div class="row">
+                  <label>Prowl API Key</label>
+                  <input type="text" id="prowl_apikey" name="prowl_apikey" value="${lazylibrarian.CONFIG['PROWL_APIKEY']}" size="26">
+                  <br>
+                  <small>Separate multiple api keys with commas</small>
+                </div>
+                <div class="row">
+                  <label>Priority</label>
+                  <select id="prowl_priority" name="prowl_priority">
+                    %for x in [-2,-1,0,1,2]:
+                    <%
+                                            if lazylibrarian.CONFIG['PROWL_PRIORITY'] == x:
+                                                prowl_priority_selected = 'selected'
+                                            else:
+                                                prowl_priority_selected = ''
+
+                                            if x == -2:
+                                                prowl_priority_value = 'Very Low'
+                                            elif x == -1:
+                                                prowl_priority_value = 'Moderate'
+                                            elif x == 0:
+                                                prowl_priority_value = 'Normal'
+                                            elif x == 1:
+                                                prowl_priority_value = 'High'
+                                            else:
+                                                prowl_priority_value = 'Emergency'
+                                        %>
+                    <option value=${x} ${prowl_priority_selected}>${prowl_priority_value}</option>
+                    %endfor
+                  </select>
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Prowl" id="testProwl">
+                </div>
+              </div>
+            </fieldset>
+          </td>
+          <td>
+            <fieldset>
+              <BR>
+              <h3>Telegram</h3>
+              <div class="checkbox row">
+                <%
+                    if lazylibrarian.CONFIG['USE_TELEGRAM'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_telegram" id="telegram" value="1" ${checked} /><label>Enable Telegram</label>
+              </div>
+              <div id="telegramoptions">
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TELEGRAM_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="telegram_onsnatch" name="telegram_onsnatch" value="1" ${checked} /><label>Notify on snatch?</label>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TELEGRAM_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="telegram_ondownload" name="telegram_ondownload" value="1" ${checked} /><label>Notify on download?</label>
+                </div>
+                <div class="row">
+                  <label>Telegram Token</label>
+                  <input type="text" id="telegram_token" name="telegram_token" value="${lazylibrarian.CONFIG['TELEGRAM_TOKEN']}" size="26">
+                  <br>
+                </div>
+                <div class="row">
+                  <label>Telegram UserID</label>
+                  <input type="text" id="telegram_userid" name="telegram_userid" value="${lazylibrarian.CONFIG['TELEGRAM_USERID']}" size="26">
+                  <br>
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Telegram" id="testTelegram">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>NotifyMyAndroid</h3>
+              <div class="checkbox row">
+                <%
+                    if lazylibrarian.CONFIG['USE_NMA'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_nma" id="nma" value="1" ${checked} /><label>Enable NotifyMyAndroid</label>
+              </div>
+              <div id="nmaoptions">
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['NMA_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="nma_onsnatch" name="nma_onsnatch" value="1" ${checked} /><label>Notify on snatch?</label>
+                </div>
+                <div class="row checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['NMA_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="nma_ondownload" name="nma_ondownload" value="1" ${checked} /><label>Notify on download?</label>
+                </div>
+                <div class="row">
+                  <label>NotifyMyAndroid API Key</label>
+                  <input type="text" id="nma_apikey" name="nma_apikey" value="${lazylibrarian.CONFIG['NMA_APIKEY']}" size="26">
+                  <br>
+                  <small>Separate multiple api keys with commas</small>
+                </div>
+                <div class="row">
+                  <label>Priority</label>
+                  <select id="nma_priority" name="nma_priority">
+                    %for x in [-2,-1,0,1,2]:
+                    <%
+                                            if lazylibrarian.CONFIG['NMA_PRIORITY'] == x:
+                                                nma_priority_selected = 'selected'
+                                            else:
+                                                nma_priority_selected = ''
+
+                                            if x == -2:
+                                                nma_priority_value = 'Very Low'
+                                            elif x == -1:
+                                                nma_priority_value = 'Moderate'
+                                            elif x == 0:
+                                                nma_priority_value = 'Normal'
+                                            elif x == 1:
+                                                nma_priority_value = 'High'
+                                            else:
+                                                nma_priority_value = 'Emergency'
+                                        %>
+                    <option value=${x} ${nma_priority_selected}>${nma_priority_value}</option>
+                    %endfor
+                  </select>
+                </div>
+                <div class="row">
+                  <input type="button" value="Test NMA" id="testNMA">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>Slack</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_SLACK'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_slack" id="slack" value="1" ${checked} />
+                <label>Enable Slack Notifications</label>
+              </div>
+              <div id="slackoptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="slack_notify_onsnatch" name="slack_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="slack_notify_ondownload" name="slack_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" size="26" placeholder="Slack Webhook Token(everything after https://hooks.slack.com/services/)">
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Slack" id="testSlack">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>Email</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_EMAIL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_email" id="email" value="1" ${checked} />
+                <label>Enable Email Notifications</label>
+              </div>
+              <div id="emailoptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="email_notify_onsnatch" name="email_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="email_notify_ondownload" name="email_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="email_sendfile_ondownload" name="email_sendfile_ondownload" value="1" ${checked} />Attach book on download
+                </div>
+                <div class="row">
+                  <input type="text" id="email_from" name="email_from" value="${lazylibrarian.CONFIG['EMAIL_FROM']}" size="26" placeholder="Email From">
+                </div>
+                <div class="row">
+                  <input type="text" id="email_to" name="email_to" value="${lazylibrarian.CONFIG['EMAIL_TO']}" size="26" placeholder="Email To">
+                </div>
+                <div class="row">
+                  <input type="text" id="email_smtp_server" name="email_smtp_server" value="${lazylibrarian.CONFIG['EMAIL_SMTP_SERVER']}" size="26" placeholder="SMTP Server">
+                </div>
+                <div class="row">
+                  <input type="text" id="email_smtp_user" name="email_smtp_user" value="${lazylibrarian.CONFIG['EMAIL_SMTP_USER']}" size="26" placeholder="SMTP User">
+                </div>
+                <div class="row">
+                  <input type="password" id="email_smtp_password" name="email_smtp_password" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD']}" size="26" placeholder="SMTP Password">
+                </div>
+                <div class="row">
+                  <input type="text" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PORT']}" size="26" placeholder="SMTP Port">
+                </div>
+                <div class="row">
+                  <%
+                            if lazylibrarian.CONFIG['EMAIL_SSL'] == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                            %>
+                  <input type="checkbox" id="email_ssl" name="email_ssl" value="1" ${checked} />SSL
+                </div>
+                <div class="row">
+                  <%
+                            if lazylibrarian.CONFIG['EMAIL_TLS'] == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                            %>
+                  <input type="checkbox" id="email_tls" name="email_tls" value="1" ${checked} />TLS
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Email" id="testEmail">
+                </div>
+              </div>
+            </fieldset>
+            <fieldset>
+              <BR>
+              <h3>Custom</h3>
+              <div class="row checkbox">
+                <%
+                    if lazylibrarian.CONFIG['USE_SLACK'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <input type="checkbox" name="use_custom" id="custom" value="1" ${checked} />
+                <label>Enable Custom Notifications</label>
+              </div>
+              <div id="customoptions">
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="custom_notify_onsnatch" name="custom_notify_onsnatch" value="1" ${checked} />Notify on snatch
+                </div>
+                <div class="row">
+                  <%
+                    if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <input type="checkbox" id="custom_notify_ondownload" name="custom_notify_ondownload" value="1" ${checked} />Notify on download
+                </div>
+                <div class="row">
+                  <input type="text" id="custom_script" name="custom_script" value="${lazylibrarian.CONFIG['CUSTOM_SCRIPT']}" size="26" placeholder="Custom script">
+                </div>
+                <div class="row">
+                  <input type="button" value="Test Custom" id="testCustom">
+                </div>
+              </div>
+            </fieldset>
+          </td>
+        </table>
+      </div>
+    </div>
+    <div class="table_wrapper" style="display:none">
+      <div class="tabs-7">
+        <table class="configtable" summary="Search Categories">
+          <tr>
+            <td>
+              <fieldset>
+                <h3>Provider Search Categories</h3>
+                <br>
+                You only need to change these settings if auto-detection fails or returns incorrect values.
+                If you make any alterations, tick the lock button to prevent reloading values from the provider.
+                %for provider in lazylibrarian.NEWZNAB_PROV:
+                <%
+                    if provider['HOST'] == "":
+                        hidden = 'hidden="hidden"'
+                    else:
+                        hidden = ''
+                    %>
+                <%
+                    if provider['MANUAL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <h3><br>
+                  ${provider['HOST']}</h3>
+                <input type="checkbox" id="newznab[${loop.index}][manual]" name="newznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
+                <label ${hidden}> Tick to lock settings</label>
+                <input type="text" id="newznab[${loop.index}][name]" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="newznab[${loop.index}][updated]" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                <label ${hidden}><br>
+                  Extended Search</label>
+                <input type="text" placeholder="Enter Extended Here" id="newznab[${loop.index}][extended]" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  General Search</label>
+                <input type="text" placeholder="Enter General Search Here" id="newznab[${loop.index}][generalsearch]" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Book Categories</label>
+                <input type="text" placeholder="Enter Book Categories Here" id="newznab[${loop.index}][bookcat]" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Book Search</label>
+                <input type="text" placeholder="Enter Book Search Here" id="newznab[${loop.index}][booksearch]" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Magazine Categories</label>
+                <input type="text" placeholder="Enter Mag Categories Here" id="newznab[${loop.index}][magcat]" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Magazine Search</label>
+                <input type="text" placeholder="Enter Mag Search Here" id="newznab[${loop.index}][magsearch]" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
+                %endfor
+                %for provider in lazylibrarian.TORZNAB_PROV:
+                <%
+                    if provider['HOST'] == "":
+                        hidden = 'hidden="hidden"'
+                    else:
+                        hidden = ''
+                    %>
+                <%
+                    if provider['MANUAL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                <h3><br>
+                  ${provider['HOST']}</h3>
+                <input type="checkbox" id="torznab[${loop.index}][manual]" name="torznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
+                <label ${hidden}> Tick to lock settings</label>
+                <input type="text" id="torznab[${loop.index}][name]" name="torznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="torznab[${loop.index}][updated]" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                <label ${hidden}><br>
+                  Extended Search</label>
+                <input type="text" placeholder="Enter Extended Here" id="torznab[${loop.index}][extended]" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  General Search</label>
+                <input type="text" placeholder="Enter General Search Here" id="torznab[${loop.index}][generalsearch]" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Book Categories</label>
+                <input type="text" placeholder="Enter Book Categories Here" id="torznab[${loop.index}][bookcat]" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Book Search</label>
+                <input type="text" placeholder="Enter Book Search Here" id="torznab[${loop.index}][booksearch]" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Magazine Categories</label>
+                <input type="text" placeholder="Enter Mag Categories Here" id="torznab[${loop.index}][magcat]" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+                <label ${hidden}><br>
+                  Magazine Search</label>
+                <input type="text" placeholder="Enter Mag Search Here" id="torznab[${loop.index}][magsearch]" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
+                %endfor
+              </fieldset>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="table_wrapper" style="display:none">
+      <div class="tabs-8">
+        <table class="configtable" summary="Word Filters">
+          <tr>
+            <td>
+              <fieldset>
+                <h3>Book Reject List</h3>
+                Default: audiobook, mp3
+                <br>
+                <input type="text" id="reject_words" name="reject_words" placeholder="Reject Word List" value="${lazylibrarian.CONFIG['REJECT_WORDS']}" size="20">
+                <br>
+                <small>Comma separated list of words to reject:<br>
+                  Search results with any of these words in the title will be ignored
+                  <BR></small>
+                <BR><BR>
+              </fieldset>
+              <fieldset>
+                <h3>Book Size Limits</h3>
+                Default: 0
+                <br>
+                <input type="text" id="reject_maxsize" name="reject_maxsize" placeholder="Reject Maximum Size" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" size="20">
+                <br>
+                <small>Book maximum size (Mb):<br>
+                  Search results larger than this will be rejected, set to 0 to disable
+                  <BR></small>
+                <br>
+                <input type="text" id="reject_minsize" name="reject_minsize" placeholder="Reject Minimum Size" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" size="20">
+                <br>
+                <small>Book minimum size (Mb):<br>
+                  Search results smaller than this will be rejected, set to 0 to disable
+                  <BR></small>
+                <BR><BR>
+              </fieldset>
+              <fieldset>
+                <h3>Magazine Reject List (all titles)</h3>
+                Default: None
+                <br>
+                <input type="text" id="reject_mags" name="reject_mags" placeholder="Reject Word List" value="${lazylibrarian.CONFIG['REJECT_MAGS']}" size="20">
+                <br>
+                <small>Comma separated list of words to reject:<br>
+                  Search results with any of these words in the title will be ignored
+                  <BR></small>
+                <BR><BR>
+              </fieldset>
+              <fieldset>
+                <h3>Magazine Size Limits</h3>
+                Default: 0
+                <br>
+                <input type="text" id="reject_magsize" name="reject_magsize" placeholder="Reject Maximum Size" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" size="20">
+                <br>
+                <small>Magazine maximum size (Mb):<br>
+                  Search results larger than this will be rejected, set to 0 to disable
+                  <BR></small>
+                <br>
+                <input type="text" id="reject_magmin" name="reject_magmin" placeholder="Reject Minimum Size" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" size="20">
+                <br>
+                <small>Magazine minimum size (Mb):<br>
+                  Search results smaller than this will be rejected, set to 0 to disable
+                  <BR></small>
+                <BR><BR>
+              </fieldset>
+            </td>
+            <td>
+              <fieldset>
+                <h3>Magazine Reject Lists (per title)</h3>
+                Default: None
+                <br>
+                %for mag in config['magazines_list']:
+                <label>${mag['Title']}</label>
+                <input type="text" placeholder="Reject Word List" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" size="20">
+                <br>
+                <input type="text" placeholder="Search expression" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" size="20">
+                <br>
+                %endfor
+                <BR><BR>
+              </fieldset>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div class="table_wrapper_button">
+      <p><input type="submit" value="Save changes" id="add"></p>
+    </div>
+    <p>&nbsp;</p>
+    <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  : Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}<br>
+      Current Version: ${lazylibrarian.CONFIG['CURRENT_VERSION']}  : Latest  Version: ${lazylibrarian.CONFIG['LATEST_VERSION']}</p>
+  </div>
+</form>
+</%def>
+<%def name="javascriptIncludes()">
+  <script>
+    function initThisPage()
+    {
+        if ($("#calibre_use_server").is(":checked"))
+            {
+                    $("#calibre_options").show();
+            }
+            else
+            {
+                    $("#calibre_options").hide();
+            }
+
+        $("#calibre_use_server").click(function(){
+                if ($("#calibre_use_server").is(":checked"))
+                {
+                        $("#calibre_options").slideDown();
+                }
+                else
+                {
+                        $("#calibre_options").slideUp();
+                }
+        });
+
+        if ($("#https_enabled").is(":checked"))
+            {
+                    $("#https_options").show();
+            }
+            else
+            {
+                    $("#https_options").hide();
+            }
+
+        $("#https_enabled").click(function(){
+                if ($("#https_enabled").is(":checked"))
+                {
+                        $("#https_options").slideDown();
+                }
+                else
+                {
+                        $("#https_options").slideUp();
+                }
+        });
+
+        if ($("#api_enabled").is(":checked"))
+            {
+                    $("#api_options").show();
+            }
+            else
+            {
+                    $("#api_options").hide();
+            }
+
+        $("#api_enabled").click(function(){
+                if ($("#api_enabled").is(":checked"))
+                {
+                        $("#api_options").slideDown();
+                }
+                else
+                {
+                        $("#api_options").slideUp();
+                }
+        });
+
+        if ($("#tor_downloader_blackhole").is(":checked"))
+            {
+                    $("#tor_blackhole_options").show();
+            }
+        else
+            {
+                    $("#tor_blackhole_options").hide();
+            }
+
+        $("#tor_downloader_blackhole").click(function(){
+                if ($("#tor_downloader_blackhole").is(":checked"))
+                {
+                        $("#tor_blackhole_options").slideDown();
+                }
+                else
+                {
+                        $("#tor_blackhole_options").slideUp();
+                }
+        });
+
+        if ($("#tor_downloader_deluge").is(":checked"))
+            {
+                    $("#deluge_options").show();
+            }
+        else
+            {
+                    $("#deluge_options").hide();
+            }
+        $("#tor_downloader_deluge").click(function(){
+                if ($("#tor_downloader_deluge").is(":checked"))
+                {
+                        $("#deluge_options").slideDown();
+                }
+                else
+                {
+                        $("#deluge_options").slideUp();
+                }
+        });
+
+        if ($("#tor_downloader_transmission").is(":checked"))
+            {
+                    $("#transmission_options").show();
+            }
+        else
+            {
+                    $("#transmission_options").hide();
+            }
+        $("#tor_downloader_transmission").click(function(){
+                if ($("#tor_downloader_transmission").is(":checked"))
+                {
+                        $("#transmission_options").slideDown();
+                }
+                else
+                {
+                        $("#transmission_options").slideUp();
+                }
+        });
+
+        if ($("#tor_downloader_rtorrent").is(":checked"))
+            {
+                    $("#rtorrent_options").show();
+            }
+        else
+            {
+                    $("#rtorrent_options").hide();
+            }
+
+        $("#tor_downloader_rtorrent").click(function(){
+                if ($("#tor_downloader_rtorrent").is(":checked"))
+                {
+                        $("#rtorrent_options").slideDown();
+                }
+                else
+                {
+                        $("#rtorrent_options").slideUp();
+                }
+        });
+
+        if ($("#tor_downloader_utorrent").is(":checked"))
+            {
+                    $("#utorrent_options").show();
+            }
+        else
+            {
+                    $("#utorrent_options").hide();
+            }
+
+        $("#tor_downloader_utorrent").click(function(){
+                if ($("#tor_downloader_utorrent").is(":checked"))
+                {
+                        $("#utorrent_options").slideDown();
+                }
+                else
+                {
+                        $("#utorrent_options").slideUp();
+                }
+        });
+
+        if ($("#tor_downloader_qbittorrent").is(":checked"))
+            {
+                    $("#qbittorrent_options").show();
+            }
+        else
+            {
+                    $("#qbittorrent_options").hide();
+            }
+
+        $("#tor_downloader_qbittorrent").click(function(){
+                if ($("#tor_downloader_qbittorrent").is(":checked"))
+                {
+                        $("#qbittorrent_options").slideDown();
+                }
+                else
+                {
+                        $("#qbittorrent_options").slideUp();
+                }
+        });
+
+        if ($("#nzb_downloader_blackhole").is(":checked"))
+            {
+                    $("#nzb_blackhole_options").show();
+            }
+        else
+            {
+                    $("#nzb_blackhole_options").hide();
+            }
+
+        $("#nzb_downloader_blackhole").click(function(){
+                if ($("#nzb_downloader_blackhole").is(":checked"))
+                {
+                        $("#nzb_blackhole_options").slideDown();
+                }
+                else
+                {
+                        $("#nzb_blackhole_options").slideUp();
+                }
+        });
+
+        if ($("#nzb_downloader_sabnzbd").is(":checked"))
+            {
+                    $("#sabnzbd_options").show();
+            }
+        else
+            {
+                    $("#sabnzbd_options").hide();
+            }
+        $("#nzb_downloader_sabnzbd").click(function(){
+                if ($("#nzb_downloader_sabnzbd").is(":checked"))
+                {
+                        $("#sabnzbd_options").slideDown();
+                }
+                else
+                {
+                        $("#sabnzbd_options").slideUp();
+                }
+        });
+
+        if ($("#nzb_downloader_nzbget").is(":checked"))
+            {
+                    $("#nzbget_options").show();
+            }
+        else
+            {
+                    $("#nzbget_options").hide();
+            }
+        $("#nzb_downloader_nzbget").click(function(){
+                if ($("#nzb_downloader_nzbget").is(":checked"))
+                {
+                        $("#nzbget_options").slideDown();
+                }
+                else
+                {
+                        $("#nzbget_options").slideUp();
+                }
+        });
+
+        if ($("#use_synology").is(":checked"))
+            {
+                    $("#synology_options").show();
+            }
+        else
+            {
+                    $("#synology_options").hide();
+            }
+        $("#use_synology").click(function(){
+                if ($("#use_synology").is(":checked"))
+                {
+                        $("#synology_options").slideDown();
+                }
+                else
+                {
+                        $("#synology_options").slideUp();
+                }
+        });
+
+        if ($("#twitter").is(":checked"))
+                {
+                        $("#twitteroptions").show();
+                }
+        else
+                {
+                        $("#twitteroptions").hide();
+                }
+
+        $("#twitter").click(function(){
+                if ($("#twitter").is(":checked"))
+                {
+                        $("#twitteroptions").slideDown();
+                }
+                else
+                {
+                        $("#twitteroptions").slideUp();
+                }
+        });
+
+        if ($("#boxcar").is(":checked"))
+                {
+                        $("#boxcaroptions").show();
+                }
+        else
+                {
+                        $("#boxcaroptions").hide();
+                }
+
+        $("#boxcar").click(function(){
+                if ($("#boxcar").is(":checked"))
+                {
+                        $("#boxcaroptions").slideDown();
+                }
+                else
+                {
+                        $("#boxcaroptions").slideUp();
+                }
+        });
+
+        if ($("#fullscan").is(":checked"))
+                {
+                        $("#fullscanoptions").show();
+                }
+        else
+                {
+                        $("#fullscanoptions").hide();
+                }
+
+        $("#fullscan").click(function(){
+                if ($("#fullscan").is(":checked"))
+                {
+                        $("#fullscanoptions").slideDown();
+                }
+                else
+                {
+                        $("#fullscanoptions").slideUp();
+                }
+        });
+
+        if ($("#pushbullet").is(":checked"))
+                {
+                        $("#pushbulletoptions").show();
+                }
+        else
+                {
+                        $("#pushbulletoptions").hide();
+                }
+
+        $("#pushbullet").click(function(){
+                if ($("#pushbullet").is(":checked"))
+                {
+                        $("#pushbulletoptions").slideDown();
+                }
+                else
+                {
+                        $("#pushbulletoptions").slideUp();
+                }
+        });
+
+        if ($("#slack").is(":checked"))
+                {
+                        $("#slackoptions").show();
+                }
+        else
+                {
+                        $("#slackoptions").hide();
+                }
+
+        $("#slack").click(function(){
+                if ($("#slack").is(":checked"))
+                {
+                        $("#slackoptions").slideDown();
+                }
+                else
+                {
+                        $("#slackoptions").slideUp();
+                }
+        });
+
+        if ($("#email").is(":checked"))
+                {
+                        $("#emailoptions").show();
+                }
+        else
+                {
+                        $("#emailoptions").hide();
+                }
+
+        $("#email").click(function(){
+                if ($("#email").is(":checked"))
+                {
+                        $("#emailoptions").slideDown();
+                }
+                else
+                {
+                        $("#emailoptions").slideUp();
+                }
+        });
+
+        if ($("#pushover").is(":checked"))
+                {
+                        $("#pushoveroptions").show();
+                }
+        else
+                {
+                        $("#pushoveroptions").hide();
+                }
+        $("#pushover").click(function(){
+                if ($("#pushover").is(":checked"))
+                {
+                        $("#pushoveroptions").slideDown();
+                }
+                else
+                {
+                        $("#pushoveroptions").slideUp();
+                }
+        });
+
+        if ($("#androidpn").is(":checked"))
+                {
+                        $("#androidpnoptions").show();
+                }
+        else
+                {
+                        $("#androidpnoptions").hide();
+                }
+        $("#androidpn").click(function(){
+                if ($("#androidpn").is(":checked"))
+                {
+                    $("#androidpnoptions").slideDown();
+                }
+                else
+                {
+                    $("#androidpnoptions").slideUp();
+                }
+        });
+
+        if ($("#androidpn_broadcast").is(":checked"))
+                {
+                        $("#androidpn_username").hide();
+                }
+        else
+                {
+                        $("#androidpn_username").show();
+                }
+        $("#androidpn_broadcast").click(function(){
+                if ($("#androidpn_broadcast").is(":checked"))
+                {
+                    $("#androidpn_username").slideUp();
+                }
+                else
+                {
+                    $("#androidpn_username").slideDown();
+                }
+        });
+
+            if ($("#nma").is(":checked"))
+                    {
+                            $("#nmaoptions").show();
+                    }
+            else
+                    {
+                            $("#nmaoptions").hide();
+                    }
+
+            $("#nma").click(function(){
+                    if ($("#nma").is(":checked"))
+                    {
+                            $("#nmaoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#nmaoptions").slideUp();
+                    }
+            });
+
+            if ($("#prowl").is(":checked"))
+                    {
+                            $("#prowloptions").show();
+                    }
+            else
+                    {
+                            $("#prowloptions").hide();
+                    }
+
+            $("#prowl").click(function(){
+                    if ($("#prowl").is(":checked"))
+                    {
+                            $("#prowloptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#prowloptions").slideUp();
+                    }
+            });
+
+            if ($("#telegram").is(":checked"))
+                    {
+                            $("#telegramoptions").show();
+                    }
+            else
+                    {
+                            $("#prowloptions").hide();
+                    }
+
+            $("#telegram").click(function(){
+                    if ($("#telegram").is(":checked"))
+                    {
+                            $("#telegramoptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#telegramoptions").slideUp();
+                    }
+            });
+
+        $('#generateAPI').click(function () {
+            $.get("generateAPI",
+                function (data) { });
+
+        });
+
+        $('#show_Jobs').click(function () {
+            $.get("show_Jobs",
+                function (data) { alert(data); });
+
+        });
+
+        $('#restart_Jobs').click(function () {
+            $.get("restart_Jobs",
+                function (data) { alert(data); });
+
+        });
+
+        $('#stop_Jobs').click(function () {
+            $.get("stop_Jobs",
+                function (data) { alert(data); });
+
+        });
+
+        $('#testSABnzbd').click(function () {
+            var host = $.trim($("#sab_host").val());
+            var port = $.trim($("#sab_port").val());
+            var user = $.trim($("#sab_user").val());
+            var pwd = $.trim($("#sab_pass").val());
+            var api = $.trim($("#sab_api").val());
+            var cat = $.trim($("#sab_cat").val());
+            var subdir = $.trim($("#sab_subdir").val());
+            $.get("testSABnzbd", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'api': api, 'cat': cat, 'subdir': subdir},
+                function (data) { alert(data); });
+        });
+
+        $('#testNZBget').click(function () {
+            var host = $("#nzbget_host").val();
+            var port = $.trim($("#nzbget_port").val());
+            var user = $.trim($("#nzbget_user").val());
+            var pwd = $.trim($("#nzbget_pass").val());
+            var cat = $.trim($("#nzbget_category").val());
+            var pri = $.trim($("#nzbget_priority").val());
+            $.get("testNZBget", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'cat': cat, 'pri': pri},
+                function (data) { alert(data); });
+        });
+
+        $('#testSynology').click(function () {
+            var host = $.trim($("#synology_host").val());
+            var port = $.trim($("#synology_port").val());
+            var user = $.trim($("#synology_user").val());
+            var pwd = $.trim($("#synology_pass").val());
+            var dir = $.trim($("#synology_dir").val());
+            $.get("testSynology", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'dir': dir},
+                function (data) { alert(data); });
+        });
+
+        $('#testDeluge').click(function () {
+            var host = $.trim($("#deluge_host").val());
+            var port = $.trim($("#deluge_port").val());
+            var user = $.trim($("#deluge_user").val());
+            var pwd = $.trim($("#deluge_pass").val());
+            var label = $.trim($("#deluge_label").val());
+            $.get("testDeluge", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'label': label},
+                function (data) { alert(data); });
+        });
+
+        $('#testTransmission').click(function () {
+            var host = $.trim($("#transmission_host").val());
+            var port = $.trim($("#transmission_port").val());
+            var user = $.trim($("#transmission_user").val());
+            var pwd = $.trim($("#transmission_pass").val());
+            $.get("testTransmission", {'host': host, 'port': port, 'user': user, 'pwd': pwd},
+                function (data) { alert(data); });
+        });
+
+        $('#testqBittorrent').click(function () {
+            var host = $.trim($("#qbittorrent_host").val());
+            var port = $.trim($("#qbittorrent_port").val());
+            var user = $.trim($("#qbittorrent_user").val());
+            var pwd = $.trim($("#qbittorrent_pass").val());
+            var label = $.trim($("#qbittorrent_label").val());
+            $.get("testqBittorrent", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'label': label},
+                function (data) { alert(data); });
+        });
+
+        $('#testuTorrent').click(function () {
+            var host = $.trim($("#utorrent_host").val());
+            var port = $.trim($("#utorrent_port").val());
+            var user = $.trim($("#utorrent_user").val());
+            var pwd = $.trim($("#utorrent_pass").val());
+            var label = $.trim($("#utorrent_label").val());
+            $.get("testuTorrent", {'host': host, 'port': port, 'user': user, 'pwd': pwd, 'label': label},
+                function (data) { alert(data); });
+        });
+
+        $('#testrTorrent').click(function () {
+            var host = $.trim($("#rtorrent_host").val());
+            var dir = $.trim($("#rtorrent_dir").val());
+            var user = $.trim($("#rtorrent_user").val());
+            var pwd = $.trim($("#rtorrent_pass").val());
+            var label = $.trim($("#rtorrent_label").val());
+            $.get("testrTorrent", {'host': host, 'dir': dir, 'user': user, 'pwd': pwd, 'label': label},
+                function (data) { alert(data); });
+        });
+
+        $('#twitterStep1').click(function () {
+            $('#testTwitter-result').html('');
+            $.get("twitterStep1", function (data) {window.open(data); })
+                .done(function () { $('#testTwitter-result').html('<b>Step1:</b> Confirm Authorization'); });
+        });
+
+        $('#twitterStep2').click(function () {
+            $('#testTwitter-result').html('');
+            var twitter_key = $("#twitter_key").val();
+            $.get("twitterStep2", {'key': twitter_key},
+                function (data) { $('#testTwitter-result').html(data); });
+        });
+
+        $('#testTwitter').click(function () {
+            $.get("testTwitter",
+                function (data) { $('#testTwitter-result').html(data); });
+        });
+
+        $('#testBoxcar').click(function () {
+            var token = $.trim($("#boxcar_token").val());
+            $.get("testBoxcar", {'token': token},
+                function (data) { alert(data); });
+        });
+
+        $('#testPushbullet').click(function () {
+            var token = $.trim($("#pushbullet_token").val());
+            var device = $.trim($("#pushbullet_deviceid").val());
+            $.get("testPushbullet", {'token': token, 'device': device},
+                function (data) { alert(data); });
+        });
+
+        $('#testCustom').click(function () {
+            var script = $.trim($("#custom_script").val());
+            $.get("testCustom", {'script': script},
+                function (data) { alert(data); });
+        });
+
+        $('#testSlack').click(function () {
+            var token = $.trim($("#slack_token").val());
+            $.get("testSlack", {'token': token},
+                function (data) { alert(data); });
+        });
+
+        $('#testEmail').click(function () {
+            var tls = ($("#email_tls").prop('checked') == true) ? 'True' : 'False';
+            var ssl = ($("#email_ssl").prop('checked') == true) ? 'True' : 'False';
+            var emailfrom = $.trim($("#email_from").val());
+            var emailto = $.trim($("#email_to").val());
+            var server = $.trim($("#email_smtp_server").val());
+            var user = $.trim($("#email_smtp_user").val());
+            var password = $.trim($("#email_smtp_password").val());
+            var port = $.trim($("#email_smtp_port").val());
+            $.get("testEmail", {'tls': tls, 'ssl': ssl, 'emailfrom': emailfrom, 'emailto': emailto, 'server': server, 'user': user, 'password': password, 'port': port},
+                function (data) { alert(data); });
+        });
+
+        $('#testPushover').click(function () {
+            var apitoken = $.trim($("#pushover_apitoken").val());
+            var keys = $.trim($("#pushover_keys").val());
+            var priority = $.trim($("#pushover_priority").val());
+            var device = $.trim($("#pushover_device").val());
+            $.get("testPushover", {'apitoken': apitoken, 'keys': keys, 'priority': priority, 'device': device},
+                function (data) { alert(data); });
+        });
+
+        $('#testProwl').click(function () {
+            var apikey = $.trim($("#prowl_apikey").val());
+            var priority = $.trim($("#prowl_priority").val());
+            $.get("testProwl", {'apikey': apikey, 'priority': priority},
+                function (data) { alert(data); });
+        });
+
+        $('#testTelegram').click(function () {
+            var token = $.trim($("#telegram_token").val());
+            var userid = $.trim($("#telegram_userid").val());
+            $.get("testTelegram", {'token': token, 'userid': userid},
+                function (data) { window.alert(data) });
+        });
+
+        $('#testNMA').click(function () {
+            var apikey = $.trim($("#nma_apikey").val());
+            var priority = $.trim($("#nma_priority").val());
+            $.get("testNMA", {'apikey': apikey, 'priority': priority},
+                function (data) { alert(data); });
+        });
+
+        $("#testAndroidPN").click(function () {
+            var androidpn_url = $.trim($("#androidpn_url").val());
+            var androidpn_username = $.trim($("#androidpn_username").val());
+            var androidpn_broadcast = ($("#androidpn_broadcast").prop('checked') == true) ? 'Y' : 'N';
+            $.get("testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast},
+                function (data) { alert(data); });
+        });
+
+        $('#testCalibredb').click(function () {
+            var prg = $.trim($("#imp_calibredb").val());
+            $.get("testCalibredb", { 'prg': prg},
+                function (data) { window.alert(data) });
+        });
+
+        // when the page first loads, hide all tab headers and panels
+        $('#tabs ul li').removeClass('active');
+        $('.table_wrapper').hide();
+        // then show the one we want
+        var tabnum = $("#current_tab").val()
+        var tabid = $(".tabs-" + tabnum);
+        $(tabid).parent().show();
+        var tabid = $("#" + tabnum);
+        tabid.addClass('active');
+
+        // when a tab is clicked
+        $("li[role='presentation']").click(function(){
+            // store current tab for python
+            var tabnum = $(this).attr('id');
+            $("#current_tab").val(tabnum);
+            // hide all tab headers and panels
+            $('#tabs ul li').removeClass('active');
+            $('.table_wrapper').hide();
+            // then show the one we want
+            var tabid = $(".tabs-" + tabnum);
+            tabid.parent().show();
+            var tabid = $("#" + tabnum);
+            tabid.addClass('active');
+        })
+
+    }
+
+    $(document).ready(function() {
+        initThisPage();
+    });
+  </script>
+</%def>

@@ -15,12 +15,16 @@
 
 import lazylibrarian
 import lib.requests as requests
+
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lazylibrarian.formatter import unaccented
 
 
 class SlackNotifier:
+
+    def __init__(self):
+        pass
 
     @staticmethod
     def _sendSlack(message=None, event=None, slack_token=None,
@@ -82,13 +86,15 @@ class SlackNotifier:
 
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH']:
-            self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH], slack_token=None)
+            self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
 
     def notify_download(self, title):
         if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD']:
-            self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], slack_token=None)
+            self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian", event=title, slack_token=None, force=True)
+        return self._notify(message="This is a test notification from LazyLibrarian",
+                            event=title, force=True)
+
 
 notifier = SlackNotifier

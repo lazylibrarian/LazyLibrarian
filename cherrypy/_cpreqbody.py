@@ -1003,7 +1003,8 @@ class RequestBody(Entity):
             # 'str').
             if sys.version_info < (3, 0):
                 if isinstance(key, unicode):
-                    key = key.encode('ISO-8859-1')
+                    key = key.encode('utf-8')
+                    #key = key.encode('ISO-8859-1')
 
             if key in request_params:
                 if not isinstance(request_params[key], list):

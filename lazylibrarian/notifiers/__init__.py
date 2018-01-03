@@ -18,13 +18,15 @@
 
 import androidpn
 import boxcar
+import custom_notify
 import email_notify
 import nma
+import prowl
 import pushbullet
 import pushover
 import slack
 import tweet
-import custom_notify
+import telegram
 from lazylibrarian import logger
 
 # online
@@ -33,9 +35,11 @@ boxcar_notifier = boxcar.BoxcarNotifier()
 pushbullet_notifier = pushbullet.PushbulletNotifier()
 pushover_notifier = pushover.PushoverNotifier()
 androidpn_notifier = androidpn.AndroidPNNotifier()
+prowl_notifier = prowl.Prowl_Notifier()
 nma_notifier = nma.NMA_Notifier()
 slack_notifier = slack.SlackNotifier()
 email_notifier = email_notify.EmailNotifier()
+telegram_notifier = telegram.Telegram_Notifier()
 #
 custom_notifier = custom_notify.CustomNotifier()
 
@@ -45,10 +49,13 @@ notifiers = [
     pushbullet_notifier,
     pushover_notifier,
     androidpn_notifier,
+    prowl_notifier,
     nma_notifier,
     slack_notifier,
-    email_notifier
+    email_notifier,
+    telegram_notifier
 ]
+
 
 def custom_notify_download(bookid):
     try:
@@ -63,12 +70,17 @@ def custom_notify_snatch(bookid):
     except Exception as e:
         logger.warn('Custom notify snatch failed: %s' % str(e))
 
-def notify_download(title):
+
+def notify_download(title, bookid=None):
     try:
         for n in notifiers:
-            n.notify_download(title)
+            if 'EmailNotifier' in str(n):
+                n.notify_download(title, bookid=bookid)
+            else:
+                n.notify_download(title)
     except Exception as e:
         logger.warn('Notify download failed: %s' % str(e))
+
 
 def notify_snatch(title):
     try:

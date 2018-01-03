@@ -2,53 +2,46 @@
 <%!
     import lazylibrarian
 %>
-
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <div id="subhead_menu">
-        </div>
+  <div id="subhead_container">
+    <div id="subhead_menu">
     </div>
+  </div>
 </%def>
-
 <%def name="body()">
-    <h1>${title}</h1>
-    <div class="table-responsive">
-        <table class="display table table-striped table-hover table-bordered" id="book_table">
-            <thead>
-                <tr>
-                    <th class="bookid">Match</th>
-                    <th class="filename">Title</th>
-                    <th class="provider">Provider</th>
-                    <th class="size text-right">Size</th>
-                    <th class="dateadded">Date</th>
-                    <th class="status">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-            %for item in results:
-                <tr>
-                    <td class="bookid">${item['score']} %</td>
-                    <td class="filename">${item['title']}</td>
-                    <td class="provider"><a href="${item['url']}">${item['provider']}</a></td>
-                    <td class="size text-right">${item['size']}</td>
-                    <td class="dateadded">${item['date']}</td>
-                    <td class="status text-center"> <a class="btn btn-xs btn-info button"
-                    href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&url=${item['url']}"
-                    title="Snatch"><i class="fa fa-book"></i> Snatch</a></td>
-                </tr>
-            %endfor
-            </tbody>
-        </table>
-    </div>
+  <h2>${title}</h2>
+  <div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="book_table">
+      <thead>
+        <tr>
+          <th class="bookid">Match</th>
+          <th class="filename">Title</th>
+          <th class="provider">Provider</th>
+          <th class="size text-right">Size</th>
+          <th class="dateadded">Date</th>
+          <th class="status">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        %for item in results:
+        <tr>
+          <td class="bookid">${item['score']} %</td>
+          <td class="filename">${item['title']}</td>
+          <td class="provider"><a href="${item['url']}">${item['provider']}</a></td>
+          <td class="size text-right">${item['size']}</td>
+          <td class="dateadded">${item['date']}</td>
+          <td class="status text-center"> <a class="btn btn-xs btn-info button"
+                    href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&size=${item['size']}&library=${library}&url=${item['url']}" title="Snatch">Snatch</a></td>
+        </tr>
+        %endfor
+      </tbody>
+    </table>
+  </div>
 </%def>
-
 <%def name="headIncludes()">
-
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script>
-
+  <script>
     $(document).ready(function()
     {
 
@@ -57,6 +50,7 @@
                 "responsive": true,
                 "order": [[ 0, 'desc' ]],
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"Show _MENU_ rows per page",
                     "sEmptyTable": "No results found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
@@ -66,7 +60,7 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
             });
-            $('.dataTables_filter input').attr("placeholder", "Search filter");
+            $('.dataTables_filter input').attr("placeholder", "Results filter");
     });
-    </script>
+  </script>
 </%def>

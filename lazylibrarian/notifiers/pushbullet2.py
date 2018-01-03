@@ -12,14 +12,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import lib.simplejson as json
+# We use system version if available for pushbullet, as there was a report that
+# lazylibrarian version of requests was not working with pushbullet.
+# Not clear why, see as issue #675
 try:
     import requests
     from requests.auth import HTTPBasicAuth
 except ImportError:
     import lib.requests as requests
     from lib.requests.auth import HTTPBasicAuth
-
-# from websocket import create_connection
 
 HOST = "https://api.pushbullet.com/v2"
 
@@ -147,12 +148,13 @@ class PushBullet:
         """
 
         if not file_type:
+            # noinspection PyBroadException
             try:
                 # noinspection PyUnresolvedReferences
                 import magic
                 file_type = magic.from_buffer(fobj.read(1024))
                 fobj.seek(0)
-            except:
+            except Exception:
                 file_type = ""
 
         data = {"file_name": file_name,
