@@ -32,7 +32,7 @@ from lib.fuzzywuzzy import fuzz
 def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
     # get authors name in a consistent format, look them up in the database
     # if not in database, try to import them.
-    # return authorname,new where new=False if author already in db, new=True if added
+    # return authorname,authorid,new where new=False if author already in db, new=True if added
     # authorname returned is our preferred name, or empty string if not found or unable to add
 
     new = False

@@ -30,7 +30,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today, formatAuthorName, check_int, plural
+from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, decodeName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.grsync import grfollow
@@ -42,6 +42,7 @@ from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
+from lazylibrarian.calibre import syncCalibreList, calibreList
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -135,6 +136,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
             'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
+            'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
+            'syncCalibreList': '[&toread=] [&read=] sync list of read/toread books with calibre',
             }
 
 
@@ -189,9 +192,7 @@ class Api(object):
     @property
     def fetchData(self):
 
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "API"
+        threading.currentThread().name = "API"
 
         if self.data == 'OK':
             if 'X-Forwarded-For' in cherrypy.request.headers:
@@ -231,6 +232,24 @@ class Api(object):
             rows_as_dic.append(row_as_dic)
 
         return rows_as_dic
+
+    def _syncCalibreList(self, **kwargs):
+        col1 = None
+        col2 = None
+        if 'toread' in kwargs:
+            col2 = kwargs['toread']
+        if 'read' in kwargs:
+            col1 = kwargs['read']
+        self.data = syncCalibreList(col1, col2)
+
+    def _calibreList(self, **kwargs):
+        col1 = None
+        col2 = None
+        if 'toread' in kwargs:
+            col2 = kwargs['toread']
+        if 'read' in kwargs:
+            col1 = kwargs['read']
+        self.data = calibreList(col1, col2)
 
     def _help(self):
         self.data = dict(cmd_dict)
@@ -369,9 +388,10 @@ class Api(object):
         res = self._dic_from_query(q)
         # now the ones with an error page
         cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
-        # ensure directory is unicode so we get unicode results from listdir
+        cache = decodeName(cache)
         if os.path.isdir(cache):
             for cached_file in os.listdir(cache):
+                cached_file = decodeName(cached_file)
                 target = os.path.join(cache, cached_file)
                 if os.path.isfile(target):
                     if os.path.getsize(target) < 500 and '.' in cached_file:

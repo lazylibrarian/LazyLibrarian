@@ -17,21 +17,21 @@ import datetime
 import os
 import platform
 import shutil
+import tarfile
 import threading
 import time
 import traceback
-import tarfile
-import lib.zipfile as zipfile
-from subprocess import Popen, PIPE
 
 import lazylibrarian
+import lib.zipfile as zipfile
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
+from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
+from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
-    replace_all, getList, surnameFirst
-from lazylibrarian.bookwork import audioRename, seriesInfo
+    replace_all, getList, surnameFirst, decodeName
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -39,7 +39,6 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
-
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
@@ -71,9 +70,10 @@ def processAlternate(source_dir=None):
         logger.debug('Processing alternate directory %s' % source_dir)
         # first, recursively process any books in subdirectories
         # ensure directory is unicode so we get unicode results from listdir
-        if isinstance(source_dir, str) and hasattr(source_dir, "decode"):
-            source_dir = source_dir.decode(lazylibrarian.SYS_ENCODING)
-        for fname in os.listdir(source_dir):
+        source_dir = decodeName(source_dir)
+        flist = os.listdir(source_dir)
+        flist = [decodeName(item) for item in flist]
+        for fname in flist:
             subdir = os.path.join(source_dir, fname)
             if os.path.isdir(subdir):
                 processAlternate(subdir)
@@ -150,46 +150,14 @@ def processAlternate(source_dir=None):
         logger.error('Unhandled exception in processAlternate: %s' % traceback.format_exc())
 
 
-def try_rename(directory, filename):
-    # Shouldn't really need to do this, there must be a better way...
-    # When we call listdir with unicode it returns unicode when it can,
-    # or 8bit ascii str if it can't convert the filename to unicode using sys encoding
-    # eg 'Stephen Hawking - A Brief History of Time (PDF&EPUB&MOB\xc4\xb0)\xb0\x06'
-    # which decodes in latin-1 but not utf-8, same problem with sone scandinavian characters
-    # Return the new filename or empty string if failed
-    if int(lazylibrarian.LOGLEVEL) > 2:
-        logger.debug("try_rename %s %s %s %s" % (type(filename), repr(filename), type(directory), repr(directory)))
-
-    if isinstance(filename, str) and hasattr(filename, "decode"):
-        try:
-            # try decode first in case we called listdir with str instead of unicode
-            filename = filename.decode(lazylibrarian.SYS_ENCODING)
-            return filename
-        except UnicodeDecodeError:
-            logger.error("Unable to convert %s to sys encoding" % repr(filename))
-
-    # strip out any non-ascii characters and try to rename
-    newfname = ''.join([c for c in filename if 128 > ord(c) > 31])
-    try:
-        shutil.move(os.path.join(directory, filename), os.path.join(directory, newfname))
-        return newfname
-    except Exception as e:
-        logger.error("[try_rename] Unable to rename %s, %s %s" % (repr(filename), type(e).__name__, str(e)))
-        return ""
-
-
 def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     # move the book and any related files too, other book formats, or opf, jpg with same title
     # (files begin with fname) from sourcedir to new targetdir
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
+    sourcedir = decodeName(sourcedir)
     list_dir = os.listdir(sourcedir)
+    list_dir = [decodeName(item) for item in list_dir]
     for ourfile in list_dir:
-        if isinstance(ourfile, str) and hasattr(ourfile, "decode"):
-            if int(lazylibrarian.LOGLEVEL) > 2:
-                logger.warn("unexpected unicode conversion moving file into subdir")
-            ourfile = try_rename(sourcedir, ourfile)
-            if not ourfile:
-                ourfile = "failed rename"
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Checking %s for %s" % (ourfile, fname))
         if ourfile.startswith(fname) or is_valid_booktype(ourfile, booktype="audiobook"):
@@ -322,9 +290,9 @@ def processDir(reset=False):
         for download_dir in dirlist:
             # download_dir is set to unicode so we get unicode results from listdir
             try:
-                if isinstance(download_dir, str) and hasattr(download_dir, "decode"):
-                    download_dir = download_dir.decode(lazylibrarian.SYS_ENCODING)
+                download_dir = decodeName(download_dir)
                 downloads = os.listdir(download_dir)
+                downloads = [decodeName(item) for item in downloads]
             except OSError as why:
                 logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
                 threading.currentThread().name = "WEBSERVER"
@@ -393,12 +361,6 @@ def processDir(reset=False):
 
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
                     for fname in downloads:
-                        if isinstance(fname, str) and hasattr(fname, "decode"):
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.warn("unexpected unicode conversion in downloads")
-                            fname = try_rename(download_dir, fname)
-                        if not fname:
-                            fname = "failed rename"
                         # skip if failed before or incomplete torrents, or incomplete btsync etc
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug("Checking extn on %s" % fname)
@@ -720,16 +682,11 @@ def processDir(reset=False):
             # do a fresh listdir in case we processed and deleted any earlier
             # and don't process any we've already done as we might not want to delete originals
             downloads = os.listdir(download_dir)
+            downloads = [decodeName(item) for item in downloads]
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
             for entry in downloads:
                 if "LL.(" in entry:
-                    if isinstance(entry, str) and hasattr(entry, "decode"):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.warn("unexpected unicode conversion in LL scanner")
-                        entry = try_rename(download_dir, entry)
-                        if not entry:
-                            entry = "failed rename"
                     dname, extn = os.path.splitext(entry)
                     if not extn or extn not in skipped_extensions:
                         bookID = entry.split("LL.(")[1].split(")")[0]
@@ -1057,60 +1014,6 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         processAutoAdd(dest_path)
 
 
-def calibredb(cmd=None, prelib=None, postlib=None):
-    """ calibre-server needs to be started with --enable-auth and needs user/password to add/remove books
-        only basic features are available without auth. calibre_server should look like  http://address:port/#library
-        default library is used if no #library in the url
-        or calibredb can talk to the database file as long as there is no running calibre """
-    params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
-    if lazylibrarian.CONFIG['CALIBRE_USE_SERVER']:
-        dest_url = lazylibrarian.CONFIG['CALIBRE_SERVER']
-        if lazylibrarian.CONFIG['CALIBRE_USER'] and lazylibrarian.CONFIG['CALIBRE_PASS']:
-            params.extend(['--username', lazylibrarian.CONFIG['CALIBRE_USER'],
-                           '--password', lazylibrarian.CONFIG['CALIBRE_PASS']])
-    else:
-        dest_url = lazylibrarian.DIRECTORY('eBook')
-
-    if prelib:
-        params.extend(prelib)
-    params.extend(['--with-library', dest_url])
-    if postlib:
-        params.extend(postlib)
-    logger.debug(str(params))
-    res = err = ''
-    try:
-        p = Popen(params, stdout=PIPE, stderr=PIPE)
-        res, err = p.communicate()
-        rc = p.returncode
-        if rc:
-            if 'Errno 111' in err:
-                logger.debug("calibredb returned %s: Connection refused" % rc)
-            else:
-                logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
-    except Exception as e:
-        logger.debug("calibredb exception: %s %s" % (type(e).__name__, str(e)))
-        rc = 1
-
-    if rc and dest_url.startswith('http'):
-        # might be no server running, retry using file
-        params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
-        if prelib:
-            params.extend(prelib)
-        params.extend(['--with-library', lazylibrarian.DIRECTORY('eBook')])
-        if postlib:
-            params.extend(postlib)
-        logger.debug(str(params))
-        try:
-            q = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = q.communicate()
-            rc = q.returncode
-            if rc:
-                logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
-        except Exception as e:
-            logger.debug("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
-    return res, err, rc
-
-
 def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=None, global_name=None, bookid=None,
                        booktype=None):
     """ Copy/move book/mag and associated files into target directory
@@ -1122,8 +1025,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     booktype = booktype.lower()
 
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(pp_path, str) and hasattr(pp_path, "decode"):
-        pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
+    pp_path = decodeName(pp_path)
 
     bestmatch = ''
     if booktype == 'ebook' and lazylibrarian.CONFIG['ONE_FORMAT']:
@@ -1131,6 +1033,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         for btype in booktype_list:
             if not bestmatch:
                 for fname in os.listdir(pp_path):
+                    fname = decodeName(fname)
                     extn = os.path.splitext(fname)[1].lstrip('.')
                     if extn and extn.lower() == btype:
                         bestmatch = btype
@@ -1141,6 +1044,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     else:  # mag or audiobook or multi-format book
         match = False
         for fname in os.listdir(pp_path):
+            fname = decodeName(fname)
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
                 break
@@ -1160,6 +1064,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # and ignores opf data if there is data embedded in the book file
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(pp_path):
+                fname = decodeName(fname)
                 if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
                     logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
                 else:
@@ -1240,6 +1145,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     if newbookfile:
                         setperm(target_dir)
                         for fname in os.listdir(target_dir):
+                            fname = decodeName(fname)
                             setperm(os.path.join(target_dir, fname))
                         return True, newbookfile
                     return False, "Failed to find a valid ebook in [%s]" % target_dir
@@ -1274,12 +1180,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
-
+        pp_path = decodeName(pp_path)
         for fname in os.listdir(pp_path):
-            if isinstance(fname, str) and hasattr(fname, "decode"):
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.warn("unexpected unicode conversion copying file to target directory")
-                fname = try_rename(pp_path, fname)
+            fname = decodeName(fname)
             if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
                 logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
             else:
@@ -1328,6 +1231,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if tokmatch:
                     break
                 for f in os.listdir(pp_path):
+                    f = decodeName(f)
                     if is_valid_booktype(f, booktype='audiobook') and token in f:
                         firstfile = os.path.join(pp_path, f)
                         logger.debug("Link to preferred part [%s], %s" % (token, f))
@@ -1341,8 +1245,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 def processAutoAdd(src_path=None, booktype='book'):
     # Called to copy/move the book files to an auto add directory for the likes of Calibre which can't do nested dirs
     # ensure directory is unicode so we get unicode results from listdir
-    if isinstance(src_path, str) and hasattr(src_path, "decode"):
-        src_path = src_path.decode(lazylibrarian.SYS_ENCODING)
+    src_path = decodeName(src_path)
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
     if booktype == 'mag':
         autoadddir = lazylibrarian.CONFIG['IMP_AUTOADDMAG']
@@ -1354,6 +1257,7 @@ def processAutoAdd(src_path=None, booktype='book'):
     # Now try and copy all the book files into a single dir.
     try:
         names = os.listdir(src_path)
+        names = [decodeName(item) for item in names]
         # files jpg, opf & book(s) should have same name
         # Caution - book may be pdf, mobi, epub or all 3.
         # for now simply copy all files, and let the autoadder sort it out
@@ -1470,7 +1374,8 @@ def processMAGOPF(issuefile, title, issue, issueID):
         'BookPub': '',
         'Series': title,
         'Series_index': issue
-    }
+    }  # type: dict
+    # noinspection PyTypeChecker
     _ = processOPF(dest_path, data, global_name, overwrite=True)
 
 
@@ -1486,7 +1391,8 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     else:
         scheme = 'GoogleBooks'
 
-    seriesname = seriesnum = ''
+    seriesname = ''
+    seriesnum = ''
     if 'Series_index' not in data:
         # no series details passed in data dictionary, look them up in db
         myDB = database.DBConnection()

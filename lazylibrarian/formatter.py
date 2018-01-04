@@ -221,6 +221,22 @@ def check_int(var, default):
         return default
 
 
+# noinspection PyBroadException
+def decodeName(name):
+    if type(name) == str and hasattr(name, "decode"):  # leave unicode ones alone
+        try:
+            name = name.decode(lazylibrarian.SYS_ENCODING)
+        except Exception:
+            try:
+                name = name.decode('latin-1')
+            except Exception:
+                try:
+                    name = name.decode('utf-8')  # in case SYS_ENCODING is not utf-8
+                except Exception:
+                    lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(name))
+    return name
+
+
 def is_valid_isbn(isbn):
     """
     Return True if parameter looks like a valid isbn

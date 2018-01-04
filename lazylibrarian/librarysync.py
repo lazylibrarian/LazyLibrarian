@@ -28,7 +28,7 @@ from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
-    cleanName, replace_all, split_title, now
+    cleanName, replace_all, split_title, now, decodeName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
@@ -398,9 +398,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             try:
                 startdir = startdir.encode('ASCII')
             except UnicodeEncodeError:
-                logger.debug('Unicode error converting %s' % repr(startdir))
+                logger.debug('Unicode error converting %s, expect trouble' % repr(startdir))
 
         for r, d, f in os.walk(startdir):
+            r = decodeName(r)
+            d = [decodeName(item) for item in d]
+            f = [decodeName(item) for item in f]
             for directory in d:
                 # prevent magazine being scanned
                 if directory.startswith("_") or directory.startswith("."):
@@ -412,12 +415,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     d.remove(directory)
 
             for files in f:
-                file_count += 1
-
-                if isinstance(r, str) and hasattr(r, "decode"):
-                    r = r.decode(lazylibrarian.SYS_ENCODING)
-
                 subdirectory = r.replace(startdir, '')
+                file_count += 1
 
                 # Added new code to skip if we've done this directory before.
                 # Made this conditional with a switch in config.ini

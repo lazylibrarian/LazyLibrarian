@@ -48,10 +48,12 @@ def redirect_url(genhost, url):
     # genhost 93.174.95.27 -> scheme "", netloc "", path 93.174.95.27
     if host.netloc:
         if host.netloc.lower() != 'libgen.io':
+            # noinspection PyArgumentList
             myurl = myurl._replace(**{"netloc": host.netloc})
             logger.debug('Redirected libgen.io to [%s]' % host.netloc)
     elif host.path:
         if host.path.lower() != 'libgen.io':
+            # noinspection PyArgumentList
             myurl = myurl._replace(**{"netloc": host.netloc})
             logger.debug('Redirected libgen.io to [%s]' % host.netloc)
     return myurl.geturl()

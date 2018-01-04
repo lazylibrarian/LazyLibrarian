@@ -18,6 +18,7 @@ import os
 import sys
 
 import cherrypy
+import lib.cherrypy_cors as cherrypy_cors
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
@@ -56,6 +57,7 @@ def initialize(options=None):
 
     logger.info("Starting LazyLibrarian web server on %s://%s:%d/" %
                 (protocol, options['http_host'], options['http_port']))
+    cherrypy_cors.install()
     cherrypy.config.update(options_dict)
 
     conf = {
@@ -109,7 +111,10 @@ def initialize(options=None):
                 options['http_user']: options['http_pass']
             })
         })
-        conf['/api'] = {'tools.auth_basic.on': False}
+        conf['/api'] = {
+            'tools.auth_basic.on': False,
+            'cors.expose.on': True,
+        }
 
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()

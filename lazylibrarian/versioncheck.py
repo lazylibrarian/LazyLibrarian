@@ -57,7 +57,8 @@ def runGit(args):
     if platform.system().lower() == 'darwin':
         git_locations.append('/usr/local/git/bin/git')
 
-    output = err = None
+    output = None
+    err = None
 
     for cur_git in git_locations:
 
@@ -270,8 +271,9 @@ def getLatestVersion_FromGit():
                 DAYNAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
                 MONNAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
                 tm = time.gmtime(timestamp)
-                age = "%s, %02d %s %04d %02d:%02d:%02d GMT" %(DAYNAMES[tm.tm_wday], tm.tm_mday,
-                    MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec)
+                age = "%s, %02d %s %04d %02d:%02d:%02d GMT" % (DAYNAMES[tm.tm_wday], tm.tm_mday,
+                                                               MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour,
+                                                               tm.tm_min, tm.tm_sec)
             try:
                 headers = {'User-Agent': USER_AGENT}
                 if age:
@@ -475,11 +477,11 @@ def update():
         content_dir = os.path.join(update_dir, update_dir_contents[0])
 
         # walk temp folder and move files to main folder
-        for dirname, dirnames, filenames in os.walk(content_dir):
-            dirname = dirname[len(content_dir) + 1:]
+        for rootdir, dirnames, filenames in os.walk(content_dir):
+            rootdir = rootdir[len(content_dir) + 1:]
             for curfile in filenames:
-                old_path = os.path.join(content_dir, dirname, curfile)
-                new_path = os.path.join(lazylibrarian.PROG_DIR, dirname, curfile)
+                old_path = os.path.join(content_dir, rootdir, curfile)
+                new_path = os.path.join(lazylibrarian.PROG_DIR, rootdir, curfile)
 
                 if os.path.isfile(new_path):
                     os.remove(new_path)
