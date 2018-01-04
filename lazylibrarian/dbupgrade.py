@@ -76,8 +76,9 @@ def upgrade_needed():
     # 24 add HaveRead and ToRead to user accounts
     # 25 add index for magazine issues (title) for new dbchanges
     # 26 add Sync table
+    # 27 add indexes for book/author/wanted status
 
-    db_current_version = 26
+    db_current_version = 27
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -166,10 +167,13 @@ def dbupgrade(db_current_version):
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin',
                                 hashlib.md5('admin').hexdigest(), '', 65535, '', ''))
                     logger.debug('Added admin user')
-                    myDB.action('CREATE INDEX issues_Title_index ON issues (Title)')
-                    myDB.action('CREATE INDEX books_index_authorid ON books(AuthorID)')
+                    myDB.action('CREATE INDEX IF NOT EXISTS issues_Title_index ON issues (Title)')
+                    myDB.action('CREATE INDEX IF NOT EXISTS books_index_authorid ON books(AuthorID)')
 
                     myDB.action('CREATE TABLE IF NOT EXISTS sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
+                    myDB.action('CREATE INDEX IF NOT EXISTS books_index_status ON books(Status)')
+                    myDB.action('CREATE INDEX IF NOT EXISTS authors_index_status ON authors(Status)')
+                    myDB.action('CREATE INDEX IF NOT EXISTS wanted_index_status ON wanted(Status)')
 
                 # These are the incremental changes before database versioning was introduced.
                 # Old database tables might already have these incorporated depending on version, so we need to check...
@@ -329,7 +333,7 @@ def dbupgrade(db_current_version):
 
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
-                                    db_v21, db_v22, db_v23, db_v24, db_v25
+                                    db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27
                                     ]
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index + 2 <= db_current_version:
@@ -955,8 +959,8 @@ def db_v24(myDB, upgradelog):
 
 
 def db_v25(myDB, upgradelog):
-    myDB.action('CREATE INDEX issues_Title_index ON issues (Title)')
-    myDB.action('CREATE INDEX books_index_authorid ON books(AuthorID)')
+    myDB.action('CREATE INDEX IF NOT EXISTS issues_Title_index ON issues (Title)')
+    myDB.action('CREATE INDEX IF NOT EXISTS books_index_authorid ON books(AuthorID)')
     upgradelog.write("%s v25: complete\n" % time.ctime())
 
 
@@ -966,3 +970,9 @@ def db_v26(myDB, upgradelog):
         upgradelog.write("%s v26: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('CREATE TABLE IF NOT EXISTS sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
     upgradelog.write("%s v26: complete\n" % time.ctime())
+
+def db_v27(myDB, upgradelog):
+    myDB.action('CREATE INDEX IF NOT EXISTS books_index_status ON books(Status)')
+    myDB.action('CREATE INDEX IF NOT EXISTS authors_index_status ON authors(Status)')
+    myDB.action('CREATE INDEX IF NOT EXISTS wanted_index_status ON wanted(Status)')
+    upgradelog.write("%s v27: complete\n" % time.ctime())

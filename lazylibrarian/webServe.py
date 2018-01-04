@@ -1401,7 +1401,6 @@ class WebInterface(object):
         if lazylibrarian.GROUP_CONCAT:
             cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
             cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
-
         rowlist = myDB.select(cmd, tuple(args))
 
         # At his point we want to sort and filter _before_ adding the html as it's much quicker
