@@ -2239,8 +2239,8 @@ class WebInterface(object):
     @cherrypy.expose
     def magazines(self):
         myDB = database.DBConnection()
-
-        magazines = myDB.select('SELECT * from magazines ORDER by Title')
+        
+        magazines = myDB.select('select * from magazines order by Title')
         mags = []
         covercount = 0
         if magazines:
@@ -2252,6 +2252,7 @@ class WebInterface(object):
                 else:
                     issues = 0
                 magimg = mag['LatestCover']
+
                 # special flag to say "no covers required"
                 if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.jpg'

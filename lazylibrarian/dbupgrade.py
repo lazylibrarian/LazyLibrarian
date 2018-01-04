@@ -78,6 +78,7 @@ def upgrade_needed():
     # 26 add Sync table
 
     db_current_version = 26
+    
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -943,7 +944,6 @@ def db_v23(myDB, upgradelog):
                           lazylibrarian.perm_admin))
         logger.debug('Added admin user %s' % user)
     upgradelog.write("%s v23: complete\n" % time.ctime())
-
 
 def db_v24(myDB, upgradelog):
     if not has_column(myDB, "users", "HaveRead"):

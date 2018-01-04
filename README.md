@@ -73,7 +73,8 @@ Auto update available via interface from master for git and source installs
 
 ## Packages
 rpm deb and snap packages here : https://github.com/DobyTang/LazyLibrarian/releases  
-The snap package is confined to users home directory, so all books and downloads need to be accessible from there too. 
+The snap package is confined to users home directory, so all books and downloads need to be accessible from there too.
+Install the snap package with flags --dangerous --devmode  
 AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
 
 ## Docker packages
