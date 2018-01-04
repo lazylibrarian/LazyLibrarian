@@ -2238,8 +2238,10 @@ class WebInterface(object):
     @cherrypy.expose
     def magazines(self):
         myDB = database.DBConnection()
-        
-        magazines = myDB.select('select * from magazines order by Title')
+
+        magazines = myDB.select('SELECT "m".*, COUNT(i.title) AS "issue_cnt" FROM 	"magazines" "m" CROSS JOIN "issues" "i" WHERE	(m.title = i.title) GROUP BY "m"."Title"')
+        magcheck = myDB.select('select * from magazines')
+
         mags = []
         covercount = 0
         if magazines:
