@@ -477,11 +477,11 @@ def update():
         content_dir = os.path.join(update_dir, update_dir_contents[0])
 
         # walk temp folder and move files to main folder
-        for dirname, dirnames, filenames in os.walk(content_dir):
-            dirname = dirname[len(content_dir) + 1:]
+        for rootdir, dirnames, filenames in os.walk(content_dir):
+            rootdir = rootdir[len(content_dir) + 1:]
             for curfile in filenames:
-                old_path = os.path.join(content_dir, dirname, curfile)
-                new_path = os.path.join(lazylibrarian.PROG_DIR, dirname, curfile)
+                old_path = os.path.join(content_dir, rootdir, curfile)
+                new_path = os.path.join(lazylibrarian.PROG_DIR, rootdir, curfile)
 
                 if os.path.isfile(new_path):
                     os.remove(new_path)

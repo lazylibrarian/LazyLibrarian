@@ -26,7 +26,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str, decodeName
 
 
 def create_covers(refresh=False):
@@ -331,10 +331,13 @@ def magazineScan():
             try:
                 mag_path = mag_path.encode('ASCII')
             except UnicodeEncodeError:
-                logger.debug('Unicode error converting %s' % repr(mag_path))
+                logger.debug('Unicode error converting %s, expect trouble' % repr(mag_path))
 
-        for dirname, dirnames, filenames in os.walk(mag_path):
-            for fname in filenames[:]:
+        for rootdir, dirnames, filenames in os.walk(mag_path):
+            rootdir = decodeName(rootdir)
+            # dirnames = [decodeName(item) for item in dirnames]
+            filenames = [decodeName(item) for item in filenames]            
+            for fname in filenames:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
                     issuedate = ''
@@ -355,7 +358,7 @@ def magazineScan():
                             match = date_pattern.match(fname)
                             if match:
                                 issuedate = match.group("issuedate")
-                                title = os.path.basename(dirname)
+                                title = os.path.basename(rootdir)
                             else:
                                 logger.debug("Pattern match failed for [%s]" % fname)
                                 continue
@@ -365,7 +368,7 @@ def magazineScan():
 
                     logger.debug("Found %s Issue %s" % (title, fname))
 
-                    issuefile = os.path.join(dirname, fname)  # full path to issue.pdf
+                    issuefile = os.path.join(rootdir, fname)  # full path to issue.pdf
                     mtime = os.path.getmtime(issuefile)
                     iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 

@@ -27,7 +27,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lazylibrarian.common import restartJobs, pwd_generator
-from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented
+from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented, decodeName
 
 
 def upgrade_needed():
@@ -74,9 +74,10 @@ def upgrade_needed():
     # 22 add goodreads "follow" to author table
     # 23 add user accounts
     # 24 add HaveRead and ToRead to user accounts
-    # 25 add Sync table
+    # 25 add index for magazine issues (title) for new dbchanges
+    # 26 add Sync table
 
-    db_current_version = 25
+    db_current_version = 26
     if db_version < db_current_version:
         return db_current_version
     return 0
@@ -165,6 +166,9 @@ def dbupgrade(db_current_version):
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin',
                                 hashlib.md5('admin').hexdigest(), '', 65535, '', ''))
                     logger.debug('Added admin user')
+                    myDB.action('CREATE INDEX issues_Title_index ON issues (Title)')
+                    myDB.action('CREATE INDEX books_index_authorid ON books(AuthorID)')
+
                     myDB.action('CREATE TABLE IF NOT EXISTS sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
 
                 # These are the incremental changes before database versioning was introduced.
@@ -707,6 +711,7 @@ def db_v14(myDB, upgradelog):
     # any that are still there are for books/authors deleted from database
     # or magazine latest issue cover files that get copied as required
     for image in os.listdir(src):
+        image = decodeName(image)
         if image.endswith('.jpg'):
             os.remove(os.path.join(src, image))
     upgradelog.write("%s v14: complete\n" % time.ctime())
@@ -950,8 +955,14 @@ def db_v24(myDB, upgradelog):
 
 
 def db_v25(myDB, upgradelog):
+    myDB.action('CREATE INDEX issues_Title_index ON issues (Title)')
+    myDB.action('CREATE INDEX books_index_authorid ON books(AuthorID)')
+    upgradelog.write("%s v25: complete\n" % time.ctime())
+
+
+def db_v26(myDB, upgradelog):
     if not has_column(myDB, "sync", "UserID"):
         lazylibrarian.UPDATE_MSG = 'Adding sync table'
-        upgradelog.write("%s v25: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        upgradelog.write("%s v26: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('CREATE TABLE IF NOT EXISTS sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
-    upgradelog.write("%s v25: complete\n" % time.ctime())
+    upgradelog.write("%s v26: complete\n" % time.ctime())
