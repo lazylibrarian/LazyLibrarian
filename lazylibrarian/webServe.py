@@ -2232,9 +2232,11 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         magazines = myDB.select('select m.*, count(i.title) as issue_cnt from magazines m , issues i where m.Title = i.Title ORDER by Title')
+        magcheck = myDB.select('select * from magazines')
+
         mags = []
         covercount = 0
-        if magazines:
+        if magcheck:
             for mag in magazines:
                 title = mag['Title']
                 issues = mag['issue_cnt']
