@@ -34,8 +34,8 @@ from lib.fuzzywuzzy import fuzz
 def calibreList(col_read, col_toread):
     """ Get a list from calibre of all books in its library, including optional 'read' and 'toread' columns
         If success, return list of dicts {"title": "", "id": 0, "authors": ""}
-        The dicts only contain "read" and "toread" columns if True, ie they don't return "read": False
-        The "read" and "toread" columns are passed as column names so they can be per-user
+        The "read" and "toread" columns are passed as column names so they can be per-user and may not be present.
+        Can be true, false, or empty in which case not included in dict. We only use the "true" state
         If error, return error message (not a dict) """
 
     fieldlist = 'title,authors'
@@ -66,7 +66,9 @@ def syncCalibreList(col_read, col_toread):
         toreadcol = '*' + col_toread
 
     calibre_list = calibreList(col_read, col_toread)
-    print type(calibre_list)
+    if not isinstance(calibre_list, list):
+        # got an error message from calibredb
+        return '"%s"' % calibre_list
 
     for item in calibre_list:
         if toreadcol and toreadcol in item or readcol and readcol in item:
@@ -154,7 +156,6 @@ def syncCalibreList(col_read, col_toread):
                                     highname = item['title']
                                     highid = item['id']
 
-
                         if high > 95:
                             logger.debug("Found ratio match %s%% [%s] for %s [%s]" %
                                          (high, highname, idlist[0], book['BookName']))
@@ -185,16 +186,18 @@ def syncCalibreList(col_read, col_toread):
             last_toread = getList(res['SyncList'])
 
         for item in calibre_list:
-            if toreadcol and toreadcol in item:
+            if toreadcol and toreadcol in item and item[toreadcol]:  # only if True
                 if str(item['id']) in map_ctol:
                     calibre_toread.append(map_ctol[str(item['id'])])
                 else:
-                    logger.warn("Calibre book %s:%s has no lazylibrarian bookid" %s (item['authors'], item['title']))
-            if readcol and readcol in item:
+                    logger.warn("Calibre to_read book %s:%s has no lazylibrarian bookid" %
+                                (item['authors'], item['title']))
+            if readcol and readcol in item and item[readcol]:  # only if True
                 if str(item['id']) in map_ctol:
                     calibre_read.append(map_ctol[str(item['id'])])
                 else:
-                    logger.warn("Calibre book %s:%s has no lazylibrarian bookid" %s (item['authors'], item['title']))
+                    logger.warn("Calibre read book %s:%s has no lazylibrarian bookid" %
+                                (item['authors'], item['title']))
 
         logger.debug("Found %s calibre read, %s calibre toread" % (len(calibre_read), len(calibre_toread)))
         logger.debug("Found %s lazylib read, %s lazylib toread" % (len(readlist), len(toreadlist)))
@@ -255,7 +258,7 @@ def syncCalibreList(col_read, col_toread):
                 logger.warn("Unable to set calibre %s true for %s" % (col_toread, item))
         for item in removed_from_ll_toread:
             if item in map_ltoc:
-                res, err, rc = calibredb('set_custom', [col_toread, map_ltoc[item], 'false'], [])
+                res, err, rc = calibredb('set_custom', [col_toread, map_ltoc[item], ''], [])
                 if rc:
                     msg = "calibredb set_custom error: "
                     if err:
@@ -267,7 +270,7 @@ def syncCalibreList(col_read, col_toread):
                 else:
                     ll_changes += 1
             else:
-                logger.warn("Unable to set calibre %s false for %s" % (col_toread, item))
+                logger.warn("Unable to clear calibre %s for %s" % (col_toread, item))
 
         for item in added_to_ll_read:
             if item in map_ltoc:
@@ -287,7 +290,7 @@ def syncCalibreList(col_read, col_toread):
 
         for item in removed_from_ll_read:
             if item in map_ltoc:
-                res, err, rc = calibredb('set_custom', [col_read, map_ltoc[item], 'false'], [])
+                res, err, rc = calibredb('set_custom', [col_read, map_ltoc[item], ''], [])
                 if rc:
                     msg = "calibredb set_custom error: "
                     if err:
@@ -299,7 +302,7 @@ def syncCalibreList(col_read, col_toread):
                 else:
                     ll_changes += 1
             else:
-                logger.warn("Unable to set calibre %s false for %s" % (col_read, item))
+                logger.warn("Unable to clear calibre %s for %s" % (col_read, item))
 
         # store current sync list as comparison for next sync
         controlValueDict = {"UserID": userid, "Label": col_read}
@@ -385,7 +388,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         params.extend(postlib)
     logger.debug(str(params))
     res = ''
-    err = ''
+
     try:
         p = Popen(params, stdout=PIPE, stderr=PIPE)
         res, err = p.communicate()
