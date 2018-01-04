@@ -2231,7 +2231,7 @@ class WebInterface(object):
     def magazines(self):
         myDB = database.DBConnection()
 
-        magazines = myDB.select('select m.*, count(i.title) as issue_cnt from magazines m , issues i where m.Title = i.Title ORDER by Title')
+        magazines = myDB.select('SELECT "m".*, COUNT(i.title) AS "issue_cnt" FROM 	"magazines" "m" CROSS JOIN "issues" "i" WHERE	(m.title = i.title) GROUP BY "m"."Title"')
         magcheck = myDB.select('select * from magazines')
 
         mags = []
