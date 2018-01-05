@@ -2244,14 +2244,12 @@ class WebInterface(object):
 
         mags = []
         covercount = 0
-        if magazines:
+        if magcheck:
             for mag in magazines:
                 title = mag['Title']
                 count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
-                if count:
-                    issues = count['counter']
-                else:
-                    issues = 0
+
+                issues = mag['issue_cnt']
                 magimg = mag['LatestCover']
 
                 # special flag to say "no covers required"
