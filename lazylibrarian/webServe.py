@@ -2238,18 +2238,18 @@ class WebInterface(object):
     @cherrypy.expose
     def magazines(self):
         myDB = database.DBConnection()
-        
-        magazines = myDB.select('select * from magazines order by Title')
+
+        magazines = myDB.select('SELECT "m".*, COUNT(i.title) AS "issue_cnt" FROM 	"magazines" "m" CROSS JOIN "issues" "i" WHERE	(m.title = i.title) GROUP BY "m"."Title"')
+        magcheck = myDB.select('select * from magazines')
+
         mags = []
         covercount = 0
-        if magazines:
+        if magcheck:
             for mag in magazines:
                 title = mag['Title']
                 count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
-                if count:
-                    issues = count['counter']
-                else:
-                    issues = 0
+
+                issues = mag['issue_cnt']
                 magimg = mag['LatestCover']
 
                 # special flag to say "no covers required"
