@@ -367,7 +367,7 @@ def LISTOPIA(host=None, feednr=None, priority=0):
     """
     results = []
     maxpage = priority
-
+    basehost = host
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -384,6 +384,8 @@ def LISTOPIA(host=None, feednr=None, priority=0):
 
         if not success:
             logger.error('Error fetching data from %s: %s' % (URL, result))
+            BlockProvider(basehost)
+            
         elif result:
             logger.debug('Parsing results from %s' % URL)
             data = result.split('<td valign="top" class="number">')
@@ -424,7 +426,7 @@ def GOODREADS(host=None, feednr=None, priority=0):
     but expects goodreads format (looks for goodreads category names)
     """
     results = []
-
+    basehost = host
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
@@ -435,7 +437,8 @@ def GOODREADS(host=None, feednr=None, priority=0):
         data = feedparser.parse(result)
     else:
         logger.error('Error fetching data from %s: %s' % (host, result))
-        return results
+        BlockProvider(basehost)
+        return []
 
     if data:
         logger.debug('Parsing results from %s' % URL)
@@ -475,10 +478,9 @@ def RSS(host=None, feednr=None, priority=0):
     """
     results = []
 
-    if not str(host)[:4] == "http":
-        host = 'http://' + host
-
     URL = host
+    if not str(URL)[:4] == "http":
+        URL = 'http://' + URL
 
     result, success = fetchURL(URL)
     if success:
@@ -599,7 +601,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if not result or result == "''":
                 result = "Got an empty response"
             logger.error('Error reading data from %s: %s' % (host, result))
-            BlockProvider(host, result)
+            BlockProvider(provider['HOST'], result)
 
         if rootxml is not None:
             # to debug because of api
