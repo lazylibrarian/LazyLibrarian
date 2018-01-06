@@ -52,9 +52,56 @@ def calibreList(col_read, col_toread):
         return json.loads(res)
 
 
-def syncCalibreList(col_read, col_toread):
+def syncCalibreList(col_read=None, col_toread=None, userid=None):
     """ Get the lazylibrarian bookid for each read/toread calibre book so we can map our id to theirs,
-        and sync to calibre database. Return message giving totals (for api) """
+        and sync current/supplied user's read/toread or supplied read/toread columns to calibre database.
+        Return message giving totals """
+
+    myDB = database.DBConnection()
+    if not userid:
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in cookie.keys():
+            userid = cookie['ll_uid'].value
+    if userid:
+        res = myDB.match('SELECT UserName,ToRead,HaveRead,CalibreRead,CalibreToRead,Perms from users where UserID=?',
+                         (userid,))
+        if res:
+            username = res['UserName']
+            if not col_read:
+                col_read = res['CalibreRead']
+            if not col_toread:
+                col_toread = res['CalibreToRead']
+            toreadlist = getList(res['ToRead'])
+            readlist = getList(res['HaveRead'])
+            # suppress duplicates (just in case)
+            toreadlist = list(set(toreadlist))
+            readlist = list(set(readlist))
+        else:
+            return "Error: Unable to get user column settings for %s" % userid
+
+    if not userid:
+        return "Error: Unable to find current userid"
+
+    if not col_read and not col_toread:
+        return "User %s has no calibre columns set" % username
+
+    # check user columns exist in calibre and create if not
+    res = calibredb('custom_columns')
+    columns = res[0].split('\n')
+    custom_columns = []
+    for column in columns:
+        if column:
+            custom_columns.append(column.split(' (')[0])
+
+    if col_read not in custom_columns:
+        added = calibredb('add_custom_column', [col_read, col_read, 'bool'])
+        if "column created" not in added[0]:
+            return added
+    if col_toread not in custom_columns:
+        added = calibredb('add_custom_column', [col_toread, col_toread, 'bool'])
+        if "column created" not in added[0]:
+            return added
+
     nomatch = 0
     readcol = ''
     toreadcol = ''
@@ -106,22 +153,6 @@ def syncCalibreList(col_read, col_toread):
 
     # Now check current users lazylibrarian read/toread against the calibre library, warn about missing ones
     # which might be books calibre doesn't have, or might be minor differences in author or title
-    myDB = database.DBConnection()
-    readlist = []
-    toreadlist = []
-    userid = ''
-    username = ''
-    cookie = cherrypy.request.cookie
-    if cookie and 'll_uid' in cookie.keys():
-        res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
-                         (cookie['ll_uid'].value,))
-        if res:
-            toreadlist = getList(res['ToRead'])
-            readlist = getList(res['HaveRead'])
-            toreadlist = list(set(toreadlist))
-            readlist = list(set(readlist))
-            username = res['UserName']
-            userid = cookie['ll_uid'].value
 
     for idlist in [("Read", readlist), ("To_Read", toreadlist)]:
         booklist = idlist[1]

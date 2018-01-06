@@ -185,7 +185,6 @@ def audioRename(bookid):
             if not os.path.isdir(dest_path):
                 logger.debug('Unable to create directory %s: %s' % (dest_path, why))
 
-    lastpart = str(len(parts)).zfill(len(parts))
     for part in parts:
         pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
         pattern = pattern.replace(

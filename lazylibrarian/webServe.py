@@ -47,7 +47,7 @@ from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.postprocess import processAlternate, processDir
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.calibre import calibreTest
+from lazylibrarian.calibre import calibreTest, syncCalibreList
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -313,6 +313,16 @@ class WebInterface(object):
                     if pwd != user['password']:
                         changes += ' password'
                         myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
+
+                # only allow admin to change these
+                # if kwargs['calread'] and user['CalibreRead'] != kwargs['calread']:
+                #     changes += ' CalibreRead'
+                #     myDB.action('UPDATE users SET CalibreRead=? WHERE UserID=?', (kwargs['calread'], userid))
+
+                # if kwargs['caltoread'] and user['CalibreToRead'] != kwargs['caltoread']:
+                #     changes += ' CalibreToRead'
+                #     myDB.action('UPDATE users SET CalibreToRead=? WHERE UserID=?', (kwargs['caltoread'], userid))
+
             if changes:
                 return 'Updated user details:%s' % changes
         return "No changes made"
@@ -405,7 +415,7 @@ class WebInterface(object):
         self.label_thread('USERADMIN')
         myDB = database.DBConnection()
         title = "Manage User Accounts"
-        users = myDB.select('SELECT UserID, UserName, Name, Email, Perms from users')
+        users = myDB.select('SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead from users')
         return serve_template(templatename="users.html", title=title, users=users)
 
     @cherrypy.expose
@@ -435,8 +445,9 @@ class WebInterface(object):
         myDB = database.DBConnection()
         match = myDB.match('SELECT * from users where UserName=?', (kwargs['user'],))
         if match:
-            return simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'], })
-        return simplejson.dumps({'email': '', 'name': '', 'perms': '0', })
+            return simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
+                                    'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead']})
+        return simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': ''})
 
     @cherrypy.expose
     def admin_users(self, **kwargs):
@@ -507,7 +518,8 @@ class WebInterface(object):
                     return "Username already exists"
 
             changes = ''
-            details = myDB.match('SELECT UserID,Name,Email,Password,Perms from users where UserName=?', (user,))
+            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead from users where UserName=?'
+            details = myDB.match(cmd, (user,))
             if details:
                 userid = details['UserID']
                 if kwargs['username'] and kwargs['username'] != user:
@@ -529,6 +541,15 @@ class WebInterface(object):
                     if pwd != details['Password']:
                         changes += ' password'
                         myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
+
+                if kwargs['calread'] and details['CalibreRead'] != kwargs['calread']:
+                    changes += ' CalibreRead'
+                    myDB.action('UPDATE users SET CalibreRead=? WHERE UserID=?', (kwargs['calread'], userid))
+
+                if kwargs['caltoread'] and details['CalibreToRead'] != kwargs['caltoread']:
+                    changes += ' CalibreToRead'
+                    myDB.action('UPDATE users SET CalibreToRead=? WHERE UserID=?', (kwargs['caltoread'], userid))
+
                 if changes:
                     return 'Updated user details:%s' % changes
             return "No changes made"
@@ -2238,20 +2259,15 @@ class WebInterface(object):
     @cherrypy.expose
     def magazines(self):
         myDB = database.DBConnection()
-        
-        magazines = myDB.select('select * from magazines order by Title')
+
+        cmd = 'SELECT m.*, COUNT(i.title) AS issue_cnt FROM magazines m CROSS JOIN issues i '
+        cmd += 'WHERE (m.title = i.title) GROUP BY m.title'
+        magazines = myDB.select(cmd)
         mags = []
         covercount = 0
         if magazines:
             for mag in magazines:
-                title = mag['Title']
-                count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
-                if count:
-                    issues = count['counter']
-                else:
-                    issues = 0
                 magimg = mag['LatestCover']
-
                 # special flag to say "no covers required"
                 if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.jpg'
@@ -2265,11 +2281,11 @@ class WebInterface(object):
                     covercount += 1
 
                 this_mag = dict(mag)
-                this_mag['Count'] = issues
+                this_mag['Count'] = mag['issue_cnt']
                 this_mag['Cover'] = magimg
-                temp_title = mag['Title']
-                temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
-                this_mag['safetitle'] = urllib.quote_plus(temp_title)
+                safe_title = mag['Title']  # split into 2 parts for easier porting to python3
+                safe_title = safe_title.encode(lazylibrarian.SYS_ENCODING)
+                this_mag['safetitle'] = urllib.quote_plus(safe_title)
                 mags.append(this_mag)
 
             if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
@@ -2328,11 +2344,11 @@ class WebInterface(object):
         return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
 
     @cherrypy.expose
-    def pastIssues(self, whichStatus=None):
+    def pastIssues(self, whichStatus=None, mag=None):
         if whichStatus is None:
             whichStatus = "Skipped"
         return serve_template(
-            templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus)
+            templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus, mag=mag)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -2342,9 +2358,13 @@ class WebInterface(object):
         iDisplayStart = int(iDisplayStart)
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-        # need to filter on whichStatus
-        rowlist = myDB.select('SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=?',
-                              (kwargs['whichStatus'],))
+        # need to filter on whichStatus and optional mag title
+        cmd = 'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=?'
+        args = [kwargs['whichStatus']]
+        if 'mag' in kwargs and kwargs['mag'] != 'None':
+            cmd += ' AND BookID=?'
+            args.append(kwargs['mag'].replace('&amp;', '&'))        
+        rowlist = myDB.select(cmd, tuple(args))
         rows = []
         filtered = []
         if len(rowlist):
@@ -3013,11 +3033,26 @@ class WebInterface(object):
         return result
 
     @cherrypy.expose
+    def syncToCalibre(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'CalSync' in [n.name for n in [t for t in threading.enumerate()]]:
+            msg = 'Calibre Sync is already running'
+        else:
+            self.label_thread('CalSync')
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in cookie.keys():
+                userid = cookie['ll_uid'].value
+                msg = syncCalibreList(userid=userid)
+                self.label_thread('WEBSERVER')
+        return msg
+
+    @cherrypy.expose
     def syncToGoodreads(self):
         if 'GRSync' not in [n.name for n in [t for t in threading.enumerate()]]:
             cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
             self.label_thread('GRSync')
             msg = grsync.sync_to_gr()
+            self.label_thread('WEBSERVER')
         else:
             msg = 'Goodreads Sync is already running'
         return msg
