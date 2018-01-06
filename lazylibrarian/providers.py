@@ -384,7 +384,7 @@ def LISTOPIA(host=None, feednr=None, priority=0):
 
         if not success:
             logger.error('Error fetching data from %s: %s' % (URL, result))
-            BlockProvider(basehost)
+            BlockProvider(basehost, result)
             
         elif result:
             logger.debug('Parsing results from %s' % URL)
@@ -437,7 +437,7 @@ def GOODREADS(host=None, feednr=None, priority=0):
         data = feedparser.parse(result)
     else:
         logger.error('Error fetching data from %s: %s' % (host, result))
-        BlockProvider(basehost)
+        BlockProvider(basehost, result)
         return []
 
     if data:

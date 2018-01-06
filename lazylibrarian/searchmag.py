@@ -28,7 +28,6 @@ from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, un
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
     IterateOverDirectSites
-from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_magazines():
