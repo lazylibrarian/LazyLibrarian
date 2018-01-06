@@ -13,7 +13,7 @@
   <h1>${title}</h1>
   <form action="pastIssues" method="get" class="form-inline">
     <div class="form-group">
-      <label for="whichStatus" class="control-label">Manage Issues with status: </label>
+      <label for="whichStatus" class="control-label">Status: </label>
       <select name="whichStatus" id="whichStatus" class="form-control input-sm">
         %for item in ['Skipped', 'Ignored', 'Wanted', 'Snatched']:
         <option value="${item}"
@@ -24,12 +24,11 @@
         %endfor
       </select>
     </div>
-    <input  class="btn btn-sm btn-primary" type="submit" value="Manage" />
+
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Title</a> - <a class="toggle-vis" data-column="2">Date</a> - <a class="toggle-vis" data-column="3">Issue</a> - <a class="toggle-vis" data-column="4">Provider</a>
     %endif
   </form>
-  <h3>Magazines with status ${whichStatus}</h3>
   <br>
   <form action="markPastIssues" method="get" class="form-inline">
     <input type="hidden" name="redirect" value="manageissues">
@@ -66,6 +65,9 @@
 <%def name="javascriptIncludes()">
   <script type="text/javascript">
     $(document).ready(function() {
+        $('#whichStatus').change(function(){
+            window.location = 'pastIssues?mag=${mag | u}&whichStatus=' + $(this).val()
+        })
         var table = $('#book_table').DataTable(
             {
                 "responsive": true,
@@ -73,10 +75,10 @@
                 "bAutoWidth": false,
                 "stateSave": true,
                 "columnDefs":
-                    [{ targets: 'no-sort', orderable: false },
-                    { targets: [0], 'render': function(data, type, row) {
+                    [ { targets: 'no-sort', orderable: false },
+                      { targets: [0], 'render': function(data, type, row) {
                         return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
-                    }
+                      }
                     ]
                 ,
                 "oLanguage": {

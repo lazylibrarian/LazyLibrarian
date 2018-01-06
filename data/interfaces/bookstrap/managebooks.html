@@ -43,8 +43,8 @@
   <h1>${title}</h1>
   <form action="manage" method="get" class="form-inline">
     <div class="form-group">
-      <label for="whichStatus" class="control-label">Books with status:</label>
-      <select name="whichStatus" class="form-control input-sm">
+      <label for="whichStatus" class="control-label">Status:</label>
+      <select name="whichStatus" id="whichStatus" class="form-control input-sm">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
         <option value="${item}"
                 %if whichStatus == item:
@@ -66,7 +66,7 @@
         %endif
       </select>
     </div>
-    <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
+
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a>
     %endif
@@ -117,6 +117,10 @@
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
+
+        $('#whichStatus').change(function(){
+            window.location = 'manage?whichStatus=' + $(this).val()
+        })
 
         $('#exportcsv').on('click', function(e) {
             $.get('exportCSV', function(data) {

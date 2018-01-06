@@ -2345,10 +2345,14 @@ class WebInterface(object):
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None, mag=None):
+        if mag is None:
+            title = "Past Issues"
+        else:
+            title = mag
         if whichStatus is None:
             whichStatus = "Skipped"
         return serve_template(
-            templatename="manageissues.html", title="Manage Past Issues", issues=[], whichStatus=whichStatus, mag=mag)
+            templatename="manageissues.html", title=title, issues=[], whichStatus=whichStatus, mag=mag)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -2363,7 +2367,7 @@ class WebInterface(object):
         args = [kwargs['whichStatus']]
         if 'mag' in kwargs and kwargs['mag'] != 'None':
             cmd += ' AND BookID=?'
-            args.append(kwargs['mag'].replace('&amp;', '&'))        
+            args.append(kwargs['mag'].replace('&amp;', '&'))
         rowlist = myDB.select(cmd, tuple(args))
         rows = []
         filtered = []
