@@ -189,7 +189,9 @@ def unpack_archive(pp_path, download_dir, title):
         rarfile = None
 
     targetdir = ''
-    if zipfile.is_zipfile(pp_path):
+    if not os.path.isfile(pp_path):  # regular files only
+        targetdir = ''
+    elif zipfile.is_zipfile(pp_path):
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug('%s is a zip file' % pp_path)
         z = zipfile.ZipFile(pp_path)
@@ -213,7 +215,7 @@ def unpack_archive(pp_path, download_dir, title):
             else:
                 logger.debug('Skipping zipped file %s' % item)
 
-    elif tarfile.is_tarfile(os.path.join(pp_path)):
+    elif tarfile.is_tarfile(pp_path):
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug('%s is a tar file' % pp_path)
         z = tarfile.TarFile(pp_path)
@@ -271,7 +273,7 @@ def cron_processDir():
 
 
 def processDir(reset=False):
-    # noinspection PyBroadException
+    # noinspection PyBroadException,PyStatementEffect
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
@@ -434,6 +436,24 @@ def processDir(reset=False):
                                 if os.path.isdir(pp_path):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                                  (match, pp_path, book_type, matchtitle))
+
+                                if isinstance(pp_path, unicode):
+                                    try:
+                                        startdir = pp_path.encode('ASCII')
+                                    except UnicodeEncodeError:
+                                        logger.debug('Unicode error converting %s, expect trouble' % repr(pp_path))
+
+                                    for f in os.listdir(startdir):
+                                        f = decodeName(f)
+                                        if not is_valid_booktype(f, 'book') \
+                                                and not is_valid_booktype(f, 'audiobook') \
+                                                and not is_valid_booktype(f, 'mag'):
+                                            # Is file an archive, if so look inside and extract to new dir
+                                            res = unpack_archive(os.path.join(startdir, f), startdir, matchtitle)
+                                            if res:
+                                                pp_path = res
+                                                break
+
                                     skipped = False
                                     if book_type == 'eBook' and not book_file(pp_path, 'ebook'):
                                         logger.debug("Skipping %s, no ebook found" % pp_path)
