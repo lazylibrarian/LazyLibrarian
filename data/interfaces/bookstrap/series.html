@@ -34,8 +34,8 @@
   <h1>${title}</h1>
   <form action="series" method="get" class="form-inline">
     <div class="form-group">
-      <label for="whichStatus" class="control-label">Series with status:</label>
-      <select name="whichStatus" class="form-control input-sm">
+      <label for="whichStatus" class="control-label">Status:</label>
+      <select name="whichStatus" id="whichStatus" class="form-control input-sm">
         %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
         <option value="${item}"
             %if whichStatus == item:
@@ -45,7 +45,6 @@
         %endfor
       </select>
     </div>
-    <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
     &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a>
     %endif
@@ -93,6 +92,10 @@
   <script type="text/javascript">
     $(document).ready(function()
     {
+        $('#whichStatus').change(function(){
+            window.location = 'series?whichStatus=' + $(this).val()
+        })
+
         var oTable = $('#book_table').DataTable(
             {
                 "order": [[1, 'asc']],

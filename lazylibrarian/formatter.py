@@ -222,19 +222,19 @@ def check_int(var, default):
 
 
 # noinspection PyBroadException
-def decodeName(name):
-    if type(name) == str and hasattr(name, "decode"):  # leave unicode ones alone
+def decodeName(txt):
+    if type(txt) == str and hasattr(txt, "decode"):  # leave unicode and python3 ones alone
         try:
-            name = name.decode(lazylibrarian.SYS_ENCODING)
+            txt = txt.decode(lazylibrarian.SYS_ENCODING)
         except Exception:
             try:
-                name = name.decode('latin-1')
+                txt = txt.decode('latin-1')
             except Exception:
                 try:
-                    name = name.decode('utf-8')  # in case SYS_ENCODING is not utf-8
+                    txt = txt.decode('utf-8')  # in case SYS_ENCODING is not utf-8
                 except Exception:
-                    lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(name))
-    return name
+                    lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(txt))
+    return txt
 
 
 def is_valid_isbn(isbn):

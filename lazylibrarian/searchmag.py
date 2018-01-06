@@ -28,7 +28,6 @@ from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, un
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
 from lazylibrarian.providers import IterateOverNewzNabSites, IterateOverTorrentSites, IterateOverRSSSites, \
     IterateOverDirectSites
-from lib.fuzzywuzzy import fuzz
 
 
 def cron_search_magazines():
@@ -222,7 +221,7 @@ def search_magazines(mags=None, reset=False):
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
                             nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
                             # Need to make sure that substrings of magazine titles don't get found
-                            # (e.g. Maxim USA will find Maximum PC USA) - token_set_ratio takes care of this
+                            # (e.g. Maxim USA will find Maximum PC USA)
                             # remove extra spaces if they're in a row
                             if nzbtitle_formatted and nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
                                 nzbtitle_formatted = nzbtitle_formatted[1:-1]
@@ -239,20 +238,22 @@ def search_magazines(mags=None, reset=False):
 
                             if len(nzbtitle_exploded) > len(bookid_exploded):
                                 # needs to be longer as it has to include a date
-                                # check (nearly) all the words in the mag title are in the nzbtitle - allow some fuzz
-                                mag_title_match = fuzz.token_set_ratio(
-                                    unaccented(bookid),
-                                    unaccented(nzbtitle_formatted))
+                                # check all the words in the mag title are in the nzbtitle
+                                rejected = False
+                                wlist = []
+                                for word in nzbtitle_exploded:
+                                    wlist.append(unaccented(word).lower())
+                                for word in bookid_exploded:
+                                    if unaccented(word).lower() not in wlist:
+                                        rejected = True
+                                        break
 
-                                if mag_title_match < check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
+                                if rejected:
                                     logger.debug(
-                                        u"Magazine token set Match failed: " + str(
-                                            mag_title_match) + "% for " + nzbtitle_formatted)
-                                    rejected = True
+                                        u"Magazine title match failed " + bookid + " for " + nzbtitle_formatted)
                                 else:
                                     logger.debug(
-                                        u"Magazine matched: " + str(
-                                            mag_title_match) + "% " + bookid + " for " + nzbtitle_formatted)
+                                        u"Magazine matched " + bookid + " for " + nzbtitle_formatted)
                             else:
                                 logger.debug("Magazine name too short (%s)" % len(nzbtitle_exploded))
                                 rejected = True
