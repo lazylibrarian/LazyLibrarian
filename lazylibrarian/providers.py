@@ -143,32 +143,24 @@ def get_capabilities(provider):
                         bookcat = cat.attrib['id']  # keep main bookcat for starting magazines later
                         provider['BOOKCAT'] = bookcat
                         provider['MAGCAT'] = ''
+                        # set default booksearch
                         if provider['BOOKCAT'] == '7000':
                             # looks like newznab+, should support book-search
                             provider['BOOKSEARCH'] = 'book'
-                            # but check in case
-                            search = data.find('searching/book-search')
-                            if search is not None:
-                                # noinspection PyUnresolvedReferences
-                                if 'available' in search.attrib:
-                                    # noinspection PyUnresolvedReferences
-                                    if search.attrib['available'] == 'yes':
-                                        provider['BOOKSEARCH'] = 'book'
-                                    else:
-                                        provider['BOOKSEARCH'] = ''
                         else:
                             # looks like nZEDb, probably no book-search
                             provider['BOOKSEARCH'] = ''
-                            # but check in case
-                            search = data.find('searching/book-search')
-                            if search:
+                        # but check in case we got some settings back
+                        search = data.find('searching/book-search')
+                        if search:
+                            # noinspection PyUnresolvedReferences
+                            if 'available' in search.attrib:
                                 # noinspection PyUnresolvedReferences
-                                if 'available' in search.attrib:
-                                    # noinspection PyUnresolvedReferences
-                                    if search.attrib['available'] == 'yes':
-                                        provider['BOOKSEARCH'] = 'book'
-                                    else:
-                                        provider['BOOKSEARCH'] = ''
+                                if search.attrib['available'] == 'yes':
+                                    provider['BOOKSEARCH'] = 'book'
+                                else:
+                                    provider['BOOKSEARCH'] = ''
+
                         subcats = cat.getiterator('subcat')
                         for subcat in subcats:
                             if 'ebook' in subcat.attrib['name'].lower():
@@ -385,7 +377,7 @@ def LISTOPIA(host=None, feednr=None, priority=0):
         if not success:
             logger.error('Error fetching data from %s: %s' % (URL, result))
             BlockProvider(basehost, result)
-            
+
         elif result:
             logger.debug('Parsing results from %s' % URL)
             data = result.split('<td valign="top" class="number">')
