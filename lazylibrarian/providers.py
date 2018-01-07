@@ -552,6 +552,47 @@ def RSS(host=None, feednr=None, priority=0):
     return results
 
 
+def cancelSearchType(searchType, errorMsg, provider):
+    """ See if errorMsg contains a known error response for an unsupported search function
+        depending on which searchType. If it does, disable that searchtype for the relevant provider
+        return True if cancelled
+    """
+    errorlist = ['no such function', 'unknown parameter', 'unknown function',
+                 'bad request', 'bad_request', 'incorrect parameter', 'does not support']
+
+    errormsg = errorMsg.lower()
+    if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
+            (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
+        match = False
+        for item in errorlist:
+            if item in errormsg:
+                match = True
+                break
+        if match:
+            if searchType in ["book", "shortbook"]:
+                msg = 'BOOKSEARCH'
+            elif searchType in ["audio", "shortaudio"]:
+                msg = 'AUDIOSEARCH'
+            else:
+                msg = ''
+
+            if msg:
+                for providerlist in [lazylibrarian.NEWZNAB_PROV, lazylibrarian.TORZNAB_PROV]:
+                    count = 0
+                    while count < len(providerlist):
+                        if providerlist[count]['HOST'] == provider['HOST']:
+                            if str(provider['MANUAL']) == 'False':
+                                logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['HOST']))
+                                providerlist[count][msg] = ""
+                                threadname = threading.currentThread().name
+                                lazylibrarian.config_write()
+                                threading.currentThread().name = threadname
+                                return True
+                        count += 1
+            logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['HOST']))
+    return False
+
+
 def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
     """
     Generic NewzNabplus query function
@@ -593,7 +634,10 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             if not result or result == "''":
                 result = "Got an empty response"
             logger.error('Error reading data from %s: %s' % (host, result))
-            BlockProvider(provider['HOST'], result)
+            # maybe the host doesn't support the search type
+            cancelled = cancelSearchType(searchType, result, provider)
+            if not cancelled:  # it was some other problem
+                BlockProvider(provider['HOST'], result)
 
         if rootxml is not None:
             # to debug because of api
@@ -603,39 +647,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
                 errormsg = rootxml.get('description', default='unknown error')
                 logger.error("%s - %s" % (host, errormsg))
                 # maybe the host doesn't support the search type
-                match = False
-                if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
-                        (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
-                    errorlist = ['no such function', 'unknown parameter', 'unknown function',
-                                 'bad request', 'incorrect parameter', 'does not support']
-                    for item in errorlist:
-                        if item in errormsg.lower():
-                            match = True
-                    if match:
-                        count = 0
-                        if searchType in ["book", "shortbook"]:
-                            msg = 'BOOKSEARCH'
-                        elif searchType in ["audio", "shortaudio"]:
-                            msg = 'AUDIOSEARCH'
-                        else:
-                            msg = ''
-                        if not msg:
-                            logger.error('Error trying to disable searchtype [%s] for %s' % (searchType, host))
-                        else:
-                            while count < len(lazylibrarian.NEWZNAB_PROV):
-                                if lazylibrarian.NEWZNAB_PROV[count]['HOST'] == provider['HOST']:
-                                    if str(provider['MANUAL']) == 'False':
-                                        logger.error("Disabled %s=%s for %s" %
-                                                     (msg, provider[msg], provider['HOST']))
-                                        lazylibrarian.NEWZNAB_PROV[count][msg] = ""
-                                        threadname = threading.currentThread().name
-                                        lazylibrarian.config_write()
-                                        threading.currentThread().name = threadname
-                                    else:
-                                        logger.error("Unable to disable %s for %s [MANUAL=%s]" %
-                                                     (msg, provider['HOST'], provider['MANUAL']))
-                                count += 1
-                if not match:
+                cancelled = cancelSearchType(searchType, errormsg, provider)
+                if not cancelled:  # it was some other problem
                     BlockProvider(provider['HOST'], errormsg)
             else:
                 resultxml = rootxml.getiterator('item')
