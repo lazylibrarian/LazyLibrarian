@@ -2975,7 +2975,6 @@ class WebInterface(object):
             rowlist = myDB.select(cmd, (status,))
             for row in rowlist:
                 bookid = row['BookID']
-                res = None
                 if row['AuxInfo'] == 'eBook':
                     res = myDB.match('SELECT BookID from books WHERE BookID=? AND Status=?',
                                      (bookid, status))
@@ -2983,7 +2982,7 @@ class WebInterface(object):
                         myDB.action('UPDATE books SET Status="Skipped" WHERE Bookid=?', (bookid,))
                 elif row['AuxInfo'] == 'AudioBook':
                     res = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus=?',
-                                     (bookid,audiostatus))
+                                     (bookid, status))
                     if res:
                             myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE Bookid=?', (bookid,))
             myDB.action("DELETE from wanted")
@@ -2995,7 +2994,6 @@ class WebInterface(object):
                 rowlist = myDB.select(cmd, (status,))
                 for row in rowlist:
                     bookid = row['BookID']
-                    res = None
                     if row['AuxInfo'] == 'eBook':
                         res = myDB.match('SELECT BookID from books WHERE BookID=? AND Status=?',
                                          (bookid, status))
@@ -3003,7 +3001,7 @@ class WebInterface(object):
                             myDB.action('UPDATE books SET Status="Skipped" WHERE Bookid=?', (bookid,))
                     elif row['AuxInfo'] == 'AudioBook':
                         res = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus=?',
-                                         (bookid,audiostatus))
+                                         (bookid, status))
                         if res:
                             myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE Bookid=?', (bookid,))
 
@@ -3016,7 +3014,7 @@ class WebInterface(object):
         # clear any currently blocked providers
         num = len(lazylibrarian.PROVIDER_BLOCKLIST)
         lazylibrarian.PROVIDER_BLOCKLIST = []
-        result = 'Cleared %s blocked provider%s' % (num, plural(num)
+        result = 'Cleared %s blocked provider%s' % (num, plural(num))
         logger.debug(result)
         return result
 
