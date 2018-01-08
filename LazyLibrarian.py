@@ -88,7 +88,7 @@ def main():
 
     lazylibrarian.LOGLEVEL = 1
     if options.debug:
-        lazylibrarian.LOGLEVEL = 3
+        lazylibrarian.LOGLEVEL = 2
 
     if options.quiet:
         lazylibrarian.LOGLEVEL = 0
