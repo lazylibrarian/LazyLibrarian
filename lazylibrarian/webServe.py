@@ -2260,39 +2260,44 @@ class WebInterface(object):
     def magazines(self):
         myDB = database.DBConnection()
 
-        cmd = 'SELECT m.*, COUNT(i.title) AS issue_cnt FROM magazines m CROSS JOIN issues i '
-        cmd += 'WHERE (m.title = i.title) GROUP BY m.title'
-        magazines = myDB.select(cmd)
+        magazines = myDB.select('SELECT * from magazines ORDER by Title')
         mags = []
         covercount = 0
-        for mag in magazines:
-            magimg = mag['LatestCover']
-            # special flag to say "no covers required"
-            if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
-                magimg = 'images/nocover.jpg'
+        if magazines:
+            for mag in magazines:
+                title = mag['Title']
+                count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
+                if count:
+                    issues = count['counter']
+                else:
+                    issues = 0
+                magimg = mag['LatestCover']
+                # special flag to say "no covers required"
+                if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
+                    magimg = 'images/nocover.jpg'
+                else:
+                    myhash = hashlib.md5(magimg).hexdigest()
+                    hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
+                    if not os.path.isfile(hashname):
+                        copyfile(magimg, hashname)
+                        setperm(hashname)
+                    magimg = 'cache/magazine/' + myhash + '.jpg'
+                    covercount += 1
+
+                this_mag = dict(mag)
+                this_mag['Count'] = issues
+                this_mag['Cover'] = magimg
+                temp_title = mag['Title']
+                temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
+                this_mag['safetitle'] = urllib.quote_plus(temp_title)
+                mags.append(this_mag)
+
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
+                if not lazylibrarian.CONFIG['MAG_IMG']:
+                    covercount = 0
             else:
-                myhash = hashlib.md5(magimg).hexdigest()
-                hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
-                if not os.path.isfile(hashname):
-                    copyfile(magimg, hashname)
-                    setperm(hashname)
-                magimg = 'cache/magazine/' + myhash + '.jpg'
-                covercount += 1
-
-            this_mag = dict(mag)
-            this_mag['Count'] = mag['issue_cnt']
-            this_mag['Cover'] = magimg
-            safe_title = mag['Title']  # split into 2 parts for easier porting to python3
-            safe_title = safe_title.encode(lazylibrarian.SYS_ENCODING)
-            this_mag['safetitle'] = urllib.quote_plus(safe_title)
-            mags.append(this_mag)
-
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
-            if not lazylibrarian.CONFIG['MAG_IMG']:
-                covercount = 0
-        else:
-            if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
-                covercount = 0
+                if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
+                    covercount = 0
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
