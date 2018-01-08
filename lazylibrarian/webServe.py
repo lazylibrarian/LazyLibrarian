@@ -44,7 +44,7 @@ from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_tota
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.postprocess import processAlternate, processDir, deleteTask
+from lazylibrarian.postprocess import processAlternate, processDir, delete_task
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.calibre import calibreTest, syncCalibreList
