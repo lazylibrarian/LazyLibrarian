@@ -765,11 +765,15 @@ def processDir(reset=False):
                         logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
                                     (book['NZBtitle'], book['Source'].lower(), hours))
                     # change status to "Failed", and ask downloader to delete task and files
+                    # Only reset book status to wanted if still snatched in case another download task succeeded
                     if book['BookID'] != 'unknown':
+                        cmd = ''
                         if book_type == 'eBook':
-                            myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (book['BookID'],))
+                            cmd = 'UPDATE books SET status="Wanted" WHERE status="Snatched" and BookID=?'
                         elif book_type == 'AudioBook':
-                            myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (book['BookID'],))
+                            cmd = 'UPDATE books SET audiostatus="Wanted" WHERE audiostatus="Snatched" and BookID=?'
+                        if cmd:
+                            myDB.action(cmd, (book['BookID'],))
                         myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
 
@@ -1104,8 +1108,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             res, err, rc = calibredb('add', ['-1'], [pp_path])
 
-            logger.debug('%s result : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
-            logger.debug('%s error  : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
+            if res:
+                logger.debug('%s result : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            if err:
+                logger.debug('%s error  : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
 
             if rc or not res:
                 return False, 'calibredb rc %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
