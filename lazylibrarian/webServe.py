@@ -2260,13 +2260,17 @@ class WebInterface(object):
     def magazines(self):
         myDB = database.DBConnection()
 
-        cmd = 'SELECT m.*, COUNT(i.title) AS issue_cnt FROM magazines m CROSS JOIN issues i '
-        cmd += 'WHERE (m.title = i.title) GROUP BY m.title'
-        magazines = myDB.select(cmd)
+        magazines = myDB.select('SELECT * from magazines ORDER by Title')
         mags = []
         covercount = 0
         if magazines:
             for mag in magazines:
+                title = mag['Title']
+                count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
+                if count:
+                    issues = count['counter']
+                else:
+                    issues = 0
                 magimg = mag['LatestCover']
                 # special flag to say "no covers required"
                 if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
@@ -2281,11 +2285,11 @@ class WebInterface(object):
                     covercount += 1
 
                 this_mag = dict(mag)
-                this_mag['Count'] = mag['issue_cnt']
+                this_mag['Count'] = issues
                 this_mag['Cover'] = magimg
-                safe_title = mag['Title']  # split into 2 parts for easier porting to python3
-                safe_title = safe_title.encode(lazylibrarian.SYS_ENCODING)
-                this_mag['safetitle'] = urllib.quote_plus(safe_title)
+                temp_title = mag['Title']
+                temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
+                this_mag['safetitle'] = urllib.quote_plus(temp_title)
                 mags.append(this_mag)
 
             if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
@@ -2939,10 +2943,7 @@ class WebInterface(object):
     @cherrypy.expose
     def history(self):
         myDB = database.DBConnection()
-        # wanted status holds snatched processed for all, plus skipped and
-        # ignored for magazine back issues
-        cmd = "SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo"
-        cmd += " from wanted WHERE Status != 'Skipped' and Status != 'Ignored'"
+        cmd = "SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo from wanted"
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of dicts
         rows = []
@@ -2973,9 +2974,42 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if status == 'all':
             logger.info("Clearing all history")
-            myDB.action("DELETE from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
+            # also reset the Snatched status in book table
+            status = "Snatched"
+            cmd = 'SELECT BookID,AuxInfo from wanted WHERE Status=?'
+            rowlist = myDB.select(cmd, (status,))
+            for row in rowlist:
+                bookid = row['BookID']
+                if row['AuxInfo'] == 'eBook':
+                    res = myDB.match('SELECT BookID from books WHERE BookID=? AND Status=?',
+                                     (bookid, status))
+                    if res:
+                        myDB.action('UPDATE books SET Status="Skipped" WHERE Bookid=?', (bookid,))
+                elif row['AuxInfo'] == 'AudioBook':
+                    res = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus=?',
+                                     (bookid, status))
+                    if res:
+                            myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE Bookid=?', (bookid,))
+            myDB.action("DELETE from wanted")
         else:
             logger.info("Clearing history where status is %s" % status)
+            if status == 'Snatched':
+                # also reset the Snatched status in book table
+                cmd = 'SELECT BookID,AuxInfo from wanted WHERE Status=?'
+                rowlist = myDB.select(cmd, (status,))
+                for row in rowlist:
+                    bookid = row['BookID']
+                    if row['AuxInfo'] == 'eBook':
+                        res = myDB.match('SELECT BookID from books WHERE BookID=? AND Status=?',
+                                         (bookid, status))
+                        if res:
+                            myDB.action('UPDATE books SET Status="Skipped" WHERE Bookid=?', (bookid,))
+                    elif row['AuxInfo'] == 'AudioBook':
+                        res = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus=?',
+                                         (bookid, status))
+                        if res:
+                            myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE Bookid=?', (bookid,))
+
             myDB.action('DELETE from wanted WHERE Status=?', (status,))
         raise cherrypy.HTTPRedirect("history")
 
@@ -2985,7 +3019,7 @@ class WebInterface(object):
         # clear any currently blocked providers
         num = len(lazylibrarian.PROVIDER_BLOCKLIST)
         lazylibrarian.PROVIDER_BLOCKLIST = []
-        result = 'Cleared %s blocked providers' % num
+        result = 'Cleared %s blocked provider%s' % (num, plural(num))
         logger.debug(result)
         return result
 
