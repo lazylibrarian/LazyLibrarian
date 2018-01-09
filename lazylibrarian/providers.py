@@ -82,10 +82,17 @@ def get_capabilities(provider):
             host = 'http://' + host
         if host[-1:] == '/':
             host = host[:-1]
-        URL = host + '/api?t=caps&apikey=' + provider['API']
-        logger.debug('Requesting capabilities for %s' % URL)
+        URL = host + '/api?t=caps'
 
+        # most providers will give you caps without an api key
+        logger.debug('Requesting capabilities for %s' % URL)
         source_xml, success = fetchURL(URL)
+        # If it failed, retry with api key
+        if not success:
+            if provider['API']:
+                URL = URL + '&apikey=' + provider['API']
+                logger.debug('Requesting capabilities for %s' % URL)
+                source_xml, success = fetchURL(URL)
         if success:
             try:
                 data = ElementTree.fromstring(source_xml)

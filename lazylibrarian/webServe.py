@@ -44,7 +44,7 @@ from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_tota
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.postprocess import processAlternate, processDir
+from lazylibrarian.postprocess import processAlternate, processDir, delete_task
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.calibre import calibreTest, syncCalibreList
@@ -2974,42 +2974,37 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if status == 'all':
             logger.info("Clearing all history")
-            # also reset the Snatched status in book table
+            # also reset the Snatched status in book table to Wanted and cancel any failed download task
+            # ONLY reset if status is still Snatched, as maybe a later task succeeded
             status = "Snatched"
-            cmd = 'SELECT BookID,AuxInfo from wanted WHERE Status=?'
+            cmd = 'SELECT BookID,AuxInfo,Source,DownloadID from wanted WHERE Status=?'
             rowlist = myDB.select(cmd, (status,))
-            for row in rowlist:
-                bookid = row['BookID']
-                if row['AuxInfo'] == 'eBook':
-                    res = myDB.match('SELECT BookID from books WHERE BookID=? AND Status=?',
-                                     (bookid, status))
-                    if res:
-                        myDB.action('UPDATE books SET Status="Skipped" WHERE Bookid=?', (bookid,))
-                elif row['AuxInfo'] == 'AudioBook':
-                    res = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus=?',
-                                     (bookid, status))
-                    if res:
-                            myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE Bookid=?', (bookid,))
+            for book in rowlist:
+                if book['BookID'] != 'unknown':
+                    if book['AuxInfo'] == 'eBook':
+                        myDB.action('UPDATE books SET Status="Wanted" WHERE Bookid=? AND Status=?',
+                                    (book['BookID'], status))
+                    elif book['AuxInfo'] == 'AudioBook':
+                        myDB.action('UPDATE books SET AudioStatus="Wanted" WHERE Bookid=? AND AudioStatus=?',
+                                    (book['BookID'], status))
+                    delete_task(book['Source'], book['DownloadID'], True)
             myDB.action("DELETE from wanted")
         else:
             logger.info("Clearing history where status is %s" % status)
             if status == 'Snatched':
-                # also reset the Snatched status in book table
-                cmd = 'SELECT BookID,AuxInfo from wanted WHERE Status=?'
+                # also reset the Snatched status in book table to Wanted and cancel any failed download task
+                # ONLY reset if status is still Snatched, as maybe a later task succeeded
+                cmd = 'SELECT BookID,AuxInfo,Source,DownloadID from wanted WHERE Status=?'
                 rowlist = myDB.select(cmd, (status,))
-                for row in rowlist:
-                    bookid = row['BookID']
-                    if row['AuxInfo'] == 'eBook':
-                        res = myDB.match('SELECT BookID from books WHERE BookID=? AND Status=?',
-                                         (bookid, status))
-                        if res:
-                            myDB.action('UPDATE books SET Status="Skipped" WHERE Bookid=?', (bookid,))
-                    elif row['AuxInfo'] == 'AudioBook':
-                        res = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus=?',
-                                         (bookid, status))
-                        if res:
-                            myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE Bookid=?', (bookid,))
-
+                for book in rowlist:
+                    if book['BookID'] != 'unknown':
+                        if book['AuxInfo'] == 'eBook':
+                            myDB.action('UPDATE books SET Status="Wanted" WHERE Bookid=? AND Status=?',
+                                        (book['BookID'], status))
+                        elif book['AuxInfo'] == 'AudioBook':
+                            myDB.action('UPDATE books SET AudioStatus="Wanted" WHERE Bookid=? AND AudioStatus=?',
+                                        (book['BookID'], status))
+                    delete_task(book['Source'], book['DownloadID'], True)
             myDB.action('DELETE from wanted WHERE Status=?', (status,))
         raise cherrypy.HTTPRedirect("history")
 
