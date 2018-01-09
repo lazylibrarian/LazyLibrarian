@@ -208,9 +208,11 @@ def addTorrent(link):
     logger.debug('addTorrent(%s)' % link)
 
     qbclient = qbittorrentclient()
-    args = {'urls': link, 'savepath': lazylibrarian.DIRECTORY('Download')}
+    args = {'savepath': lazylibrarian.DIRECTORY('Download')}
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
         args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
+    logger.debug('addTorrent args(%s)' % args)
+    args['urls'] = link
     # noinspection PyProtectedMember
     return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')
 
