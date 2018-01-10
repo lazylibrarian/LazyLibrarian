@@ -88,6 +88,7 @@ def serve_template(templatename, **kwargs):
                 res = myDB.match('SELECT UserName,Perms,UserID from users')
                 cherrypy.response.cookie['ll_uid'] = res['UserID']
                 logger.debug("Auto-login for %s" % res['UserName'])
+                lazylibrarian.AUTOLOGIN = True
         if res:
             perm = check_int(res['Perms'], 0)
             username = res['UserName']
