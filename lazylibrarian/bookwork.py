@@ -1030,14 +1030,58 @@ def getBookCover(bookID=None, src=None):
                     if os.path.isfile(coverimg):
                         if src == 'cover':
                             coverfile = os.path.join(cachedir, "book", bookID + '_cover.jpg')
-                            logger.debug(u"getBookCover: Copying book cover to %s" % coverfile)
-                            shutil.copyfile(coverimg, coverfile)
                             coverlink = 'cache/book/' + bookID + '_cover.jpg'
+                            logger.debug(u"getBookCover: Caching cover.jpg for %s" % bookID)
                         else:
-                            logger.debug(u"getBookCover: Copying book cover to %s" % coverfile)
-                            shutil.copyfile(coverimg, coverfile)
                             coverlink = 'cache/book/' + bookID + '.jpg'
+                            logger.debug(u"getBookCover: Caching book cover for %s" % coverfile)
+                        shutil.copyfile(coverimg, coverfile)
                         return coverlink
+            if src == 'cover':
+                logger.debug('getBookCover: No cover.jpg found for %s' % bookID)
+                return None
+
+        # see if librarything workpage has a cover
+        if not src or src == 'librarything':
+            work = getBookWork(bookID, "Cover")
+            if work:
+                try:
+                    img = work.split('workCoverImage')[1].split('="')[1].split('"')[0]
+                    if img and img.startswith('http'):
+                        if src == 'librarything':
+                            coverlink, success = cache_img("book", bookID + '_lt', img)
+                        else:
+                            coverlink, success = cache_img("book", bookID, img)
+                        if success:
+                            logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
+                            return coverlink
+                        else:
+                            logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
+                    else:
+                        logger.debug("getBookCover: No image found in work page for %s" % bookID)
+                except IndexError:
+                    logger.debug('getBookCover: workCoverImage not found in work page for %s' % bookID)
+
+                try:
+                    img = work.split('og:image')[1].split('="')[1].split('"')[0]
+                    if img and img.startswith('http'):
+                        if src == 'librarything':
+                            coverlink, success = cache_img("book", bookID + '_lt', img)
+                        else:
+                            coverlink, success = cache_img("book", bookID, img)
+                        if success:
+                            logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
+                            return coverlink
+                        else:
+                            logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
+                    else:
+                        logger.debug("getBookCover: No image found in work page for %s" % bookID)
+                except IndexError:
+                    logger.debug('getBookCover: og:image not found in work page for %s' % bookID)
+            else:
+                logger.debug('getBookCover: No work page for %s' % bookID)
+            if src == 'librarything':
+                return None
 
         cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -1052,9 +1096,9 @@ def getBookCover(bookID=None, src=None):
             booklink = item['BookLink']
             safeparams = urllib.quote_plus("%s %s" % (author, title))
 
-        # no cover.jpg, try to get a cover from goodreads
+        # try to get a cover from goodreads
         if not src or src == 'goodreads':
-            if safeparams and 'goodreads' in booklink:
+            if booklink and 'goodreads' in booklink:
                 # if the bookID is a goodreads one, we can call https://www.goodreads.com/book/show/{bookID}
                 # and scrape the page for og:image
                 # <meta property="og:image" content="https://i.gr-assets.com/images/S/photo.goodreads.com/books/
@@ -1093,47 +1137,13 @@ def getBookCover(bookID=None, src=None):
                         logger.debug("getBookCover: No image found in goodreads page for %s" % bookID)
                 else:
                     logger.debug("getBookCover: Error getting page %s, [%s]" % (booklink, result))
-
-        # nothing from goodreads, see if librarything workpage has a cover
-        if not src or src == 'librarything':
-            work = getBookWork(bookID, "Cover")
-            if work:
-                try:
-                    img = work.split('workCoverImage')[1].split('="')[1].split('"')[0]
-                    if img and img.startswith('http'):
-                        if src == 'librarything':
-                            coverlink, success = cache_img("book", bookID + '_lt', img)
-                        else:
-                            coverlink, success = cache_img("book", bookID, img)
-                        if success:
-                            logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
-                            return coverlink
-                        else:
-                            logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
-                    else:
-                        logger.debug("getBookCover: No image found in work page for %s" % bookID)
-                except IndexError:
-                    logger.debug('getBookCover: Image not found in work page for %s' % bookID)
-
-                try:
-                    img = work.split('og:image')[1].split('="')[1].split('"')[0]
-                    if img and img.startswith('http'):
-                        if src == 'librarything':
-                            coverlink, success = cache_img("book", bookID + '_lt', img)
-                        else:
-                            coverlink, success = cache_img("book", bookID, img)
-                        if success:
-                            logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
-                            return coverlink
-                        else:
-                            logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
-                    else:
-                        logger.debug("getBookCover: No image found in work page for %s" % bookID)
-                except IndexError:
-                    logger.debug('getBookCover: Image not found in work page for %s' % bookID)
+            else:
+                logger.debug("getBookCover: Not a goodreads booklink for %s [%s]" % (bookID, booklink))
+            if src == 'goodreads':
+                return None
 
         if not src or src == 'google':
-            # if all else fails, try a google image search...
+            # try a google image search...
             # tbm=isch      search images
             # tbs=isz:l     large images
             # ift:jpg       jpeg file type
@@ -1160,7 +1170,9 @@ def getBookCover(bookID=None, src=None):
                         logger.debug("getBookCover: No image found in google page for %s" % bookID)
                 else:
                     logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
-
+            else:
+                logger.debug("getBookCover: No parameters for google page search for %s" % bookID)
+        return None
     except Exception:
         logger.error('Unhandled exception in getBookCover: %s' % traceback.format_exc())
     return None
