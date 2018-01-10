@@ -59,21 +59,19 @@ class qbittorrentclient(object):
         self._get_sid(self.base_url, self.username, self.password)
         self.api = self._api_version()
 
-
     def _make_opener(self):
         # create opener with cookie handler to carry QBitTorrent SID cookie
         cookie_handler = urllib2.HTTPCookieProcessor(self.cookiejar)
         handlers = [cookie_handler]
         return urllib2.build_opener(*handlers)
 
-
     def _api_version(self):
+        # noinspection PyBroadException
         try:
             version = int(self._command('version/api'))
         except Exception:
             version = 1
         return version
-
 
     def _get_sid(self, base_url, username, password):
         # login so we can capture SID cookie
@@ -111,7 +109,6 @@ class qbittorrentclient(object):
         try:
             response = self.opener.open(request)
             info = response.info()
-
             if info:
                 if info.getheader('content-type'):
                     # some commands return json
@@ -225,7 +222,7 @@ def addTorrent(link):
     qbclient = qbittorrentclient()
     args = {'savepath': lazylibrarian.DIRECTORY('Download')}
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
-        if qbclient.api > 6 and qbclient.api < 10:
+        if 6 < qbclient.api < 10:
             args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
         elif qbclient.api >= 10:
             args['category'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
