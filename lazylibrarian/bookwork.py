@@ -1003,6 +1003,7 @@ def getBookCover(bookID=None, src=None):
     if not src:
         src = ''
     logger.debug("Getting %s cover for %s" % (src, bookID))
+    # noinspection PyBroadException
     try:
         cachedir = lazylibrarian.CACHEDIR
         coverfile = os.path.join(cachedir, "book", bookID + '.jpg')
@@ -1159,9 +1160,11 @@ def getBookCover(bookID=None, src=None):
                         logger.debug("getBookCover: No image found in google page for %s" % bookID)
                 else:
                     logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
-        return None
+
     except Exception:
         logger.error('Unhandled exception in getBookCover: %s' % traceback.format_exc())
+    return None
+
 
 def getAuthorImage(authorid=None):
     # tbm=isch      search images

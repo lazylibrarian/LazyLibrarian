@@ -57,12 +57,21 @@ class qbittorrentclient(object):
         self.cookiejar = cookielib.CookieJar()
         self.opener = self._make_opener()
         self._get_sid(self.base_url, self.username, self.password)
+        self.api = self._api_version()
 
     def _make_opener(self):
         # create opener with cookie handler to carry QBitTorrent SID cookie
         cookie_handler = urllib2.HTTPCookieProcessor(self.cookiejar)
         handlers = [cookie_handler]
         return urllib2.build_opener(*handlers)
+
+    def _api_version(self):
+        # noinspection PyBroadException
+        try:
+            version = int(self._command('version/api'))
+        except Exception:
+            version = 1
+        return version
 
     def _get_sid(self, base_url, username, password):
         # login so we can capture SID cookie
@@ -100,19 +109,24 @@ class qbittorrentclient(object):
         try:
             response = self.opener.open(request)
             info = response.info()
-
             if info:
                 if info.getheader('content-type'):
+                    # some commands return json
                     if info.getheader('content-type') == 'application/json':
                         return json.loads(response.read())
                         # response code is always 200, whether success or fail
                     else:
+                        # some commands return plain text
                         resp = ''
                         for line in response:
                             resp = resp + line
                         logger.debug("QBitTorrent returned %s" % resp)
+                        if command == 'version/api':
+                            return resp
+                        # some just return Ok. or Fails.
                         if resp != 'Ok.':
                             return False
+            # some commands return nothing but response code (always 200)
             return True
         except urllib2.URLError as err:
             logger.debug('Failed URL: %s' % url)
@@ -195,10 +209,8 @@ def checkLink():
         qbclient = qbittorrentclient()
         if len(qbclient.cookiejar):
             # qbittorrent creates a new label if needed
-            # can't see how to get a list of known labels
-            if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
-                return "qBittorrent login successful, label not checked"
-            return "qBittorrent login successful"
+            # can't see how to get a list of known labels to check against
+            return "qBittorrent login successful, api: %s" % qbclient.api
         return "qBittorrent login FAILED\nCheck debug log"
     except Exception as err:
         return "qBittorrent login FAILED: %s %s" % (type(err).__name__, str(err))
@@ -210,7 +222,10 @@ def addTorrent(link):
     qbclient = qbittorrentclient()
     args = {'savepath': lazylibrarian.DIRECTORY('Download')}
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
-        args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
+        if 6 < qbclient.api < 10:
+            args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
+        elif qbclient.api >= 10:
+            args['category'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
     logger.debug('addTorrent args(%s)' % args)
     args['urls'] = link
     # noinspection PyProtectedMember
