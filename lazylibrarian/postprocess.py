@@ -1372,6 +1372,8 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
 
 def processMAGOPF(issuefile, title, issue, issueID):
     """ Needs calibre to be configured to read metadata from file contents, not filename """
+    if not lazylibrarian.CONFIG['IMP_MAGOPF']:
+        return
     dest_path, global_name = os.path.split(issuefile)
     global_name, extn = os.path.splitext(global_name)
 
