@@ -9,24 +9,25 @@ This module contains the primary objects that power Requests.
 
 import collections
 import datetime
+import sys
 
 # Import encoding now, to avoid implicit import later.
 # Implicit import within threads may cause LookupError when standard library is in a ZIP,
-# such as in Embedded Python. See https://github.com/kennethreitz/requests/issues/3578.
+# such as in Embedded Python. See https://github.com/requests/requests/issues/3578.
 import encodings.idna
 
-from io import BytesIO, UnsupportedOperation
+from urllib3.fields import RequestField
+from urllib3.filepost import encode_multipart_formdata
+from urllib3.util import parse_url
+from urllib3.exceptions import (
+    DecodeError, ReadTimeoutError, ProtocolError, LocationParseError)
+
+from io import UnsupportedOperation
 from .hooks import default_hooks
 from .structures import CaseInsensitiveDict
 
 from .auth import HTTPBasicAuth
 from .cookies import cookiejar_from_dict, get_cookie_header, _copy_cookie_jar
-from .packages import idna
-from .packages.urllib3.fields import RequestField
-from .packages.urllib3.filepost import encode_multipart_formdata
-from .packages.urllib3.util import parse_url
-from .packages.urllib3.exceptions import (
-    DecodeError, ReadTimeoutError, ProtocolError, LocationParseError)
 from .exceptions import (
     HTTPError, MissingSchema, InvalidURL, ChunkedEncodingError,
     ContentDecodingError, ConnectionError, StreamConsumedError)
@@ -36,7 +37,7 @@ from .utils import (
     stream_decode_response_unicode, to_key_val_list, parse_header_links,
     iter_slices, guess_json_utf, super_len, check_header_validity)
 from .compat import (
-    cookielib, urlunparse, urlsplit, urlencode, str, bytes, StringIO,
+    cookielib, urlunparse, urlsplit, urlencode, str, bytes,
     is_py2, chardet, builtin_str, basestring)
 from .compat import json as complexjson
 from .status_codes import codes
@@ -214,8 +215,9 @@ class Request(RequestHooksMixin):
       <PreparedRequest [GET]>
     """
 
-    def __init__(self, method=None, url=None, headers=None, files=None,
-        data=None, params=None, auth=None, cookies=None, hooks=None, json=None):
+    def __init__(self,
+            method=None, url=None, headers=None, files=None, data=None,
+            params=None, auth=None, cookies=None, hooks=None, json=None):
 
         # Default empty dicts for dict params.
         data = [] if data is None else data
@@ -294,8 +296,9 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         #: integer denoting starting position of a readable file-like body.
         self._body_position = None
 
-    def prepare(self, method=None, url=None, headers=None, files=None,
-        data=None, params=None, auth=None, cookies=None, hooks=None, json=None):
+    def prepare(self,
+            method=None, url=None, headers=None, files=None, data=None,
+            params=None, auth=None, cookies=None, hooks=None, json=None):
         """Prepares the entire request with the given parameters."""
 
         self.prepare_method(method)
@@ -331,13 +334,23 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         if self.method is not None:
             self.method = to_native_string(self.method.upper())
 
+    @staticmethod
+    def _get_idna_encoded_host(host):
+        import idna
+
+        try:
+            host = idna.encode(host, uts46=True).decode('utf-8')
+        except idna.IDNAError:
+            raise UnicodeError
+        return host
+
     def prepare_url(self, url, params):
         """Prepares the given HTTP URL."""
         #: Accept objects that have string representations.
         #: We're unable to blindly call unicode/str functions
         #: as this will include the bytestring indicator (b'')
         #: on python 3.x.
-        #: https://github.com/kennethreitz/requests/pull/2238
+        #: https://github.com/requests/requests/pull/2238
         if isinstance(url, bytes):
             url = url.decode('utf8')
         else:
@@ -368,17 +381,17 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         if not host:
             raise InvalidURL("Invalid URL %r: No host supplied" % url)
 
-        # In general, we want to try IDNA encoding every hostname, as that
-        # allows users to automatically get the correct behaviour. However,
-        # we’re quite strict about IDNA encoding, so certain valid hostnames
-        # may fail to encode. On failure, we verify the hostname meets a
-        # minimum standard of only containing ASCII characters, and not starting
-        # with a wildcard (*), before allowing the unencoded hostname through.
-        try:
-            host = idna.encode(host, uts46=True).decode('utf-8')
-        except (UnicodeError, idna.IDNAError):
-            if not unicode_is_ascii(host) or host.startswith(u'*'):
+        # In general, we want to try IDNA encoding the hostname if the string contains
+        # non-ASCII characters. This allows users to automatically get the correct IDNA
+        # behaviour. For strings containing only ASCII characters, we need to also verify
+        # it doesn't start with a wildcard (*), before allowing the unencoded hostname.
+        if not unicode_is_ascii(host):
+            try:
+                host = self._get_idna_encoded_host(host)
+            except UnicodeError:
                 raise InvalidURL('URL has an invalid label.')
+        elif host.startswith(u'*'):
+            raise InvalidURL('URL has an invalid label.')
 
         # Carefully reconstruct the network location
         netloc = auth or ''
@@ -573,10 +586,9 @@ class Response(object):
     ]
 
     def __init__(self):
-        super(Response, self).__init__()
-
         self._content = False
         self._content_consumed = False
+        self._next = None
 
         #: Integer Code of responded HTTP Status, e.g. 404 or 200.
         self.status_code = None
@@ -620,6 +632,12 @@ class Response(object):
         #: is a response.
         self.request = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     def __getstate__(self):
         # Consume everything; accessing the content attribute makes
         # sure the content has been fully read.
@@ -643,11 +661,23 @@ class Response(object):
         return '<Response [%s]>' % (self.status_code)
 
     def __bool__(self):
-        """Returns true if :attr:`status_code` is 'OK'."""
+        """Returns True if :attr:`status_code` is less than 400.
+
+        This attribute checks if the status code of the response is between
+        400 and 600 to see if there was a client error or a server error. If
+        the status code, is between 200 and 400, this will return True. This
+        is **not** a check to see if the response code is ``200 OK``.
+        """
         return self.ok
 
     def __nonzero__(self):
-        """Returns true if :attr:`status_code` is 'OK'."""
+        """Returns True if :attr:`status_code` is less than 400.
+
+        This attribute checks if the status code of the response is between
+        400 and 600 to see if there was a client error or a server error. If
+        the status code, is between 200 and 400, this will return True. This
+        is **not** a check to see if the response code is ``200 OK``.
+        """
         return self.ok
 
     def __iter__(self):
@@ -656,6 +686,13 @@ class Response(object):
 
     @property
     def ok(self):
+        """Returns True if :attr:`status_code` is less than 400.
+
+        This attribute checks if the status code of the response is between
+        400 and 600 to see if there was a client error or a server error. If
+        the status code, is between 200 and 400, this will return True. This
+        is **not** a check to see if the response code is ``200 OK``.
+        """
         try:
             self.raise_for_status()
         except HTTPError:
@@ -671,12 +708,17 @@ class Response(object):
 
     @property
     def is_permanent_redirect(self):
-        """True if this Response one of the permanent versions of redirect"""
+        """True if this Response one of the permanent versions of redirect."""
         return ('location' in self.headers and self.status_code in (codes.moved_permanently, codes.permanent_redirect))
 
     @property
+    def next(self):
+        """Returns a PreparedRequest for the next request in a redirect chain, if there is one."""
+        return self._next
+
+    @property
     def apparent_encoding(self):
-        """The apparent encoding, provided by the chardet library"""
+        """The apparent encoding, provided by the chardet library."""
         return chardet.detect(self.content)['encoding']
 
     def iter_content(self, chunk_size=1, decode_unicode=False):
@@ -824,7 +866,7 @@ class Response(object):
         return content
 
     def json(self, **kwargs):
-        """Returns the json-encoded content of a response, if any.
+        r"""Returns the json-encoded content of a response, if any.
 
         :param \*\*kwargs: Optional arguments that ``json.loads`` takes.
         :raises ValueError: If the response body does not contain valid json.
