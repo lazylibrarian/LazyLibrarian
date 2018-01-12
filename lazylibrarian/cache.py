@@ -19,9 +19,12 @@ import os
 import shutil
 import time
 from xml.etree import ElementTree
-
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
+    
 import lazylibrarian
-import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int

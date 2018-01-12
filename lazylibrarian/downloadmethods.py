@@ -19,8 +19,12 @@ import unicodedata
 from base64 import b16encode, b32decode
 from hashlib import sha1
 
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
+    
 import lazylibrarian
-import lib.requests as requests
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL

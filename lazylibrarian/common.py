@@ -27,7 +27,10 @@ import lib.zipfile as zipfile
 import re
 import ssl
 import sqlite3
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database

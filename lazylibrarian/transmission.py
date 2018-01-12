@@ -16,7 +16,10 @@
 import json
 import time
 import urlparse
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger

@@ -18,7 +18,10 @@ import time
 import traceback
 import unicodedata
 import urllib
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database

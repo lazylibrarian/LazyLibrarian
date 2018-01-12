@@ -91,7 +91,8 @@ class qbittorrentclient(object):
         url = self.base_url + '/' + command
         data = None
         headers = dict()
-        if files:  # Use Multipart form
+
+        if files or content_type == 'multipart/form-data':
             data, headers = encode_multipart(args, files, '-------------------------acebdf13572468')
         else:
             if args:
@@ -229,7 +230,7 @@ def addTorrent(link):
     logger.debug('addTorrent args(%s)' % args)
     args['urls'] = link
     # noinspection PyProtectedMember
-    return qbclient._command('command/download', args, 'application/x-www-form-urlencoded')
+    return qbclient._command('command/download', args, 'multipart/form-data')
 
 
 def addFile(data):
@@ -335,28 +336,30 @@ def encode_multipart(fields, files, boundary=None):
         boundary = ''.join(random.choice(_BOUNDARY_CHARS) for _ in range(30))
     lines = []
 
-    for name, value in fields.items():
-        lines.extend((
-            '--{0}'.format(boundary),
-            'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)),
-            '',
-            str(value),
-        ))
+    if fields:
+        for name, value in fields.items():
+            lines.extend((
+                '--{0}'.format(boundary),
+                'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)),
+                '',
+                str(value),
+            ))
 
-    for name, value in files.items():
-        filename = value['filename']
-        if 'mimetype' in value:
-            mimetype = value['mimetype']
-        else:
-            mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-        lines.extend((
-            '--{0}'.format(boundary),
-            'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
-                escape_quote(name), escape_quote(filename)),
-            'Content-Type: {0}'.format(mimetype),
-            '',
-            value['content'],
-        ))
+    if files:
+        for name, value in files.items():
+            filename = value['filename']
+            if 'mimetype' in value:
+                mimetype = value['mimetype']
+            else:
+                mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            lines.extend((
+                '--{0}'.format(boundary),
+                'Content-Disposition: form-data; name="{0}"; filename="{1}"'.format(
+                    escape_quote(name), escape_quote(filename)),
+                'Content-Type: {0}'.format(mimetype),
+                '',
+                value['content'],
+            ))
 
     lines.extend((
         '--{0}--'.format(boundary),
