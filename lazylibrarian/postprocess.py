@@ -382,12 +382,6 @@ def processDir(reset=False):
                                 logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
                             if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                                 pp_path = os.path.join(download_dir, fname)
-                                if isinstance(pp_path, str) and hasattr(pp_path, "decode"):
-                                    try:
-                                        pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
-                                    except UnicodeDecodeError:
-                                        logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
-                                        pp_path = "Failed pp_path"
 
                                 if int(lazylibrarian.LOGLEVEL) > 2:
                                     logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
@@ -433,23 +427,18 @@ def processDir(reset=False):
                                         else:
                                             logger.debug('Skipping unhandled file %s' % fname)
 
-                                if os.path.isdir(pp_path):
+                                elif os.path.isdir(pp_path):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                                  (match, pp_path, book_type, matchtitle))
 
-                                if isinstance(pp_path, unicode):
-                                    try:
-                                        startdir = pp_path.encode('ASCII')
-                                    except UnicodeEncodeError:
-                                        logger.debug('Unicode error converting %s, expect trouble' % repr(pp_path))
-
-                                    for f in os.listdir(startdir):
+                                    pp_path = decodeName(pp_path)
+                                    for f in os.listdir(pp_path):
                                         f = decodeName(f)
                                         if not is_valid_booktype(f, 'book') \
                                                 and not is_valid_booktype(f, 'audiobook') \
                                                 and not is_valid_booktype(f, 'mag'):
                                             # Is file an archive, if so look inside and extract to new dir
-                                            res = unpack_archive(os.path.join(startdir, f), startdir, matchtitle)
+                                            res = unpack_archive(os.path.join(pp_path, f), pp_path, matchtitle)
                                             if res:
                                                 pp_path = res
                                                 break
@@ -473,7 +462,7 @@ def processDir(reset=False):
                                     if not skipped:
                                         matches.append([match, pp_path, book])
                                 else:
-                                    logger.debug('%s is not a directory?' % pp_path)
+                                    logger.debug('%s is not a file or a directory?' % pp_path)
                             else:
                                 pp_path = os.path.join(download_dir, fname)
                                 matches.append([match, pp_path, book])  # so we can report closest match
