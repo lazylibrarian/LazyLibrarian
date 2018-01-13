@@ -434,8 +434,8 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         logger.debug(err)
         rc = 1
 
-    if rc and dest_url.startswith('http'):
-        # might be no server running, retry using file
+    if rc and dest_url.startswith('http') and not res.startswith('Forbidden'):
+        # if not forbidden (auth issue), might be no server running, retry using file
         params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
         if prelib:
             params.extend(prelib)
