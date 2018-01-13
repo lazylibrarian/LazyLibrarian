@@ -1296,8 +1296,6 @@ class WebInterface(object):
             }
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
-            url = urllib.unquote_plus(url)
-            url = url.replace(' ', '+')
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if 'libgen' in provider:  # for libgen we use direct download links
                 snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], library)
