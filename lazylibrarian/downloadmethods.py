@@ -23,7 +23,7 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
-    
+
 import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, bencode
@@ -280,7 +280,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         logger.debug("Sending %s to qbittorrent" % tor_title)
         Source = "QBITTORRENT"
         hashid = CalcTorrentHash(torrent)
-        status = qbittorrent.addTorrent(tor_url)  # returns hash or True or False
+        status = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
         if status:
             downloadID = hashid
             tor_title = qbittorrent.getName(hashid)

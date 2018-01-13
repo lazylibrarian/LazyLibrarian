@@ -217,7 +217,7 @@ def checkLink():
         return "qBittorrent login FAILED: %s %s" % (type(err).__name__, str(err))
 
 
-def addTorrent(link):
+def addTorrent(link, hashid):
     logger.debug('addTorrent(%s)' % link)
 
     qbclient = qbittorrentclient()
@@ -230,7 +230,17 @@ def addTorrent(link):
     logger.debug('addTorrent args(%s)' % args)
     args['urls'] = link
     # noinspection PyProtectedMember
-    return qbclient._command('command/download', args, 'multipart/form-data')
+    res = qbclient._command('command/download', args, 'multipart/form-data'):
+    logger.debug("qBittorrent addTorrent returned %s" % res)
+    if res:
+        return True
+    # sometimes returns "Fails." when it hasn't failed, so look if hashid was added correctly
+    time.sleep(2)
+    torrents = self._get_list()
+        if hashid.upper() in str(torrents).upper():
+            logger.debug("qBittorrent: found hashid in torrent list, assume success")
+            return True
+    return False
 
 
 def addFile(data):
