@@ -1080,6 +1080,19 @@
               None  to disable cover creation</small>
           </td>
         </tr>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_MAGOPF'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_magopf" name="imp_magopf" value=1 ${checked} />
+              <label> Create opf files for magazines</label>
+              <br>
+            </div>
+          </td>
         <tr>
           <td>
             <div>

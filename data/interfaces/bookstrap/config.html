@@ -1598,6 +1598,17 @@
                   </div>
                   <div class="checkbox">
                     <%
+                        if lazylibrarian.CONFIG['IMP_MAGOPF'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="imp_magopf" class="control-label">
+                      <input type="checkbox" id="imp_magopf" name="imp_magopf" value="1" ${checked} />
+                      Create opf files for magazines</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
                         if lazylibrarian.CONFIG['FULL_SCAN'] == True:
                             checked = 'checked="checked"'
                         else:

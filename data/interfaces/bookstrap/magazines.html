@@ -90,12 +90,12 @@
             <td class="bookart hidden"></td>
             % endif
             <td class="bookname">${result['Title']}</td>
-            <td class="number text-center">${result['Count']}</td>
+            <td class="number text-center">${result['Iss_Cnt']}</td>
             <td class="series text-center">${result['LastAcquired']}</td>
             <td class="date text-center">${result['IssueDate']}</td>
             <td class="stars text-center">${result['Status']}</td>
             %if result['IssueStatus'] == 'Open':
-            %if result['Count'] == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:
+            %if result['Iss_Cnt'] == 1 and lazylibrarian.CONFIG['MAG_SINGLE']:
             <td class="status text-center"><a class="button btn btn-xs btn-warning" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
             %else:
             <td class="status text-center"><a class="button btn btn-xs btn-primary" href="openMag?bookid=${result['safetitle']}" target="_self"><i class="fa fa-list-ul"></i> Show</a></td>

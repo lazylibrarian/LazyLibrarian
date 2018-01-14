@@ -31,7 +31,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
-    replace_all, getList, surnameFirst, decodeName
+    replace_all, getList, surnameFirst, decodeName, encodeName
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -69,9 +69,7 @@ def processAlternate(source_dir=None):
 
         logger.debug('Processing alternate directory %s' % source_dir)
         # first, recursively process any books in subdirectories
-        # ensure directory is unicode so we get unicode results from listdir
-        source_dir = decodeName(source_dir)
-        flist = os.listdir(source_dir)
+        flist = os.listdir(encodeName(source_dir))
         flist = [decodeName(item) for item in flist]
         for fname in flist:
             subdir = os.path.join(source_dir, fname)
@@ -154,8 +152,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     # move the book and any related files too, other book formats, or opf, jpg with same title
     # (files begin with fname) from sourcedir to new targetdir
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
-    sourcedir = decodeName(sourcedir)
-    list_dir = os.listdir(sourcedir)
+    list_dir = os.listdir(encodeName(sourcedir))
     list_dir = [decodeName(item) for item in list_dir]
     for ourfile in list_dir:
         if int(lazylibrarian.LOGLEVEL) > 2:
@@ -290,10 +287,8 @@ def processDir(reset=False):
             if os.path.isdir(item):
                 dirlist.append(item)
         for download_dir in dirlist:
-            # download_dir is set to unicode so we get unicode results from listdir
             try:
-                download_dir = decodeName(download_dir)
-                downloads = os.listdir(download_dir)
+                downloads = os.listdir(encodeName(download_dir))
                 downloads = [decodeName(item) for item in downloads]
             except OSError as why:
                 logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
@@ -382,12 +377,6 @@ def processDir(reset=False):
                                 logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
                             if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                                 pp_path = os.path.join(download_dir, fname)
-                                if isinstance(pp_path, str) and hasattr(pp_path, "decode"):
-                                    try:
-                                        pp_path = pp_path.decode(lazylibrarian.SYS_ENCODING)
-                                    except UnicodeDecodeError:
-                                        logger.error("Unable to convert %s to sys encoding" % repr(pp_path))
-                                        pp_path = "Failed pp_path"
 
                                 if int(lazylibrarian.LOGLEVEL) > 2:
                                     logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
@@ -433,23 +422,17 @@ def processDir(reset=False):
                                         else:
                                             logger.debug('Skipping unhandled file %s' % fname)
 
-                                if os.path.isdir(pp_path):
+                                elif os.path.isdir(pp_path):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                                  (match, pp_path, book_type, matchtitle))
 
-                                if isinstance(pp_path, unicode):
-                                    try:
-                                        startdir = pp_path.encode('ASCII')
-                                    except UnicodeEncodeError:
-                                        logger.debug('Unicode error converting %s, expect trouble' % repr(pp_path))
-
-                                    for f in os.listdir(startdir):
+                                    for f in os.listdir(encodeName(pp_path)):
                                         f = decodeName(f)
                                         if not is_valid_booktype(f, 'book') \
                                                 and not is_valid_booktype(f, 'audiobook') \
                                                 and not is_valid_booktype(f, 'mag'):
                                             # Is file an archive, if so look inside and extract to new dir
-                                            res = unpack_archive(os.path.join(startdir, f), startdir, matchtitle)
+                                            res = unpack_archive(os.path.join(pp_path, f), pp_path, matchtitle)
                                             if res:
                                                 pp_path = res
                                                 break
@@ -464,7 +447,7 @@ def processDir(reset=False):
                                     elif book_type == 'Magazine' and not book_file(pp_path, 'mag'):
                                         logger.debug("Skipping %s, no magazine found" % pp_path)
                                         skipped = True
-                                    if not os.listdir(pp_path):
+                                    if not os.listdir(encodeName(pp_path)):
                                         logger.debug("Skipping %s, folder is empty" % pp_path)
                                         skipped = True
                                     elif bts_file(pp_path):
@@ -473,7 +456,7 @@ def processDir(reset=False):
                                     if not skipped:
                                         matches.append([match, pp_path, book])
                                 else:
-                                    logger.debug('%s is not a directory?' % pp_path)
+                                    logger.debug('%s is not a file or a directory?' % pp_path)
                             else:
                                 pp_path = os.path.join(download_dir, fname)
                                 matches.append([match, pp_path, book])  # so we can report closest match
@@ -701,7 +684,7 @@ def processDir(reset=False):
             # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
             # do a fresh listdir in case we processed and deleted any earlier
             # and don't process any we've already done as we might not want to delete originals
-            downloads = os.listdir(download_dir)
+            downloads = os.listdir(encodeName(download_dir))
             downloads = [decodeName(item) for item in downloads]
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
@@ -1048,15 +1031,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
     booktype = booktype.lower()
 
-    # ensure directory is unicode so we get unicode results from listdir
-    pp_path = decodeName(pp_path)
-
     bestmatch = ''
     if booktype == 'ebook' and lazylibrarian.CONFIG['ONE_FORMAT']:
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for btype in booktype_list:
             if not bestmatch:
-                for fname in os.listdir(pp_path):
+                for fname in os.listdir(encodeName(pp_path)):
                     fname = decodeName(fname)
                     extn = os.path.splitext(fname)[1].lstrip('.')
                     if extn and extn.lower() == btype:
@@ -1067,7 +1047,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         logger.debug('One format import, best match = %s' % bestmatch)
     else:  # mag or audiobook or multi-format book
         match = False
-        for fname in os.listdir(pp_path):
+        for fname in os.listdir(encodeName(pp_path)):
             fname = decodeName(fname)
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
@@ -1087,7 +1067,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
             # and ignores opf data if there is data embedded in the book file
             # so we send separate "set_metadata" commands after the import
-            for fname in os.listdir(pp_path):
+            for fname in os.listdir(encodeName(pp_path)):
                 fname = decodeName(fname)
                 if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
                     logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
@@ -1170,7 +1150,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
-                        for fname in os.listdir(target_dir):
+                        for fname in os.listdir(encodeName(target_dir)):
                             fname = decodeName(fname)
                             setperm(os.path.join(target_dir, fname))
                         return True, newbookfile
@@ -1206,8 +1186,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
-        pp_path = decodeName(pp_path)
-        for fname in os.listdir(pp_path):
+        for fname in os.listdir(encodeName(pp_path)):
             fname = decodeName(fname)
             if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
                 logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
@@ -1256,7 +1235,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                 if tokmatch:
                     break
-                for f in os.listdir(pp_path):
+                for f in os.listdir(encodeName(pp_path)):
                     f = decodeName(f)
                     if is_valid_booktype(f, booktype='audiobook') and token in f:
                         firstfile = os.path.join(pp_path, f)
@@ -1270,8 +1249,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
 def processAutoAdd(src_path=None, booktype='book'):
     # Called to copy/move the book files to an auto add directory for the likes of Calibre which can't do nested dirs
-    # ensure directory is unicode so we get unicode results from listdir
-    src_path = decodeName(src_path)
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
     if booktype == 'mag':
         autoadddir = lazylibrarian.CONFIG['IMP_AUTOADDMAG']
@@ -1282,7 +1259,7 @@ def processAutoAdd(src_path=None, booktype='book'):
         return False
     # Now try and copy all the book files into a single dir.
     try:
-        names = os.listdir(src_path)
+        names = os.listdir(encodeName(src_path))
         names = [decodeName(item) for item in names]
         # files jpg, opf & book(s) should have same name
         # Caution - book may be pdf, mobi, epub or all 3.
@@ -1372,6 +1349,8 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
 
 def processMAGOPF(issuefile, title, issue, issueID):
     """ Needs calibre to be configured to read metadata from file contents, not filename """
+    if not lazylibrarian.CONFIG['IMP_MAGOPF']:
+        return
     dest_path, global_name = os.path.split(issuefile)
     global_name, extn = os.path.splitext(global_name)
 

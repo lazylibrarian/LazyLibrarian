@@ -53,6 +53,7 @@ CONFIG = {}
 CFG = ''
 DBFILE = None
 COMMIT_LIST = None
+AUTOLOGIN = False
 
 # These are only used in startup
 SCHED = Scheduler()
@@ -219,6 +220,7 @@ CONFIG_DEFINITIONS = {
     'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_RENAME': ('bool', 'General', 0),
+    'IMP_MAGOPF': ('bool', 'General', 1),
     'IMP_CONVERT': ('str', 'General', ''),
     'GIT_PROGRAM': ('str', 'General', ''),
     'CACHE_AGE': ('int', 'General', 30),

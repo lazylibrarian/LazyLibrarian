@@ -12,11 +12,13 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import urllib
-
 import lazylibrarian
-import lib.requests as requests
 from lazylibrarian import logger
 from lazylibrarian.common import proxyList
 from lazylibrarian.formatter import check_int, unaccented_str

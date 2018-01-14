@@ -154,16 +154,15 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                     "DateAdded": today()
                 }
                 if not dbauthor or (dbauthor and not dbauthor['manual']):
-                    if dbauthor and dbauthor['authorname'] != author['authorname']:
-                        logger.warn("Authorname mismatch for %s [%s][%s]" %
-                                    (authorid, dbauthor['authorname'], author['authorname']))
-                        authorname = dbauthor['authorname']
-                    else:
-                        newValueDict["AuthorName"] = author['authorname']
                     newValueDict["AuthorImg"] = author['authorimg']
                     newValueDict["AuthorBorn"] = author['authorborn']
                     newValueDict["AuthorDeath"] = author['authordeath']
-
+                    if not dbauthor:
+                        newValueDict["AuthorName"] = author['authorname']
+                    elif dbauthor['authorname'] != author['authorname']:
+                        authorname = dbauthor['authorname']
+                        logger.warn("Authorname mismatch for %s [%s][%s]" %
+                                    (authorid, dbauthor['authorname'], author['authorname']))
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 match = True
             else:

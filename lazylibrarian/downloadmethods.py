@@ -19,8 +19,12 @@ import unicodedata
 from base64 import b16encode, b32decode
 from hashlib import sha1
 
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
+
 import lazylibrarian
-import lib.requests as requests
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL
@@ -276,7 +280,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         logger.debug("Sending %s to qbittorrent" % tor_title)
         Source = "QBITTORRENT"
         hashid = CalcTorrentHash(torrent)
-        status = qbittorrent.addTorrent(tor_url)  # returns hash or True or False
+        status = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
         if status:
             downloadID = hashid
             tor_title = qbittorrent.getName(hashid)

@@ -27,12 +27,15 @@ import lib.zipfile as zipfile
 import re
 import ssl
 import sqlite3
-import lib.requests as requests
+try:
+    import requests
+except ImportError:
+    import lib.requests as requests
 
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, \
-    getList, decodeName
+    getList, decodeName, encodeName
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -224,10 +227,8 @@ def any_file(search_dir=None, extn=None):
     # return full pathname of file, or empty string if none found
     if search_dir is None or extn is None:
         return ""
-    # ensure directory is unicode so we get unicode results from listdir
-    search_dir = decodeName(search_dir)
     if os.path.isdir(search_dir):
-        for fname in os.listdir(search_dir):
+        for fname in os.listdir(encodeName(search_dir)):
             fname = decodeName(fname)
             if fname.endswith(extn):
                 return os.path.join(search_dir, fname)
@@ -255,11 +256,9 @@ def book_file(search_dir=None, booktype=None):
     # return full pathname of book/mag, or empty string if none found
     if search_dir is None or booktype is None:
         return ""
-    # ensure directory is unicode so we get unicode results from listdir
-    search_dir = decodeName(search_dir)
     if search_dir and os.path.isdir(search_dir):
         try:
-            for fname in os.listdir(search_dir):
+            for fname in os.listdir(encodeName(search_dir)):
                 fname = decodeName(fname)
                 if is_valid_booktype(fname, booktype=booktype):
                     return os.path.join(search_dir, fname)
@@ -693,12 +692,10 @@ def cleanCache():
     myDB = database.DBConnection()
     result = []
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
-    # ensure directory is unicode so we get unicode results from listdir
-    cache = decodeName(cache)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(cache):
+        for cached_file in os.listdir(encodeName(cache)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
@@ -715,12 +712,10 @@ def cleanCache():
     logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
-    # ensure directory is unicode so we get unicode results from listdir
-    cache = decodeName(cache)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(cache):
+        for cached_file in os.listdir(encodeName(cache)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
@@ -737,12 +732,10 @@ def cleanCache():
     logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
-    # ensure directory is unicode so we get unicode results from listdir
-    cache = decodeName(cache)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(cache):
+        for cached_file in os.listdir(encodeName(cache)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cache, cached_file)
             try:
@@ -762,12 +755,10 @@ def cleanCache():
     logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "SeriesCache")
-    # ensure directory is unicode so we get unicode results from listdir
-    cache = decodeName(cache)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(cache):
+        for cached_file in os.listdir(encodeName(cache)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cache, cached_file)
             try:
@@ -787,14 +778,12 @@ def cleanCache():
     logger.debug(msg)
 
     cache = os.path.join(lazylibrarian.CACHEDIR, "magazine")
-    # ensure directory is unicode so we get unicode results from listdir
-    cache = decodeName(cache)
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
         # we can clear the magazine cache, it gets rebuilt as required
         # this does not delete our magazine cover files, only the small cached copy
-        for cached_file in os.listdir(cache):
+        for cached_file in os.listdir(encodeName(cache)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cache, cached_file)
             if target.endswith('.jpg'):
@@ -811,7 +800,7 @@ def cleanCache():
     kept = 0
     cachedir = os.path.join(cache, 'author')
     if os.path.isdir(cachedir):
-        for cached_file in os.listdir(cachedir):
+        for cached_file in os.listdir(encodeName(cachedir)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
@@ -829,7 +818,7 @@ def cleanCache():
                     kept += 1
     cachedir = os.path.join(cache, 'book')
     if os.path.isdir(cachedir):
-        for cached_file in os.listdir(cachedir):
+        for cached_file in os.listdir(encodeName(cachedir)):
             cached_file = decodeName(cached_file)
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
@@ -848,7 +837,7 @@ def cleanCache():
 
     # at this point there should be no more .jpg files in the root of the cachedir
     # any that are still there are for books/authors deleted from database
-    for cached_file in os.listdir(cache):
+    for cached_file in os.listdir(encodeName(cache)):
         cached_file = decodeName(cached_file)
         if cached_file.endswith('.jpg'):
             os.remove(os.path.join(cache, cached_file))

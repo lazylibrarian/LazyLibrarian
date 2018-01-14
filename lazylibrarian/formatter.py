@@ -223,17 +223,32 @@ def check_int(var, default):
 
 # noinspection PyBroadException
 def decodeName(txt):
+    # convert a filename to unicode, don't know what encoding it might be so try a few
+    # it could be a file on a windows filesystem, unix...
     if type(txt) == str and hasattr(txt, "decode"):  # leave unicode and python3 ones alone
-        try:
-            txt = txt.decode(lazylibrarian.SYS_ENCODING)
-        except Exception:
+        for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1' 'utf-8']:
             try:
-                txt = txt.decode('latin-1')
-            except Exception:
-                try:
-                    txt = txt.decode('utf-8')  # in case SYS_ENCODING is not utf-8
-                except Exception:
-                    lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(txt))
+                txt = txt.decode(encoding)
+                return txt
+            except UnicodeError:
+                pass
+        lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(txt))
+    return txt
+
+
+# noinspection PyBroadException
+def encodeName(txt):
+    # convert a filename to str, needed for os.walk and os.listdir
+    # listdir falls over if given unicode startdir and a filename in a subdir can't be decoded to ascii
+    if type(txt) == str and hasattr(txt, "decode"):  # nothing to do if already str
+        return txt
+    for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1' 'utf-8']:
+        try:
+            txt = txt.encode(encoding)
+            return txt
+        except UnicodeError:
+            pass
+    lazylibrarian.logger.debug("Unable to encode name [%s]" % repr(txt))
     return txt
 
 

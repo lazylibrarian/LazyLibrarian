@@ -26,7 +26,7 @@ import lazylibrarian
 import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str, decodeName
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str, decodeName, encodeName
 
 
 def create_covers(refresh=False):
@@ -327,15 +327,8 @@ def magazineScan():
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
         # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
-        if isinstance(mag_path, unicode):
-            try:
-                mag_path = mag_path.encode('ASCII')
-            except UnicodeEncodeError:
-                logger.debug('Unicode error converting %s, expect trouble' % repr(mag_path))
-
-        for rootdir, dirnames, filenames in os.walk(mag_path):
+        for rootdir, dirnames, filenames in os.walk(encodeName(mag_path)):
             rootdir = decodeName(rootdir)
-            # dirnames = [decodeName(item) for item in dirnames]
             filenames = [decodeName(item) for item in filenames]            
             for fname in filenames:
                 # maybe not all magazines will be pdf?
