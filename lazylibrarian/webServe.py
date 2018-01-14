@@ -2259,17 +2259,13 @@ class WebInterface(object):
     def magazines(self):
         myDB = database.DBConnection()
 
-        magazines = myDB.select('SELECT * from magazines ORDER by Title')
+        cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
+        cmd += ' as Iss_Cnt from magazines order by Title'
+        magazines = myDB.select(cmd)
         mags = []
         covercount = 0
         if magazines:
             for mag in magazines:
-                title = mag['Title']
-                count = myDB.match('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
-                if count:
-                    issues = count['counter']
-                else:
-                    issues = 0
                 magimg = mag['LatestCover']
                 # special flag to say "no covers required"
                 if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
@@ -2284,7 +2280,6 @@ class WebInterface(object):
                     covercount += 1
 
                 this_mag = dict(mag)
-                this_mag['Count'] = issues
                 this_mag['Cover'] = magimg
                 temp_title = mag['Title']
                 temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)

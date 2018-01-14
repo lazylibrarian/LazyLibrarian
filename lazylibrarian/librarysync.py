@@ -477,6 +477,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         # LL preferred authorname/bookname at this point.
                         # Allow metadata in opf file to override book metadata as may be users pref
                         res = {}
+                        metafile = ''
                         try:
                             metafile = opf_file(rootdir)
                             res = get_book_info(metafile)
