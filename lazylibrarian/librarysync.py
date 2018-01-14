@@ -28,7 +28,7 @@ from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
-    cleanName, replace_all, split_title, now, decodeName
+    cleanName, replace_all, split_title, now, decodeName, encodeName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
@@ -394,28 +394,22 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
         # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
-        if isinstance(startdir, unicode):
-            try:
-                startdir = startdir.encode('ASCII')
-            except UnicodeEncodeError:
-                logger.debug('Unicode error converting %s, expect trouble' % repr(startdir))
-
-        for r, d, f in os.walk(startdir):
-            r = decodeName(r)
-            d = [decodeName(item) for item in d]
-            f = [decodeName(item) for item in f]
-            for directory in d:
+        for rootdir, dirnames, filenames in os.walk(encodeName(startdir)):
+            for directory in dirnames:
                 # prevent magazine being scanned
                 if directory.startswith("_") or directory.startswith("."):
                     logger.debug('Skipping %s' % directory)
-                    d.remove(directory)
+                    dirnames.remove(directory)
                 # ignore directories containing this special file
-                elif os.path.exists(os.path.join(r, directory, '.ll_ignore')):
-                    logger.debug('Found .ll_ignore file in %s' % os.path.join(r, directory))
-                    d.remove(directory)
+                elif os.path.exists(os.path.join(rootdir, directory, '.ll_ignore')):
+                    logger.debug('Found .ll_ignore file in %s' % os.path.join(rootdir, directory))
+                    dirnames.remove(directory)
 
-            for files in f:
-                subdirectory = r.replace(startdir, '')
+            rootdir = decodeName(rootdir)
+            filenames = [decodeName(item) for item in filenames]
+
+            for files in filenames:
+                subdirectory = rootdir.replace(startdir, '')
                 file_count += 1
 
                 # Added new code to skip if we've done this directory before.
@@ -426,8 +420,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
                     logger.debug("[%s] already scanned" % subdirectory)
-                elif not os.path.isdir(r):
-                    logger.debug("[%s] missing (renamed?)" % r)
+                elif not os.path.isdir(rootdir):
+                    logger.debug("[%s] missing (renamed?)" % rootdir)
                 else:
                     # If this is a book, try to get author/title/isbn/language
                     # if epub or mobi, read metadata from the book
@@ -451,7 +445,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                         # if it's an epub or a mobi we can try to read metadata from it
                         if (extn == ".epub") or (extn == ".mobi"):
-                            book_filename = os.path.join(r, files)
+                            book_filename = os.path.join(rootdir, files)
                             book_filename = book_filename.encode(lazylibrarian.SYS_ENCODING)
 
                             try:
@@ -484,7 +478,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         # Allow metadata in opf file to override book metadata as may be users pref
                         res = {}
                         try:
-                            metafile = opf_file(r)
+                            metafile = opf_file(rootdir)
                             res = get_book_info(metafile)
                         except Exception as e:
                             logger.debug('get_book_info failed for %s, %s %s' % (metafile, type(e).__name__, str(e)))
@@ -510,7 +504,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             # no author/book from metadata file, and not embedded either
                             # or audiobook which may have id3 tags
                             if is_valid_booktype(files, 'audiobook'):
-                                filename = os.path.join(r, files)
+                                filename = os.path.join(rootdir, files)
                                 filename = filename.encode(lazylibrarian.SYS_ENCODING)
 
                                 try:
@@ -631,7 +625,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                 if not bookid:
                                     # get author name from parent directory of this book directory
-                                    newauthor = os.path.basename(os.path.dirname(r))
+                                    newauthor = os.path.basename(os.path.dirname(rootdir))
                                     if isinstance(newauthor, str) and hasattr(newauthor, "decode"):
                                         newauthor = newauthor.decode(lazylibrarian.SYS_ENCODING)
                                     # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
@@ -741,7 +735,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                     (now(), bookid))
 
                                             # check and store book location so we can check if it gets (re)moved
-                                            book_filename = os.path.join(r, files)
+                                            book_filename = os.path.join(rootdir, files)
 
                                             book_basename = os.path.splitext(book_filename)[0]
                                             booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
@@ -780,15 +774,15 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 myDB.action(
                                                     'UPDATE books set AudioLibrary=? where BookID=?', (now(), bookid))
                                             # store audiobook location so we can check if it gets (re)moved
-                                            book_filename = os.path.join(r, files)
+                                            book_filename = os.path.join(rootdir, files)
                                             # link to the first part of multi-part audiobooks
                                             tokmatch = ''
                                             for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                                                 if tokmatch:
                                                     break
-                                                for e in os.listdir(r):
+                                                for e in os.listdir(encodeName(rootdir)):
                                                     if is_valid_booktype(e, booktype='audiobook') and token in e:
-                                                        book_filename = os.path.join(r, e)
+                                                        book_filename = os.path.join(rootdir, e)
                                                         logger.debug("Librarysync link to preferred part %s: %s" %
                                                                      (token, book_filename))
                                                         tokmatch = token
