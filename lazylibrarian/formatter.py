@@ -222,27 +222,28 @@ def check_int(var, default):
 
 
 # noinspection PyBroadException
-def decodeName(txt):
-    # convert a filename to unicode, don't know what encoding it might be so try a few
+def makeUnicode(txt):
+    # convert a bytestring to unicode, don't know what encoding it might be so try a few
     # it could be a file on a windows filesystem, unix...
-    if type(txt) == str and hasattr(txt, "decode"):  # leave unicode and python3 ones alone
-        for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1' 'utf-8']:
-            try:
-                txt = txt.decode(encoding)
-                return txt
-            except UnicodeError:
-                pass
-        lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(txt))
+    if txt is None or isinstance(txt, unicode):
+        return txt
+    for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1', 'utf-8']:
+        try:
+            txt = txt.decode(encoding)
+            return txt
+        except UnicodeError:
+            pass
+    lazylibrarian.logger.debug("Unable to decode name [%s]" % repr(txt))
     return txt
 
 
 # noinspection PyBroadException
-def encodeName(txt):
-    # convert a filename to str, needed for os.walk and os.listdir
+def makeBytestr(txt):
+    # convert unicode to bytestring, needed for os.walk and os.listdir
     # listdir falls over if given unicode startdir and a filename in a subdir can't be decoded to ascii
-    if type(txt) == str and hasattr(txt, "decode"):  # nothing to do if already str
+    if txt is None or not isinstance(txt, unicode):  # nothing to do if already bytestring
         return txt
-    for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1' 'utf-8']:
+    for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1', 'utf-8']:
         try:
             txt = txt.encode(encoding)
             return txt
@@ -361,8 +362,7 @@ def split_title(author, book):
 
 def formatAuthorName(author):
     """ get authorame in a consistent format """
-    if isinstance(author, str) and hasattr(author, "decode"):
-        author = author.decode(lazylibrarian.SYS_ENCODING)
+    author = makeUnicode(author)
 
     if "," in author:
         postfix = getList(lazylibrarian.CONFIG['NAME_POSTFIX'])

@@ -20,7 +20,7 @@ import urlparse
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented, formatAuthorName
+from lazylibrarian.formatter import plural, unaccented, formatAuthorName, makeUnicode
 from lib.BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
 
 
@@ -76,9 +76,7 @@ def GEN(book=None, prov=None):
     if search[0] == '/':
         search = search[1:]
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     page = 1
     results = []

@@ -30,7 +30,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, decodeName, encodeName
+from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.grsync import grfollow
@@ -389,8 +389,8 @@ class Api(object):
         # now the ones with an error page
         cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
         if os.path.isdir(cache):
-            for cached_file in os.listdir(encodeName(cache)):
-                cached_file = decodeName(cached_file)
+            for cached_file in os.listdir(makeBytestr(cache)):
+                cached_file = makeUnicode(cached_file)
                 target = os.path.join(cache, cached_file)
                 if os.path.isfile(target):
                     if os.path.getsize(target) < 500 and '.' in cached_file:

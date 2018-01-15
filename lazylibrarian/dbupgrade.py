@@ -27,7 +27,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lazylibrarian.common import restartJobs, pwd_generator
-from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented, decodeName, encodeName
+from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented, makeUnicode, makeBytestr
 
 
 def upgrade_needed():
@@ -715,8 +715,8 @@ def db_v14(myDB, upgradelog):
     # at this point there should be no more .jpg files in the root of the cachedir
     # any that are still there are for books/authors deleted from database
     # or magazine latest issue cover files that get copied as required
-    for image in os.listdir(encodeName(src)):
-        image = decodeName(image)
+    for image in os.listdir(makeBytestr(src)):
+        image = makeUnicode(image)
         if image.endswith('.jpg'):
             os.remove(os.path.join(src, image))
     upgradelog.write("%s v14: complete\n" % time.ctime())

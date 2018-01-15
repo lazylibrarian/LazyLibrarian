@@ -24,7 +24,7 @@ import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.directparser import GEN
-from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
 from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, LIME
 
 
@@ -624,9 +624,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
             host = host[:-1]
         URL = host + '/api?' + urllib.urlencode(params)
 
-        sterm = book['searchterm']
-        if isinstance(sterm, str) and hasattr(sterm, "decode"):
-            sterm = sterm.decode('utf-8')
+        sterm = makeUnicode(book['searchterm'])
 
         rootxml = None
         logger.debug("[NewzNabPlus] URL = %s" % URL)

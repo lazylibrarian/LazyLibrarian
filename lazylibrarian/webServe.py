@@ -37,7 +37,7 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
-    safe_unicode, cleanName, surnameFirst, sortDefinite, getList
+    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -907,8 +907,8 @@ class WebInterface(object):
                 title = mag['Title']
                 reject = mag['Reject']
                 regex = mag['Regex']
-                # seems kwargs parameters from cherrypy are passed as latin-1, can't see how to
-                # configure it, so we need to correct it on accented magazine names
+                # seems kwargs parameters from cherrypy are sometimes passed as latin-1,
+                # can't see how to configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute stored as unicode
                 # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
                 # otherwise the comparison fails, but sometimes accented characters won't
@@ -2439,8 +2439,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         maglist = []
         for nzburl in args:
-            if isinstance(nzburl, str) and hasattr(nzburl, "decode"):
-                nzburl = nzburl.decode(lazylibrarian.SYS_ENCODING)
+            nzburl = makeUnicode(nzburl)
             # ouch dirty workaround...
             if not nzburl == 'book_table_length':
                 # some NZBurl have &amp;  some have just & so need to try both forms
@@ -2574,8 +2573,7 @@ class WebInterface(object):
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
         for item in args:
-            if isinstance(item, str) and hasattr(item, "decode"):
-                item = item.decode(lazylibrarian.SYS_ENCODING)
+            item = makeUnicode(item)
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if action == "Paused" or action == "Active":

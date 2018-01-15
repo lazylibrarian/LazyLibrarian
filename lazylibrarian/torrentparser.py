@@ -21,7 +21,7 @@ import lazylibrarian
 import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented
+from lazylibrarian.formatter import plural, unaccented, makeUnicode
 from lib.BeautifulSoup import BeautifulSoup
 
 
@@ -52,9 +52,7 @@ def TPB(book=None):
         elif book['library'] == 'magazine':
             cat = 0
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     page = 0
     results = []
@@ -183,9 +181,7 @@ def KAT(book=None):
     }
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     result, success = fetchURL(searchURL)
     if not success:
@@ -291,9 +287,7 @@ def WWT(book=None):
 
     providerurl = url_fix(host + "/torrents-search.php")
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     cat = 0  # 0=all, 36=ebooks, 52=mags, 56=audiobooks
     if 'library' in book:
@@ -433,9 +427,7 @@ def EXTRA(book=None):
     }
     searchURL = providerurl + "/?%s" % urllib.urlencode(params)
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     data, success = fetchURL(searchURL)
     if not success:
@@ -515,9 +507,7 @@ def ZOO(book=None):
     }
     searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     data, success = fetchURL(searchURL)
     if not success:
@@ -597,9 +587,7 @@ def LIME(book=None):
     providerurl = url_fix(host + "/searchrss/other")
     searchURL = providerurl + "?%s" % urllib.urlencode(params)
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     data, success = fetchURL(searchURL)
     if not success:
@@ -684,9 +672,7 @@ def TDL(book=None):
     }
     searchURL = providerurl + "/rss.xml?%s" % urllib.urlencode(params)
 
-    sterm = book['searchterm']
-    if isinstance(sterm, str) and hasattr(sterm, "decode"):
-        sterm = sterm.decode('utf-8')
+    sterm = makeUnicode(book['searchterm'])
 
     data, success = fetchURL(searchURL)
     if not success:

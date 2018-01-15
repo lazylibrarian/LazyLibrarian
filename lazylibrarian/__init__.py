@@ -34,7 +34,7 @@ from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysyn
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader
-from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, decodeName
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
 from lib.apscheduler.scheduler import Scheduler
 
 # Transient globals NOT stored in config
@@ -501,8 +501,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
             logger.debug(str(e))
             my_val = str(def_val)
         finally:
-            if isinstance(my_val, str) and hasattr(my_val, "decode"):
-                my_val = my_val.decode(SYS_ENCODING)
+            my_val = makeUnicode(my_val)
 
     check_section(cfg_name)
     # noinspection PyUnresolvedReferences
@@ -1080,7 +1079,7 @@ def DIRECTORY(dirname):
         usedir = os.getcwd()
 
     # return directory as unicode so we get unicode results from listdir
-    return decodeName(usedir)
+    return makeUnicode(usedir)
 
 
 # noinspection PyUnresolvedReferences

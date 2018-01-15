@@ -31,7 +31,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
-    replace_all, getList, surnameFirst, decodeName, encodeName
+    replace_all, getList, surnameFirst, makeUnicode, makeBytestr
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -69,8 +69,8 @@ def processAlternate(source_dir=None):
 
         logger.debug('Processing alternate directory %s' % source_dir)
         # first, recursively process any books in subdirectories
-        flist = os.listdir(encodeName(source_dir))
-        flist = [decodeName(item) for item in flist]
+        flist = os.listdir(makeBytestr(source_dir))
+        flist = [makeUnicode(item) for item in flist]
         for fname in flist:
             subdir = os.path.join(source_dir, fname)
             if os.path.isdir(subdir):
@@ -152,8 +152,8 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     # move the book and any related files too, other book formats, or opf, jpg with same title
     # (files begin with fname) from sourcedir to new targetdir
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
-    list_dir = os.listdir(encodeName(sourcedir))
-    list_dir = [decodeName(item) for item in list_dir]
+    list_dir = os.listdir(makeBytestr(sourcedir))
+    list_dir = [makeUnicode(item) for item in list_dir]
     for ourfile in list_dir:
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Checking %s for %s" % (ourfile, fname))
@@ -288,8 +288,8 @@ def processDir(reset=False):
                 dirlist.append(item)
         for download_dir in dirlist:
             try:
-                downloads = os.listdir(encodeName(download_dir))
-                downloads = [decodeName(item) for item in downloads]
+                downloads = os.listdir(makeBytestr(download_dir))
+                downloads = [makeUnicode(item) for item in downloads]
             except OSError as why:
                 logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
                 threading.currentThread().name = "WEBSERVER"
@@ -426,8 +426,8 @@ def processDir(reset=False):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                                  (match, pp_path, book_type, matchtitle))
 
-                                    for f in os.listdir(encodeName(pp_path)):
-                                        f = decodeName(f)
+                                    for f in os.listdir(makeBytestr(pp_path)):
+                                        f = makeUnicode(f)
                                         if not is_valid_booktype(f, 'book') \
                                                 and not is_valid_booktype(f, 'audiobook') \
                                                 and not is_valid_booktype(f, 'mag'):
@@ -447,7 +447,7 @@ def processDir(reset=False):
                                     elif book_type == 'Magazine' and not book_file(pp_path, 'mag'):
                                         logger.debug("Skipping %s, no magazine found" % pp_path)
                                         skipped = True
-                                    if not os.listdir(encodeName(pp_path)):
+                                    if not os.listdir(makeBytestr(pp_path)):
                                         logger.debug("Skipping %s, folder is empty" % pp_path)
                                         skipped = True
                                     elif bts_file(pp_path):
@@ -684,8 +684,8 @@ def processDir(reset=False):
             # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
             # do a fresh listdir in case we processed and deleted any earlier
             # and don't process any we've already done as we might not want to delete originals
-            downloads = os.listdir(encodeName(download_dir))
-            downloads = [decodeName(item) for item in downloads]
+            downloads = os.listdir(makeBytestr(download_dir))
+            downloads = [makeUnicode(item) for item in downloads]
             if int(lazylibrarian.LOGLEVEL) > 2:
                 logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
             for entry in downloads:
@@ -1036,8 +1036,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         booktype_list = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
         for btype in booktype_list:
             if not bestmatch:
-                for fname in os.listdir(encodeName(pp_path)):
-                    fname = decodeName(fname)
+                for fname in os.listdir(makeBytestr(pp_path)):
+                    fname = makeUnicode(fname)
                     extn = os.path.splitext(fname)[1].lstrip('.')
                     if extn and extn.lower() == btype:
                         bestmatch = btype
@@ -1047,8 +1047,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         logger.debug('One format import, best match = %s' % bestmatch)
     else:  # mag or audiobook or multi-format book
         match = False
-        for fname in os.listdir(encodeName(pp_path)):
-            fname = decodeName(fname)
+        for fname in os.listdir(makeBytestr(pp_path)):
+            fname = makeUnicode(fname)
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
                 break
@@ -1067,8 +1067,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
             # and ignores opf data if there is data embedded in the book file
             # so we send separate "set_metadata" commands after the import
-            for fname in os.listdir(encodeName(pp_path)):
-                fname = decodeName(fname)
+            for fname in os.listdir(makeBytestr(pp_path)):
+                fname = makeUnicode(fname)
                 if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
                     logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
                 else:
@@ -1150,8 +1150,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     newbookfile = book_file(target_dir, booktype='ebook')
                     if newbookfile:
                         setperm(target_dir)
-                        for fname in os.listdir(encodeName(target_dir)):
-                            fname = decodeName(fname)
+                        for fname in os.listdir(makeBytestr(target_dir)):
+                            fname = makeUnicode(fname)
                             setperm(os.path.join(target_dir, fname))
                         return True, newbookfile
                     return False, "Failed to find a valid ebook in [%s]" % target_dir
@@ -1186,8 +1186,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
-        for fname in os.listdir(encodeName(pp_path)):
-            fname = decodeName(fname)
+        for fname in os.listdir(makeBytestr(pp_path)):
+            fname = makeUnicode(fname)
             if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
                 logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
             else:
@@ -1235,8 +1235,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                 if tokmatch:
                     break
-                for f in os.listdir(encodeName(pp_path)):
-                    f = decodeName(f)
+                for f in os.listdir(makeBytestr(pp_path)):
+                    f = makeUnicode(f)
                     if is_valid_booktype(f, booktype='audiobook') and token in f:
                         firstfile = os.path.join(pp_path, f)
                         logger.debug("Link to preferred part [%s], %s" % (token, f))
@@ -1259,8 +1259,8 @@ def processAutoAdd(src_path=None, booktype='book'):
         return False
     # Now try and copy all the book files into a single dir.
     try:
-        names = os.listdir(encodeName(src_path))
-        names = [decodeName(item) for item in names]
+        names = os.listdir(makeBytestr(src_path))
+        names = [makeUnicode(item) for item in names]
         # files jpg, opf & book(s) should have same name
         # Caution - book may be pdf, mobi, epub or all 3.
         # for now simply copy all files, and let the autoadder sort it out

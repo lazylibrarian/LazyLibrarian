@@ -27,7 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int, getList
+from lazylibrarian.formatter import check_int, getList, makeBytestr
 
 
 class qbittorrentclient(object):
@@ -75,7 +75,7 @@ class qbittorrentclient(object):
 
     def _get_sid(self, base_url, username, password):
         # login so we can capture SID cookie
-        login_data = urllib.urlencode({'username': username, 'password': password})
+        login_data = makeBytestr(urllib.urlencode({'username': username, 'password': password}))
         try:
             _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
@@ -96,7 +96,7 @@ class qbittorrentclient(object):
             data, headers = encode_multipart(args, files, '-------------------------acebdf13572468')
         else:
             if args:
-                data = urllib.urlencode(args)
+                data = makeBytestr(urllib.urlencode(args))
             if content_type:
                 headers['Content-Type'] = content_type
 
@@ -190,17 +190,17 @@ def removeTorrent(hashid, remove_data=False):
     qbclient = qbittorrentclient()
     # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
-    for torrent in torrentList:
-        if torrent['hash'].upper() == hashid.upper():
-            if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                qbclient.remove(hashid, remove_data)
-                return True
-            else:
-                logger.info(
-                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                    torrent['name'])
-                return False
+    if torrentList:
+        for torrent in torrentList:
+            if torrent['hash'].upper() == hashid.upper():
+                if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
+                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                    qbclient.remove(hashid, remove_data)
+                    return True
+                else:
+                    logger.info(
+                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                        torrent['name'])
     return False
 
 
