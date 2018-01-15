@@ -28,20 +28,15 @@
 from .mbcharsetprober import MultiByteCharSetProber
 from .codingstatemachine import CodingStateMachine
 from .chardistribution import Big5DistributionAnalysis
-from .mbcssm import BIG5_SM_MODEL
+from .mbcssm import Big5SMModel
 
 
 class Big5Prober(MultiByteCharSetProber):
     def __init__(self):
-        super(Big5Prober, self).__init__()
-        self.coding_sm = CodingStateMachine(BIG5_SM_MODEL)
-        self.distribution_analyzer = Big5DistributionAnalysis()
+        MultiByteCharSetProber.__init__(self)
+        self._mCodingSM = CodingStateMachine(Big5SMModel)
+        self._mDistributionAnalyzer = Big5DistributionAnalysis()
         self.reset()
 
-    @property
-    def charset_name(self):
+    def get_charset_name(self):
         return "Big5"
-
-    @property
-    def language(self):
-        return "Chinese"

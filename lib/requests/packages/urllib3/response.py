@@ -38,11 +38,7 @@ class DeflateDecoder(object):
 
         self._data += data
         try:
-            decompressed = self._obj.decompress(data)
-            if decompressed:
-                self._first_try = False
-                self._data = None
-            return decompressed
+            return self._obj.decompress(data)
         except zlib.error:
             self._first_try = False
             self._obj = zlib.decompressobj(-zlib.MAX_WBITS)
@@ -473,10 +469,6 @@ class HTTPResponse(io.IOBase):
 
     def getheader(self, name, default=None):
         return self.headers.get(name, default)
-
-    # Backwards compatibility for http.cookiejar
-    def info(self):
-        return self.headers
 
     # Overrides from io.IOBase
     def close(self):

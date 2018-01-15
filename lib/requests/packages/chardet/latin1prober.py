@@ -27,7 +27,8 @@
 ######################### END LICENSE BLOCK #########################
 
 from .charsetprober import CharSetProber
-from .enums import ProbingState
+from .constants import eNotMe
+from .compat import wrap_ord
 
 FREQ_CAT_NUM = 4
 
@@ -81,7 +82,7 @@ Latin1_CharToClass = (
 # 2 : normal
 # 3 : very likely
 Latin1ClassModel = (
-# UDF OTH ASC ASS ACV ACO ASV ASO
+    # UDF OTH ASC ASS ACV ACO ASV ASO
     0,  0,  0,  0,  0,  0,  0,  0,  # UDF
     0,  3,  3,  3,  3,  3,  3,  3,  # OTH
     0,  3,  3,  3,  3,  3,  3,  3,  # ASC
@@ -95,47 +96,40 @@ Latin1ClassModel = (
 
 class Latin1Prober(CharSetProber):
     def __init__(self):
-        super(Latin1Prober, self).__init__()
-        self._last_char_class = None
-        self._freq_counter = None
+        CharSetProber.__init__(self)
         self.reset()
 
     def reset(self):
-        self._last_char_class = OTH
-        self._freq_counter = [0] * FREQ_CAT_NUM
+        self._mLastCharClass = OTH
+        self._mFreqCounter = [0] * FREQ_CAT_NUM
         CharSetProber.reset(self)
 
-    @property
-    def charset_name(self):
-        return "ISO-8859-1"
+    def get_charset_name(self):
+        return "windows-1252"
 
-    @property
-    def language(self):
-        return ""
-
-    def feed(self, byte_str):
-        byte_str = self.filter_with_english_letters(byte_str)
-        for c in byte_str:
-            char_class = Latin1_CharToClass[c]
-            freq = Latin1ClassModel[(self._last_char_class * CLASS_NUM)
-                                    + char_class]
+    def feed(self, aBuf):
+        aBuf = self.filter_with_english_letters(aBuf)
+        for c in aBuf:
+            charClass = Latin1_CharToClass[wrap_ord(c)]
+            freq = Latin1ClassModel[(self._mLastCharClass * CLASS_NUM)
+                                    + charClass]
             if freq == 0:
-                self._state = ProbingState.NOT_ME
+                self._mState = eNotMe
                 break
-            self._freq_counter[freq] += 1
-            self._last_char_class = char_class
+            self._mFreqCounter[freq] += 1
+            self._mLastCharClass = charClass
 
-        return self.state
+        return self.get_state()
 
     def get_confidence(self):
-        if self.state == ProbingState.NOT_ME:
+        if self.get_state() == eNotMe:
             return 0.01
 
-        total = sum(self._freq_counter)
+        total = sum(self._mFreqCounter)
         if total < 0.01:
             confidence = 0.0
         else:
-            confidence = ((self._freq_counter[3] - self._freq_counter[1] * 20.0)
+            confidence = ((self._mFreqCounter[3] - self._mFreqCounter[1] * 20.0)
                           / total)
         if confidence < 0.0:
             confidence = 0.0

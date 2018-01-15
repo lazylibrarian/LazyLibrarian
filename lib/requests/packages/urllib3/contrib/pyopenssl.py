@@ -43,6 +43,7 @@ set the ``urllib3.contrib.pyopenssl.DEFAULT_SSL_CIPHER_LIST`` variable.
 """
 from __future__ import absolute_import
 
+import idna
 import OpenSSL.SSL
 from cryptography import x509
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
@@ -59,7 +60,8 @@ except ImportError:  # Platform-specific: Python 3
 
 import logging
 import ssl
-from ..packages import six
+import select
+import six
 import sys
 
 from .. import util
@@ -164,8 +166,6 @@ def _dnsname_to_stdlib(name):
         that we can't just safely call `idna.encode`: it can explode for
         wildcard names. This avoids that problem.
         """
-        import idna
-
         for prefix in [u'*.', u'.']:
             if name.startswith(prefix):
                 name = name[len(prefix):]
@@ -183,12 +183,9 @@ def get_subj_alt_name(peer_cert):
     Given an PyOpenSSL certificate, provides all the subject alternative names.
     """
     # Pass the cert to cryptography, which has much better APIs for this.
-    if hasattr(peer_cert, "to_cryptography"):
-        cert = peer_cert.to_cryptography()
-    else:
-        # This is technically using private APIs, but should work across all
-        # relevant versions before PyOpenSSL got a proper API for this.
-        cert = _Certificate(openssl_backend, peer_cert._x509)
+    # This is technically using private APIs, but should work across all
+    # relevant versions until PyOpenSSL gets something proper for this.
+    cert = _Certificate(openssl_backend, peer_cert._x509)
 
     # We want to find the SAN extension. Ask Cryptography to locate it (it's
     # faster than looping in Python)
@@ -267,7 +264,8 @@ class WrappedSocket(object):
             else:
                 raise
         except OpenSSL.SSL.WantReadError:
-            rd = util.wait_for_read(self.socket, self.socket.gettimeout())
+            rd, wd, ed = select.select(
+                [self.socket], [], [], self.socket.gettimeout())
             if not rd:
                 raise timeout('The read operation timed out')
             else:
@@ -289,7 +287,8 @@ class WrappedSocket(object):
             else:
                 raise
         except OpenSSL.SSL.WantReadError:
-            rd = util.wait_for_read(self.socket, self.socket.gettimeout())
+            rd, wd, ed = select.select(
+                [self.socket], [], [], self.socket.gettimeout())
             if not rd:
                 raise timeout('The read operation timed out')
             else:
@@ -303,12 +302,11 @@ class WrappedSocket(object):
             try:
                 return self.connection.send(data)
             except OpenSSL.SSL.WantWriteError:
-                wr = util.wait_for_write(self.socket, self.socket.gettimeout())
-                if not wr:
+                _, wlist, _ = select.select([], [self.socket], [],
+                                            self.socket.gettimeout())
+                if not wlist:
                     raise timeout()
                 continue
-            except OpenSSL.SSL.SysCallError as e:
-                raise SocketError(str(e))
 
     def sendall(self, data):
         total_sent = 0
@@ -440,7 +438,7 @@ class PyOpenSSLContext(object):
             try:
                 cnx.do_handshake()
             except OpenSSL.SSL.WantReadError:
-                rd = util.wait_for_read(sock, sock.gettimeout())
+                rd, _, _ = select.select([sock], [], [], sock.gettimeout())
                 if not rd:
                     raise timeout('select timed out')
                 continue

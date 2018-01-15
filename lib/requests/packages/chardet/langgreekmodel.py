@@ -31,7 +31,7 @@
 # 252: 0 - 9
 
 # Character Mapping Table:
-Latin7_char_to_order_map = (
+Latin7_CharToOrderMap = (
 255,255,255,255,255,255,255,255,255,255,254,255,255,254,255,255,  # 00
 255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,  # 10
 253,253,253,253,253,253,253,253,253,253,253,253,253,253,253,253,  # 20
@@ -50,7 +50,7 @@ Latin7_char_to_order_map = (
   9,  8, 14,  7,  2, 12, 28, 23, 42, 24, 64, 75, 19, 26, 27,253,  # f0
 )
 
-win1253_char_to_order_map = (
+win1253_CharToOrderMap = (
 255,255,255,255,255,255,255,255,255,255,254,255,255,254,255,255,  # 00
 255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,  # 10
 253,253,253,253,253,253,253,253,253,253,253,253,253,253,253,253,  # 20
@@ -207,19 +207,19 @@ GreekLangModel = (
 )
 
 Latin7GreekModel = {
-  'char_to_order_map': Latin7_char_to_order_map,
-  'precedence_matrix': GreekLangModel,
-  'typical_positive_ratio': 0.982851,
-  'keep_english_letter': False,
-  'charset_name': "ISO-8859-7",
-  'language': 'Greek',
+  'charToOrderMap': Latin7_CharToOrderMap,
+  'precedenceMatrix': GreekLangModel,
+  'mTypicalPositiveRatio': 0.982851,
+  'keepEnglishLetter': False,
+  'charsetName': "ISO-8859-7"
 }
 
 Win1253GreekModel = {
-  'char_to_order_map': win1253_char_to_order_map,
-  'precedence_matrix': GreekLangModel,
-  'typical_positive_ratio': 0.982851,
-  'keep_english_letter': False,
-  'charset_name': "windows-1253",
-  'language': 'Greek',
+  'charToOrderMap': win1253_CharToOrderMap,
+  'precedenceMatrix': GreekLangModel,
+  'mTypicalPositiveRatio': 0.982851,
+  'keepEnglishLetter': False,
+  'charsetName': "windows-1253"
 }
+
+# flake8: noqa
