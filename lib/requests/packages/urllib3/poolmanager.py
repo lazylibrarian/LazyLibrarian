@@ -21,42 +21,28 @@ log = logging.getLogger(__name__)
 SSL_KEYWORDS = ('key_file', 'cert_file', 'cert_reqs', 'ca_certs',
                 'ssl_version', 'ca_cert_dir', 'ssl_context')
 
-# All known keyword arguments that could be provided to the pool manager, its
-# pools, or the underlying connections. This is used to construct a pool key.
-_key_fields = (
-    'key_scheme',  # str
-    'key_host',  # str
-    'key_port',  # int
-    'key_timeout',  # int or float or Timeout
-    'key_retries',  # int or Retry
-    'key_strict',  # bool
-    'key_block',  # bool
-    'key_source_address',  # str
-    'key_key_file',  # str
-    'key_cert_file',  # str
-    'key_cert_reqs',  # str
-    'key_ca_certs',  # str
-    'key_ssl_version',  # str
-    'key_ca_cert_dir',  # str
-    'key_ssl_context',  # instance of ssl.SSLContext or urllib3.util.ssl_.SSLContext
-    'key_maxsize',  # int
-    'key_headers',  # dict
-    'key__proxy',  # parsed proxy url
-    'key__proxy_headers',  # dict
-    'key_socket_options',  # list of (level (int), optname (int), value (int or str)) tuples
-    'key__socks_options',  # dict
-    'key_assert_hostname',  # bool or string
-    'key_assert_fingerprint',  # str
-)
+# The base fields to use when determining what pool to get a connection from;
+# these do not rely on the ``connection_pool_kw`` and can be determined by the
+# URL and potentially the ``urllib3.connection.port_by_scheme`` dictionary.
+#
+# All custom key schemes should include the fields in this key at a minimum.
+BasePoolKey = collections.namedtuple('BasePoolKey', ('scheme', 'host', 'port'))
 
-#: The namedtuple class used to construct keys for the connection pool.
-#: All custom key schemes should include the fields in this key at a minimum.
-PoolKey = collections.namedtuple('PoolKey', _key_fields)
+# The fields to use when determining what pool to get a HTTP and HTTPS
+# connection from. All additional fields must be present in the PoolManager's
+# ``connection_pool_kw`` instance variable.
+HTTPPoolKey = collections.namedtuple(
+    'HTTPPoolKey', BasePoolKey._fields + ('timeout', 'retries', 'strict',
+                                          'block', 'source_address')
+)
+HTTPSPoolKey = collections.namedtuple(
+    'HTTPSPoolKey', HTTPPoolKey._fields + SSL_KEYWORDS
+)
 
 
 def _default_key_normalizer(key_class, request_context):
     """
-    Create a pool key out of a request context dictionary.
+    Create a pool key of type ``key_class`` for a request.
 
     According to RFC 3986, both the scheme and host are case-insensitive.
     Therefore, this function normalizes both before constructing the pool
@@ -66,50 +52,26 @@ def _default_key_normalizer(key_class, request_context):
     :param key_class:
         The class to use when constructing the key. This should be a namedtuple
         with the ``scheme`` and ``host`` keys at a minimum.
-    :type  key_class: namedtuple
+
     :param request_context:
         A dictionary-like object that contain the context for a request.
-    :type  request_context: dict
-
-    :return: A namedtuple that can be used as a connection pool key.
-    :rtype:  PoolKey
+        It should contain a key for each field in the :class:`HTTPPoolKey`
     """
-    # Since we mutate the dictionary, make a copy first
-    context = request_context.copy()
+    context = {}
+    for key in key_class._fields:
+        context[key] = request_context.get(key)
     context['scheme'] = context['scheme'].lower()
     context['host'] = context['host'].lower()
-
-    # These are both dictionaries and need to be transformed into frozensets
-    for key in ('headers', '_proxy_headers', '_socks_options'):
-        if key in context and context[key] is not None:
-            context[key] = frozenset(context[key].items())
-
-    # The socket_options key may be a list and needs to be transformed into a
-    # tuple.
-    socket_opts = context.get('socket_options')
-    if socket_opts is not None:
-        context['socket_options'] = tuple(socket_opts)
-
-    # Map the kwargs to the names in the namedtuple - this is necessary since
-    # namedtuples can't have fields starting with '_'.
-    for key in list(context.keys()):
-        context['key_' + key] = context.pop(key)
-
-    # Default to ``None`` for keys missing from the context
-    for field in key_class._fields:
-        if field not in context:
-            context[field] = None
-
     return key_class(**context)
 
 
-#: A dictionary that maps a scheme to a callable that creates a pool key.
-#: This can be used to alter the way pool keys are constructed, if desired.
-#: Each PoolManager makes a copy of this dictionary so they can be configured
-#: globally here, or individually on the instance.
+# A dictionary that maps a scheme to a callable that creates a pool key.
+# This can be used to alter the way pool keys are constructed, if desired.
+# Each PoolManager makes a copy of this dictionary so they can be configured
+# globally here, or individually on the instance.
 key_fn_by_scheme = {
-    'http': functools.partial(_default_key_normalizer, PoolKey),
-    'https': functools.partial(_default_key_normalizer, PoolKey),
+    'http': functools.partial(_default_key_normalizer, HTTPPoolKey),
+    'https': functools.partial(_default_key_normalizer, HTTPSPoolKey),
 }
 
 pool_classes_by_scheme = {
@@ -131,7 +93,7 @@ class PoolManager(RequestMethods):
         Headers to include with all requests, unless other headers are given
         explicitly.
 
-    :param \\**connection_pool_kw:
+    :param \**connection_pool_kw:
         Additional parameters are used to create fresh
         :class:`urllib3.connectionpool.ConnectionPool` instances.
 
@@ -167,32 +129,22 @@ class PoolManager(RequestMethods):
         # Return False to re-raise any potential exceptions
         return False
 
-    def _new_pool(self, scheme, host, port, request_context=None):
+    def _new_pool(self, scheme, host, port):
         """
-        Create a new :class:`ConnectionPool` based on host, port, scheme, and
-        any additional pool keyword arguments.
+        Create a new :class:`ConnectionPool` based on host, port and scheme.
 
-        If ``request_context`` is provided, it is provided as keyword arguments
-        to the pool class used. This method is used to actually create the
-        connection pools handed out by :meth:`connection_from_url` and
-        companion methods. It is intended to be overridden for customization.
+        This method is used to actually create the connection pools handed out
+        by :meth:`connection_from_url` and companion methods. It is intended
+        to be overridden for customization.
         """
         pool_cls = self.pool_classes_by_scheme[scheme]
-        if request_context is None:
-            request_context = self.connection_pool_kw.copy()
-
-        # Although the context has everything necessary to create the pool,
-        # this function has historically only used the scheme, host, and port
-        # in the positional args. When an API change is acceptable these can
-        # be removed.
-        for key in ('scheme', 'host', 'port'):
-            request_context.pop(key, None)
-
+        kwargs = self.connection_pool_kw
         if scheme == 'http':
+            kwargs = self.connection_pool_kw.copy()
             for kw in SSL_KEYWORDS:
-                request_context.pop(kw, None)
+                kwargs.pop(kw, None)
 
-        return pool_cls(host, port, **request_context)
+        return pool_cls(host, port, **kwargs)
 
     def clear(self):
         """
@@ -203,21 +155,18 @@ class PoolManager(RequestMethods):
         """
         self.pools.clear()
 
-    def connection_from_host(self, host, port=None, scheme='http', pool_kwargs=None):
+    def connection_from_host(self, host, port=None, scheme='http'):
         """
         Get a :class:`ConnectionPool` based on the host, port, and scheme.
 
         If ``port`` isn't given, it will be derived from the ``scheme`` using
-        ``urllib3.connectionpool.port_by_scheme``. If ``pool_kwargs`` is
-        provided, it is merged with the instance's ``connection_pool_kw``
-        variable and used to create the new connection pool, if one is
-        needed.
+        ``urllib3.connectionpool.port_by_scheme``.
         """
 
         if not host:
             raise LocationValueError("No host specified.")
 
-        request_context = self._merge_pool_kwargs(pool_kwargs)
+        request_context = self.connection_pool_kw.copy()
         request_context['scheme'] = scheme or 'http'
         if not port:
             port = port_by_scheme.get(request_context['scheme'].lower(), 80)
@@ -237,9 +186,9 @@ class PoolManager(RequestMethods):
         pool_key_constructor = self.key_fn_by_scheme[scheme]
         pool_key = pool_key_constructor(request_context)
 
-        return self.connection_from_pool_key(pool_key, request_context=request_context)
+        return self.connection_from_pool_key(pool_key)
 
-    def connection_from_pool_key(self, pool_key, request_context=None):
+    def connection_from_pool_key(self, pool_key):
         """
         Get a :class:`ConnectionPool` based on the provided pool key.
 
@@ -255,48 +204,22 @@ class PoolManager(RequestMethods):
                 return pool
 
             # Make a fresh ConnectionPool of the desired type
-            scheme = request_context['scheme']
-            host = request_context['host']
-            port = request_context['port']
-            pool = self._new_pool(scheme, host, port, request_context=request_context)
+            pool = self._new_pool(pool_key.scheme, pool_key.host, pool_key.port)
             self.pools[pool_key] = pool
 
         return pool
 
-    def connection_from_url(self, url, pool_kwargs=None):
+    def connection_from_url(self, url):
         """
-        Similar to :func:`urllib3.connectionpool.connection_from_url`.
+        Similar to :func:`urllib3.connectionpool.connection_from_url` but
+        doesn't pass any additional parameters to the
+        :class:`urllib3.connectionpool.ConnectionPool` constructor.
 
-        If ``pool_kwargs`` is not provided and a new pool needs to be
-        constructed, ``self.connection_pool_kw`` is used to initialize
-        the :class:`urllib3.connectionpool.ConnectionPool`. If ``pool_kwargs``
-        is provided, it is used instead. Note that if a new pool does not
-        need to be created for the request, the provided ``pool_kwargs`` are
-        not used.
+        Additional parameters are taken from the :class:`.PoolManager`
+        constructor.
         """
         u = parse_url(url)
-        return self.connection_from_host(u.host, port=u.port, scheme=u.scheme,
-                                         pool_kwargs=pool_kwargs)
-
-    def _merge_pool_kwargs(self, override):
-        """
-        Merge a dictionary of override values for self.connection_pool_kw.
-
-        This does not modify self.connection_pool_kw and returns a new dict.
-        Any keys in the override dictionary with a value of ``None`` are
-        removed from the merged dictionary.
-        """
-        base_pool_kwargs = self.connection_pool_kw.copy()
-        if override:
-            for key, value in override.items():
-                if value is None:
-                    try:
-                        del base_pool_kwargs[key]
-                    except KeyError:
-                        pass
-                else:
-                    base_pool_kwargs[key] = value
-        return base_pool_kwargs
+        return self.connection_from_host(u.host, port=u.port, scheme=u.scheme)
 
     def urlopen(self, method, url, redirect=True, **kw):
         """
@@ -399,13 +322,13 @@ class ProxyManager(PoolManager):
         super(ProxyManager, self).__init__(
             num_pools, headers, **connection_pool_kw)
 
-    def connection_from_host(self, host, port=None, scheme='http', pool_kwargs=None):
+    def connection_from_host(self, host, port=None, scheme='http'):
         if scheme == "https":
             return super(ProxyManager, self).connection_from_host(
-                host, port, scheme, pool_kwargs=pool_kwargs)
+                host, port, scheme)
 
         return super(ProxyManager, self).connection_from_host(
-            self.proxy.host, self.proxy.port, self.proxy.scheme, pool_kwargs=pool_kwargs)
+            self.proxy.host, self.proxy.port, self.proxy.scheme)
 
     def _set_proxy_headers(self, url, headers=None):
         """

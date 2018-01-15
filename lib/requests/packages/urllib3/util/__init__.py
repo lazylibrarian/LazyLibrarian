@@ -7,7 +7,6 @@ from .ssl_ import (
     SSLContext,
     HAS_SNI,
     IS_PYOPENSSL,
-    IS_SECURETRANSPORT,
     assert_fingerprint,
     resolve_cert_reqs,
     resolve_ssl_version,
@@ -25,15 +24,10 @@ from .url import (
     split_first,
     Url,
 )
-from .wait import (
-    wait_for_read,
-    wait_for_write
-)
 
 __all__ = (
     'HAS_SNI',
     'IS_PYOPENSSL',
-    'IS_SECURETRANSPORT',
     'SSLContext',
     'Retry',
     'Timeout',
@@ -49,6 +43,4 @@ __all__ = (
     'resolve_ssl_version',
     'split_first',
     'ssl_wrap_socket',
-    'wait_for_read',
-    'wait_for_write'
 )

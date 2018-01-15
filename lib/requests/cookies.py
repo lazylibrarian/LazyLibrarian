@@ -19,6 +19,8 @@ from .compat import cookielib, urlparse, urlunparse, Morsel
 
 try:
     import threading
+    # grr, pyflakes: this fixes "redefinition of unused 'threading'"
+    threading
 except ImportError:
     import dummy_threading as threading
 
@@ -306,10 +308,8 @@ class RequestsCookieJar(cookielib.CookieJar, collections.MutableMapping):
         """
         dictionary = {}
         for cookie in iter(self):
-            if (
-                (domain is None or cookie.domain == domain) and
-                (path is None or cookie.path == path)
-            ):
+            if (domain is None or cookie.domain == domain) and (path is None
+                                                or cookie.path == path):
                 dictionary[cookie.name] = cookie.value
         return dictionary
 

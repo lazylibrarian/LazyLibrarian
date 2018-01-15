@@ -1,7 +1,13 @@
 from __future__ import absolute_import
 import socket
-from .wait import wait_for_read
-from .selectors import HAS_SELECT, SelectorError
+try:
+    from select import poll, POLLIN
+except ImportError:  # `poll` doesn't exist on OSX and other platforms
+    poll = False
+    try:
+        from select import select
+    except ImportError:  # `select` doesn't exist on AppEngine.
+        select = False
 
 
 def is_connection_dropped(conn):  # Platform-specific
@@ -20,13 +26,22 @@ def is_connection_dropped(conn):  # Platform-specific
     if sock is None:  # Connection already closed (such as by httplib).
         return True
 
-    if not HAS_SELECT:
-        return False
+    if not poll:
+        if not select:  # Platform-specific: AppEngine
+            return False
 
-    try:
-        return bool(wait_for_read(sock, timeout=0.0))
-    except SelectorError:
-        return True
+        try:
+            return select([sock], [], [], 0.0)[0]
+        except socket.error:
+            return True
+
+    # This version is better on platforms that support it.
+    p = poll()
+    p.register(sock, POLLIN)
+    for (fno, ev) in p.poll(0.0):
+        if fno == sock.fileno():
+            # Either data is buffered (bad), or the connection is dropped.
+            return True
 
 
 # This function is copied from socket.py in the Python 2.7 standard

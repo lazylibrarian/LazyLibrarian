@@ -15,25 +15,18 @@
 # 02110-1301  USA
 ######################### END LICENSE BLOCK #########################
 
-
-from .compat import PY2, PY3
-from .universaldetector import UniversalDetector
-from .version import __version__, VERSION
+__version__ = "2.3.0"
+from sys import version_info
 
 
-def detect(byte_str):
-    """
-    Detect the encoding of the given byte string.
+def detect(aBuf):
+    if ((version_info < (3, 0) and isinstance(aBuf, unicode)) or
+            (version_info >= (3, 0) and not isinstance(aBuf, bytes))):
+        raise ValueError('Expected a bytes object, not a unicode object')
 
-    :param byte_str:     The byte sequence to examine.
-    :type byte_str:      ``bytes`` or ``bytearray``
-    """
-    if not isinstance(byte_str, bytearray):
-        if not isinstance(byte_str, bytes):
-            raise TypeError('Expected object of type bytes or bytearray, got: '
-                            '{0}'.format(type(byte_str)))
-        else:
-            byte_str = bytearray(byte_str)
-    detector = UniversalDetector()
-    detector.feed(byte_str)
-    return detector.close()
+    from . import universaldetector
+    u = universaldetector.UniversalDetector()
+    u.reset()
+    u.feed(aBuf)
+    u.close()
+    return u.result

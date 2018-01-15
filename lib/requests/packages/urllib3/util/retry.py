@@ -85,14 +85,6 @@ class Retry(object):
 
         Set to ``False`` to disable and imply ``raise_on_redirect=False``.
 
-    :param int status:
-        How many times to retry on bad status codes.
-
-        These are retries made on responses, where status code matches
-        ``status_forcelist``.
-
-        Set to ``0`` to fail on the first retry of this type.
-
     :param iterable method_whitelist:
         Set of uppercased HTTP method verbs that we should retry on.
 
@@ -149,7 +141,7 @@ class Retry(object):
     #: Maximum backoff time.
     BACKOFF_MAX = 120
 
-    def __init__(self, total=10, connect=None, read=None, redirect=None, status=None,
+    def __init__(self, total=10, connect=None, read=None, redirect=None,
                  method_whitelist=DEFAULT_METHOD_WHITELIST, status_forcelist=None,
                  backoff_factor=0, raise_on_redirect=True, raise_on_status=True,
                  history=None, respect_retry_after_header=True):
@@ -157,7 +149,6 @@ class Retry(object):
         self.total = total
         self.connect = connect
         self.read = read
-        self.status = status
 
         if redirect is False or total is False:
             redirect = 0
@@ -175,7 +166,7 @@ class Retry(object):
     def new(self, **kw):
         params = dict(
             total=self.total,
-            connect=self.connect, read=self.read, redirect=self.redirect, status=self.status,
+            connect=self.connect, read=self.read, redirect=self.redirect,
             method_whitelist=self.method_whitelist,
             status_forcelist=self.status_forcelist,
             backoff_factor=self.backoff_factor,
@@ -282,23 +273,10 @@ class Retry(object):
         """
         return isinstance(err, (ReadTimeoutError, ProtocolError))
 
-    def _is_method_retryable(self, method):
-        """ Checks if a given HTTP method should be retried upon, depending if
-        it is included on the method whitelist.
+    def is_retry(self, method, status_code, has_retry_after=False):
+        """ Is this method/status code retryable? (Based on method/codes whitelists)
         """
         if self.method_whitelist and method.upper() not in self.method_whitelist:
-            return False
-
-        return True
-
-    def is_retry(self, method, status_code, has_retry_after=False):
-        """ Is this method/status code retryable? (Based on whitelists and control
-        variables such as the number of total retries to allow, whether to
-        respect the Retry-After header, whether this header is present, and
-        whether the returned status code is on the list of status codes to
-        be retried upon on the presence of the aforementioned header)
-        """
-        if not self._is_method_retryable(method):
             return False
 
         if self.status_forcelist and status_code in self.status_forcelist:
@@ -309,7 +287,7 @@ class Retry(object):
 
     def is_exhausted(self):
         """ Are we out of retries? """
-        retry_counts = (self.total, self.connect, self.read, self.redirect, self.status)
+        retry_counts = (self.total, self.connect, self.read, self.redirect)
         retry_counts = list(filter(None, retry_counts))
         if not retry_counts:
             return False
@@ -339,7 +317,6 @@ class Retry(object):
         connect = self.connect
         read = self.read
         redirect = self.redirect
-        status_count = self.status
         cause = 'unknown'
         status = None
         redirect_location = None
@@ -353,7 +330,7 @@ class Retry(object):
 
         elif error and self._is_read_error(error):
             # Read retry?
-            if read is False or not self._is_method_retryable(method):
+            if read is False:
                 raise six.reraise(type(error), error, _stacktrace)
             elif read is not None:
                 read -= 1
@@ -371,8 +348,6 @@ class Retry(object):
             # status_forcelist and a the given method is in the whitelist
             cause = ResponseError.GENERIC_ERROR
             if response and response.status:
-                if status_count is not None:
-                    status_count -= 1
                 cause = ResponseError.SPECIFIC_ERROR.format(
                     status_code=response.status)
                 status = response.status
@@ -381,7 +356,7 @@ class Retry(object):
 
         new_retry = self.new(
             total=total,
-            connect=connect, read=read, redirect=redirect, status=status_count,
+            connect=connect, read=read, redirect=redirect,
             history=history)
 
         if new_retry.is_exhausted():
@@ -393,7 +368,7 @@ class Retry(object):
 
     def __repr__(self):
         return ('{cls.__name__}(total={self.total}, connect={self.connect}, '
-                'read={self.read}, redirect={self.redirect}, status={self.status})').format(
+                'read={self.read}, redirect={self.redirect})').format(
                     cls=type(self), self=self)
 
 
