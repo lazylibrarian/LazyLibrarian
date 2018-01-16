@@ -179,7 +179,7 @@ def main():
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so force update
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 1
-        lazylibrarian.SIGNAL == 'update'
+        lazylibrarian.SIGNAL = 'update'
 
     if lazylibrarian.CONFIG['COMMITS_BEHIND'] <= 0 and lazylibrarian.SIGNAL == 'update':
         lazylibrarian.SIGNAL = None
