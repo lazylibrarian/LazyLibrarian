@@ -53,10 +53,10 @@ def get_book_info(fname):
             logger.debug('Unable to parse mobi in %s, %s %s' % (fname, type(e).__name__, str(e)))
             return res
 
-        res['creator'] =  makeUnicode(book.author())
-        res['title'] =  makeUnicode(book.title())
-        res['language'] =  makeUnicode(book.language())
-        res['identifier'] =  makeUnicode(book.isbn())
+        res['creator'] = makeUnicode(book.author())
+        res['title'] = makeUnicode(book.title())
+        res['language'] = makeUnicode(book.language())
+        res['identifier'] = makeUnicode(book.isbn())
         return res
 
         # noinspection PyUnreachableCode
