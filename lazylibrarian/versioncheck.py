@@ -230,7 +230,7 @@ def checkForUpdates():
                 plural = 's'
             logmsg('info', 'Auto updating %s commit%s in 10 seconds' % (behind, plural))
             time.sleep(10)
-            lazylibrarian.SIGNAL == 'update'
+            lazylibrarian.SIGNAL = 'update'
     logmsg('debug', 'Update check complete')
 
 

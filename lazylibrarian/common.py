@@ -285,40 +285,40 @@ def scheduleJob(action='Start', target=None):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
         if 'processDir' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0)
             lazylibrarian.SCHED.add_interval_job(
-                lazylibrarian.postprocess.cron_processDir,
-                minutes=check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0))
-            logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
+                lazylibrarian.postprocess.cron_processDir, minutes=minutes)
+            logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_magazines' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0)
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchmag.cron_search_magazines,
-                    minutes=check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                    lazylibrarian.searchmag.cron_search_magazines, minutes=minutes)
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_book' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0)
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchbook.cron_search_book,
-                    minutes=check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                    lazylibrarian.searchbook.cron_search_book, minutes=minutes)
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_rss_book' in target and check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0):
             if lazylibrarian.USE_RSS():
+                minutes = check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0)
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchrss.search_rss_book,
-                    minutes=check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+                    lazylibrarian.searchrss.search_rss_book, minutes=minutes)
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'checkForUpdates' in target and check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0):
+            hours = check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0)
             lazylibrarian.SCHED.add_interval_job(
-                lazylibrarian.versioncheck.checkForUpdates,
-                hours=check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0))
-            logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+                lazylibrarian.versioncheck.checkForUpdates, hours=hours)
+            logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'syncToGoodreads' in target and lazylibrarian.CONFIG['GR_SYNC']:
             if check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0):
+                hours = check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0)
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.grsync.cron_sync_to_gr,
-                    hours=check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0))
-                logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
+                    lazylibrarian.grsync.cron_sync_to_gr, hours=hours)
+                logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'authorUpdate' in target and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
             # Try to get all authors scanned evenly inside the cache age
             minutes = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0) * 24 * 60
@@ -336,11 +336,11 @@ def scheduleJob(action='Start', target=None):
                 minutes = 10
             if minutes <= 600:  # for bigger intervals switch to hours
                 lazylibrarian.SCHED.add_interval_job(authorUpdate, minutes=minutes)
-                logger.debug("%s %s job in %s minutes" % (action, target, minutes))
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
             else:
                 hours = int(minutes / 60)
                 lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=hours)
-                logger.debug("%s %s job in %s hours" % (action, target, hours))
+                logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
 
 
 def authorUpdate():
@@ -480,7 +480,10 @@ def showJobs():
         # jobinterval = job.split('[')[1].split(']')[0]
         jobtime = job.split('at: ')[1].split('.')[0]
         jobtime = next_run(jobtime)
-        jobinfo = "%s: Next run in %s" % (jobname, jobtime)
+        timeparts = jobtime.split(' ')
+        if timeparts[0] == '1' and timeparts[1].endswith('s'):
+            timeparts[1] = timeparts[1][:-1]
+        jobinfo = "%s: Next run in %s %s" % (jobname, timeparts[0], timeparts[1])
         result.append(jobinfo)
 
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
