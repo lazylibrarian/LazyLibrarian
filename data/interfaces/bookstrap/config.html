@@ -1267,6 +1267,16 @@
                       <input type="text" id="versioncheck_interval" name="versioncheck_interval" value="${lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']}" class="form-control" placeholder="Version check interval (hours)" >
                       <span class="input-group-addon">Hours</span>
                     </div>
+                    <%
+                        if lazylibrarian.CONFIG['AUTO_UPDATE'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="auto_update" class="control-label">
+                      <input type="checkbox" id="auto_update" name="auto_update" value="1" ${checked} />
+                      Auto Update when new version found</label>
+                    <span class="help-block">This will auto update if the task finds a new version. Does not apply to manual version checks</span>
                   </div>
                   <div class="help-block">Changes to the scan intervals only take effect when the jobs are restarted</div>
                 </fieldset>
@@ -1333,7 +1343,7 @@
                             checked = 'checked="checked"'
                         else:
                             checked = ''
-                        %>
+                    %>
                     <label for="newauthor_books" class="control-label">
                       <input type="checkbox" id="newauthor_books" name="newauthor_books" value="1" ${checked} />
                       Include other books by new authors</label>

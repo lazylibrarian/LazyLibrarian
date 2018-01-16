@@ -28,7 +28,7 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
-    
+
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int
@@ -210,8 +210,10 @@ def getCurrentGitBranch():
 
 def checkForUpdates():
     """ Called at startup, from webserver with thread name WEBSERVER, or as a cron job """
+    auto_update = False
     if 'Thread-' in threading.currentThread().name:
         threading.currentThread().name = "CRON-VERSIONCHECK"
+        auto_update = lazylibrarian.CONFIG['AUTO_UPDATE']
     logmsg('debug', 'Set Install Type, Current & Latest Version and Commit status')
     getInstallType()
     lazylibrarian.CONFIG['CURRENT_VERSION'] = getCurrentVersion()
@@ -220,7 +222,15 @@ def checkForUpdates():
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
         lazylibrarian.COMMIT_LIST = ""
     else:
-        lazylibrarian.CONFIG['COMMITS_BEHIND'], lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
+        behind, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
+        lazylibrarian.CONFIG['COMMITS_BEHIND'] = behind
+        if auto_update and behind > 0:
+            plural = ''
+            if behind > 1:
+                plural = 's'
+            logmsg('info', 'Auto updating %s commit%s in 10 seconds' % (behind, plural))
+            time.sleep(10)
+            lazylibrarian.SIGNAL == 'update'
     logmsg('debug', 'Update check complete')
 
 
@@ -228,8 +238,6 @@ def getLatestVersion():
     # Return latest version from GITHUB
     # if GIT install return latest on current branch
     # if nonGIT install return latest from master
-    # Can only work for GIT driven installs, so check install type
-    # lazylibrarian.CONFIG['COMMITS_BEHIND'] = 'Unknown'
 
     if lazylibrarian.CONFIG['INSTALL_TYPE'] in ['git', 'source', 'package']:
         latest_version = getLatestVersion_FromGit()
@@ -305,8 +313,7 @@ def getLatestVersion_FromGit():
 
 def getCommitDifferenceFromGit():
     # See how many commits behind we are
-    # Takes current latest version value and trys to diff it with the latest
-    # version in the current branch.
+    # Takes current latest version value and tries to diff it with the latest version in the current branch.
     commit_list = ''
     commits = -1
     if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
@@ -425,14 +432,9 @@ def update():
             lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
             return True
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
-
-        # As this is a non GIT install, we assume that the comparison is
-        # always to master.
-
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (
             lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
-        # version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
 
         try:
             logmsg('info', '(update) Downloading update from: ' + tar_download_url)
