@@ -57,7 +57,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
 
     if hostname.endswith('/'):
         hostname = hostname[:-1]
-    if not hostname.startswith("http"):
+    if not hostname.startswith("http://") and not hostname.startswith("https://"):
         hostname = 'http://' + hostname
 
     HOST = "%s:%s" % (hostname, port)

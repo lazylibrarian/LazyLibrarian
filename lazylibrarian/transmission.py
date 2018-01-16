@@ -177,7 +177,7 @@ def torrentAction(method, arguments):
     username = lazylibrarian.CONFIG['TRANSMISSION_USER']
     password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
-    if not host.startswith('http'):
+    if not host.startswith("http://") and not host.startswith("https://"):
         host = 'http://' + host
 
     if host.endswith('/'):
@@ -230,7 +230,7 @@ def torrentAction(method, arguments):
     proxies = proxyList()
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     try:
-        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies, 
+        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies,
                                  auth=auth, timeout=timeout)
         response = response.json()
     except Exception as e:

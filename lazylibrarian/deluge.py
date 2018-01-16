@@ -226,7 +226,7 @@ def _get_auth():
 
     delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']
 
-    if not delugeweb_host.startswith('http'):
+    if not delugeweb_host.startswith("http://") and not delugeweb_host.startswith("https://"):
         delugeweb_host = 'http://%s' % delugeweb_host
 
     if delugeweb_host.endswith('/'):

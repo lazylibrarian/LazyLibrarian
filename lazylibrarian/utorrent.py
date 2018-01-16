@@ -39,7 +39,7 @@ class utorrentclient(object):
         if not host or not port:
             logger.error('Invalid Utorrent host or port, check your config')
 
-        if not host.startswith('http'):
+        if not host.startswith("http://") and not host.startswith("https://"):
             host = 'http://' + host
 
         if host.endswith('/'):

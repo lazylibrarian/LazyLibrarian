@@ -27,7 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int, getList, makeBytestr
+from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
 
 
 class qbittorrentclient(object):
@@ -41,7 +41,7 @@ class qbittorrentclient(object):
         if not host or not port:
             logger.error('Invalid Qbittorrent host or port, check your config')
 
-        if not host.startswith('http'):
+        if not host.startswith("http://") and not host.startswith("https://"):
             host = 'http://' + host
 
         if host.endswith('/'):
@@ -69,7 +69,8 @@ class qbittorrentclient(object):
         # noinspection PyBroadException
         try:
             version = int(self._command('version/api'))
-        except Exception:
+        except Exception as err:
+            logger.debug('Error getting api version. qBittorrent %s: %s' % (type(err).__name__, str(err)))
             version = 1
         return version
 
@@ -109,24 +110,24 @@ class qbittorrentclient(object):
 
         try:
             response = self.opener.open(request)
-            info = response.info()
-            if info:
-                if info.getheader('content-type'):
-                    # some commands return json
-                    if info.getheader('content-type') == 'application/json':
-                        return json.loads(response.read())
-                        # response code is always 200, whether success or fail
-                    else:
-                        # some commands return plain text
-                        resp = ''
-                        for line in response:
-                            resp = resp + line
-                        logger.debug("QBitTorrent returned %s" % resp)
-                        if command == 'version/api':
-                            return resp
-                        # some just return Ok. or Fails.
-                        if resp != 'Ok.':
-                            return False
+            try:
+                contentType = response.headers['content-type']
+            except KeyError as err:
+                contentType = ''
+
+            # some commands return json
+            if contentType == 'application/json':
+                return json.loads(response.read())
+            else:
+                # some commands return plain text
+                resp = response.read()
+                resp = makeUnicode(resp)
+                logger.debug("QBitTorrent returned %s" % resp)
+                if command == 'version/api':
+                    return resp
+                # some just return Ok. or Fails.
+                if resp and resp != 'Ok.':
+                    return False
             # some commands return nothing but response code (always 200)
             return True
         except urllib2.URLError as err:

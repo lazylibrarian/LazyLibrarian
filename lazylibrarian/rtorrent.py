@@ -28,7 +28,7 @@ def getServer():
         logger.error("rtorrent error: No host found, check your config")
         return False
 
-    if not host.startswith('http'):
+    if not host.startswith("http://") and not host.startswith("https://"):
         host = 'http://' + host
     if host.endswith('/'):
         host = host[:-1]
