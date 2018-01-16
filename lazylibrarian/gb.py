@@ -31,7 +31,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
     setSeries, setStatus
 from lazylibrarian.cache import get_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
-    getList, cleanName, check_int
+    getList, cleanName, check_int, makeUnicode
 from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
@@ -39,10 +39,7 @@ from lib.fuzzywuzzy import fuzz
 
 class GoogleBooks:
     def __init__(self, name=None):
-        if isinstance(name, str) and hasattr(name, "decode"):
-            self.name = name.decode(lazylibrarian.SYS_ENCODING)
-        else:
-            self.name = name
+        self.name = makeUnicode(name)
         if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
         self.url = 'https://www.googleapis.com/books/v1/volumes?q='

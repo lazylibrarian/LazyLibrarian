@@ -81,7 +81,7 @@ def search_magazines(mags=None, reset=False):
                 # strip accents from the magazine title for easier name-matching
                 searchterm = unaccented_str(searchmag['Title'])
                 if not searchterm:
-                    # unless it's not a latin-1 encodable name
+                    # unless there are no ascii characters left
                     searchterm = searchmag['Title']
                 searchterm = replace_all(searchterm, dic)
 

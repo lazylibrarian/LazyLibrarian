@@ -24,7 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
-    is_valid_booktype, check_int, getList, replace_all, decodeName, encodeName
+    is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
 
 
@@ -60,8 +60,8 @@ def audioRename(bookid):
     book = ''
     track = ''
     audio_file = ''
-    for f in os.listdir(encodeName(r)):
-        f = decodeName(f)
+    for f in os.listdir(makeBytestr(r)):
+        f = makeUnicode(f)
         if is_valid_booktype(f, booktype='audiobook'):
             cnt += 1
             audio_file = f
@@ -332,8 +332,8 @@ def bookRename(bookid):
 
     if book_basename != new_basename:
         # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
-        for fname in os.listdir(encodeName(r)):
-            fname = decodeName(fname)
+        for fname in os.listdir(makeBytestr(r)):
+            fname = makeUnicode(fname)
             extn = ''
             if is_valid_booktype(fname, booktype='ebook'):
                 extn = os.path.splitext(fname)[1]

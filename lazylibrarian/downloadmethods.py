@@ -29,7 +29,7 @@ from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, 
     deluge, rtorrent, synology, bencode
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT, proxyList
-from lazylibrarian.formatter import cleanName, unaccented_str, getList
+from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
 from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
@@ -176,8 +176,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             # had a problem with torznab utf-8 encoded strings not matching
             # our utf-8 strings because of long/short form differences
             url, value = tor_url.split('&file=', 1)
-            if isinstance(value, str) and hasattr(value, "decode"):
-                value = value.decode('utf-8')  # make unicode
+            value = makeUnicode(value)  # ensure unicode
             value = unicodedata.normalize('NFC', value)  # normalize to short form
             value = value.encode('unicode-escape')  # then escape the result
             value = value.replace(' ', '%20')  # and encode any spaces

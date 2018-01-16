@@ -281,7 +281,7 @@ def _hostURL():
     if not host or not port:
         logger.debug("Invalid Synology host or port, check your config")
         return False
-    if not host.startswith('http'):
+    if not host.startswith("http://") and not host.startswith("https://"):
         host = 'http://' + host
     if host.endswith('/'):
         host = host[:-1]

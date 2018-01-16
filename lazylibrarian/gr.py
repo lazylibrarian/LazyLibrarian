@@ -29,7 +29,7 @@ from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSerie
     setSeries, setStatus
 from lazylibrarian.cache import get_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
-    cleanName, is_valid_isbn, formatAuthorName, check_int
+    cleanName, is_valid_isbn, formatAuthorName, check_int, makeUnicode
 from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
 
@@ -38,10 +38,7 @@ class GoodReads:
     # https://www.goodreads.com/api/
 
     def __init__(self, name=None):
-        if isinstance(name, str) and hasattr(name, "decode"):
-            self.name = name.decode(lazylibrarian.SYS_ENCODING)
-        else:
-            self.name = name
+        self.name = makeUnicode(name)
         # self.type = type
         if not lazylibrarian.CONFIG['GR_API']:
             logger.warn('No Goodreads API key, check config')
@@ -238,8 +235,7 @@ class GoodReads:
               '?' + urllib.urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
-        if isinstance(author, str) and hasattr(author, "decode"):
-            author = author.decode('utf-8')  # make unicode
+        author = makeUnicode(author)  # ensure it's unicode
         author = unicodedata.normalize('NFC', author)  # normalize to short form
 
         logger.debug("Searching for author with name: %s" % author)

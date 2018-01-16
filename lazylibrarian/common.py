@@ -35,7 +35,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, \
-    getList, decodeName, encodeName
+    getList, makeUnicode, makeBytestr
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -228,8 +228,8 @@ def any_file(search_dir=None, extn=None):
     if search_dir is None or extn is None:
         return ""
     if os.path.isdir(search_dir):
-        for fname in os.listdir(encodeName(search_dir)):
-            fname = decodeName(fname)
+        for fname in os.listdir(makeBytestr(search_dir)):
+            fname = makeUnicode(fname)
             if fname.endswith(extn):
                 return os.path.join(search_dir, fname)
     return ""
@@ -258,8 +258,8 @@ def book_file(search_dir=None, booktype=None):
         return ""
     if search_dir and os.path.isdir(search_dir):
         try:
-            for fname in os.listdir(encodeName(search_dir)):
-                fname = decodeName(fname)
+            for fname in os.listdir(makeBytestr(search_dir)):
+                fname = makeUnicode(fname)
                 if is_valid_booktype(fname, booktype=booktype):
                     return os.path.join(search_dir, fname)
         except Exception as e:
@@ -285,40 +285,40 @@ def scheduleJob(action='Start', target=None):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
         if 'processDir' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0)
             lazylibrarian.SCHED.add_interval_job(
-                lazylibrarian.postprocess.cron_processDir,
-                minutes=check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0))
-            logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SCAN_INTERVAL']))
+                lazylibrarian.postprocess.cron_processDir, minutes=minutes)
+            logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_magazines' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0)
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchmag.cron_search_magazines,
-                    minutes=check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                    lazylibrarian.searchmag.cron_search_magazines, minutes=minutes)
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_book' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0)
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchbook.cron_search_book,
-                    minutes=check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCH_INTERVAL']))
+                    lazylibrarian.searchbook.cron_search_book, minutes=minutes)
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_rss_book' in target and check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0):
             if lazylibrarian.USE_RSS():
+                minutes = check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0)
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchrss.search_rss_book,
-                    minutes=check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0))
-                logger.debug("%s %s job in %s minutes" % (action, target, lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']))
+                    lazylibrarian.searchrss.search_rss_book, minutes=minutes)
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'checkForUpdates' in target and check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0):
+            hours = check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0)
             lazylibrarian.SCHED.add_interval_job(
-                lazylibrarian.versioncheck.checkForUpdates,
-                hours=check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0))
-            logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']))
+                lazylibrarian.versioncheck.checkForUpdates, hours=hours)
+            logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'syncToGoodreads' in target and lazylibrarian.CONFIG['GR_SYNC']:
             if check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0):
+                hours = check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0)
                 lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.grsync.cron_sync_to_gr,
-                    hours=check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0))
-                logger.debug("%s %s job in %s hours" % (action, target, lazylibrarian.CONFIG['GOODREADS_INTERVAL']))
+                    lazylibrarian.grsync.cron_sync_to_gr, hours=hours)
+                logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'authorUpdate' in target and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
             # Try to get all authors scanned evenly inside the cache age
             minutes = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0) * 24 * 60
@@ -336,11 +336,11 @@ def scheduleJob(action='Start', target=None):
                 minutes = 10
             if minutes <= 600:  # for bigger intervals switch to hours
                 lazylibrarian.SCHED.add_interval_job(authorUpdate, minutes=minutes)
-                logger.debug("%s %s job in %s minutes" % (action, target, minutes))
+                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
             else:
                 hours = int(minutes / 60)
                 lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=hours)
-                logger.debug("%s %s job in %s hours" % (action, target, hours))
+                logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
 
 
 def authorUpdate():
@@ -480,7 +480,10 @@ def showJobs():
         # jobinterval = job.split('[')[1].split(']')[0]
         jobtime = job.split('at: ')[1].split('.')[0]
         jobtime = next_run(jobtime)
-        jobinfo = "%s: Next run in %s" % (jobname, jobtime)
+        timeparts = jobtime.split(' ')
+        if timeparts[0] == '1' and timeparts[1].endswith('s'):
+            timeparts[1] = timeparts[1][:-1]
+        jobinfo = "%s: Next run in %s %s" % (jobname, timeparts[0], timeparts[1])
         result.append(jobinfo)
 
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
@@ -695,8 +698,8 @@ def cleanCache():
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(encodeName(cache)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cache)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
@@ -715,8 +718,8 @@ def cleanCache():
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(encodeName(cache)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cache)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
@@ -735,8 +738,8 @@ def cleanCache():
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(encodeName(cache)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cache)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             try:
                 bookid = cached_file.split('.')[0]
@@ -758,8 +761,8 @@ def cleanCache():
     cleaned = 0
     kept = 0
     if os.path.isdir(cache):
-        for cached_file in os.listdir(encodeName(cache)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cache)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             try:
                 seriesid = cached_file.split('.')[0]
@@ -783,8 +786,8 @@ def cleanCache():
     if os.path.isdir(cache):
         # we can clear the magazine cache, it gets rebuilt as required
         # this does not delete our magazine cover files, only the small cached copy
-        for cached_file in os.listdir(encodeName(cache)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cache)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             if target.endswith('.jpg'):
                 os.remove(target)
@@ -800,8 +803,8 @@ def cleanCache():
     kept = 0
     cachedir = os.path.join(cache, 'author')
     if os.path.isdir(cachedir):
-        for cached_file in os.listdir(encodeName(cachedir)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cachedir)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
@@ -818,8 +821,8 @@ def cleanCache():
                     kept += 1
     cachedir = os.path.join(cache, 'book')
     if os.path.isdir(cachedir):
-        for cached_file in os.listdir(encodeName(cachedir)):
-            cached_file = decodeName(cached_file)
+        for cached_file in os.listdir(makeBytestr(cachedir)):
+            cached_file = makeUnicode(cached_file)
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
@@ -837,8 +840,8 @@ def cleanCache():
 
     # at this point there should be no more .jpg files in the root of the cachedir
     # any that are still there are for books/authors deleted from database
-    for cached_file in os.listdir(encodeName(cache)):
-        cached_file = decodeName(cached_file)
+    for cached_file in os.listdir(makeBytestr(cache)):
+        cached_file = makeUnicode(cached_file)
         if cached_file.endswith('.jpg'):
             os.remove(os.path.join(cache, cached_file))
             cleaned += 1

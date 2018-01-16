@@ -28,7 +28,7 @@ from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
-    cleanName, replace_all, split_title, now, decodeName, encodeName
+    cleanName, replace_all, split_title, now, makeUnicode, makeBytestr
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
@@ -53,22 +53,10 @@ def get_book_info(fname):
             logger.debug('Unable to parse mobi in %s, %s %s' % (fname, type(e).__name__, str(e)))
             return res
 
-        author = book.author()
-        title = book.title()
-        language = book.language()
-        isbn = book.isbn()
-        if isinstance(author, str) and hasattr(author, "decode"):
-            author = author.decode(lazylibrarian.SYS_ENCODING)
-        if isinstance(title, str) and hasattr(title, "decode"):
-            title = title.decode(lazylibrarian.SYS_ENCODING)
-        if isinstance(language, str) and hasattr(language, "decode"):
-            language = language.decode(lazylibrarian.SYS_ENCODING)
-        if isinstance(isbn, str) and hasattr(isbn, "decode"):
-            isbn = isbn.decode(lazylibrarian.SYS_ENCODING)
-        res['creator'] = author
-        res['title'] = title
-        res['language'] = language
-        res['identifier'] = isbn
+        res['creator'] = makeUnicode(book.author())
+        res['title'] = makeUnicode(book.title())
+        res['language'] = makeUnicode(book.language())
+        res['identifier'] = makeUnicode(book.isbn())
         return res
 
         # noinspection PyUnreachableCode
@@ -147,8 +135,7 @@ def get_book_info(fname):
             tag = tag.split('}')[1]
             txt = tree[0][n].text
             attrib = str(tree[0][n].attrib).lower()
-            if isinstance(txt, str) and hasattr(txt, "decode"):
-                txt = txt.decode(lazylibrarian.SYS_ENCODING)
+            txt = makeUnicode(txt)
             if 'title' in tag:
                 res['title'] = txt
             elif 'language' in tag:
@@ -394,7 +381,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
         # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
-        for rootdir, dirnames, filenames in os.walk(encodeName(startdir)):
+        for rootdir, dirnames, filenames in os.walk(makeBytestr(startdir)):
             for directory in dirnames:
                 # prevent magazine being scanned
                 if directory.startswith("_") or directory.startswith("."):
@@ -405,8 +392,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     logger.debug('Found .ll_ignore file in %s' % os.path.join(rootdir, directory))
                     dirnames.remove(directory)
 
-            rootdir = decodeName(rootdir)
-            filenames = [decodeName(item) for item in filenames]
+            rootdir = makeUnicode(rootdir)
+            filenames = [makeUnicode(item) for item in filenames]
 
             for files in filenames:
                 subdirectory = rootdir.replace(startdir, '')
@@ -541,10 +528,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 except IndexError:
                                     book = ''
 
-                                if isinstance(book, str) and hasattr(book, "decode"):
-                                    book = book.decode(lazylibrarian.SYS_ENCODING)
-                                if isinstance(author, str) and hasattr(author, "decode"):
-                                    author = author.decode(lazylibrarian.SYS_ENCODING)
+                                book = makeUnicode(book)
+                                author = makeUnicode(author)
                                 if len(book) <= 2 or len(author) <= 2:
                                     match = False
                             if not match:
@@ -627,8 +612,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 if not bookid:
                                     # get author name from parent directory of this book directory
                                     newauthor = os.path.basename(os.path.dirname(rootdir))
-                                    if isinstance(newauthor, str) and hasattr(newauthor, "decode"):
-                                        newauthor = newauthor.decode(lazylibrarian.SYS_ENCODING)
+                                    newauthor = makeUnicode(newauthor)
                                     # calibre replaces trailing periods with _ eg Smith Jr. -> Smith Jr_
                                     if newauthor.endswith('_'):
                                         newauthor = newauthor[:-1] + '.'
@@ -781,7 +765,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
                                                 if tokmatch:
                                                     break
-                                                for e in os.listdir(encodeName(rootdir)):
+                                                for e in os.listdir(makeBytestr(rootdir)):
                                                     if is_valid_booktype(e, booktype='audiobook') and token in e:
                                                         book_filename = os.path.join(rootdir, e)
                                                         logger.debug("Librarysync link to preferred part %s: %s" %

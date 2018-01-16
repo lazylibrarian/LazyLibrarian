@@ -60,7 +60,7 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
     addToTop = False
     nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
 
-    if not host.startswith('http'):
+    if not host.startswith("http://") and not host.startswith("https://"):
         host = 'http://' + host
 
     if host.endswith('/'):

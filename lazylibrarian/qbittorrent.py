@@ -27,7 +27,7 @@ import urllib2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int, getList
+from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
 
 
 class qbittorrentclient(object):
@@ -41,7 +41,7 @@ class qbittorrentclient(object):
         if not host or not port:
             logger.error('Invalid Qbittorrent host or port, check your config')
 
-        if not host.startswith('http'):
+        if not host.startswith("http://") and not host.startswith("https://"):
             host = 'http://' + host
 
         if host.endswith('/'):
@@ -69,13 +69,14 @@ class qbittorrentclient(object):
         # noinspection PyBroadException
         try:
             version = int(self._command('version/api'))
-        except Exception:
+        except Exception as err:
+            logger.debug('Error getting api version. qBittorrent %s: %s' % (type(err).__name__, str(err)))
             version = 1
         return version
 
     def _get_sid(self, base_url, username, password):
         # login so we can capture SID cookie
-        login_data = urllib.urlencode({'username': username, 'password': password})
+        login_data = makeBytestr(urllib.urlencode({'username': username, 'password': password}))
         try:
             _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
@@ -96,7 +97,7 @@ class qbittorrentclient(object):
             data, headers = encode_multipart(args, files, '-------------------------acebdf13572468')
         else:
             if args:
-                data = urllib.urlencode(args)
+                data = makeBytestr(urllib.urlencode(args))
             if content_type:
                 headers['Content-Type'] = content_type
 
@@ -109,24 +110,24 @@ class qbittorrentclient(object):
 
         try:
             response = self.opener.open(request)
-            info = response.info()
-            if info:
-                if info.getheader('content-type'):
-                    # some commands return json
-                    if info.getheader('content-type') == 'application/json':
-                        return json.loads(response.read())
-                        # response code is always 200, whether success or fail
-                    else:
-                        # some commands return plain text
-                        resp = ''
-                        for line in response:
-                            resp = resp + line
-                        logger.debug("QBitTorrent returned %s" % resp)
-                        if command == 'version/api':
-                            return resp
-                        # some just return Ok. or Fails.
-                        if resp != 'Ok.':
-                            return False
+            try:
+                contentType = response.headers['content-type']
+            except KeyError as err:
+                contentType = ''
+
+            # some commands return json
+            if contentType == 'application/json':
+                return json.loads(response.read())
+            else:
+                # some commands return plain text
+                resp = response.read()
+                resp = makeUnicode(resp)
+                logger.debug("QBitTorrent returned %s" % resp)
+                if command == 'version/api':
+                    return resp
+                # some just return Ok. or Fails.
+                if resp and resp != 'Ok.':
+                    return False
             # some commands return nothing but response code (always 200)
             return True
         except urllib2.URLError as err:
@@ -190,17 +191,17 @@ def removeTorrent(hashid, remove_data=False):
     qbclient = qbittorrentclient()
     # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
-    for torrent in torrentList:
-        if torrent['hash'].upper() == hashid.upper():
-            if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
-                qbclient.remove(hashid, remove_data)
-                return True
-            else:
-                logger.info(
-                    '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                    torrent['name'])
-                return False
+    if torrentList:
+        for torrent in torrentList:
+            if torrent['hash'].upper() == hashid.upper():
+                if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
+                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                    qbclient.remove(hashid, remove_data)
+                    return True
+                else:
+                    logger.info(
+                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
+                        torrent['name'])
     return False
 
 
