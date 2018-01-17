@@ -136,6 +136,7 @@ class qbittorrentclient(object):
             return False
 
     def _get_list(self, **args):
+        # type: (dict) -> list
         return self._command('query/torrents', args)
 
     def _get_settings(self):

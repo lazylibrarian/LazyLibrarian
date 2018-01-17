@@ -25,7 +25,7 @@ from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
-from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, LIME
+from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
 
 
 def test_provider(name):
@@ -34,8 +34,6 @@ def test_provider(name):
         return TPB(book, test=True), "Pirate Bay"
     if name == 'KAT':
         return KAT(book, test=True), "KickAss Torrents"
-    if name == 'WWT':
-        return WWT(book, test=True), "WorldWideTorrents"
     if name == 'ZOO':
         return ZOO(book, test=True), "Zooqle"
     if name == 'LIME':
@@ -309,7 +307,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    for prov in ['KAT', 'WWT', 'TPB', 'ZOO', 'TDL', 'LIME']:
+    for prov in ['KAT', 'TPB', 'ZOO', 'TDL', 'LIME']:
         if lazylibrarian.CONFIG[prov]:
             if ProviderIsBlocked(prov):
                 logger.debug('[IterateOverTorrentSites] - %s is BLOCKED' % lazylibrarian.CONFIG[prov + '_HOST'])
@@ -317,8 +315,6 @@ def IterateOverTorrentSites(book=None, searchType=None):
                 logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
                 if prov == 'KAT':
                     results, error = KAT(book)
-                elif prov == 'WWT':
-                    results, error = WWT(book)
                 elif prov == 'TPB':
                     results, error = TPB(book)
                 elif prov == 'ZOO':

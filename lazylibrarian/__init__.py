@@ -306,9 +306,9 @@ CONFIG_DEFINITIONS = {
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
     'KAT_DLPRIORITY': ('int', 'KAT', 0),
-    'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.eu'),
-    'WWT': ('bool', 'WWT', 0),
-    'WWT_DLPRIORITY': ('int', 'WWT', 0),
+    #  'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.eu'),
+    #  'WWT': ('bool', 'WWT', 0),
+    #  'WWT_DLPRIORITY': ('int', 'WWT', 0),
     'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
     'TPB': ('bool', 'TPB', 0),
     'TPB_DLPRIORITY': ('int', 'TPB', 0),
@@ -1122,7 +1122,7 @@ def USE_RSS():
 
 def USE_TOR():
     count = 0
-    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL'], CONFIG['WWT']]:
+    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
         if bool(provider):
             count += 1
     return count
