@@ -112,7 +112,7 @@ class qbittorrentclient(object):
             response = self.opener.open(request)
             try:
                 contentType = response.headers['content-type']
-            except KeyError as err:
+            except KeyError:
                 contentType = ''
 
             # some commands return json
@@ -146,7 +146,7 @@ class qbittorrentclient(object):
     def get_savepath(self, hashid):
         logger.debug('qb.get_savepath(%s)' % hashid)
         torrentList = self._get_list()
-        for torrent in torrentList:
+        for torrent in list(torrentList):
             if torrent['hash']:
                 if torrent['hash'].upper() == hashid.upper():
                     return torrent['save_path']

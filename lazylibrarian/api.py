@@ -274,7 +274,7 @@ class Api(object):
         if not match:
             self.data = 'Invalid parameter: provider'
             return
-        self.data = get_capabilities(provider, True)
+        self.data = get_capabilities(prov, True)
 
     def _help(self):
         self.data = dict(cmd_dict)
