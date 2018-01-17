@@ -970,6 +970,7 @@
                     <div class="input-group">
                       <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
                       <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="newznab[${loop.index}]"> Test</button>
                         <input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />
                       </span>
                       <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
@@ -999,6 +1000,7 @@
                     <div class="input-group">
                       <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
                       <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="torznab[${loop.index}]"> Test</button>
                         <input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value="1" ${checked} />
                       </span>
                       <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
@@ -1028,6 +1030,7 @@
                     <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
                     <div class="input-group">
                       <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="rss[${loop.index}]"> Test</button>
                         <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />
                       </span>
                       <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
@@ -1060,7 +1063,8 @@
                       <label for="kat_host" class="sr-only">KAT Host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="kat" name="kat" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="KAT"> Test</button>
+                        <input type="checkbox" id="kat" name="kat" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" class="form-control">
                       </div>
@@ -1079,7 +1083,8 @@
                       <label for="wwt_host" class="sr-only">WWT Host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="wwt" name="wwt" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="WWT"> Test</button>
+                        <input type="checkbox" id="wwt" name="wwt" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="WWT Host" id="wwt_host" name="wwt_host" value="${lazylibrarian.CONFIG['WWT_HOST']}" class="form-control">
                       </div>
@@ -1098,12 +1103,13 @@
                       <label for="tpb_host" class="sr-only">TPB Host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="TPB"> Test</button>
                           <input type="checkbox" id="tpb" name="tpb" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" class="form-control">
                       </div>
                       <div class="input-group">
-                        <span class="input-group-addon">Priority</span>
+                      <span class="input-group-addon">Priority</span>
                         <input type="text" id="tpb_dlpriority" name="tpb_dlpriority" value="${lazylibrarian.CONFIG['TPB_DLPRIORITY']}" class="form-control" placeholder="0">
                       </div>
                     </div>
@@ -1117,7 +1123,8 @@
                       <label for="zoo_host" class="sr-only">zooqle host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="zoo" name="zoo" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="ZOO"> Test</button>
+                        <input type="checkbox" id="zoo" name="zoo" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" class="form-control">
                       </div>
@@ -1136,7 +1143,8 @@
                       <label for="tdl_host" class="sr-only">torrentdownload host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="tdl" name="tdl" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="TDL"> Test</button>
+                        <input type="checkbox" id="tdl" name="tdl" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" class="form-control">
                       </div>
@@ -1155,7 +1163,8 @@
                       <label for="lime_host" class="sr-only">limetorrent host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="lime" name="lime" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="LIME"> Test</button>
+                        <input type="checkbox" id="lime" name="lime" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" class="form-control">
                       </div>
@@ -1181,7 +1190,8 @@
                       <label for="gen_host" class="sr-only">libgen host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="gen" name="gen" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="GEN"> Test</button>
+                        <input type="checkbox" id="gen" name="gen" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" class="form-control">
                       </div>
@@ -1208,7 +1218,8 @@
                       <label for="gen2_host" class="sr-only">libgen host</label>
                       <div class="input-group">
                         <span class="input-group-addon">
-                          <input type="checkbox" id="gen2" name="gen2" value="1" ${checked} />
+                        <button role="testprov" class="button btn btn-sm btn-warning btn-primary" type="button" value="GEN2"> Test</button>
+                        <input type="checkbox" id="gen2" name="gen2" value="1" ${checked} />
                         </span>
                         <input type="text" placeholder="libgen host" id="gen2_host" name="gen2_host" value="${lazylibrarian.CONFIG['GEN2_HOST']}" class="form-control">
                       </div>
@@ -2912,6 +2923,23 @@
                             label: "Clear Blocklist",
                             className: 'btn-primary',
                             callback: function(result){ $.get("clearblocked", function(e) {}); }
+                        }
+                    }
+                });
+            });
+        });
+
+        $("button[role='testprov']").on('click', function(e) {
+            var prov = $(this).val();
+            $.get('testprovider', {'name': prov},
+            function(data) {
+                bootbox.dialog({
+                    title: 'Test Result',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
                         }
                     }
                 });
