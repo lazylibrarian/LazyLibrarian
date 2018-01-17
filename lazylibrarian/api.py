@@ -43,6 +43,7 @@ from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.calibre import syncCalibreList, calibreList
+from lazylibrarian.providers import get_capabilities
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -136,6 +137,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
             'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
+            'showCaps': '&provider= get a list of capabilities from a provider',
             'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
             'syncCalibreList': '[&toread=] [&read=] sync list of read/toread books with calibre',
             }
@@ -251,6 +253,29 @@ class Api(object):
             col1 = kwargs['read']
         self.data = calibreList(col1, col2)
 
+    def _showCaps(self, **kwargs):
+        if 'provider' not in kwargs:
+            self.data = 'Missing parameter: provider'
+            return
+
+        prov = kwargs['provider']
+        match = False
+        for provider in lazylibrarian.NEWZNAB_PROV:
+            if prov == provider['HOST']:
+                prov = provider
+                match = True
+                break
+        if not match:
+            for provider in lazylibrarian.TORZNAB_PROV:
+                if prov == provider['HOST']:
+                    prov = provider
+                    match = True
+                    break
+        if not match:
+            self.data = 'Invalid parameter: provider'
+            return
+        self.data = get_capabilities(provider, True)
+
     def _help(self):
         self.data = dict(cmd_dict)
 
@@ -268,8 +293,6 @@ class Api(object):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
-        else:
-            self.id = kwargs['id']
         self.data = audioRename(kwargs['id'])
 
     def _writeAllOPF(self, **kwargs):
