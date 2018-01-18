@@ -76,7 +76,7 @@ def get_book_info(fname):
                     res['identifier'] = txt['isbn']
                     res['type'] = "pdf"
                     return res
-                """
+        """
     elif extn == ".epub":
         res['type'] = "epub"
 

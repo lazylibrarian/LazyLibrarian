@@ -48,6 +48,7 @@ from lazylibrarian.postprocess import processAlternate, processDir, delete_task
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.calibre import calibreTest, syncCalibreList
+from lazylibrarian.providers import test_provider
 from lib.deluge_client import DelugeRPCClient
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -2999,6 +3000,19 @@ class WebInterface(object):
                     delete_task(book['Source'], book['DownloadID'], True)
             myDB.action('DELETE from wanted WHERE Status=?', (status,))
         raise cherrypy.HTTPRedirect("history")
+
+    @cherrypy.expose
+    def testprovider(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'name' in kwargs and kwargs['name']:
+            result, name = test_provider(kwargs['name'])
+            if result:
+                msg = "%s test PASSED" % name
+            else:
+                msg = "%s test FAILED, check debug log" % name
+        else:
+            msg = "Invalid or missing name in testprovider"
+        return msg
 
     @cherrypy.expose
     def clearblocked(self):

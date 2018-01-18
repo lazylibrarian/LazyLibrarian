@@ -25,7 +25,55 @@ from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
-from lazylibrarian.torrentparser import KAT, WWT, TPB, ZOO, TDL, LIME
+from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
+
+
+def test_provider(name):
+    book = {'searchterm': 'Agatha+Christie', 'library': 'eBook'}
+    if name == 'TPB':
+        return TPB(book, test=True), "Pirate Bay"
+    if name == 'KAT':
+        return KAT(book, test=True), "KickAss Torrents"
+    if name == 'ZOO':
+        return ZOO(book, test=True), "Zooqle"
+    if name == 'LIME':
+        return LIME(book, test=True), "LimeTorrents"
+    if name == 'TDL':
+        return TDL(book, test=True), "TorrentDownloads"
+    if name == 'GEN':
+        return GEN(book, prov='GEN', test=True), "LibGen 1"
+    if name == 'GEN2':
+        return GEN(book, prov='GEN2', test=True), "LibGen 2"
+    if name.startswith('rss['):
+        try:
+            prov = name.split('[')[1].split(']')[0]
+            for provider in lazylibrarian.RSS_PROV:
+                if provider['NAME'] == 'RSS_%s' % prov and provider['HOST']:
+                    return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY']), provider['NAME']
+        except IndexError:
+            pass
+
+    # for torznab/newznab try book search if enabled, fall back to general search
+    book.update({'authorName': 'Agatha Christie', 'bookName': 'Poirot', 'bookSub': ''})
+    if name.startswith('torznab['):
+        try:
+            prov = name.split('[')[1].split(']')[0]
+            for provider in lazylibrarian.TORZNAB_PROV:
+                if provider['NAME'] == 'Torznab%s' % prov and provider['HOST']:
+                    return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['NAME']
+        except IndexError:
+            pass
+    if name.startswith('newznab['):
+        try:
+            prov = name.split('[')[1].split(']')[0]
+            for provider in lazylibrarian.NEWZNAB_PROV:
+                if provider['NAME'] == 'Newznab%s' % prov and provider['HOST']:
+                    return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['NAME']
+        except IndexError:
+            pass
+    msg = "Unknown provider [%s]" % name
+    logger.error(msg)
+    return False, msg
 
 
 def get_searchterm(book, searchType):
@@ -63,16 +111,17 @@ def get_searchterm(book, searchType):
     return authorname, bookname
 
 
-def get_capabilities(provider):
+def get_capabilities(provider, force=False):
     """
     query provider for caps if none loaded yet, or if config entry is too old and not set manually.
     """
-    match = False
-    if len(provider['UPDATED']) == 10:  # any stored values?
+    if not force and len(provider['UPDATED']) == 10:  # any stored values?
         match = True
         if (age(provider['UPDATED']) > lazylibrarian.CONFIG['CACHE_AGE']) and not provider['MANUAL']:
             logger.debug('Stored capabilities for %s are too old' % provider['HOST'])
             match = False
+    else:
+        match = False
 
     if match:
         logger.debug('Using stored capabilities for %s' % provider['HOST'])
@@ -261,7 +310,7 @@ def IterateOverTorrentSites(book=None, searchType=None):
         authorname, bookname = get_searchterm(book, searchType)
         book['searchterm'] = authorname + ' ' + bookname
 
-    for prov in ['KAT', 'WWT', 'TPB', 'ZOO', 'TDL', 'LIME']:
+    for prov in ['KAT', 'TPB', 'ZOO', 'TDL', 'LIME']:
         if lazylibrarian.CONFIG[prov]:
             if ProviderIsBlocked(prov):
                 logger.debug('[IterateOverTorrentSites] - %s is BLOCKED' % lazylibrarian.CONFIG[prov + '_HOST'])
@@ -269,8 +318,6 @@ def IterateOverTorrentSites(book=None, searchType=None):
                 logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
                 if prov == 'KAT':
                     results, error = KAT(book)
-                elif prov == 'WWT':
-                    results, error = WWT(book)
                 elif prov == 'TPB':
                     results, error = TPB(book)
                 elif prov == 'ZOO':
@@ -471,7 +518,7 @@ def GOODREADS(host=None, feednr=None, priority=0):
     return results
 
 
-def RSS(host=None, feednr=None, priority=0):
+def RSS(host=None, feednr=None, priority=0, test=False):
     """
     Generic RSS query function, just return all the results from the RSS feed in a list
     """
@@ -482,6 +529,10 @@ def RSS(host=None, feednr=None, priority=0):
         URL = 'http://' + URL
 
     result, success = fetchURL(URL)
+
+    if test:
+        return success
+
     if success:
         data = feedparser.parse(result)
     else:
@@ -600,7 +651,7 @@ def cancelSearchType(searchType, errorMsg, provider):
     return False
 
 
-def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
+def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test=False):
     """
     Generic NewzNabplus query function
     takes in host+key+type and returns the result set regardless of who
@@ -629,6 +680,15 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None):
         rootxml = None
         logger.debug("[NewzNabPlus] URL = %s" % URL)
         result, success = fetchURL(URL)
+
+        if test:
+            if result.startswith('<') and result.endswith('/>') and "error code" in result:
+                result = result[1:-2]
+                success = False
+            if not success:
+                logger.debug(result)
+            return success
+
         if success:
             try:
                 rootxml = ElementTree.fromstring(result)
