@@ -968,18 +968,27 @@
                     %>
                   <div class="col-md-4 form-group">
                     <div class="input-group">
-                      <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
+                      <span class="input-group-addon">Name</span>
+                      <label for="newznab[${loop.index}][dispname]" class="sr-only">Newznab Name</label>
+                      <input type="text" id="newznab[${loop.index}][dispname]" name="newznab[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab[${loop.index}]"> Test</button>
-                        <input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />
+                      &nbsp;<input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
                       </span>
+                    </div>
+                    <div class="input-group col-md-12">
+                      <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
                       <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
                     </div>
+                    <div class="input-group col-md-12">
                     <label for="newznab[${loop.index}][api]" class="sr-only">Newznab API Key</label>
                     <input type="text" placeholder="Newznab API #${loop.index}" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                      </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                       <input type="text" id="newznab[${loop.index}][dlpriority]" name="newznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab[${loop.index}]"> Test</button>
+                      </span>
                     </div>
                   </div>
                   %endfor
@@ -998,18 +1007,27 @@
                     %>
                   <div class="col-md-4 form-group">
                     <div class="input-group">
-                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
+                      <span class="input-group-addon">Name</span>
+                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab Name</label>
+                      <input type="text" id="torznab[${loop.index}][dispname]" name="torznab[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab[${loop.index}]"> Test</button>
-                        <input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value="1" ${checked} />
-                      </span>
+                        &nbsp;<input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
+                        </span>
+                    </div>
+                    <div class="input-group col-md-12">
+                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
                       <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
                     </div>
+                    <div class="input-group col-md-12">
                     <label for="torznab[${loop.index}][api]" class="sr-only">Torznab API Key</label>
                     <input type="text" placeholder="Torznab API #${loop.index}" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                    </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                       <input type="text" id="torznab[${loop.index}][dlpriority]" name="torznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab[${loop.index}]"> Test</button>
+                      </span>
                     </div>
                   </div>
                   %endfor
@@ -1027,12 +1045,16 @@
                        checked = 'checked="checked"'
                   %>
                   <div class="col-md-4 form-group">
-                    <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
                     <div class="input-group">
+                      <span class="input-group-addon">Name</span>
+                      <label for="rss[${loop.index}][host]" class="sr-only">RSS Name</label>
+                      <input type="text" id="rss[${loop.index}][dispname]" name="rss[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss[${loop.index}]"> Test</button>
-                        <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />
+                        &nbsp;<input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
                       </span>
+                    </div>
+                    <div class="input-group col-md-12">
+                      <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
                       <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
                     </div>
                       <%
@@ -1044,6 +1066,9 @@
                     <div class="input-group">
                       <span class="input-group-addon">${label}</span>
                       <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss[${loop.index}]"> Test</button>
+                      </span>
                     </div>
                   </div>
                   %endfor
@@ -2355,7 +2380,7 @@
                     hidden = ''
                 %>
                 <div class="col-md-6">
-                <legend ${hidden}>${provider['HOST']}</legend>
+                <legend ${hidden}>${provider['DISPNAME']}</legend>
                 <div class="checkbox">
                   <%
                     if provider['MANUAL'] == True:
@@ -2413,7 +2438,7 @@
                         hidden = ''
                 %>
                 <div class="col-md-6">
-                <legend ${hidden}><h5>${provider['HOST']}</h5></legend>
+                <legend ${hidden}>${provider['DISPNAME']}</legend>
                 <div class="checkbox">
                   <%
                     if provider['MANUAL'] == True:

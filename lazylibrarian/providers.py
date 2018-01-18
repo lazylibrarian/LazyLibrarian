@@ -49,7 +49,7 @@ def test_provider(name):
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.RSS_PROV:
                 if provider['NAME'] == 'RSS_%s' % prov and provider['HOST']:
-                    return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY']), provider['NAME']
+                    return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY']), provider['DISPNAME']
         except IndexError:
             pass
 
@@ -60,7 +60,7 @@ def test_provider(name):
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.TORZNAB_PROV:
                 if provider['NAME'] == 'Torznab%s' % prov and provider['HOST']:
-                    return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['NAME']
+                    return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['DISPNAME']
         except IndexError:
             pass
     if name.startswith('newznab['):
@@ -68,7 +68,7 @@ def test_provider(name):
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.NEWZNAB_PROV:
                 if provider['NAME'] == 'Newznab%s' % prov and provider['HOST']:
-                    return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['NAME']
+                    return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['DISPNAME']
         except IndexError:
             pass
     msg = "Unknown provider [%s]" % name
