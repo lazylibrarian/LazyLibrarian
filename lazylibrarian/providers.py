@@ -29,7 +29,7 @@ from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
 
 
 def test_provider(name):
-    book = {'searchterm': 'Agatha+Christie'}  # Library is optional, determines category
+    book = {'searchterm': 'Agatha+Christie', 'library': 'eBook'}
     if name == 'TPB':
         return TPB(book, test=True), "Pirate Bay"
     if name == 'KAT':
@@ -52,12 +52,15 @@ def test_provider(name):
                     return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY']), provider['NAME']
         except IndexError:
             pass
+
+    # for torznab/newznab try book search if enabled, fall back to general search
+    book.update({'authorName': 'Agatha Christie', 'bookName': 'Poirot', 'bookSub': ''})
     if name.startswith('torznab['):
         try:
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.TORZNAB_PROV:
                 if provider['NAME'] == 'Torznab%s' % prov and provider['HOST']:
-                    return NewzNabPlus(book, provider, 'General', 'torznab', True), provider['NAME']
+                    return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['NAME']
         except IndexError:
             pass
     if name.startswith('newznab['):
@@ -65,7 +68,7 @@ def test_provider(name):
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.NEWZNAB_PROV:
                 if provider['NAME'] == 'Newznab%s' % prov and provider['HOST']:
-                    return NewzNabPlus(book, provider, 'General', 'nzb', True), provider['NAME']
+                    return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['NAME']
         except IndexError:
             pass
     msg = "Unknown provider [%s]" % name
