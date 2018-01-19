@@ -828,7 +828,8 @@ class WebInterface(object):
         config = {
             "http_look_list": http_look_list,
             "status_list": status_list,
-            "magazines_list": mags_list
+            "magazines_list": mags_list,
+            "updated": time.ctime(check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0))
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
 
