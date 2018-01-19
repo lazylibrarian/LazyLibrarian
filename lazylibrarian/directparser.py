@@ -20,8 +20,8 @@ import urlparse
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented, formatAuthorName, makeUnicode
-from lib.BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
+from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
+from lib.BeautifulSoup import BeautifulSoup
 
 
 def url_fix(s, charset='utf-8'):
@@ -149,30 +149,25 @@ def GEN(book=None, prov=None, test=False):
                     td = row.findAll('td')
                     if 'index.php' in search and len(td) > 3:
                         try:
-                            res = str(BeautifulStoneSoup(td[0].text,
-                                                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            author = formatAuthorName(res)
-                            title = str(BeautifulStoneSoup(td[2].text,
-                                                           convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            temp = str(td[4])
-                            temp = temp.split('onmouseout')[1]
-                            extn = temp.split('">')[1].split('(')[0]
-                            size = temp.split('">')[1].split('(')[1].split(')')[0]
+                            author = formatAuthorName(td[0].text)
+                            title = td[2].text
+                            newsoup =  BeautifulSoup(str(td[4]))
+                            data = newsoup.find('a')
+                            link = data.get('href')
+                            extn = data.text.split('(')[0]
+                            size = data.text.split('(')[1].split(')')[0]
                             size = size.upper()
-                            link = temp.split('href=')[1].split('"')[1]
                         except IndexError as e:
                             logger.debug('Error parsing libgen index.php results: %s' % str(e))
 
                     elif 'search.php' in search and len(td) > 8:
                         try:
-                            res = str(BeautifulStoneSoup(td[1].text,
-                                                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            author = formatAuthorName(res)
-                            title = str(td[2]).split('>')[2].split('<')[0].strip()
-                            title = str(BeautifulStoneSoup(title, convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            link = str(td[2]).split('href="')[1].split('?')[1].split('"')[0]
-                            size = unaccented(td[7].text).upper()
+                            author = formatAuthorName(td[1].text)
+                            title = td[2].text
+                            size = td[7].text.upper()
                             extn = td[8].text
+                            newsoup =  BeautifulSoup(str(td[2]))
+                            link = newsoup.get('href')
                         except IndexError as e:
                             logger.debug('Error parsing libgen search.php results; %s' % str(e))
 

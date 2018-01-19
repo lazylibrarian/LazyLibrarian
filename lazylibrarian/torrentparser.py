@@ -103,9 +103,11 @@ def TPB(book=None, test=False):
                 td = row.findAll('td')
                 if len(td) > 2:
                     try:
-                        title = unaccented(str(td[1]).split('title=')[1].split('>')[1].split('<')[0])
-                        magnet = str(td[1]).split('href="')[1].split('"')[0]
-                        size = unaccented(td[1].text.split(', Size ')[1].split('iB')[0])
+                        new_soup = BeautifulSoup(str(td[1]))
+                        link = new_soup.find("a")
+                        magnet = link.get("href")
+                        title = link.text
+                        size = td[1].text.split(', Size ')[1].split('iB')[0]
                         size = size.replace('&nbsp;', '')
                         mult = 1
                         try:
@@ -223,7 +225,7 @@ def KAT(book=None, test=False):
             td = row.findAll('td')
             if len(td) > 3:
                 try:
-                    title = unaccented(str(td[0]).split('cellMainLink">')[1].split('<')[0])
+                    title = unaccented(td[0].text)
                     # kat can return magnet or torrent or both.
                     magnet = ''
                     url = ''
@@ -354,7 +356,7 @@ def WWT(book=None, test=False):
                 td = row.findAll('td')
                 if len(td) > 3:
                     try:
-                        title = unaccented(str(td[0]).split('title="')[1].split('"')[0])
+                        title = unaccented(td[0].text)
                         # can return magnet or torrent or both.
                         magnet = ''
                         url = ''
