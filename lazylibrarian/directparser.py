@@ -21,16 +21,8 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
-from lib.BeautifulSoup import BeautifulSoup
-
-
-def url_fix(s, charset='utf-8'):
-    if isinstance(s, unicode):
-        s = s.encode(charset, 'ignore')
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&=')
-    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+from lazylibrarian.torrentparser import url_fix
+from lib.bs4 import BeautifulSoup
 
 
 # noinspection PyProtectedMember
@@ -129,11 +121,11 @@ def GEN(book=None, prov=None, test=False):
         if result:
             logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             try:
-                soup = BeautifulSoup(result)
+                soup = BeautifulSoup(result, 'html5lib')
                 try:
-                    table = soup.findAll('table')[2]  # un-named table
+                    table = soup.find_all('table')[2]  # un-named table
                     if table:
-                        rows = table.findAll('tr')
+                        rows = table.find_all('tr')
                 except IndexError:  # no results table in result page
                     rows = []
 
@@ -146,12 +138,12 @@ def GEN(book=None, prov=None, test=False):
                     size = ''
                     extn = ''
                     link = ''
-                    td = row.findAll('td')
+                    td = row.find_all('td')
                     if 'index.php' in search and len(td) > 3:
                         try:
                             author = formatAuthorName(td[0].text)
                             title = td[2].text
-                            newsoup =  BeautifulSoup(str(td[4]))
+                            newsoup = BeautifulSoup(str(td[4]), 'html5lib')
                             data = newsoup.find('a')
                             link = data.get('href')
                             extn = data.text.split('(')[0]
@@ -166,7 +158,7 @@ def GEN(book=None, prov=None, test=False):
                             title = td[2].text
                             size = td[7].text.upper()
                             extn = td[8].text
-                            newsoup =  BeautifulSoup(str(td[2]))
+                            newsoup = BeautifulSoup(str(td[2]), 'html5lib')
                             link = newsoup.get('href')
                         except IndexError as e:
                             logger.debug('Error parsing libgen search.php results; %s' % str(e))
@@ -217,8 +209,8 @@ def GEN(book=None, prov=None, test=False):
                         if bookresult:
                             url = None
                             try:
-                                new_soup = BeautifulSoup(bookresult)
-                                for link in new_soup.findAll('a'):
+                                new_soup = BeautifulSoup(bookresult, 'html5lib')
+                                for link in new_soup.find_all('a'):
                                     output = link.get('href')
                                     if output:
                                         if output.startswith('http') and '/get.php' in output:
