@@ -17,6 +17,7 @@ import ConfigParser
 import Queue
 import json
 import os
+import sys
 import shutil
 import threading
 import cherrypy
@@ -67,6 +68,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getHistory': 'list history',
             'getLogs': 'show current log',
             'getDebug': 'show debug log header',
+            'getModules': 'show installed modules',
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
             'getIssues': '&name= list issues of named magazine',
@@ -380,6 +382,12 @@ class Api(object):
 
     def _getDebug(self):
         self.data = logHeader().replace('\n', '<br>')
+
+    def _getModules(self):
+        lst = ''
+        for item in sys.modules:
+            lst = lst + "%s: %s<br>" % (item, str(sys.modules[item]).replace('<', '').replace('>', ''))
+        self.data = lst
 
     def _clearLogs(self):
         self.data = clearLog()
