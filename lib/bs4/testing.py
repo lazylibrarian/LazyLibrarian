@@ -9,8 +9,8 @@ import copy
 import functools
 import unittest
 from unittest import TestCase
-from bs4 import BeautifulSoup
-from bs4.element import (
+from lib.bs4 import BeautifulSoup
+from lib.bs4.element import (
     CharsetMetaAttributeValue,
     Comment,
     ContentMetaAttributeValue,
@@ -18,7 +18,7 @@ from bs4.element import (
     SoupStrainer,
 )
 
-from bs4.builder import HTMLParserTreeBuilder
+from lib.bs4.builder import HTMLParserTreeBuilder
 default_builder = HTMLParserTreeBuilder
 
 

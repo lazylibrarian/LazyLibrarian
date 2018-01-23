@@ -16,7 +16,7 @@ from lib.bs4.element import (
     ProcessingInstruction,
     XMLProcessingInstruction,
 )
-from bs4.builder import (
+from lib.bs4.builder import (
     FAST,
     HTML,
     HTMLTreeBuilder,
