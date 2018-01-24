@@ -14,8 +14,9 @@
 <%def name="body()">
 <BR><BR>
 <h1>&nbsp;&nbsp;${title}</h1>
-    <form action="configUpdate" method="post">
+    <form accept-charset="UTF-8" action="configUpdate" method="post">
     <div id="form">
+      <input name="utf8" type="hidden" value="&#x2713;" />
     <div id="tabs">
         <ul>
             <li role='presentation' id="1" ><a  href="#tabs-1">Interface</a></li>
