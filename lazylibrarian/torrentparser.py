@@ -22,7 +22,7 @@ import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented, makeUnicode
-from lib.BeautifulSoup import BeautifulSoup
+from lib.bs4 import BeautifulSoup
 
 
 def url_fix(s, charset='utf-8'):
@@ -89,23 +89,25 @@ def TPB(book=None, test=False):
 
         if result:
             logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-            soup = BeautifulSoup(result)
+            soup = BeautifulSoup(result, 'html5lib')
             # tpb uses a named table
             table = soup.find('table', id='searchResult')
             if table:
-                rows = table.findAll('tr')
+                rows = table.find_all('tr')
             else:
                 rows = []
 
             if len(rows) > 1:
                 rows = rows[1:]  # first row is headers
             for row in rows:
-                td = row.findAll('td')
+                td = row.find_all('td')
                 if len(td) > 2:
                     try:
-                        title = unaccented(str(td[1]).split('title=')[1].split('>')[1].split('<')[0])
-                        magnet = str(td[1]).split('href="')[1].split('"')[0]
-                        size = unaccented(td[1].text.split(', Size ')[1].split('iB')[0])
+                        new_soup = BeautifulSoup(str(td[1]), 'html5lib')
+                        link = new_soup.find("a")
+                        magnet = link.get("href")
+                        title = link.text
+                        size = td[1].text.split(', Size ')[1].split('iB')[0]
                         size = size.replace('&nbsp;', '')
                         mult = 1
                         try:
@@ -134,8 +136,8 @@ def TPB(book=None, test=False):
                                 logger.debug('Error fetching url %s, %s' % (magurl, result))
                             else:
                                 magnet = None
-                                new_soup = BeautifulSoup(result)
-                                for link in new_soup.findAll('a'):
+                                new_soup = BeautifulSoup(result, 'html5lib')
+                                for link in new_soup.find_all('a'):
                                     output = link.get('href')
                                     if output and output.startswith('magnet'):
                                         magnet = output
@@ -207,12 +209,12 @@ def KAT(book=None, test=False):
     if result:
         logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
         minimumseeders = int(lazylibrarian.CONFIG['NUMBEROFSEEDERS']) - 1
-        soup = BeautifulSoup(result)
+        soup = BeautifulSoup(result, 'html5lib')
         rows = []
         try:
-            table = soup.findAll('table')[1]  # un-named table
+            table = soup.find_all('table')[1]  # un-named table
             if table:
-                rows = table.findAll('tr')
+                rows = table.find_all('tr')
         except IndexError:  # no results table in result page
             rows = []
 
@@ -220,10 +222,10 @@ def KAT(book=None, test=False):
             rows = rows[1:]  # first row is headers
 
         for row in rows:
-            td = row.findAll('td')
+            td = row.find_all('td')
             if len(td) > 3:
                 try:
-                    title = unaccented(str(td[0]).split('cellMainLink">')[1].split('<')[0])
+                    title = unaccented(td[0].text)
                     # kat can return magnet or torrent or both.
                     magnet = ''
                     url = ''
@@ -337,13 +339,13 @@ def WWT(book=None, test=False):
 
         if result:
             logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
-            soup = BeautifulSoup(result)
+            soup = BeautifulSoup(result, 'html5lib')
 
             try:
-                tables = soup.findAll('table')  # un-named table
+                tables = soup.find_all('table')  # un-named table
                 table = tables[2]
                 if table:
-                    rows = table.findAll('tr')
+                    rows = table.find_all('tr')
             except IndexError:  # no results table in result page
                 rows = []
 
@@ -351,10 +353,10 @@ def WWT(book=None, test=False):
                 rows = rows[1:]  # first row is headers
 
             for row in rows:
-                td = row.findAll('td')
+                td = row.find_all('td')
                 if len(td) > 3:
                     try:
-                        title = unaccented(str(td[0]).split('title="')[1].split('"')[0])
+                        title = unaccented(td[0].text)
                         # can return magnet or torrent or both.
                         magnet = ''
                         url = ''
@@ -732,8 +734,8 @@ def TDL(book=None, test=False):
                         # TDL gives us a relative link
                         result, success = fetchURL(providerurl+link)
                         if success:
-                            new_soup = BeautifulSoup(result)
-                            for link in new_soup.findAll('a'):
+                            new_soup = BeautifulSoup(result, 'html5lib')
+                            for link in new_soup.find_all('a'):
                                 output = link.get('href')
                                 if output and output.startswith('magnet'):
                                     url = output

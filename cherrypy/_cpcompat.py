@@ -298,7 +298,7 @@ except ImportError:
 try:
     # Prefer simplejson, which is usually more advanced than the builtin
     # module.
-    import simplejson as json
+    import lib.simplejson as json
     json_decode = json.JSONDecoder().decode
     _json_encode = json.JSONEncoder().iterencode
 except ImportError:

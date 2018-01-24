@@ -678,8 +678,10 @@ def config_read(reloaded=False):
             CFG.remove_option(newz_name, 'newznab_api%i' % count)
         if CFG.has_option(newz_name, 'nzedb'):
             CFG.remove_option(newz_name, 'nzedb')
+        disp_name = check_setting('str', newz_name, 'dispname', newz_name)
 
         NEWZNAB_PROV.append({"NAME": newz_name,
+                             "DISPNAME": disp_name,
                              "ENABLED": check_setting('bool', newz_name, 'enabled', 0),
                              "HOST": check_setting('str', newz_name, 'host', ''),
                              "API": check_setting('str', newz_name, 'api', ''),
@@ -714,8 +716,10 @@ def config_read(reloaded=False):
             CFG.remove_option(torz_name, 'torznab_api%i' % count)
         if CFG.has_option(torz_name, 'nzedb'):
             CFG.remove_option(torz_name, 'nzedb')
+        disp_name = check_setting('str', torz_name, 'dispname', torz_name)
 
         TORZNAB_PROV.append({"NAME": torz_name,
+                             "DISPNAME": disp_name,
                              "ENABLED": check_setting('bool', torz_name, 'enabled', 0),
                              "HOST": check_setting('str', torz_name, 'host', ''),
                              "API": check_setting('str', torz_name, 'api', ''),
@@ -755,8 +759,10 @@ def config_read(reloaded=False):
             CFG.remove_option(rss_name, 'PASS')
         if CFG.has_option(rss_name, 'USER'):
             CFG.remove_option(rss_name, 'USER')
+        disp_name = check_setting('str', rss_name, 'dispname', rss_name)
 
         RSS_PROV.append({"NAME": rss_name,
+                         "DISPNAME": disp_name,
                          "ENABLED": check_setting('bool', rss_name, 'ENABLED', 0),
                          "HOST": check_setting('str', rss_name, 'HOST', ''),
                          "DLPRIORITY": check_setting('int', rss_name, 'DLPRIORITY', 0)
@@ -898,6 +904,7 @@ def config_write():
         for provider in new_list:
             check_section(provider['NAME'])
             CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+            CFG.set(provider['NAME'], 'DISPNAME', provider['DISPNAME'])
             CFG.set(provider['NAME'], 'HOST', provider['HOST'])
             CFG.set(provider['NAME'], 'API', provider['API'])
             CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
@@ -938,6 +945,7 @@ def config_write():
     for provider in new_list:
         check_section(provider['NAME'])
         CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
+        CFG.set(provider['NAME'], 'DISPNAME', provider['DISPNAME'])
         CFG.set(provider['NAME'], 'HOST', provider['HOST'])
         CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
 
@@ -999,6 +1007,7 @@ def add_newz_slot():
     if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
         prov_name = 'Newznab%i' % count
         empty = {"NAME": prov_name,
+                 "DISPNAME": prov_name,
                  "ENABLED": 0,
                  "HOST": '',
                  "API": '',
@@ -1028,6 +1037,7 @@ def add_torz_slot():
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
         prov_name = 'Torznab%i' % count
         empty = {"NAME": prov_name,
+                 "DISPNAME": prov_name,
                  "ENABLED": 0,
                  "HOST": '',
                  "API": '',
@@ -1094,6 +1104,7 @@ def add_rss_slot():
         # CFG.set(rss_name, 'USER', '')
         # CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
+                         "DISPNAME": rss_name,
                          "ENABLED": 0,
                          "HOST": '',
                          "DLPRIORITY": 0

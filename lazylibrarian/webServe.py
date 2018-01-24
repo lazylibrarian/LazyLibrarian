@@ -828,7 +828,8 @@ class WebInterface(object):
         config = {
             "http_look_list": http_look_list,
             "status_list": status_list,
-            "magazines_list": mags_list
+            "magazines_list": mags_list,
+            "updated": time.ctime(check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0))
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
 
@@ -888,8 +889,8 @@ class WebInterface(object):
                 # default interface doesn't know about other interfaces variables
                 elif interface == 'legacy' and key in lazylibrarian.CONFIG_NONDEFAULT:
                     pass
-                # default interface doesn't know about download priorities
-                elif interface == 'legacy' and 'dlpriority' in key.lower():
+                # default interface doesn't know about download priorities or displaynames
+                elif interface == 'legacy' and ('dlpriority' in key.lower() or 'dispname' in key.lower()):
                     pass
                 # no key is returned for empty tickboxes...
                 elif item_type == 'bool':
@@ -971,6 +972,8 @@ class WebInterface(object):
             if interface != 'legacy':
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'newznab[%i][dlpriority]' % count, 0), 0)
+                lazylibrarian.NEWZNAB_PROV[count]['DISPNAME'] = kwargs.get(
+                    'newznab[%i][dispname]' % count, '')
             count += 1
 
         count = 0
@@ -1004,6 +1007,8 @@ class WebInterface(object):
             if interface != 'legacy':
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'torznab[%i][dlpriority]' % count, 0), 0)
+                lazylibrarian.TORZNAB_PROV[count]['DISPNAME'] = kwargs.get(
+                    'torznab[%i][dispname]' % count, '')
             count += 1
 
         count = 0
@@ -1013,6 +1018,8 @@ class WebInterface(object):
             if interface != 'legacy':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'rss[%i][dlpriority]' % count, 0), 0)
+                lazylibrarian.RSS_PROV[count]['DISPNAME'] = kwargs.get(
+                    'rss[%i][dispname]' % count, '')
             count += 1
 
         lazylibrarian.config_write()

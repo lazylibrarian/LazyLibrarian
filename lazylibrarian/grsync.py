@@ -147,7 +147,7 @@ class grauth:
                 page_shelves = 0
                 shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
                 body = urllib.urlencode({})
-                headers = {'content-type': 'application/x-www-form-urlencoded'}
+                headers = {'Content-Type': 'application/x-www-form-urlencoded'}
                 request_url = shelf_template.substitute(base='https://www.goodreads.com', user_id=user_id,
                                                         page=current_page, key=lazylibrarian.CONFIG['GR_API'])
                 time_now = int(time.time())
@@ -157,7 +157,8 @@ class grauth:
                 try:
                     response, content = client.request(request_url, 'GET', body, headers)
                 except Exception as e:
-                    return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+                    logger.error("Exception in client.request: %s %s" % (type(e).__name__, str(e)))
+                    return shelves
 
                 if response['status'] != '200':
                     raise Exception('Failure status: %s for page %s' % (response['status'], current_page))
@@ -203,7 +204,7 @@ class grauth:
 
         if follow:
             body = urllib.urlencode({'id': authorid, 'format': 'xml'})
-            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
             try:
                 response, content = client.request('%s/author_followings' % 'https://www.goodreads.com', 'POST', body,
                                                    headers)
@@ -211,7 +212,7 @@ class grauth:
                 return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
         else:
             body = urllib.urlencode({'format': 'xml'})
-            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
             try:
                 response, content = client.request('%s/author_followings/%s' % ('https://www.goodreads.com', authorid),
                                                    'DELETE', body, headers)
@@ -242,7 +243,7 @@ class grauth:
 
         # could also pass [featured] [exclusive_flag] [sortable_flag] all default to False
         body = urllib.urlencode({'user_shelf[name]': shelf.lower()})
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
             time.sleep(1)
@@ -323,9 +324,11 @@ class grauth:
         try:
             response, content = client.request('%s/api/auth_user' % 'https://www.goodreads.com', 'GET')
         except Exception as e:
-            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+            logger.error("Exception in client.request: %s %s" % (type(e).__name__, str(e)))
+            return ''
         if response['status'] != '200':
-            raise Exception('Cannot fetch resource: %s' % response['status'])
+            logger.error('Cannot fetch resource: %s' % response['status'])
+            return ''
 
         userxml = xml.dom.minidom.parseString(content)
         user_id = userxml.getElementsByTagName('user')[0].attributes['id'].value
@@ -342,7 +345,7 @@ class grauth:
         data += '&key=${key}&page=${page}&per_page=100&shelf=${shelf_name}'
         owned_template = Template(data)
         body = urllib.urlencode({})
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         request_url = owned_template.substitute(base='https://www.goodreads.com', user_id=user_id, page=page,
                                                 key=lazylibrarian.CONFIG['GR_API'], shelf_name=shelf_name)
         time_now = int(time.time())
@@ -374,7 +377,7 @@ class grauth:
             body = urllib.urlencode({'name': shelf_name, 'book_id': book_id, 'a': 'remove'})
         else:
             body = urllib.urlencode({'name': shelf_name, 'book_id': book_id})
-        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
             time.sleep(1)

@@ -20,17 +20,9 @@ import urlparse
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented, formatAuthorName, makeUnicode
-from lib.BeautifulSoup import BeautifulSoup, BeautifulStoneSoup
-
-
-def url_fix(s, charset='utf-8'):
-    if isinstance(s, unicode):
-        s = s.encode(charset, 'ignore')
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&=')
-    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
+from lazylibrarian.torrentparser import url_fix
+from lib.bs4 import BeautifulSoup
 
 
 # noinspection PyProtectedMember
@@ -129,11 +121,11 @@ def GEN(book=None, prov=None, test=False):
         if result:
             logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             try:
-                soup = BeautifulSoup(result)
+                soup = BeautifulSoup(result, 'html5lib')
                 try:
-                    table = soup.findAll('table')[2]  # un-named table
+                    table = soup.find_all('table')[2]  # un-named table
                     if table:
-                        rows = table.findAll('tr')
+                        rows = table.find_all('tr')
                 except IndexError:  # no results table in result page
                     rows = []
 
@@ -146,33 +138,28 @@ def GEN(book=None, prov=None, test=False):
                     size = ''
                     extn = ''
                     link = ''
-                    td = row.findAll('td')
+                    td = row.find_all('td')
                     if 'index.php' in search and len(td) > 3:
                         try:
-                            res = str(BeautifulStoneSoup(td[0].text,
-                                                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            author = formatAuthorName(res)
-                            title = str(BeautifulStoneSoup(td[2].text,
-                                                           convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            temp = str(td[4])
-                            temp = temp.split('onmouseout')[1]
-                            extn = temp.split('">')[1].split('(')[0]
-                            size = temp.split('">')[1].split('(')[1].split(')')[0]
+                            author = formatAuthorName(td[0].text)
+                            title = td[2].text
+                            newsoup = BeautifulSoup(str(td[4]), 'html5lib')
+                            data = newsoup.find('a')
+                            link = data.get('href')
+                            extn = data.text.split('(')[0]
+                            size = data.text.split('(')[1].split(')')[0]
                             size = size.upper()
-                            link = temp.split('href=')[1].split('"')[1]
                         except IndexError as e:
                             logger.debug('Error parsing libgen index.php results: %s' % str(e))
 
                     elif 'search.php' in search and len(td) > 8:
                         try:
-                            res = str(BeautifulStoneSoup(td[1].text,
-                                                         convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            author = formatAuthorName(res)
-                            title = str(td[2]).split('>')[2].split('<')[0].strip()
-                            title = str(BeautifulStoneSoup(title, convertEntities=BeautifulStoneSoup.HTML_ENTITIES))
-                            link = str(td[2]).split('href="')[1].split('?')[1].split('"')[0]
-                            size = unaccented(td[7].text).upper()
+                            author = formatAuthorName(td[1].text)
+                            title = td[2].text
+                            size = td[7].text.upper()
                             extn = td[8].text
+                            newsoup = BeautifulSoup(str(td[2]), 'html5lib')
+                            link = newsoup.get('href')
                         except IndexError as e:
                             logger.debug('Error parsing libgen search.php results; %s' % str(e))
 
@@ -222,8 +209,8 @@ def GEN(book=None, prov=None, test=False):
                         if bookresult:
                             url = None
                             try:
-                                new_soup = BeautifulSoup(bookresult)
-                                for link in new_soup.findAll('a'):
+                                new_soup = BeautifulSoup(bookresult, 'html5lib')
+                                for link in new_soup.find_all('a'):
                                     output = link.get('href')
                                     if output:
                                         if output.startswith('http') and '/get.php' in output:

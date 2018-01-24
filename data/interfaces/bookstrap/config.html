@@ -968,18 +968,31 @@
                     %>
                   <div class="col-md-4 form-group">
                     <div class="input-group">
-                      <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
+                      <span class="input-group-addon">Name</span>
+                      <label for="newznab[${loop.index}][dispname]" class="sr-only">Newznab Name</label>
+                      <input type="text" id="newznab[${loop.index}][dispname]" name="newznab[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab[${loop.index}]"> Test</button>
-                        <input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />
+                      &nbsp;<input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
                       </span>
-                      <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
                     </div>
+                    <div class="input-group">
+                    <span class="input-group-addon"></span>
+                      <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
+                      <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
+                      <span class="input-group-addon"></span>
+                    </div>
+                    <div class="input-group">
+                    <span class="input-group-addon"></span>
                     <label for="newznab[${loop.index}][api]" class="sr-only">Newznab API Key</label>
                     <input type="text" placeholder="Newznab API #${loop.index}" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                    <span class="input-group-addon"></span>
+                      </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                       <input type="text" id="newznab[${loop.index}][dlpriority]" name="newznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab[${loop.index}]"> Test</button>
+                      </span>
                     </div>
                   </div>
                   %endfor
@@ -998,18 +1011,31 @@
                     %>
                   <div class="col-md-4 form-group">
                     <div class="input-group">
-                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
+                      <span class="input-group-addon">Name</span>
+                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab Name</label>
+                      <input type="text" id="torznab[${loop.index}][dispname]" name="torznab[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab[${loop.index}]"> Test</button>
-                        <input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value="1" ${checked} />
-                      </span>
-                      <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
+                        &nbsp;<input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
+                        </span>
                     </div>
+                    <div class="input-group">
+                      <span class="input-group-addon"></span>
+                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
+                      <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
+                      <span class="input-group-addon"></span>
+                    </div>
+                    <div class="input-group">
+                    <span class="input-group-addon"></span>
                     <label for="torznab[${loop.index}][api]" class="sr-only">Torznab API Key</label>
                     <input type="text" placeholder="Torznab API #${loop.index}" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                    <span class="input-group-addon"></span>
+                    </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                       <input type="text" id="torznab[${loop.index}][dlpriority]" name="torznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab[${loop.index}]"> Test</button>
+                      </span>
                     </div>
                   </div>
                   %endfor
@@ -1027,13 +1053,19 @@
                        checked = 'checked="checked"'
                   %>
                   <div class="col-md-4 form-group">
-                    <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
                     <div class="input-group">
+                      <span class="input-group-addon">Name</span>
+                      <label for="rss[${loop.index}][host]" class="sr-only">RSS Name</label>
+                      <input type="text" id="rss[${loop.index}][dispname]" name="rss[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss[${loop.index}]"> Test</button>
-                        <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />
+                        &nbsp;<input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
                       </span>
+                    </div>
+                    <div class="input-group">
+                      <span class="input-group-addon"></span>
+                      <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
                       <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
+                      <span class="input-group-addon"></span>
                     </div>
                       <%
                         if '/list/show/' in provider['HOST']:
@@ -1044,6 +1076,9 @@
                     <div class="input-group">
                       <span class="input-group-addon">${label}</span>
                       <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss[${loop.index}]"> Test</button>
+                      </span>
                     </div>
                   </div>
                   %endfor
@@ -1062,15 +1097,17 @@
                     <div class="col-md-4 form-group">
                       <label for="kat_host" class="sr-only">KAT Host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="KAT"> Test</button>
                         <input type="checkbox" id="kat" name="kat" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="KAT Host" id="kat_host" name="kat_host" value="${lazylibrarian.CONFIG['KAT_HOST']}" class="form-control">
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="text" id="kat_dlpriority" name="kat_dlpriority" value="${lazylibrarian.CONFIG['KAT_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="KAT"> Test</button>
+                        </span>
                       </div>
                     </div>
                     <%
@@ -1082,15 +1119,17 @@
                     <div class="col-md-4 form-group">
                       <label for="tpb_host" class="sr-only">TPB Host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TPB"> Test</button>
                           <input type="checkbox" id="tpb" name="tpb" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="TPB Host" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" class="form-control">
                       </div>
                       <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                         <input type="text" id="tpb_dlpriority" name="tpb_dlpriority" value="${lazylibrarian.CONFIG['TPB_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TPB"> Test</button>
+                        </span>
                       </div>
                     </div>
                     <%
@@ -1102,15 +1141,17 @@
                     <div class="col-md-4 form-group">
                       <label for="zoo_host" class="sr-only">zooqle host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="ZOO"> Test</button>
                         <input type="checkbox" id="zoo" name="zoo" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="zooqle host" id="zoo_host" name="zoo_host" value="${lazylibrarian.CONFIG['ZOO_HOST']}" class="form-control">
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="text" id="zoo_dlpriority" name="zoo_dlpriority" value="${lazylibrarian.CONFIG['ZOO_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="ZOO"> Test</button>
+                        </span>
                       </div>
                     </div>
                     <%
@@ -1122,15 +1163,17 @@
                     <div class="col-md-4 form-group">
                       <label for="tdl_host" class="sr-only">torrentdownload host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TDL"> Test</button>
                         <input type="checkbox" id="tdl" name="tdl" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="torrentdownload host" id="tdl_host" name="tdl_host" value="${lazylibrarian.CONFIG['TDL_HOST']}" class="form-control">
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="text" id="tdl_dlpriority" name="tdl_dlpriority" value="${lazylibrarian.CONFIG['TDL_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TDL"> Test</button>
+                        </span>
                       </div>
                     </div>
                     <%
@@ -1142,15 +1185,17 @@
                     <div class="col-md-4 form-group">
                       <label for="lime_host" class="sr-only">limetorrent host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="LIME"> Test</button>
                         <input type="checkbox" id="lime" name="lime" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="limetorrent host" id="lime_host" name="lime_host" value="${lazylibrarian.CONFIG['LIME_HOST']}" class="form-control">
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="text" id="lime_dlpriority" name="lime_dlpriority" value="${lazylibrarian.CONFIG['LIME_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="LIME"> Test</button>
+                        </span>
                       </div>
                     </div>
                   </fieldset>
@@ -1169,11 +1214,10 @@
                     <div class="col-md-4 form-group">
                       <label for="gen_host" class="sr-only">libgen host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN"> Test</button>
                         <input type="checkbox" id="gen" name="gen" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="libgen host" id="gen_host" name="gen_host" value="${lazylibrarian.CONFIG['GEN_HOST']}" class="form-control">
                       </div>
                       <label for="gen_search" class="sr-only">libgen search</label>
                       <div class="input-group">
@@ -1183,6 +1227,9 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="text" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN"> Test</button>
+                        </span>
                       </div>
                       <span class="help-block">
                         Search Examples: search.php or foreignfiction/index.php
@@ -1197,11 +1244,10 @@
                     <div class="col-md-4 form-group">
                       <label for="gen2_host" class="sr-only">libgen host</label>
                       <div class="input-group">
+                        <input type="text" placeholder="libgen host" id="gen2_host" name="gen2_host" value="${lazylibrarian.CONFIG['GEN2_HOST']}" class="form-control">
                         <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN2"> Test</button>
                         <input type="checkbox" id="gen2" name="gen2" value="1" ${checked} />
                         </span>
-                        <input type="text" placeholder="libgen host" id="gen2_host" name="gen2_host" value="${lazylibrarian.CONFIG['GEN2_HOST']}" class="form-control">
                       </div>
                       <label for="gen2_search" class="sr-only">libgen search</label>
                       <div class="input-group">
@@ -1211,6 +1257,9 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="text" id="gen2_dlpriority" name="gen2_dlpriority" value="${lazylibrarian.CONFIG['GEN2_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN2"> Test</button>
+                        </span>
                       </div>
                       <span class="help-block">
                         Search Examples: search.php or foreignfiction/index.php
@@ -2355,7 +2404,7 @@
                     hidden = ''
                 %>
                 <div class="col-md-6">
-                <legend ${hidden}>${provider['HOST']}</legend>
+                <legend ${hidden}>${provider['DISPNAME']}</legend>
                 <div class="checkbox">
                   <%
                     if provider['MANUAL'] == True:
@@ -2413,7 +2462,7 @@
                         hidden = ''
                 %>
                 <div class="col-md-6">
-                <legend ${hidden}><h5>${provider['HOST']}</h5></legend>
+                <legend ${hidden}>${provider['DISPNAME']}</legend>
                 <div class="checkbox">
                   <%
                     if provider['MANUAL'] == True:
@@ -2572,7 +2621,7 @@
       <input type="submit" value="Save changes" id="add" class="btn btn-primary">
     </div>
     <p>&nbsp;</p>
-    <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  :     Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}<br>
+    <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  :     Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}  :  Updated: ${config['updated']}<br>
     Current Version: ${lazylibrarian.CONFIG['CURRENT_VERSION']}  : Latest  Version:    ${lazylibrarian.CONFIG['LATEST_VERSION']}</p>
   </div>
 <!-- form -->

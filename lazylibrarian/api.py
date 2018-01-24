@@ -17,6 +17,7 @@ import ConfigParser
 import Queue
 import json
 import os
+import sys
 import shutil
 import threading
 import cherrypy
@@ -67,6 +68,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'getHistory': 'list history',
             'getLogs': 'show current log',
             'getDebug': 'show debug log header',
+            'getModules': 'show installed modules',
+            'checkModules': 'Check using lazylibrarian library modules',
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
             'getIssues': '&name= list issues of named magazine',
@@ -380,6 +383,23 @@ class Api(object):
 
     def _getDebug(self):
         self.data = logHeader().replace('\n', '<br>')
+
+    def _getModules(self):
+        lst = ''
+        for item in sys.modules:
+            lst = lst + "%s: %s<br>" % (item, str(sys.modules[item]).replace('<', '').replace('>', ''))
+        self.data = lst
+
+    def _checkModules(self):
+        lst = []
+        for item in sys.modules:
+            data = str(sys.modules[item]).replace('<', '').replace('>', '')
+            for libname in ['apscheduler', 'bs4', 'deluge_client', 'feedparser', 'fuzzywuzzy', 'html5lib',
+                            'httplib2', 'mobi', 'oauth2', 'pynma', 'pythontwitter', 'requests', 'simplejson',
+                            'unrar']:
+                if libname in data and 'dist-packages' in data:
+                    lst.append("%s: %s" % (item, data))
+        self.data = lst
 
     def _clearLogs(self):
         self.data = clearLog()
