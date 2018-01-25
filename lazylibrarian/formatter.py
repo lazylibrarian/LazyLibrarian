@@ -221,6 +221,11 @@ def check_int(var, default):
         return default
 
 
+def md5_utf8(txt):
+    if not isinstance(txt, unicode):
+        x = txt.encode('utf-8')
+    return hashlib.md5(x).hexdigest()
+
 # noinspection PyBroadException
 def makeUnicode(txt):
     # convert a bytestring to unicode, don't know what encoding it might be so try a few
