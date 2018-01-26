@@ -19,7 +19,8 @@ import re
 import string
 import time
 import unicodedata
-
+import hashlib
+from lib.six import PY2, text_type
 import lazylibrarian
 
 
@@ -222,15 +223,18 @@ def check_int(var, default):
 
 
 def md5_utf8(txt):
-    if not isinstance(txt, unicode):
-        x = txt.encode('utf-8')
-    return hashlib.md5(x).hexdigest()
+    if isinstance(txt, text_type):
+        txt = txt.encode('utf-8')
+    return hashlib.md5(txt).hexdigest()
+
 
 # noinspection PyBroadException
 def makeUnicode(txt):
     # convert a bytestring to unicode, don't know what encoding it might be so try a few
     # it could be a file on a windows filesystem, unix...
-    if txt is None or isinstance(txt, unicode):
+    if txt is None:
+        return txt
+    elif isinstance(txt, text_type):
         return txt
     for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1', 'utf-8']:
         try:
@@ -246,7 +250,9 @@ def makeUnicode(txt):
 def makeBytestr(txt):
     # convert unicode to bytestring, needed for os.walk and os.listdir
     # listdir falls over if given unicode startdir and a filename in a subdir can't be decoded to ascii
-    if txt is None or not isinstance(txt, unicode):  # nothing to do if already bytestring
+    if txt is None:
+        return txt
+    elif not isinstance(txt, text_type):  # nothing to do if already bytestring
         return txt
     for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1', 'utf-8']:
         try:
@@ -307,8 +313,11 @@ def getList(st, c=None):
     return lst
 
 
+# noinspection PyArgumentList
 def safe_unicode(obj, *args):
     """ return the unicode representation of obj """
+    if not PY2:
+        return str(obj, *args)
     try:
         return unicode(obj, *args)
     except UnicodeDecodeError:
@@ -430,6 +439,8 @@ def cleanName(name, extras=None):
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')
     except TypeError:
         cleanedName = unicodedata.normalize('NFKD', name.decode(lazylibrarian.SYS_ENCODING)).encode('ASCII', 'ignore')
+    if not PY2:
+        cleanedName = cleanedName.decode('utf-8')
     cleaned = u''.join(c for c in cleanedName if c in validNameChars)
     return cleaned.strip()
 
@@ -458,8 +469,12 @@ def unaccented_str(str_or_unicode):
     dic.update({u'\xe6': 'a', u'\xf0': 'o', u'\xf7': '/', u'\xf8': 'o', u'\xfe': 'p'})
     stripped = replace_all(stripped, dic)
     # now get rid of any other non-ascii
-    return stripped.encode('ASCII', 'ignore')
-    # returns bytestring
+    if PY2:
+        return stripped.encode('ASCII', 'ignore')
+        # return bytestring
+    else:
+        return stripped.decode(lazylibrarian.SYS_ENCODING)
+        # return unicode
 
 
 def replace_all(text, dic):

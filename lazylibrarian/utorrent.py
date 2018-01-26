@@ -24,6 +24,7 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import check_int, getList
+from lib.six import PY2
 
 
 class utorrentclient(object):
@@ -152,7 +153,10 @@ class utorrentclient(object):
         request.add_header('User-Agent', USER_AGENT)
 
         if body:
-            request.add_data(body)
+            if PY2:
+                request.add_data(body)
+            else:
+                request.data(body)
             request.add_header('Content-length', len(body))
         if content_type:
             request.add_header('Content-type', content_type)

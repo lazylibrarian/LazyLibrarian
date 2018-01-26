@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import sys
 from types import ModuleType
 
-from six import text_type
+from lib.six import text_type
 
 try:
     import xml.etree.cElementTree as default_etree

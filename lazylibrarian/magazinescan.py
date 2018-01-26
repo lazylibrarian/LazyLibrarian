@@ -23,10 +23,14 @@ import traceback
 from hashlib import sha1
 
 import lazylibrarian
-import lib.zipfile as zipfile
+try:
+    import zipfile
+except ImportError:
+    import lib.zipfile as zipfile
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str, makeUnicode, makeBytestr
+from lib.six import PY2
 
 
 def create_covers(refresh=False):
@@ -107,7 +111,10 @@ def create_cover(issuefile=None, refresh=False):
                         break
             if img:
                 with open(coverfile, 'wb') as f:
-                    f.write(img)
+                    if PY2:
+                        f.write(img)
+                    else:
+                        f.write(img.encode())
                 return
             else:
                 logger.debug("Failed to find image in %s" % issuefile)
@@ -131,7 +138,11 @@ def create_cover(issuefile=None, refresh=False):
                 postfix = '[0]'
             try:
                 params = [converter, '%s%s' % (issuefile, postfix), '%s' % coverfile]
-                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                if PY2:
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                else:
+                    # noinspection PyArgumentList
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
                 if res:
                     logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
             except Exception as e:
@@ -147,14 +158,22 @@ def create_cover(issuefile=None, refresh=False):
             if not os.path.isfile(GS):
                 params = ["where", "gswin64c"]
                 try:
-                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    if PY2:
+                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    else:
+                        # noinspection PyArgumentList
+                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
                     generator = "gswin64c"
                 except Exception as e:
                     logger.debug("where gswin64c failed: %s %s" % (type(e).__name__, str(e)))
             if not os.path.isfile(GS):
                 params = ["where", "gswin32c"]
                 try:
-                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    if PY2:
+                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    else:
+                        # noinspection PyArgumentList
+                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
                     generator = "gswin32c"
                 except Exception as e:
                     logger.debug("where gswin32c failed: %s %s" % (type(e).__name__, str(e)))
@@ -165,13 +184,21 @@ def create_cover(issuefile=None, refresh=False):
                 # noinspection PyBroadException
                 try:
                     params = [GS, "--version"]
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if PY2:
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    else:
+                        # noinspection PyArgumentList
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
                     logger.debug("Found %s [%s] version %s" % (generator, GS, res))
                     generator = "%s version %s" % (generator, res)
                     issuefile = issuefile.split('[')[0]
                     params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
                               "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if PY2:
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    else:
+                        # noinspection PyArgumentList
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
                     if not os.path.isfile(coverfile):
                         logger.debug("Failed to create jpg: %s" % res)
                 except Exception:  # as why:
@@ -214,7 +241,11 @@ def create_cover(issuefile=None, refresh=False):
                         GS = ""
                         params = ["which", "gs"]
                         try:
-                            GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                            if PY2:
+                                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                            else:
+                                # noinspection PyArgumentList
+                                GS = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
                             generator = GS
                         except Exception as e:
                             logger.debug("which gs failed: %s %s" % (type(e).__name__, str(e)))
@@ -223,13 +254,21 @@ def create_cover(issuefile=None, refresh=False):
                             generator = "(no gs found)"
                         else:
                             params = [GS, "--version"]
-                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            if PY2:
+                                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            else:
+                                # noinspection PyArgumentList
+                                res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
                             logger.debug("Found gs [%s] version %s" % (GS, res))
                             generator = "%s version %s" % (generator, res)
                             issuefile = issuefile.split('[')[0]
                             params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
                                       "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            if PY2:
+                                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            else:
+                                # noinspection PyArgumentList
+                                res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
                             if not os.path.isfile(coverfile):
                                 logger.debug("Failed to create jpg: %s" % res)
             except Exception as e:
@@ -251,7 +290,7 @@ def create_cover(issuefile=None, refresh=False):
 
 
 def create_id(issuename=None):
-    hashID = sha1(issuename).hexdigest()
+    hashID = sha1(makeBytestr(issuename)).hexdigest()
     # logger.debug('Issue %s Hash: %s' % (issuename, hashID))
     return hashID
 
@@ -270,7 +309,8 @@ def magazineScan():
                 mag_path = '_' + mag_path
             mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
 
-        mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
         if lazylibrarian.CONFIG['FULL_SCAN']:
             mags = myDB.select('select * from Issues')
             # check all the issues are still there, delete entry if not
@@ -329,7 +369,7 @@ def magazineScan():
         # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
         for rootdir, dirnames, filenames in os.walk(makeBytestr(mag_path)):
             rootdir = makeUnicode(rootdir)
-            filenames = [makeUnicode(item) for item in filenames]            
+            filenames = [makeUnicode(item) for item in filenames]
             for fname in filenames:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):

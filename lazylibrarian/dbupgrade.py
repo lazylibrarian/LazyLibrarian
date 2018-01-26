@@ -16,7 +16,6 @@
 from __future__ import with_statement
 
 import datetime
-import hashlib
 import os
 import shutil
 import threading

@@ -22,6 +22,7 @@ import threading
 import time
 import urllib
 from shutil import copyfile, rmtree
+from lib.six import PY2
 
 import cherrypy
 import lazylibrarian
@@ -37,7 +38,7 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
-    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode
+    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -311,7 +312,7 @@ class WebInterface(object):
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
                 if kwargs['password']:
-                    pwd = hashlib.md5(kwargs['password']).hexdigest()
+                    pwd = md5_utf8(kwargs['password'])
                     if pwd != user['password']:
                         changes += ' password'
                         myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
@@ -361,7 +362,7 @@ class WebInterface(object):
         if 'password' in kwargs:
             password = kwargs['password']
         if username and password:
-            pwd = hashlib.md5(password).hexdigest()
+            pwd = md5_utf8(password)
             res = myDB.match('SELECT UserID, Password from users where username=?', (username,))  # type: dict
         if res and pwd == res['Password']:
             cherrypy.response.cookie['ll_uid'] = res['UserID']
@@ -504,7 +505,7 @@ class WebInterface(object):
             if result:
                 cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
                 myDB.action(cmd, (pwd_generator(), kwargs['username'], kwargs['fullname'],
-                                  hashlib.md5(kwargs['password']).hexdigest(), kwargs['email'], perms))
+                                  md5_utf8(kwargs['password']), kwargs['email'], perms))
                 msg = "New user added: %s: %s" % (kwargs['username'], perm_msg)
                 msg += "<br>Email sent to %s" % kwargs['email']
             else:
@@ -539,7 +540,7 @@ class WebInterface(object):
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
                 if kwargs['password']:
-                    pwd = hashlib.md5(kwargs['password']).hexdigest()
+                    pwd = md5_utf8(kwargs['password'])
                     if pwd != details['Password']:
                         changes += ' password'
                         myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
@@ -586,7 +587,7 @@ class WebInterface(object):
             msg = "Your new password is %s" % new_pwd
             result = notifiers.email_notifier.notify_message('LazyLibrarian New Password', msg, res['Email'])
             if result:
-                pwd = hashlib.md5(new_pwd).hexdigest()
+                pwd = md5_utf8(new_pwd)
                 myDB.action("UPDATE users SET Password=? WHERE UserID=?", (pwd, res['UserID']))
                 return "Password reset, check your email"
             else:
@@ -860,7 +861,7 @@ class WebInterface(object):
 
                 admin = myDB.match('SELECT password from users where name="admin"')
                 if admin:
-                    if admin['password'] == hashlib.md5('admin').hexdigest():
+                    if admin['password'] == md5_utf8('admin'):
                         adminmsg += "The default admin user is 'admin' and password is 'admin'<br>"
                         adminmsg += "This is insecure, please change it on Config -> User Admin<br>"
 
@@ -1077,7 +1078,8 @@ class WebInterface(object):
         if not author:
             raise cherrypy.HTTPRedirect("home")
         authorname = author['AuthorName']
-        authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
 
         return serve_template(
             templatename="author.html", title=urllib.quote_plus(authorname),
@@ -2184,7 +2186,7 @@ class WebInterface(object):
                     if not magimg or not os.path.isfile(magimg):
                         magimg = 'images/nocover.jpg'
                     else:
-                        myhash = hashlib.md5(magimg).hexdigest()
+                        myhash = md5_utf8(magimg)
                         hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
                         if not os.path.isfile(hashname):
                             copyfile(magimg, hashname)
@@ -2279,7 +2281,7 @@ class WebInterface(object):
                 if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.jpg'
                 else:
-                    myhash = hashlib.md5(magimg).hexdigest()
+                    myhash = md5_utf8(magimg)
                     hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
                     if not os.path.isfile(hashname):
                         copyfile(magimg, hashname)
@@ -2290,7 +2292,8 @@ class WebInterface(object):
                 this_mag = dict(mag)
                 this_mag['Cover'] = magimg
                 temp_title = mag['Title']
-                temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
+                if PY2:
+                    temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
                 this_mag['safetitle'] = urllib.quote_plus(temp_title)
                 mags.append(this_mag)
 
@@ -2321,7 +2324,7 @@ class WebInterface(object):
                     if not magimg or not os.path.isfile(magimg):
                         magimg = 'images/nocover.jpg'
                     else:
-                        myhash = hashlib.md5(magimg).hexdigest()
+                        myhash = md5_utf8(magimg)
                         hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
                         if not os.path.isfile(hashname):
                             copyfile(magimg, hashname)
@@ -2439,7 +2442,8 @@ class WebInterface(object):
             return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
         else:  # multiple issues, show a list
             logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
-            bookid = bookid.encode(lazylibrarian.SYS_ENCODING)
+            if PY2:
+                bookid = bookid.encode(lazylibrarian.SYS_ENCODING)
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid))
 
     @cherrypy.expose

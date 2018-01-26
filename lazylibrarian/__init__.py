@@ -36,6 +36,7 @@ from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
 from lib.apscheduler.scheduler import Scheduler
+from lib.six import PY2, text_type
 
 # Transient globals NOT stored in config
 # These are used/modified by LazyLibrarian.py before config.ini is read
@@ -65,7 +66,7 @@ started = False
 LOGLIST = []
 LOGTOGGLE = 2  # normal debug
 
-# These are transient globals
+# These are globals
 UPDATE_MSG = ''
 AUTHORUPDATE_MSG = 0
 NO_TOR_MSG = 0
@@ -870,7 +871,7 @@ def config_write():
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
 
-        if isinstance(value, unicode):
+        if isinstance(value, text_type):
             try:
                 value = value.encode(SYS_ENCODING)
             except UnicodeError:
@@ -972,7 +973,11 @@ def config_write():
 
     msg = None
     try:
-        with open(CONFIGFILE + '.new', 'wb') as configfile:
+        if PY2:
+            fmode = 'wb'
+        else:
+            fmode = 'w'
+        with open(CONFIGFILE + '.new', fmode) as configfile:
             CFG.write(configfile)
     except Exception as e:
         msg = '{} {} {} {}'.format('Unable to create new config file:', CONFIGFILE, type(e).__name__, str(e))
@@ -1252,6 +1257,7 @@ def build_monthtable():
             try:
                 wanted_lang = lang.split('_')[0]
                 params = ['locale', '-a']
+                # noinspection PyArgumentList
                 all_locales = subprocess.check_output(params).split()
                 locale_list = []
                 for a_locale in all_locales:
@@ -1388,21 +1394,33 @@ def shutdown(restart=False, update=False):
         executable = sys.executable
 
         if not executable:
-            if platform.system() == "Windows":
-                params = ["where", "python2"]
-                try:
-                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                except Exception as e:
-                    logger.debug("where python2 failed: %s %s" % (type(e).__name__, str(e)))
+            if PY2:
+                prg = "python2"
             else:
-                params = ["which", "python2"]
+                prg = "python3"
+            if platform.system() == "Windows":
+                params = ["where", prg]
                 try:
-                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    if PY2:
+                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    else:
+                        # noinspection PyArgumentList
+                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
                 except Exception as e:
-                    logger.debug("which python2 failed: %s %s" % (type(e).__name__, str(e)))
+                    logger.debug("where %s failed: %s %s" % (prg, type(e).__name__, str(e)))
+            else:
+                params = ["which", prg]
+                try:
+                    if PY2:
+                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
+                    else:
+                        # noinspection PyArgumentList
+                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
+                except Exception as e:
+                    logger.debug("which %s failed: %s %s" % (prg, type(e).__name__, str(e)))
 
         if not executable:
-            executable = 'python'  # default if not found, still might not work if points to python3
+            executable = 'python'  # default if not found
 
         popen_list = [executable, FULL_PATH]
         popen_list += ARGS

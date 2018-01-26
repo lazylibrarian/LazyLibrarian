@@ -29,6 +29,8 @@ try:
 except ImportError:
     import lib.requests as requests
 
+from lib.six import PY2
+
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int
@@ -73,6 +75,13 @@ def runGit(args):
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
+            if not PY2:
+                if output:
+                    # noinspection PyArgumentList
+                    output = str(output, "utf-8")
+                if err:
+                    # noinspection PyArgumentList
+                    err = str(err, "utf-8")
             logmsg('debug', '(RunGit)Git output: [%s]' % output.strip('\n'))
 
         except OSError:

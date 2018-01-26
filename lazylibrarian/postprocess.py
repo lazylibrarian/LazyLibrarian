@@ -23,7 +23,10 @@ import time
 import traceback
 
 import lazylibrarian
-import lib.zipfile as zipfile
+try:
+    import zipfile
+except ImportError:
+    import lib.zipfile as zipfile
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.bookwork import audioRename, seriesInfo
@@ -39,6 +42,7 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
+from lib.six import PY2
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
@@ -206,7 +210,11 @@ def unpack_archive(pp_path, download_dir, title):
                         if not os.path.isdir(targetdir):
                             logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
                             return ''
-                with open(os.path.join(targetdir, item), 'wb') as f:
+                if PY2:
+                    fmode = 'wb'
+                else:
+                    fmode = 'w'
+                with open(os.path.join(targetdir, item), fmode) as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.read(item))
             else:
@@ -230,7 +238,11 @@ def unpack_archive(pp_path, download_dir, title):
                         if not os.path.isdir(targetdir):
                             logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
                             return ''
-                with open(os.path.join(targetdir, item), 'wb') as f:
+                if PY2:
+                    fmode = 'wb'
+                else:
+                    fmode = 'w'
+                with open(os.path.join(targetdir, item), fmode) as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.extractfile(item).read())
             else:
@@ -254,7 +266,11 @@ def unpack_archive(pp_path, download_dir, title):
                         if not os.path.isdir(targetdir):
                             logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
                             return ''
-                with open(os.path.join(targetdir, item), 'wb') as f:
+                if PY2:
+                    fmode = 'wb'
+                else:
+                    fmode = 'w'
+                with open(os.path.join(targetdir, item), fmode) as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.read(item))
             else:
@@ -528,7 +544,8 @@ def processDir(reset=False):
                                     dest_dir = lazylibrarian.DIRECTORY('eBook')
                                     dest_path = os.path.join(dest_dir, dest_path)
 
-                                dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
+                                if PY2:
+                                    dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                                 authorname = None
                                 bookname = None
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
@@ -1470,7 +1487,11 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
     opfinfo = unaccented_str(replace_all(opfinfo, dic))
 
-    with open(opfpath, 'wb') as opf:
+    if PY2:
+        fmode = 'wb'
+    else:
+        fmode = 'w'
+    with open(opfpath, fmode) as opf:
         opf.write(opfinfo)
     logger.debug('Saved metadata to: ' + opfpath)
     return opfpath, True

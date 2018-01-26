@@ -23,10 +23,11 @@ from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented, makeUnicode
 from lib.bs4 import BeautifulSoup
+from lib.six import text_type
 
 
 def url_fix(s, charset='utf-8'):
-    if isinstance(s, unicode):
+    if isinstance(s, text_type):
         s = s.encode(charset, 'ignore')
     scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
     path = urllib.quote(path, '/%')

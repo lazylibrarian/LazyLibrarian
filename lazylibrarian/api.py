@@ -21,6 +21,7 @@ import sys
 import shutil
 import threading
 import cherrypy
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -396,7 +397,7 @@ class Api(object):
             data = str(sys.modules[item]).replace('<', '').replace('>', '')
             for libname in ['apscheduler', 'bs4', 'deluge_client', 'feedparser', 'fuzzywuzzy', 'html5lib',
                             'httplib2', 'mobi', 'oauth2', 'pynma', 'pythontwitter', 'requests', 'simplejson',
-                            'unrar']:
+                            'unrar', 'six', 'webencodings']:
                 if libname in data and 'dist-packages' in data:
                     lst.append("%s: %s" % (item, data))
         self.data = lst
@@ -993,7 +994,11 @@ class Api(object):
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
             lazylibrarian.CFG.set(kwargs['group'], kwargs['name'], kwargs['value'])
-            with open(lazylibrarian.CONFIGFILE, 'wb') as configfile:
+            if PY2:
+                fmode = 'wb'
+            else:
+                fmode = 'w'
+            with open(lazylibrarian.CONFIGFILE, fmode) as configfile:
                 lazylibrarian.CFG.write(configfile)
             lazylibrarian.config_read(reloaded=True)
         except Exception as e:

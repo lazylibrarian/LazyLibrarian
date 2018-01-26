@@ -8,6 +8,7 @@ __version__ = '1.53.20070415'    # History at the end of the file.
 # ID3 specs: http://www.id3.org/develop.html
 
 import struct, sys, zlib
+from lib.six import PY2
 
 # These are the text encodings, indexed by the first byte of a text value.
 _encodings = ['iso8859-1', 'utf-16', 'utf-16be', 'utf-8']
@@ -24,12 +25,6 @@ _simpleDataMapping = {
     'genre':        ('TCON', 'TCO', 'v1genre'),
     'comment':      ('COMM', 'COM', 'v1comment'),
 }
-
-# Provide booleans for older Pythons.
-try:
-    True, False
-except NameError:
-    True, False = 1==1, 1==0
 
 # Tracing
 _t = False
@@ -135,9 +130,14 @@ class _Frame:
             # Decompress the compressed data.
             self.rawData = zlib.decompress(self.rawData)
 
-        if self.id[0] == 'T':
+        tt = self.id[0]
+        if not PY2:
+            tt = chr(tt)
+        if tt == 'T':
             # Text fields start with T
-            encoding = ord(self.rawData[0])
+            encoding = self.rawData[0]
+            if not PY2:
+                encoding = ord(encoding)
             if 0 <= encoding < len(_encodings):
                 #if _c: _coverage('encoding%d' % encoding)
                 value = self.rawData[1:].decode(_encodings[encoding])
@@ -152,7 +152,7 @@ class _Frame:
                 value = value.split('\0')
                 #if _c: _coverage('textlist')
             self.value = value
-        elif self.id[0] == 'W':
+        elif tt == 'W':
             # URL fields start with W
             self.value = self.rawData.strip('\0')
             if self.id == 'WXXX':
@@ -302,11 +302,18 @@ class Reader:
         if len(header) < 10:
             return
         hstuff = struct.unpack('!3sBBBBBBB', header)
-        if hstuff[0] != "ID3":
-            # Doesn't look like an ID3v2 tag,
-            # Try reading an ID3v1 tag.
-            self._readId3v1()
-            return
+        if PY2:
+            if hstuff[0] != "ID3":
+                # Doesn't look like an ID3v2 tag,
+                # Try reading an ID3v1 tag.
+                self._readId3v1()
+                return
+        else:
+            if hstuff[0] != b"ID3":
+                # Doesn't look like an ID3v2 tag,
+                # Try reading an ID3v1 tag.
+                self._readId3v1()
+                return
 
         self.header = _Header()
         self.header.majorVersion = hstuff[1]
@@ -428,10 +435,12 @@ class Reader:
         """ Determine if the id bytes make a valid ID3 id.
         """
         for c in id:
-            if not c in self._validIdChars:
-                #if _c: _coverage('bad id')
-                return False
-        #if _c: _coverage('id '+id)
+            if PY2:
+                if not c in self._validIdChars:
+                    return False
+            else:
+                if not chr(c) in self._validIdChars:
+                    return False
         return True
 
     def _readFrame_rev2(self):
@@ -540,19 +549,35 @@ class Reader:
             convenience label ('title', 'performer', ...),
             or return None if there is no such value.
         """
-        if self.frames.has_key(id):
-            if hasattr(self.frames[id], 'value'):
-                return self.frames[id].value
-        if _simpleDataMapping.has_key(id):
-            for id2 in _simpleDataMapping[id]:
-                v = self.getValue(id2)
-                if v:
-                    return v
+        if PY2:
+            if self.frames.has_key(id):
+                if hasattr(self.frames[id], 'value'):
+                    return self.frames[id].value
+            if _simpleDataMapping.has_key(id):
+                for id2 in _simpleDataMapping[id]:
+                    v = self.getValue(id2)
+                    if v:
+                        return v
+        else:
+            if bytes(id, 'utf-8') in self.frames:
+                id = bytes(id, 'utf-8')
+                if hasattr(self.frames[id], 'value'):
+                    return self.frames[id].value
+            if id in _simpleDataMapping:
+                for id2 in _simpleDataMapping[id]:
+                    v = self.getValue(id2)
+                    if v:
+                        return v
         return None
 
     def getRawData(self, id):
-        if self.frames.has_key(id):
-            return self.frames[id].rawData
+        if PY2:
+            if self.frames.has_key(id):
+                return self.frames[id].rawData
+        else:
+            if bytes(id, 'utf-8') in self.frames:
+                id = bytes(id, 'utf-8')
+                return self.frames[id].rawData
         return None
 
     def dump(self):

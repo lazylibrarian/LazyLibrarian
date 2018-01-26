@@ -13,10 +13,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import hashlib
 import json
 import os
-import sys
 import shutil
 import time
 from xml.etree import ElementTree
@@ -24,6 +22,7 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
@@ -39,10 +38,10 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
         Allow one retry on timeout by default"""
 
     if raw is None:
-        if sys.version_info[0] == 3:
-            raw = False
-        else:
+        if PY2:
             raw = True
+        else:
+            raw = False
 
     if headers is None:
         # some sites insist on having a user-agent, default is to add one

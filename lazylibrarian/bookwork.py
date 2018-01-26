@@ -19,6 +19,7 @@ import time
 import urllib
 import traceback
 import lib.id3reader as id3reader
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -689,21 +690,28 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
             else:
                 logger.debug(u"getBookWork: Returning Cached seriespage for %s" % item['seriesName'])
 
-            with open(workfile, "r") as cachefile:
-                source = cachefile.read()
+            if PY2:
+                with open(workfile, "r") as cachefile:
+                    source = cachefile.read()
+            else:
+                # noinspection PyArgumentList
+                with open(workfile, "r", errors="backslashreplace") as cachefile:
+                    source = cachefile.read()
             return source
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             if bookID:
                 title = safe_unicode(item['BookName'])
-                title = title.encode(lazylibrarian.SYS_ENCODING)
                 author = safe_unicode(item['AuthorName'])
-                author = author.encode(lazylibrarian.SYS_ENCODING)
+                if PY2:
+                    title = title.encode(lazylibrarian.SYS_ENCODING)
+                    author = author.encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/api/whatwork.php?author=%s&title=%s' % \
                       (urllib.quote_plus(author), urllib.quote_plus(title))
             else:
                 seriesname = safe_unicode(item['seriesName'])
-                seriesname = seriesname.encode(lazylibrarian.SYS_ENCODING)
+                if PY2:
+                    seriesname = seriesname.encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/series/%s' % urllib.quote_plus(seriesname)
 
             librarything_wait()
@@ -859,7 +867,8 @@ def getSeriesAuthors(seriesid):
             params = {"key": lazylibrarian.CONFIG['GR_API']}
             searchname = bookname + ' ' + authorname
             searchname = cleanName(unaccented(searchname))
-            searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+            if PY2:
+                searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
             searchterm = urllib.quote_plus(searchname)
             set_url = base_url + searchterm + '&' + urllib.urlencode(params)
             authorid = ''
@@ -888,7 +897,8 @@ def getSeriesAuthors(seriesid):
                             break
                 if not authorid:  # try again with title only
                     searchname = cleanName(unaccented(bookname))
-                    searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+                    if PY2:
+                        searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
                     searchterm = urllib.quote_plus(searchname)
                     set_url = base_url + searchterm + '&' + urllib.urlencode(params)
                     rootxml, in_cache = get_xml_request(set_url)
@@ -1088,9 +1098,10 @@ def getBookCover(bookID=None, src=None):
         booklink = ''
         if item:
             title = safe_unicode(item['BookName'])
-            title = title.encode(lazylibrarian.SYS_ENCODING)
             author = safe_unicode(item['AuthorName'])
-            author = author.encode(lazylibrarian.SYS_ENCODING)
+            if PY2:
+                title = title.encode(lazylibrarian.SYS_ENCODING)
+                author = author.encode(lazylibrarian.SYS_ENCODING)
             booklink = item['BookLink']
             safeparams = urllib.quote_plus("%s %s" % (author, title))
 
@@ -1197,7 +1208,8 @@ def getAuthorImage(authorid=None):
     authors = myDB.select('select AuthorName from authors where AuthorID=?', (authorid,))
     if authors:
         authorname = safe_unicode(authors[0][0])
-        authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
         safeparams = urllib.quote_plus("author %s" % authorname)
         URL = "https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)

@@ -19,9 +19,13 @@ import traceback
 import urllib
 import shutil
 from xml.etree import ElementTree
+from lib.six import PY2
 
 import lazylibrarian
-import lib.zipfile as zipfile
+try:
+    import zipfile
+except ImportError:
+    import lib.zipfile as zipfile
 import lib.id3reader as id3reader
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
@@ -384,11 +388,17 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
         for rootdir, dirnames, filenames in os.walk(makeBytestr(startdir)):
             for directory in dirnames:
                 # prevent magazine being scanned
-                if directory.startswith("_") or directory.startswith("."):
+                if PY2:
+                    c = directory[0]
+                    ignorefile = '.ll_ignore'
+                else:
+                    c = chr(directory[0])
+                    ignorefile = b'.ll_ignore'
+                if c in ["_", "."]:
                     logger.debug('Skipping %s' % directory)
                     dirnames.remove(directory)
-                # ignore directories containing this special file
-                elif os.path.exists(os.path.join(rootdir, directory, '.ll_ignore')):
+                    # ignore directories containing this special file
+                elif os.path.exists(os.path.join(rootdir, directory, ignorefile)):
                     logger.debug('Found .ll_ignore file in %s' % os.path.join(rootdir, directory))
                     dirnames.remove(directory)
 
@@ -433,7 +443,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         # if it's an epub or a mobi we can try to read metadata from it
                         if (extn == ".epub") or (extn == ".mobi"):
                             book_filename = os.path.join(rootdir, files)
-                            book_filename = book_filename.encode(lazylibrarian.SYS_ENCODING)
+                            if PY2:
+                                book_filename = book_filename.encode(lazylibrarian.SYS_ENCODING)
 
                             try:
                                 res = get_book_info(book_filename)
@@ -493,7 +504,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             # or audiobook which may have id3 tags
                             if is_valid_booktype(files, 'audiobook'):
                                 filename = os.path.join(rootdir, files)
-                                filename = filename.encode(lazylibrarian.SYS_ENCODING)
+                                if PY2:
+                                    filename = filename.encode(lazylibrarian.SYS_ENCODING)
 
                                 try:
                                     id3r = id3reader.Reader(filename)
@@ -647,7 +659,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                         searchname = author + ' ' + book
                                         searchname = cleanName(unaccented(searchname))
-                                        searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+                                        if PY2:
+                                            searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
                                         searchterm = urllib.quote_plus(searchname)
                                         set_url = base_url + searchterm + '&' + urllib.urlencode(params)
                                         # noinspection PyBroadException

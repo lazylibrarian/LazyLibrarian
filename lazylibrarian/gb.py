@@ -35,6 +35,7 @@ from lazylibrarian.formatter import plural, today, replace_all, unaccented, unac
 from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
+from lib.six import PY2
 
 
 class GoogleBooks:
@@ -89,14 +90,16 @@ class GoogleBooks:
                         title = title.split(' (')[0]  # without any series info
                         searchterm = title
                     searchterm = searchterm.replace("'", "").replace('"', '').strip()  # and no quotes
-                    searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+                    if PY2:
+                        searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
                     set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
                 elif api_value == 'inauthor:':
                     searchterm = fullterm
                     if authorname:
                         searchterm = authorname  # just search for author
                     searchterm = searchterm.strip()
-                    searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+                    if PY2:
+                        searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
                     set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
 
                 startindex = 0

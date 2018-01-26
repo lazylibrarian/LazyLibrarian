@@ -32,6 +32,7 @@ from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unac
     cleanName, is_valid_isbn, formatAuthorName, check_int, makeUnicode
 from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
+from lib.six import PY2
 
 
 class GoodReads:
@@ -56,7 +57,8 @@ class GoodReads:
                 searchtitle, searchauthorname = searchterm.split(' <ll> ')
                 searchterm = searchterm.replace(' <ll> ', ' ')
 
-            searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+            if PY2:
+                searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
             url = urllib.quote_plus(searchterm)
             set_url = 'https://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
             logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)

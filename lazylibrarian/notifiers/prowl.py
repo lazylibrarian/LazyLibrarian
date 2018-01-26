@@ -4,6 +4,7 @@ from urllib import urlencode
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
+from lib.six import PY2
 
 
 class Prowl_Notifier:
@@ -25,7 +26,8 @@ class Prowl_Notifier:
         if prowl_priority is None:
             prowl_priority = lazylibrarian.CONFIG['PROWL_PRIORITY']
 
-        message = message.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            message = message.encode(lazylibrarian.SYS_ENCODING)
 
         logger.debug(u"Prowl: title: " + title)
         logger.debug(u"Prowl: event: " + event)

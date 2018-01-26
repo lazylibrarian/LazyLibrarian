@@ -23,7 +23,10 @@ import shutil
 import threading
 import time
 import traceback
-import lib.zipfile as zipfile
+try:
+    import zipfile
+except ImportError:
+    import lib.zipfile as zipfile
 import re
 import ssl
 import sqlite3

@@ -20,6 +20,7 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
@@ -56,8 +57,9 @@ class BoxcarNotifier:
 
         # build up the URL and parameters
         msg = msg.strip()
-        msg = msg.encode(lazylibrarian.SYS_ENCODING)
-        title = title.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            msg = msg.encode(lazylibrarian.SYS_ENCODING)
+            title = title.encode(lazylibrarian.SYS_ENCODING)
         curUrl = API_URL
 
         # if this is a subscription notification then act accordingly

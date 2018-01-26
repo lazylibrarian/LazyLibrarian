@@ -1,12 +1,12 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from six import text_type, binary_type
-from six.moves import http_client, urllib
+from lib.six import text_type, binary_type
+from lib.six.moves import http_client, urllib
 
 import codecs
 import re
 
-import webencodings
+import lib.webencodings
 
 from .constants import EOF, spaceCharacters, asciiLetters, asciiUppercase
 from .constants import ReparseException
