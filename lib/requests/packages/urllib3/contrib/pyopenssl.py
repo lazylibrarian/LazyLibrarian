@@ -61,7 +61,7 @@ except ImportError:  # Platform-specific: Python 3
 import logging
 import ssl
 import select
-import six
+from ..packages import six
 import sys
 
 from .. import util

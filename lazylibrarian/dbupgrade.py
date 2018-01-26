@@ -16,7 +16,6 @@
 from __future__ import with_statement
 
 import datetime
-import hashlib
 import os
 import shutil
 import threading
@@ -27,7 +26,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
 from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lazylibrarian.common import restartJobs, pwd_generator
-from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented, makeUnicode, makeBytestr
+from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented, makeUnicode, makeBytestr, md5_utf8
 
 
 def upgrade_needed():
@@ -166,7 +165,7 @@ def dbupgrade(db_current_version):
                                 Password TEXT, Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, \
                                 CalibreRead TEXT, CalibreToRead TEXT)')
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Perms) VALUES (?, ?, ?, ?, ?)'
-                    myDB.action(cmd, (pwd_generator(), 'admin', 'admin', hashlib.md5('admin').hexdigest(), 65535))
+                    myDB.action(cmd, (pwd_generator(), 'admin', 'admin', md5_utf8('admin'), 65535))
                     logger.debug('Added admin user')
                     myDB.action('CREATE INDEX IF NOT EXISTS issues_Title_index ON issues (Title)')
                     myDB.action('CREATE INDEX IF NOT EXISTS books_index_authorid ON books(AuthorID)')
@@ -944,7 +943,7 @@ def db_v23(myDB, upgradelog):
         if not user or not pwd:
             user = 'admin'
             pwd = 'admin'
-        myDB.action(cmd, (pwd_generator(), user, name, hashlib.md5(pwd).hexdigest(), email,
+        myDB.action(cmd, (pwd_generator(), user, name, md5_utf8(pwd), email,
                           lazylibrarian.perm_admin))
         logger.debug('Added admin user %s' % user)
     upgradelog.write("%s v23: complete\n" % time.ctime())

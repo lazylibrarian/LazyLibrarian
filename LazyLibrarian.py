@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: UTF-8 -*-
-# first line tries to force python2 in case system defaults to python3 (eg freenas)
+#
 import ConfigParser
 import locale
 import os

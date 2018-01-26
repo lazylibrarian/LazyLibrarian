@@ -18,6 +18,7 @@ import re
 import threading
 import time
 import traceback
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -86,7 +87,8 @@ def search_magazines(mags=None, reset=False):
                 searchterm = replace_all(searchterm, dic)
 
                 searchterm = re.sub('[.\-/]', ' ', searchterm)
-                searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
+                if PY2:
+                    searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
 
             searchlist.append({"bookid": bookid, "searchterm": searchterm})
 

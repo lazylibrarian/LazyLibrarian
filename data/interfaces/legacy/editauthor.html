@@ -10,8 +10,9 @@
 <BR><br>
 <h1>&nbsp;&nbsp;${title}</h1>
 <br><br>
-<form action="authorUpdate" method="post">
+<form accept-charset="UTF-8" action="authorUpdate" method="post">
     <div class="table_wrapper">
+        <input name="utf8" type="hidden" value="&#x2713;" />
         <div>
             <input type="text" name="authorid" value="${config['AuthorID']}" class="hidden">
         </div>

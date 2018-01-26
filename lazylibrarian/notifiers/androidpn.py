@@ -26,6 +26,7 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, proxyList
 from lazylibrarian.formatter import check_int
+from lib.six import PY2
 
 
 class AndroidPNNotifier:
@@ -36,7 +37,8 @@ class AndroidPNNotifier:
 
         # build up the URL and parameters
         msg = msg.strip()
-        msg = msg.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            msg = msg.encode(lazylibrarian.SYS_ENCODING)
 
         data = {
             'action': "send",

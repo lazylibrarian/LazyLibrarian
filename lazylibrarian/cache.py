@@ -13,7 +13,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import hashlib
 import json
 import os
 import shutil
@@ -23,17 +22,26 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
-    
+from lib.six import PY2
+
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, md5_utf8
 
 
-def fetchURL(URL, headers=None, retry=True):
+def fetchURL(URL, headers=None, retry=True, raw=None):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
+        Return data as raw/bytes n python2 or if raw == True
+        On python3 default to unicode, need to set raw=True for images/data
         Allow one retry on timeout by default"""
+
+    if raw is None:
+        if PY2:
+            raw = True
+        else:
+            raw = False
 
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
@@ -45,7 +53,14 @@ def fetchURL(URL, headers=None, retry=True):
         r = requests.get(URL, headers=headers, timeout=timeout, proxies=proxies)
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)
-            return r.content, True
+            if raw:
+                return r.content, True
+            try:
+                result = r.content.decode('utf-8')
+            except UnicodeDecodeError:
+                result = r.content.decode('latin-1')
+            return result, True
+
         # noinspection PyBroadException
         try:
             # noinspection PyProtectedMember
@@ -58,7 +73,7 @@ def fetchURL(URL, headers=None, retry=True):
             logger.error(u"fetchURL: Timeout getting response from %s" % URL)
             return "Timeout %s" % str(e), False
         logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
-        result, success = fetchURL(URL, headers=headers, retry=False)
+        result, success = fetchURL(URL, headers=headers, retry=False, raw=False)
         return result, success
     except Exception as e:
         if hasattr(e, 'reason'):
@@ -81,7 +96,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
         return link, True
 
     if img_url.startswith('http'):
-        result, success = fetchURL(img_url)
+        result, success = fetchURL(img_url, raw=True)
         if success:
             try:
                 with open(cachefile, 'wb') as img:
@@ -120,7 +135,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
     cacheLocation = os.path.join(lazylibrarian.CACHEDIR, cacheLocation)
     if not os.path.exists(cacheLocation):
         os.mkdir(cacheLocation)
-    myhash = hashlib.md5(url).hexdigest()
+    myhash = md5_utf8(url)
     valid_cache = False
     source = None
     hashfilename = cacheLocation + os.sep + myhash + "." + cache.lower()

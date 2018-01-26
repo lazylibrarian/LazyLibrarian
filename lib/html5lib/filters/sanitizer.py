@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import re
 from xml.sax.saxutils import escape, unescape
 
-from six.moves import urllib_parse as urlparse
+from lib.six.moves import urllib_parse as urlparse
 
 from . import base
 from ..constants import namespaces, prefixes

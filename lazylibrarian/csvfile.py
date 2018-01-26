@@ -18,6 +18,7 @@ import traceback
 
 import lazylibrarian
 import lib.csv as csv
+from lib.six import PY2
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
 from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName, makeUnicode
@@ -55,7 +56,11 @@ def export_CSV(search_dir=None, status="Wanted"):
             logger.warn(msg)
         else:
             count = 0
-            with open(csvFile, 'wb') as csvfile:
+            if PY2:
+                fmode = 'wb'
+            else:
+                fmode = 'w'
+            with open(csvFile, fmode) as csvfile:
                 csvwrite = csv.writer(csvfile, delimiter=',',
                                       quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
@@ -66,7 +71,10 @@ def export_CSV(search_dir=None, status="Wanted"):
                     logger.debug(u"Exported CSV for book %s" % resulted['BookName'])
                     row = ([resulted['BookID'], resulted['AuthorName'], resulted['BookName'],
                             resulted['BookIsbn'], resulted['AuthorID']])
-                    csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
+                    if PY2:
+                        csvwrite.writerow([("%s" % s).encode(lazylibrarian.SYS_ENCODING) for s in row])
+                    else:
+                        csvwrite.writerow([("%s" % s) for s in row])
                     count += 1
             msg = "CSV exported %s book%s to %s" % (count, plural(count), csvFile)
             logger.info(msg)

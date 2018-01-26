@@ -196,15 +196,18 @@ try:
     import sgmllib
 except ImportError:
     # This is probably Python 3, which doesn't include sgmllib anymore
-    _SGML_AVAILABLE = 0
+    try:
+        from lib.feedparser import sgmllib3 as sgmllib
+    except ImportError:
+        _SGML_AVAILABLE = 0
 
-    # Mock sgmllib enough to allow subclassing later on
-    class sgmllib(object):
-        class SGMLParser(object):
-            def goahead(self, i):
-                pass
-            def parse_starttag(self, i):
-                pass
+        # Mock sgmllib enough to allow subclassing later on
+        class sgmllib(object):
+            class SGMLParser(object):
+                def goahead(self, i):
+                    pass
+                def parse_starttag(self, i):
+                    pass
 else:
     _SGML_AVAILABLE = 1
 

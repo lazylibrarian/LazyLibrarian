@@ -19,6 +19,7 @@
 
 from httplib import HTTPSConnection
 from urllib import urlencode
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
@@ -62,8 +63,9 @@ class PushoverNotifier:
 
         http_handler = HTTPSConnection('api.pushover.net')
 
-        message = message.encode(lazylibrarian.SYS_ENCODING)
-        event = event.encode(lazylibrarian.SYS_ENCODING)
+        if PY2:
+            message = message.encode(lazylibrarian.SYS_ENCODING)
+            event = event.encode(lazylibrarian.SYS_ENCODING)
         try:
             data = {'token': pushover_apitoken,
                     'user': pushover_keys,
