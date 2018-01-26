@@ -6,7 +6,7 @@ from lib.six.moves import http_client, urllib
 import codecs
 import re
 
-import lib.webencodings
+import lib.webencodings as webencodings
 
 from .constants import EOF, spaceCharacters, asciiLetters, asciiUppercase
 from .constants import ReparseException
