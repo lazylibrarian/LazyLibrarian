@@ -357,7 +357,7 @@ class grauth:
         except Exception as e:
             return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
         if response['status'] != '200':
-            raise Exception('Failure status: %s for page ' % response['status'] + page)
+            raise Exception('Failure status: %s for page %s' % (response['status'], page))
         return content
 
     #############################
