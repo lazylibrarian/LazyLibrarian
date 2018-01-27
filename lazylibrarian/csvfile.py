@@ -17,14 +17,19 @@ import os
 import traceback
 
 import lazylibrarian
-import lib.csv as csv
 from lib.six import PY2
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
 from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName, makeUnicode
 from lazylibrarian.importer import search_for, import_book, addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
-
+try:
+    import csv
+except ImportError:
+    if PY2:
+        import lib.csv as csv
+    else:
+        import lib.csv3 as csv
 
 def export_CSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """

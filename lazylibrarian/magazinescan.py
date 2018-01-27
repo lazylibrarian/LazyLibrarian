@@ -21,16 +21,20 @@ import shutil
 import subprocess
 import traceback
 from hashlib import sha1
+from lib.six import PY2
 
 import lazylibrarian
 try:
     import zipfile
 except ImportError:
-    import lib.zipfile as zipfile
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib.zipfile3 as zipfile
+
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
 from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str, makeUnicode, makeBytestr
-from lib.six import PY2
 
 
 def create_covers(refresh=False):

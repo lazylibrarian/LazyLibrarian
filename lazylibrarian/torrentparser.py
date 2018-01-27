@@ -18,13 +18,16 @@ import urllib
 import urlparse
 
 import lazylibrarian
-import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented, makeUnicode
 from lib.bs4 import BeautifulSoup
-from lib.six import text_type
+from lib.six import PY2, text_type
 
+if PY2:
+    import lib.feedparser as feedparser
+else:
+    import lib.feedparser3 as feedparser
 
 def url_fix(s, charset='utf-8'):
     if isinstance(s, text_type):

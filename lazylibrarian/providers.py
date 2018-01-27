@@ -20,12 +20,17 @@ import threading
 from xml.etree import ElementTree
 
 import lazylibrarian
-import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
+from lib.six import PY2
+
+if PY2:
+    import lib.feedparser as feedparser
+else:
+    import lib.feedparser3 as feedparser
 
 
 def test_provider(name):
@@ -49,7 +54,16 @@ def test_provider(name):
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.RSS_PROV:
                 if provider['NAME'] == 'RSS_%s' % prov and provider['HOST']:
-                    return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY']), provider['DISPNAME']
+                    if 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
+                        return GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                                         test=True), provider['DISPNAME']
+                    elif 'goodreads' in provider['HOST'] and '/list/show/' in provider['HOST']:
+                        # goodreads listopia
+                        return LISTOPIA(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                                        test=True), provider['DISPNAME']
+                    else:
+                        return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                                   test=True), provider['DISPNAME']
         except IndexError:
             pass
 
@@ -407,7 +421,7 @@ def IterateOverWishLists():
     return resultslist, providers
 
 
-def LISTOPIA(host=None, feednr=None, priority=0):
+def LISTOPIA(host=None, feednr=None, priority=0, test=False):
     """
     Goodreads Listopia query function, return all the results in a list
     """
@@ -426,6 +440,10 @@ def LISTOPIA(host=None, feednr=None, priority=0):
             URL = "%s?page=%i" % (host, page)
 
         result, success = fetchURL(URL)
+
+        if test:
+            return success
+
         next_page = False
 
         if not success:
@@ -466,7 +484,7 @@ def LISTOPIA(host=None, feednr=None, priority=0):
     return results
 
 
-def GOODREADS(host=None, feednr=None, priority=0):
+def GOODREADS(host=None, feednr=None, priority=0, test=False):
     """
     Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
     but expects goodreads format (looks for goodreads category names)
@@ -479,6 +497,10 @@ def GOODREADS(host=None, feednr=None, priority=0):
     URL = host
 
     result, success = fetchURL(URL)
+
+    if test:
+        return success
+
     if success:
         data = feedparser.parse(result)
     else:

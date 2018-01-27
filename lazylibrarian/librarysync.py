@@ -21,12 +21,20 @@ import shutil
 from xml.etree import ElementTree
 from lib.six import PY2
 
+if PY2:
+    import lib.id3reader as id3reader
+else:
+    import lib.id3reader3 as id3reader
+
 import lazylibrarian
 try:
     import zipfile
 except ImportError:
-    import lib.zipfile as zipfile
-import lib.id3reader as id3reader
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib.zipfile3 as zipfile
+
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request

@@ -18,9 +18,13 @@ import shutil
 import time
 import urllib
 import traceback
-import lib.id3reader as id3reader
 from lib.six import PY2
 
+if PY2:
+    import lib.id3reader as id3reader
+else:
+    import lib.id3reader3 as id3reader
+    
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
