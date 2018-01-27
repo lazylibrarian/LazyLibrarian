@@ -26,13 +26,14 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
-    deluge, rtorrent, synology, bencode
+    deluge, rtorrent, synology
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT, proxyList
 from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
 from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
 from magnet2torrent import magnet2torrent
+from lib.bencode import encode, decode
 
 
 def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
@@ -393,7 +394,7 @@ def CalcTorrentHash(torrent):
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
     else:
-        info = bencode.decode(torrent)["info"]
-        hashid = sha1(bencode.encode(info)).hexdigest()
+        info = decode(torrent)["info"]
+        hashid = sha1(encode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hashid)
     return hashid

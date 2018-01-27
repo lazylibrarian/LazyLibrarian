@@ -63,8 +63,14 @@ try:
 except ImportError:
   from md5 import md5
 
+# lazylibrarian changes
 import lib.oauth2 as oauth
-
+def longint(x):
+  if sys.version_info[0] == 2:
+    return long(x)
+  else:
+    return int(x)
+# lazylib changes end
 
 CHARACTER_LIMIT = 140
 
@@ -413,7 +419,7 @@ class Status(object):
       A human readable string representing the posting time
     '''
     fudge = 1.25
-    delta  = long(self.now) - long(self.created_at_in_seconds)
+    delta  = longint(self.now) - longint(self.created_at_in_seconds)
 
     if delta < (1 * fudge):
       return 'about a second ago'
@@ -2480,13 +2486,13 @@ class Api(object):
 
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
 
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
 
@@ -2685,12 +2691,12 @@ class Api(object):
       parameters['count'] = count
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except ValueError:
         raise TwitterError("'since_id' must be an integer")
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except ValueError:
         raise TwitterError("'max_id' must be an integer")
     if trim_user:
@@ -2767,13 +2773,13 @@ class Api(object):
 
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
 
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
 
@@ -2834,7 +2840,7 @@ class Api(object):
     parameters = {}
 
     try:
-      parameters['id'] = long(id)
+      parameters['id'] = longint(id)
     except ValueError:
       raise TwitterError("'id' must be an integer.")
 
@@ -2866,7 +2872,7 @@ class Api(object):
       raise TwitterError("API must be authenticated.")
 
     try:
-      post_data = {'id': long(id)}
+      post_data = {'id': longint(id)}
     except:
       raise TwitterError("id must be an integer")
     url  = '%s/statuses/destroy/%s.json' % (self.base_url, id)
@@ -3425,7 +3431,7 @@ class Api(object):
     json = self._FetchUrl(url, parameters=parameters)
     try:
       data = self._ParseAndCheckTwitter(json)
-    except TwitterError, e:
+    except TwitterError as e:
         _, e, _ = sys.exc_info()
         t = e.args[0]
         if len(t) == 1 and ('code' in t[0]) and (t[0]['code'] == 34):
@@ -3781,13 +3787,13 @@ class Api(object):
 
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
 
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
 
@@ -3859,12 +3865,12 @@ class Api(object):
         raise TwitterError("count must be an integer")
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
     if trim_user:
@@ -3937,14 +3943,14 @@ class Api(object):
     data = {}
     if list_id:
       try:
-        data['list_id']= long(list_id)
+        data['list_id']= longint(list_id)
       except:
         raise TwitterError("list_id must be an integer")
     elif slug:
       data['slug'] = slug
       if owner_id:
         try:
-          data['owner_id'] = long(owner_id)
+          data['owner_id'] = longint(owner_id)
         except:
           raise TwitterError("owner_id must be an integer")
       elif owner_screen_name:
@@ -3987,14 +3993,14 @@ class Api(object):
     data = {}
     if list_id:
       try:
-        data['list_id']= long(list_id)
+        data['list_id']= longint(list_id)
       except:
         raise TwitterError("list_id must be an integer")
     elif slug:
       data['slug'] = slug
       if owner_id:
         try:
-          data['owner_id'] = long(owner_id)
+          data['owner_id'] = longint(owner_id)
         except:
           raise TwitterError("owner_id must be an integer")
       elif owner_screen_name:
@@ -4036,14 +4042,14 @@ class Api(object):
     data = {}
     if list_id:
       try:
-        data['list_id']= long(list_id)
+        data['list_id']= longint(list_id)
       except:
         raise TwitterError("list_id must be an integer")
     elif slug:
       data['slug'] = slug
       if owner_id:
         try:
-          data['owner_id'] = long(owner_id)
+          data['owner_id'] = longint(owner_id)
         except:
           raise TwitterError("owner_id must be an integer")
       elif owner_screen_name:
@@ -4099,7 +4105,7 @@ class Api(object):
 
     if user_id is not None:
       try:
-        parameters['user_id'] = long(user_id)
+        parameters['user_id'] = longint(user_id)
       except:
         raise TwitterError('user_id must be an integer')
     elif screen_name is not None:
@@ -4143,7 +4149,7 @@ class Api(object):
     parameters = {}
     if user_id is not None:
       try:
-        parameters['user_id'] = long(user_id)
+        parameters['user_id'] = longint(user_id)
       except:
         raise TwitterError('user_id must be an integer')
     elif screen_name is not None:
@@ -4551,7 +4557,7 @@ class Api(object):
           response = opener.open(url, encoded_post_data)
           url_data = self._DecompressGzippedResponse(response)
           self._cache.Set(key, url_data)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
           print e
         opener.close()
       else:
@@ -4618,7 +4624,7 @@ class _FileCache(object):
              os.getenv('USERNAME') or \
              os.getlogin() or \
              'nobody'
-    except (AttributeError, IOError, OSError), e:
+    except (AttributeError, IOError, OSError) as e:
       return 'nobody'
 
   def _GetTmpCachePath(self):
