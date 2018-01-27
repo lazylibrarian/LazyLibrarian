@@ -35,9 +35,7 @@ takes 2 optional arguments:
  - (opt) developerkey: where you can store your developer key
 """
 
-    def __init__(self, apikey=None, developerkey=None):
-        if apikey is None:
-            apikey = []
+    def __init__(self, apikey=[], developerkey=None):
         self._developerkey = None
         self.developerkey(developerkey)
         if apikey:
