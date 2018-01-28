@@ -469,12 +469,11 @@ def unaccented_str(str_or_unicode):
     dic.update({u'\xe6': 'a', u'\xf0': 'o', u'\xf7': '/', u'\xf8': 'o', u'\xfe': 'p'})
     stripped = replace_all(stripped, dic)
     # now get rid of any other non-ascii
+    stripped = stripped.encode('ASCII', 'ignore')
     if PY2:
-        return stripped.encode('ASCII', 'ignore')
-        # return bytestring
+        return stripped  # return bytestring
     else:
-        return stripped.decode(lazylibrarian.SYS_ENCODING)
-        # return unicode
+        return stripped.decode(lazylibrarian.SYS_ENCODING)  # return unicode
 
 
 def replace_all(text, dic):

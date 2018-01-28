@@ -394,7 +394,7 @@ def CalcTorrentHash(torrent):
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
     else:
-        info = decode(torrent)["info"]
+        info = dict(decode(torrent))["info"]
         hashid = sha1(encode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hashid)
     return hashid

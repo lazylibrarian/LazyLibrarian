@@ -29,6 +29,7 @@ if PY2:
 else:
     import lib.feedparser3 as feedparser
 
+
 def url_fix(s, charset='utf-8'):
     if isinstance(s, text_type):
         s = s.encode(charset, 'ignore')

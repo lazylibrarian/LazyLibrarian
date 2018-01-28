@@ -20,17 +20,17 @@ import urllib
 import traceback
 from lib.six import PY2
 
-if PY2:
-    import lib.id3reader as id3reader
-else:
-    import lib.id3reader3 as id3reader
-    
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
+
+if PY2:
+    import lib.id3reader as id3reader
+else:
+    import lib.id3reader3 as id3reader
 
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR

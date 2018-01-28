@@ -31,6 +31,7 @@ except ImportError:
     else:
         import lib.csv3 as csv
 
+
 def export_CSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
     # noinspection PyBroadException
