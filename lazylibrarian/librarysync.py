@@ -21,20 +21,7 @@ import shutil
 from xml.etree import ElementTree
 from lib.six import PY2
 
-if PY2:
-    import lib.id3reader as id3reader
-else:
-    import lib.id3reader3 as id3reader
-
 import lazylibrarian
-try:
-    import zipfile
-except ImportError:
-    if PY2:
-        import lib.zipfile as zipfile
-    else:
-        import lib.zipfile3 as zipfile
-
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
@@ -46,6 +33,18 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
+
+if PY2:
+    import lib.id3reader as id3reader
+else:
+    import lib.id3reader3 as id3reader
+try:
+    import zipfile
+except ImportError:
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib.zipfile3 as zipfile
 
 
 def get_book_info(fname):
@@ -525,6 +524,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         author = performer
                                     else:
                                         author = None
+                                    if author and type(author) is list:
+                                        author = author[0]
                                     book = id3r.getValue('album')
                                     if author and book:
                                         match = True
