@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -21,7 +18,7 @@ import shutil
 import subprocess
 import traceback
 from hashlib import sha1
-from lib.six import PY2
+from lib.six import PY2, text_type
 
 import lazylibrarian
 try:
@@ -30,7 +27,7 @@ except ImportError:
     if PY2:
         import lib.zipfile as zipfile
     else:
-        import lib.zipfile3 as zipfile
+        import lib3.zipfile as zipfile
 
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
@@ -230,11 +227,11 @@ def create_cover(issuefile=None, refresh=False):
                 elif interface == 'pythonmagick':
                     generator = "pythonmagick interface"
                     img = PythonMagick.Image()
-                    # PythonMagick requires filenames to be str, not unicode
-                    if type(issuefile) is unicode:
-                        issuefile = unaccented_str(issuefile)
-                    if type(coverfile) is unicode:
-                        coverfile = unaccented_str(coverfile)
+                    # PythonMagick requires filenames to be bytestr, not unicode
+                    if type(issuefile) is text_type:
+                        issuefile = makeBytestr(issuefile)
+                    if type(coverfile) is text_type:
+                        coverfile = makeBytestr(coverfile)
                     img.read(issuefile + '[0]')
                     img.write(coverfile)
 

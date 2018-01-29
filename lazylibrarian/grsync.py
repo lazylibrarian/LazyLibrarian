@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -18,8 +15,6 @@
 import threading
 import time
 import traceback
-import urllib
-import urlparse
 import xml.dom.minidom
 from string import Template
 
@@ -28,6 +23,7 @@ import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
+from lib.six.moves.urllib_parse import urlencode, parse_qsl
 
 client = ''
 request_token = ''
@@ -69,7 +65,7 @@ class grauth:
         if response['status'] != '200':
             return 'Invalid response from: %s' % request_token_url
 
-        request_token = dict(urlparse.parse_qsl(content))
+        request_token = dict(parse_qsl(content))
 
         authorize_link = '%s?oauth_token=%s' % (authorize_url, request_token['oauth_token'])
         # print authorize_link
@@ -96,7 +92,7 @@ class grauth:
         if response['status'] != '200':
             return 'Invalid response: %s' % response['status']
 
-        access_token = dict(urlparse.parse_qsl(content))
+        access_token = dict(parse_qsl(content))
         # print access_token
         lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = access_token['oauth_token']
         lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = access_token['oauth_token_secret']
@@ -146,7 +142,7 @@ class grauth:
                 current_page = current_page + 1
                 page_shelves = 0
                 shelf_template = Template('${base}/shelf/list.xml?user_id=${user_id}&key=${key}&page=${page}')
-                body = urllib.urlencode({})
+                body = urlencode({})
                 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
                 request_url = shelf_template.substitute(base='https://www.goodreads.com', user_id=user_id,
                                                         page=current_page, key=lazylibrarian.CONFIG['GR_API'])
@@ -203,7 +199,7 @@ class grauth:
             lazylibrarian.LAST_GOODREADS = time_now
 
         if follow:
-            body = urllib.urlencode({'id': authorid, 'format': 'xml'})
+            body = urlencode({'id': authorid, 'format': 'xml'})
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
             try:
                 response, content = client.request('%s/author_followings' % 'https://www.goodreads.com', 'POST', body,
@@ -211,7 +207,7 @@ class grauth:
             except Exception as e:
                 return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
         else:
-            body = urllib.urlencode({'format': 'xml'})
+            body = urlencode({'format': 'xml'})
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
             try:
                 response, content = client.request('%s/author_followings/%s' % ('https://www.goodreads.com', authorid),
@@ -242,7 +238,7 @@ class grauth:
         user_id = self.getUserId()
 
         # could also pass [featured] [exclusive_flag] [sortable_flag] all default to False
-        body = urllib.urlencode({'user_shelf[name]': shelf.lower()})
+        body = urlencode({'user_shelf[name]': shelf.lower()})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:
@@ -344,7 +340,7 @@ class grauth:
         data = '${base}/review/list?format=xml&v=2&id=${user_id}&sort=author&order=a'
         data += '&key=${key}&page=${page}&per_page=100&shelf=${shelf_name}'
         owned_template = Template(data)
-        body = urllib.urlencode({})
+        body = urlencode({})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         request_url = owned_template.substitute(base='https://www.goodreads.com', user_id=user_id, page=page,
                                                 key=lazylibrarian.CONFIG['GR_API'], shelf_name=shelf_name)
@@ -374,9 +370,9 @@ class grauth:
     def BookToList(book_id, shelf_name, action='add'):
         global client
         if action == 'remove':
-            body = urllib.urlencode({'name': shelf_name, 'book_id': book_id, 'a': 'remove'})
+            body = urlencode({'name': shelf_name, 'book_id': book_id, 'a': 'remove'})
         else:
-            body = urllib.urlencode({'name': shelf_name, 'book_id': book_id})
+            body = urlencode({'name': shelf_name, 'book_id': book_id})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         time_now = int(time.time())
         if time_now <= lazylibrarian.LAST_GOODREADS:

@@ -1,25 +1,22 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
 import socket
-import xmlrpclib
 from time import sleep
 
 import lazylibrarian
 from lazylibrarian import logger
+from lib.six.moves import xmlrpc_client
 
 
 def getServer():
@@ -41,13 +38,13 @@ def getServer():
 
     try:
         socket.setdefaulttimeout(20)  # so we don't freeze if server is not there
-        server = xmlrpclib.ServerProxy(host)
+        server = xmlrpc_client.ServerProxy(host)
         result = server.system.client_version()
         socket.setdefaulttimeout(None)  # reset timeout
         logger.debug("rTorrent client version = %s" % result)
     except Exception as e:
         socket.setdefaulttimeout(None)  # reset timeout if failed
-        logger.debug("xmlrpclib error: %s" % repr(e))
+        logger.debug("xmlrpc_client error: %s" % repr(e))
         return False
     if result:
         return server

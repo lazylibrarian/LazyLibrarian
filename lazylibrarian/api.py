@@ -1,27 +1,24 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import ConfigParser
-import Queue
+
 import json
 import os
 import sys
 import shutil
 import threading
 import cherrypy
-from lib.six import PY2
+from lib.six import PY2, string_types
+from lib.six.moves import configparser, queue
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -213,7 +210,7 @@ class Api(object):
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
             if 'callback' not in self.kwargs:
-                if isinstance(self.data, basestring):
+                if isinstance(self.data, string_types):
                     return self.data
                 else:
                     return json.dumps(self.data)
@@ -234,7 +231,7 @@ class Api(object):
         rows_as_dic = []
 
         for row in rows:
-            row_as_dic = dict(zip(row.keys(), row))
+            row_as_dic = dict(list(zip(list(row.keys()), row)))
             rows_as_dic.append(row_as_dic)
 
         return rows_as_dic
@@ -353,7 +350,7 @@ class Api(object):
     def _getRead(self):
         userid = None
         cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
+        if cookie and 'll_uid' in list(cookie.keys()):
             userid = cookie['ll_uid'].value
         if not userid:
             self.data = 'No userid'
@@ -364,7 +361,7 @@ class Api(object):
     def _getToRead(self):
         userid = None
         cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
+        if cookie and 'll_uid' in list(cookie.keys()):
             userid = cookie['ll_uid'].value
         if not userid:
             self.data = 'No userid'
@@ -772,12 +769,12 @@ class Api(object):
         authorname = formatAuthorName(kwargs['name'])
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(authorname)
-            myqueue = Queue.Queue()
+            myqueue = queue.Queue()
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, myqueue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             GR = GoodReads(authorname)
-            myqueue = Queue.Queue()
+            myqueue = queue.Queue()
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, myqueue])
             search_api.start()
 
@@ -791,12 +788,12 @@ class Api(object):
 
         if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
-            myqueue = Queue.Queue()
+            myqueue = queue.Queue()
             search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], myqueue])
             search_api.start()
         else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             GR = GoodReads(kwargs['name'])
-            myqueue = Queue.Queue()
+            myqueue = queue.Queue()
             search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], myqueue])
             search_api.start()
 
@@ -977,7 +974,7 @@ class Api(object):
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
         if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
-            logger.info(u"Removing all references to author: %s" % AuthorName)
+            logger.info("Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
             myDB.action('DELETE from books WHERE AuthorID=?', (kwargs['id'],))
 
@@ -1013,7 +1010,7 @@ class Api(object):
             return
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
-        except ConfigParser.Error:
+        except configparser.Error:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
 
     @staticmethod

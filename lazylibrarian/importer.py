@@ -1,19 +1,15 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import Queue
 import threading
 import traceback
 from operator import itemgetter
@@ -27,6 +23,7 @@ from lazylibrarian.grsync import grfollow
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
+from lib.six.moves import queue
 
 
 def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
@@ -165,7 +162,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 match = True
             else:
-                logger.warn(u"Nothing found for %s" % authorid)
+                logger.warn("Nothing found for %s" % authorid)
                 if not dbauthor:
                     myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
 
@@ -216,7 +213,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 myDB.upsert("authors", newValueDict, controlValueDict)
                 match = True
             else:
-                logger.warn(u"Nothing found for %s" % authorname)
+                logger.warn("Nothing found for %s" % authorname)
                 if not dbauthor:
                     myDB.action('DELETE from authors WHERE AuthorName=?', (authorname,))
                 return
@@ -353,11 +350,11 @@ def search_for(searchterm):
     """
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(searchterm)
-        myqueue = Queue.Queue()
+        myqueue = queue.Queue()
         search_api = threading.Thread(target=GB.find_results, name='GB-RESULTS', args=[searchterm, myqueue])
         search_api.start()
     else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
-        myqueue = Queue.Queue()
+        myqueue = queue.Queue()
         GR = GoodReads(searchterm)
         search_api = threading.Thread(target=GR.find_results, name='GR-RESULTS', args=[searchterm, myqueue])
         search_api.start()

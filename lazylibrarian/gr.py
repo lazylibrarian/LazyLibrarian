@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -17,7 +14,6 @@ import re
 import time
 import traceback
 import unicodedata
-import urllib
 try:
     import requests
 except ImportError:
@@ -33,7 +29,7 @@ from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unac
 from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
-
+from lib.six.moves.urllib_parse import quote, quote_plus, urlencode
 
 class GoodReads:
     # https://www.goodreads.com/api/
@@ -59,8 +55,8 @@ class GoodReads:
 
             if PY2:
                 searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
-            url = urllib.quote_plus(searchterm)
-            set_url = 'https://www.goodreads.com/search.xml?q=' + url + '&' + urllib.urlencode(self.params)
+            url = quote_plus(searchterm)
+            set_url = 'https://www.goodreads.com/search.xml?q=' + url + '&' + urlencode(self.params)
             logger.debug('Now searching GoodReads API with searchterm: %s' % searchterm)
             # logger.debug('Searching for %s at: %s' % (searchterm, set_url))
 
@@ -233,8 +229,8 @@ class GoodReads:
     def find_author_id(self, refresh=False):
         author = self.name
         author = formatAuthorName(unaccented(author))
-        URL = 'https://www.goodreads.com/api/author_url/' + urllib.quote(author) + \
-              '?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/api/author_url/' + quote(author) + \
+              '?' + urlencode(self.params)
 
         # googlebooks gives us author names with long form unicode characters
         author = makeUnicode(author)  # ensure it's unicode
@@ -269,7 +265,7 @@ class GoodReads:
 
     def get_author_info(self, authorid=None):
 
-        URL = 'https://www.goodreads.com/author/show/' + authorid + '.xml?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/author/show/' + authorid + '.xml?' + urlencode(self.params)
         author_dict = {}
 
         try:
@@ -318,7 +314,7 @@ class GoodReads:
             gb_lang_change = 0
             cache_hits = 0
             not_cached = 0
-            URL = 'https://www.goodreads.com/author/list/' + authorid + '.xml?' + urllib.urlencode(self.params)
+            URL = 'https://www.goodreads.com/author/list/' + authorid + '.xml?' + urlencode(self.params)
 
             # Artist is loading
             myDB = database.DBConnection()
@@ -448,7 +444,7 @@ class GoodReads:
                                     if book.find(find_field).text:
                                         BOOK_URL = 'https://www.goodreads.com/book/show?id=' + \
                                                    book.find(find_field).text + \
-                                                   '&' + urllib.urlencode(self.params)
+                                                   '&' + urlencode(self.params)
                                         logger.debug("Book URL: " + BOOK_URL)
 
                                         time_now = int(time.time())
@@ -727,7 +723,7 @@ class GoodReads:
                         logger.warn('Maximum books page search reached, still more results available')
                     else:
                         URL = 'https://www.goodreads.com/author/list/' + authorid + '.xml?' + \
-                              urllib.urlencode(self.params) + '&page=' + str(loopCount)
+                              urlencode(self.params) + '&page=' + str(loopCount)
                         resultxml = None
                         try:
                             rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
@@ -799,7 +795,7 @@ class GoodReads:
     def find_book(self, bookid=None):
         myDB = database.DBConnection()
 
-        URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urllib.urlencode(self.params)
+        URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(self.params)
 
         try:
             rootxml, in_cache = get_xml_request(URL)

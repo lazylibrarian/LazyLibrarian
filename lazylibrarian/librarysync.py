@@ -1,22 +1,18 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import re
 import traceback
-import urllib
 import shutil
 from xml.etree import ElementTree
 from lib.six import PY2
@@ -33,18 +29,19 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
+from lib.six.moves.urllib_parse import quote_plus, urlencode
 
 if PY2:
     import lib.id3reader as id3reader
 else:
-    import lib.id3reader3 as id3reader
+    import lib3.id3reader as id3reader
 try:
     import zipfile
 except ImportError:
     if PY2:
         import lib.zipfile as zipfile
     else:
-        import lib.zipfile3 as zipfile
+        import lib3.zipfile as zipfile
 
 
 def get_book_info(fname):
@@ -525,7 +522,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     else:
                                         author = None
                                     if author and type(author) is list:
-                                        author = author[0]
+                                        author = author[0]  # if multiple authors, just use the first one
                                     book = id3r.getValue('album')
                                     if author and book:
                                         match = True
@@ -862,7 +859,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                   'bad_lang': stats['sum(bad_lang)'], 'bad_char': stats['sum(bad_char)'],
                   'uncached': stats['sum(uncached)'], 'duplicates': stats['sum(duplicates)']}
 
-            for item in st.keys():
+            for item in list(st.keys()):
                 if st[item] is None:
                     st[item] = 0
 

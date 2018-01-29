@@ -1,21 +1,17 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import datetime
-import urllib
 import threading
 from xml.etree import ElementTree
 
@@ -26,11 +22,12 @@ from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
 from lib.six import PY2
+from lib.six.moves.urllib_parse import urlencode
 
 if PY2:
     import lib.feedparser as feedparser
 else:
-    import lib.feedparser3 as feedparser
+    import lib3.feedparser as feedparser
 
 
 def test_provider(name):
@@ -695,7 +692,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
             host = 'http://' + host
         if host[-1:] == '/':
             host = host[:-1]
-        URL = host + '/api?' + urllib.urlencode(params)
+        URL = host + '/api?' + urlencode(params)
 
         sterm = makeUnicode(book['searchterm'])
 

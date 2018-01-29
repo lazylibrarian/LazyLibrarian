@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -404,7 +401,7 @@ def updateVersionFile(new_version_id):
         return True
     except IOError as e:
         logmsg('error',
-               u"(updateVersionFile) Unable to write current version to version.txt, update not complete: %s" % str(e))
+               "(updateVersionFile) Unable to write current version to version.txt, update not complete: %s" % str(e))
         return False
 
 
@@ -487,7 +484,7 @@ def update():
         # Find update dir name
         update_dir_contents = [x for x in os.listdir(update_dir) if os.path.isdir(os.path.join(update_dir, x))]
         if len(update_dir_contents) != 1:
-            logmsg('error', u"(update) Invalid update data, update failed: " + str(update_dir_contents))
+            logmsg('error', "(update) Invalid update data, update failed: " + str(update_dir_contents))
             return False
         content_dir = os.path.join(update_dir, update_dir_contents[0])
 

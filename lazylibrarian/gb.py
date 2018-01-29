@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -19,7 +16,6 @@
 
 import re
 import traceback
-import urllib
 try:
     import requests
 except ImportError:
@@ -36,7 +32,7 @@ from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
-
+from lib.six.moves.urllib_parse import quote, quote_plus, urlencode
 
 class GoogleBooks:
     def __init__(self, name=None):
@@ -82,7 +78,7 @@ class GoogleBooks:
             for api_value in api_strings:
                 set_url = self.url
                 if api_value == "isbn:":
-                    set_url = set_url + urllib.quote(api_value + searchterm)
+                    set_url = set_url + quote(api_value + searchterm)
                 elif api_value == 'intitle:':
                     searchterm = fullterm
                     if title:  # just search for title
@@ -92,7 +88,7 @@ class GoogleBooks:
                     searchterm = searchterm.replace("'", "").replace('"', '').strip()  # and no quotes
                     if PY2:
                         searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
-                    set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
+                    set_url = set_url + quote(api_value + '"' + searchterm + '"')
                 elif api_value == 'inauthor:':
                     searchterm = fullterm
                     if authorname:
@@ -100,7 +96,7 @@ class GoogleBooks:
                     searchterm = searchterm.strip()
                     if PY2:
                         searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
-                    set_url = set_url + urllib.quote(api_value + '"' + searchterm + '"')
+                    set_url = set_url + quote_plus(api_value + '"' + searchterm + '"')
 
                 startindex = 0
                 resultcount = 0
@@ -112,7 +108,7 @@ class GoogleBooks:
                     while startindex < number_results:
 
                         self.params['startIndex'] = startindex
-                        URL = set_url + '&' + urllib.urlencode(self.params)
+                        URL = set_url + '&' + urlencode(self.params)
 
                         try:
                             jsonresults, in_cache = get_json_request(URL)
@@ -309,7 +305,7 @@ class GoogleBooks:
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
             # google doesnt like accents in author names
-            set_url = self.url + urllib.quote('inauthor:"%s"' % unaccented_str(authorname))
+            set_url = self.url + quote('inauthor:"%s"' % unaccented_str(authorname))
 
             api_hits = 0
             gr_lang_hits = 0
@@ -339,7 +335,7 @@ class GoogleBooks:
                 while startindex < number_results:
 
                     self.params['startIndex'] = startindex
-                    URL = set_url + '&' + urllib.urlencode(self.params)
+                    URL = set_url + '&' + urlencode(self.params)
 
                     try:
                         jsonresults, in_cache = get_json_request(URL, useCache=not refresh)

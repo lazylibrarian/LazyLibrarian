@@ -1,21 +1,19 @@
 #  This file is part of LazyLibrarian.
-#
 #  LazyLibrarian is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  LazyLibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+
 import json
 import time
-import urlparse
+
 try:
     import requests
 except ImportError:
@@ -25,7 +23,7 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
 from lazylibrarian.common import proxyList
-
+from lib.six.moves.urllib_parse import urlparse, urlunparse
 
 # This is just a simple script to send torrents to transmission. The
 # intention is to turn this into a class where we can check the state
@@ -185,7 +183,7 @@ def torrentAction(method, arguments):
 
     # Fix the URL. We assume that the user does not point to the RPC endpoint,
     # so add it if it is missing.
-    parts = list(urlparse.urlparse(host))
+    parts = list(urlparse(host))
 
     if parts[0] not in ("http", "https"):
         parts[0] = "http"
@@ -196,7 +194,7 @@ def torrentAction(method, arguments):
     if not parts[2].endswith("/rpc"):
         parts[2] += "/transmission/rpc"
 
-    host = urlparse.urlunparse(parts)
+    host = urlunparse(parts)
 
     # Retrieve session id
     auth = (username, password) if username and password else None

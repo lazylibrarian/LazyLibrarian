@@ -197,7 +197,7 @@ try:
 except ImportError:
     # This is probably Python 3, which doesn't include sgmllib anymore
     try:
-        import lib3.sgmllib as sgmllib
+        import lib.sgmllib3 as sgmllib
     except ImportError:
         _SGML_AVAILABLE = 0
 

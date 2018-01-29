@@ -1,22 +1,18 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
 from __future__ import with_statement
 
-import ConfigParser
 import calendar
 import json
 import locale
@@ -37,6 +33,7 @@ from lazylibrarian.common import restartJobs, logHeader
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
 from lib.apscheduler.scheduler import Scheduler
 from lib.six import PY2, text_type
+from lib.six.moves import configparser
 
 # Transient globals NOT stored in config
 # These are used/modified by LazyLibrarian.py before config.ini is read
@@ -468,7 +465,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
         try:
             # noinspection PyUnresolvedReferences
             my_val = CFG.getint(cfg_name, item_name)
-        except ConfigParser.Error:
+        except configparser.Error:
             # no such item, might be a new entry
             my_val = int(def_val)
         except Exception as e:
@@ -480,7 +477,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
         try:
             # noinspection PyUnresolvedReferences
             my_val = CFG.getboolean(cfg_name, item_name)
-        except ConfigParser.Error:
+        except configparser.Error:
             my_val = bool(def_val)
         except Exception as e:
             logger.warn('Invalid bool for %s: %s, using default %s' % (cfg_name, item_name, bool(def_val)))
@@ -496,7 +493,7 @@ def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
                 my_val = my_val[1:-1]
             if not len(my_val):
                 my_val = def_val
-        except ConfigParser.Error:
+        except configparser.Error:
             my_val = str(def_val)
         except Exception as e:
             logger.warn('Invalid str for %s: %s, using default %s' % (cfg_name, item_name, str(def_val)))
@@ -621,7 +618,7 @@ def initialize():
 
         try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
             # noinspection PyUnresolvedReferences
-            from dbcheck import dbcheck
+            from .dbcheck import dbcheck
             dbcheck()
         except ImportError:
             pass
@@ -772,7 +769,7 @@ def config_read(reloaded=False):
     # if the last slot is full, add an empty one on the end
     add_rss_slot()
 
-    for key in CONFIG_DEFINITIONS.keys():
+    for key in list(CONFIG_DEFINITIONS.keys()):
         item_type, section, default = CONFIG_DEFINITIONS[key]
         CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default)
     if not CONFIG['LOGDIR']:
@@ -849,7 +846,7 @@ def config_write():
 
     interface = CFG.get('General', 'http_look')
 
-    for key in CONFIG_DEFINITIONS.keys():
+    for key in list(CONFIG_DEFINITIONS.keys()):
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
             value = CONFIG[key]
@@ -858,11 +855,10 @@ def config_write():
             value = CONFIG[key]
             if key == 'LOGLEVEL':
                 LOGLEVEL = check_int(value, 1)
-            elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWNLOAD_DIR',
-                         'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
-                value = value.encode(SYS_ENCODING)
+            #elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWNLOAD_DIR',
+            #             'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
+            #    value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
-                value = value.encode(SYS_ENCODING)
                 value = value.lower()
         else:
             # keep the old value
@@ -871,7 +867,7 @@ def config_write():
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
             CONFIG[key] = value
 
-        if isinstance(value, text_type):
+        if PY2 and isinstance(value, text_type):
             try:
                 value = value.encode(SYS_ENCODING)
             except UnicodeError:
@@ -881,8 +877,8 @@ def config_write():
         CFG.set(section, key.lower(), value)
 
     # sanity check for typos...
-    for key in CONFIG.keys():
-        if key not in CONFIG_DEFINITIONS.keys():
+    for key in list(CONFIG.keys()):
+        if key not in list(CONFIG_DEFINITIONS.keys()):
             logger.warn('Unsaved config key: %s' % key)
 
     for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:

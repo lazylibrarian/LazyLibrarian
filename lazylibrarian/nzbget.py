@@ -20,14 +20,12 @@
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import httplib
-import xmlrpclib
 from base64 import standard_b64encode
 
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
-
+from lib.six.moves import xmlrpc_client, http_client
 
 def checkLink():
     # socket.setdefaulttimeout(2)
@@ -71,7 +69,7 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
                                                  "port": port,
                                                  "password": lazylibrarian.CONFIG['NZBGET_PASS']}
     try:
-        nzbGetRPC = xmlrpclib.ServerProxy(url)
+        nzbGetRPC = xmlrpc_client.ServerProxy(url)
     except Exception as e:
         logger.debug("NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e)))
         return False
@@ -96,13 +94,13 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
             else:
                 logger.info("Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
 
-    except httplib.socket.error as e:
+    except http_client.socket.error as e:
         logger.error("Please check your NZBget host and port (if it is running). \
             NZBget is not responding to this combination: %s" % e)
         logger.error("NZBget url set to [%s]" % url)
         return False
 
-    except xmlrpclib.ProtocolError as e:
+    except xmlrpc_client.ProtocolError as e:
         if e.errmsg == "Unauthorized":
             logger.error("NZBget password is incorrect.")
         else:

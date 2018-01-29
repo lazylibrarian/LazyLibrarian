@@ -27,8 +27,8 @@ class Telegram_Notifier:
         if telegram_userid is None:
             telegram_userid = lazylibrarian.CONFIG['TELEGRAM_USERID']
 
-        logger.debug(u"Telegram: event: " + event)
-        logger.debug(u"Telegram: message: " + message)
+        logger.debug("Telegram: event: " + event)
+        logger.debug("Telegram: message: " + message)
 
         # Construct message
         payload = {'chat_id': telegram_userid, 'text': event + ': ' + message}
@@ -40,7 +40,7 @@ class Telegram_Notifier:
             logger.debug(payload)
             response = requests.request('POST', url, data=payload)
         except Exception as e:
-            logger.warn(u'Telegram notify failed: ' + str(e))
+            logger.warn('Telegram notify failed: ' + str(e))
             return False
 
         if response.status_code == 200:

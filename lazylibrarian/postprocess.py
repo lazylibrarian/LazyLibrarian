@@ -29,7 +29,7 @@ except ImportError:
     if PY2:
         import lib.zipfile as zipfile
     else:
-        import lib.zipfile3 as zipfile
+        import lib3.zipfile as zipfile
         
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
