@@ -31,7 +31,7 @@ except ImportError:
 
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural, unaccented_str, makeUnicode, makeBytestr
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr
 
 
 def create_covers(refresh=False):

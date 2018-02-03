@@ -5,6 +5,7 @@ from lib.six import PY2
 from lib.six.moves.urllib_parse import urlencode
 from lib.six.moves.http_client import HTTPSConnection
 
+
 class Prowl_Notifier:
     def __init__(self):
         pass

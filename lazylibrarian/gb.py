@@ -32,7 +32,9 @@ from lazylibrarian.common import proxyList
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote, quote_plus, urlencode
+
 
 class GoogleBooks:
     def __init__(self, name=None):

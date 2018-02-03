@@ -18,6 +18,7 @@ import shutil
 import threading
 import cherrypy
 from lib.six import PY2, string_types
+# noinspection PyUnresolvedReferences
 from lib.six.moves import configparser, queue
 
 import lazylibrarian

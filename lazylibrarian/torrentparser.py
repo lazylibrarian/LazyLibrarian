@@ -16,8 +16,9 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented, makeUnicode, makeBytestr
+from lazylibrarian.formatter import plural, unaccented, makeUnicode
 from lib.six import PY2, PY3, text_type
+from lib.six.moves.urllib_parse import quote_plus, quote, urlencode, urlsplit, urlunsplit
 
 if PY2:
     from lib.bs4 import BeautifulSoup
@@ -25,7 +26,7 @@ if PY2:
 else:
     from lib3.bs4 import BeautifulSoup
     import lib3.feedparser as feedparser
-from lib.six.moves.urllib_parse import quote_plus, quote, urlencode, urlsplit, urlunsplit
+
 
 def url_fix(s, charset='utf-8'):
     if PY2 and isinstance(s, text_type):

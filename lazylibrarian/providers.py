@@ -22,6 +22,7 @@ from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode
 
 if PY2:

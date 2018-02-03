@@ -20,7 +20,9 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import proxyList
 from lazylibrarian.formatter import check_int, unaccented_str
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode
+
 
 def checkLink():
     # connection test, check host/port

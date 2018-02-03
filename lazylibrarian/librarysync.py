@@ -29,6 +29,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
+
 from lib.six.moves.urllib_parse import quote_plus, urlencode
 
 if PY2:
@@ -399,7 +400,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     c = chr(directory[0])
                     ignorefile = b'.ll_ignore'
                 if c in ["_", "."]:
-                    logger.debug('Skipping %s' % directory)
+                    logger.debug('Skipping %s' % os.path.join(rootdir, directory))#directory)
                     dirnames.remove(directory)
                     # ignore directories containing this special file
                 elif os.path.exists(os.path.join(rootdir, directory, ignorefile)):
@@ -418,9 +419,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 # in case user keeps multiple different books in the same subdirectory
                 if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
                         (subdirectory in processed_subdirectories):
-                    logger.debug("[%s] already scanned" % subdirectory)
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
-                    logger.debug("[%s] already scanned" % subdirectory)
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("[%s] already scanned" % subdirectory)
                 elif not os.path.isdir(rootdir):
                     logger.debug("[%s] missing (renamed?)" % rootdir)
                 else:
@@ -526,6 +529,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     book = id3r.getValue('album')
                                     if author and book:
                                         match = True
+                                        author = makeUnicode(author)
+                                        book = makeUnicode(book)
                                 except Exception as e:
                                     logger.debug("id3reader error %s %s" % (type(e).__name__, str(e)))
                                     pass
@@ -548,7 +553,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                 book = makeUnicode(book)
                                 author = makeUnicode(author)
-                                if len(book) <= 2 or len(author) <= 2:
+                                if len(book) > 2 and len(author) > 2:
+                                    match = True
+                                    author = makeUnicode(author)
+                                    book = makeUnicode(book)
+                                else:
                                     match = False
                             if not match:
                                 logger.debug("Pattern match failed [%s]" % files)
@@ -574,9 +583,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
                             newauthor, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
+
                             if len(newauthor) and newauthor != author:
                                 logger.debug("Preferred authorname changed from [%s] to [%s]" % (author, newauthor))
-                                author = newauthor
+                                author = makeUnicode(newauthor)
                             if author:
                                 # author exists, check if this book by this author is in our database
                                 # metadata might have quotes in book name
@@ -667,8 +677,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         searchname = cleanName(unaccented(searchname))
                                         if PY2:
                                             searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
-                                        searchterm = urllib.quote_plus(searchname)
-                                        set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+                                        searchterm = quote_plus(searchname)
+                                        set_url = base_url + searchterm + '&' + urlencode(params)
                                         # noinspection PyBroadException
                                         try:
                                             rootxml, in_cache = get_xml_request(set_url)

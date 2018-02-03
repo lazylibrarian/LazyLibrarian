@@ -29,7 +29,9 @@ from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unac
 from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote, quote_plus, urlencode
+
 
 class GoodReads:
     # https://www.goodreads.com/api/

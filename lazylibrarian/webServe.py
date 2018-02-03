@@ -20,6 +20,7 @@ import threading
 import time
 from shutil import copyfile, rmtree
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, unquote_plus
 
 import cherrypy
@@ -237,7 +238,7 @@ class WebInterface(object):
             else:
                 filtered = rows
             sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -653,7 +654,7 @@ class WebInterface(object):
                 filtered = rows
 
             sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -1491,11 +1492,11 @@ class WebInterface(object):
                 sortcolumn -= 2
 
             if sortcolumn in [4, 12]:  # date, series
-                self.natural_sort(filtered, key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
             elif sortcolumn in [2]:  # title
-                filtered.sort(key=lambda x: x[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
+                filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
             else:
-                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -2401,7 +2402,7 @@ class WebInterface(object):
                 filtered = rows
 
             sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -2926,7 +2927,7 @@ class WebInterface(object):
             filtered = lazylibrarian.LOGLIST[::]
 
         sortcolumn = int(iSortCol_0)
-        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+        filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
         if iDisplayLength < 0:  # display = all
             rows = filtered
         else:

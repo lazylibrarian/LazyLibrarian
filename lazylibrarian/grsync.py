@@ -23,6 +23,7 @@ import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl
 
 client = ''

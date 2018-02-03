@@ -18,12 +18,13 @@ from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
 from lazylibrarian.torrentparser import url_fix
 from lib.six import PY2
+from lib.six.moves.urllib_parse import urlparse, urlencode
 
 if PY2:
     from lib.bs4 import BeautifulSoup
 else:
     from lib3.bs4 import BeautifulSoup
-from lib.six.moves.urllib_parse import urlparse, urlencode
+
 
 # noinspection PyProtectedMember
 def redirect_url(genhost, url):

@@ -22,7 +22,9 @@ from lazylibrarian import logger, common, formatter
 
 import lib.oauth2 as oauth
 import lib.pythontwitter as twitter
+
 from lib.six.moves.urllib_parse import parse_qsl
+
 
 class TwitterNotifier:
 

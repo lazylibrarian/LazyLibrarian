@@ -23,13 +23,12 @@ from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
+from lib.six.moves.urllib_parse import quote_plus, urlencode
 
 if PY2:
     import lib.id3reader as id3reader
 else:
     import lib3.id3reader as id3reader
-
-from lib.six.moves.urllib_parse import quote_plus, urlencode
 
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR

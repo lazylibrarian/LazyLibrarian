@@ -23,6 +23,7 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
 from lazylibrarian.common import proxyList
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlparse, urlunparse
 
 # This is just a simple script to send torrents to transmission. The

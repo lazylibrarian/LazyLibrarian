@@ -23,10 +23,12 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
+
 from lib.six.moves import http_cookiejar
 from lib.six.moves.urllib_parse import urlencode
 from lib.six.moves.urllib_request import HTTPCookieProcessor, build_opener, Request
 from lib.six.moves.urllib_error import URLError
+
 
 class qbittorrentclient(object):
     # TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"

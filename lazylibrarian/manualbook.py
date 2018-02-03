@@ -17,6 +17,7 @@ from lazylibrarian.formatter import getList, unaccented_str, plural
 from lazylibrarian.providers import IterateOverRSSSites, IterateOverTorrentSites, IterateOverNewzNabSites, \
     IterateOverDirectSites
 from lib.fuzzywuzzy import fuzz
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
 
 

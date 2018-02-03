@@ -23,6 +23,7 @@ from lazylibrarian.grsync import grfollow
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
+# noinspection PyUnresolvedReferences
 from lib.six.moves import queue
 
 

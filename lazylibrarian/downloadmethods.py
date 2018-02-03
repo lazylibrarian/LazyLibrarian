@@ -34,6 +34,7 @@ from .magnet2torrent import magnet2torrent
 from lib.bencode import encode, decode
 from lib.six import text_type
 
+
 def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
     myDB = database.DBConnection()
     Source = ''
@@ -392,6 +393,7 @@ def CalcTorrentHash(torrent):
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
     else:
+        # noinspection PyTypeChecker
         info = dict(decode(torrent))["info"]  # python3 decode returns OrderedDict
         hashid = sha1(encode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hashid)
