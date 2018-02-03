@@ -795,6 +795,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 if tokmatch:
                                                     break
                                                 for e in os.listdir(makeBytestr(rootdir)):
+                                                    e = makeUnicode(e)
                                                     if is_valid_booktype(e, booktype='audiobook') and token in e:
                                                         book_filename = os.path.join(rootdir, e)
                                                         logger.debug("Librarysync link to preferred part %s: %s" %

@@ -604,7 +604,7 @@ class Reader:
 
         return frame
 
-    def get_value(self, tag_id):
+    def getValue(self, tag_id):
         """ Return the value for an ID3 tag id, or for a
             convenience label ('title', 'performer', ...),
             or return None if there is no such value.
@@ -614,7 +614,7 @@ class Reader:
                 return self.frames[tag_id].value
         if tag_id in _simpleDataMapping:
             for id2 in _simpleDataMapping[tag_id]:
-                v = self.get_value(id2)
+                v = self.getValue(id2)
                 if v:
                     return v
         return None
@@ -639,7 +639,7 @@ class Reader:
             else:
                 print('{}= {}'.format(fr.id, _safestr(fr.rawData)))
         for label in _simpleDataMapping.keys():
-            v = self.get_value(label)
+            v = self.getValue(label)
             if v:
                 print('Label {}: {}'.format(label, _safestr(v)))
 
