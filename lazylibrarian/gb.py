@@ -747,7 +747,7 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
-    def find_book(self, bookid=None):
+    def find_book(self, bookid=None, bookstatus="None"):
         myDB = database.DBConnection()
         if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
@@ -759,6 +759,8 @@ class GoogleBooks:
             logger.debug('No results found for %s' % bookid)
             return
 
+        if not bookstatus:
+            bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
         bookname = jsonresults['volumeInfo']['title']
         dic = {':': '.', '"': '', '\'': ''}
         bookname = replace_all(bookname, dic)
@@ -893,7 +895,7 @@ class GoogleBooks:
             "BookPages": bookpages,
             "BookDate": bookdate,
             "BookLang": booklang,
-            "Status": "Wanted",
+            "Status": bookstatus,
             "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
             "BookAdded": today()
         }

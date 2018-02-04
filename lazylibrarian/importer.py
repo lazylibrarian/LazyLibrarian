@@ -340,10 +340,10 @@ def import_book(bookid):
     """ search goodreads or googlebooks for a bookid and import the book """
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(bookid)
-        _ = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid]).start()
+        _ = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid, "Wanted"]).start()
     else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
         GR = GoodReads(bookid)
-        _ = threading.Thread(target=GR.find_book, name='GR-IMPORT', args=[bookid]).start()
+        _ = threading.Thread(target=GR.find_book, name='GR-IMPORT', args=[bookid, "Wanted"]).start()
 
 
 def search_for(searchterm):

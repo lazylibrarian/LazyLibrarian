@@ -400,7 +400,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     c = chr(directory[0])
                     ignorefile = b'.ll_ignore'
                 if c in ["_", "."]:
-                    logger.debug('Skipping %s' % os.path.join(rootdir, directory))#directory)
+                    logger.debug('Skipping %s' % os.path.join(rootdir, directory))
                     dirnames.remove(directory)
                     # ignore directories containing this special file
                 elif os.path.exists(os.path.join(rootdir, directory, ignorefile)):

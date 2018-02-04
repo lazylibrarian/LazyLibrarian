@@ -794,7 +794,7 @@ class GoodReads:
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
-    def find_book(self, bookid=None):
+    def find_book(self, bookid=None, bookstatus=None):
         myDB = database.DBConnection()
 
         URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(self.params)
@@ -808,13 +808,15 @@ class GoodReads:
             logger.error("%s finding book: %s" % (type(e).__name__, str(e)))
             return
 
+        if not bookstatus:
+            bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
         bookLanguage = rootxml.find('./book/language_code').text
         bookname = rootxml.find('./book/title').text
 
         if not bookLanguage:
             bookLanguage = "Unknown"
         #
-        # PAB user has said they want this book, don't block for unwanted language, just warn
+        # user has said they want this book, don't block for unwanted language, just warn
         #
         valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
@@ -900,7 +902,7 @@ class GoodReads:
             "BookPages": bookpages,
             "BookDate": bookdate,
             "BookLang": bookLanguage,
-            "Status": "Wanted",
+            "Status": bookstatus,
             "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
             "BookAdded": today()
         }
