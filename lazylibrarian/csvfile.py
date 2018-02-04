@@ -157,7 +157,7 @@ def import_CSV(search_dir=None):
             return msg
         else:
             logger.debug('Reading file %s' % csvFile)
-            reader = csv.reader(open(csvFile))
+            reader = csv.reader(open(csvFile, 'rU'))
             for row in reader:
                 if reader.line_num == 1:
                     # If we are on the first line, create the headers list from the first row
