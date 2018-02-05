@@ -24,11 +24,7 @@ from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented,
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
 from lib.six.moves.urllib_parse import quote_plus, urlencode
-
-if PY2:
-    import lib.id3reader as id3reader
-else:
-    import lib3.id3reader as id3reader
+import lib.id3reader as id3reader
 
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
@@ -70,10 +66,10 @@ def audioRename(bookid):
             audio_file = f
             try:
                 id3r = id3reader.Reader(os.path.join(r, f))
-                performer = id3r.getValue('performer')
-                composer = id3r.getValue('TCOM')
-                book = id3r.getValue('album')
-                track = id3r.getValue('track')
+                performer = id3r.get_value('performer')
+                composer = id3r.get_value('TCOM')
+                book = id3r.get_value('album')
+                track = id3r.get_value('track')
 
                 if not track:
                     track = '0'

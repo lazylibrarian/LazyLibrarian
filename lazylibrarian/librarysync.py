@@ -32,10 +32,8 @@ from lib.mobi import Mobi
 
 from lib.six.moves.urllib_parse import quote_plus, urlencode
 
-if PY2:
-    import lib.id3reader as id3reader
-else:
-    import lib3.id3reader as id3reader
+import lib.id3reader as id3reader
+
 try:
     import zipfile
 except ImportError:
@@ -513,11 +511,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 filename = os.path.join(rootdir, files)
                                 if PY2:
                                     filename = filename.encode(lazylibrarian.SYS_ENCODING)
-
+                                id3r = None
                                 try:
                                     id3r = id3reader.Reader(filename)
-                                    performer = id3r.getValue('performer')
-                                    composer = id3r.getValue('TCOM')
+                                    performer = id3r.get_value('performer')
+                                    composer = id3r.get_value('TCOM')
                                     if composer:  # if present, should be author
                                         author = composer
                                     elif performer:  # author, or narrator if composer == author
@@ -525,14 +523,18 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     else:
                                         author = None
                                     if author and type(author) is list:
+                                        lst = ', '.join(author)
+                                        logger.debug("id3reader author list [%s]" % lst)
                                         author = author[0]  # if multiple authors, just use the first one
-                                    book = id3r.getValue('album')
+                                    book = id3r.get_value('album')
                                     if author and book:
                                         match = True
                                         author = makeUnicode(author)
                                         book = makeUnicode(book)
                                 except Exception as e:
-                                    logger.debug("id3reader error %s %s" % (type(e).__name__, str(e)))
+                                    logger.debug("id3reader error %s %s [%s]" % (type(e).__name__, str(e), filename))
+                                    if id3r and int(lazylibrarian.LOGLEVEL) > 2:
+                                        logger.debug(id3r.dump())
                                     pass
 
                         # Failing anything better, just pattern match on filename
