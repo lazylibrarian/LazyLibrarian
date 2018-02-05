@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -17,13 +14,19 @@ import os
 import traceback
 
 import lazylibrarian
-import lib.csv as csv
 from lib.six import PY2
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
 from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName, makeUnicode
 from lazylibrarian.importer import search_for, import_book, addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
+try:
+    import csv
+except ImportError:
+    if PY2:
+        import lib.csv as csv
+    else:
+        import lib3.csv as csv
 
 
 def export_CSV(search_dir=None, status="Wanted"):
@@ -68,7 +71,7 @@ def export_CSV(search_dir=None, status="Wanted"):
                 csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
 
                 for resulted in find_status:
-                    logger.debug(u"Exported CSV for book %s" % resulted['BookName'])
+                    logger.debug("Exported CSV for book %s" % resulted['BookName'])
                     row = ([resulted['BookID'], resulted['AuthorName'], resulted['BookName'],
                             resulted['BookIsbn'], resulted['AuthorID']])
                     if PY2:
@@ -153,8 +156,8 @@ def import_CSV(search_dir=None):
             logger.warn(msg)
             return msg
         else:
-            logger.debug(u'Reading file %s' % csvFile)
-            reader = csv.reader(open(csvFile))
+            logger.debug('Reading file %s' % csvFile)
+            reader = csv.reader(open(csvFile, 'rU'))
             for row in reader:
                 if reader.line_num == 1:
                     # If we are on the first line, create the headers list from the first row
@@ -164,7 +167,7 @@ def import_CSV(search_dir=None):
                     # row and we can create the sub-dictionary by using the zip() function.
                     # we include the key in the dictionary as our exported csv files use
                     # bookid as the key
-                    content[row[0]] = dict(zip(headers, row))
+                    content[row[0]] = dict(list(zip(headers, row)))
 
             # We can now get to the content by using the resulting dictionary, so to see
             # the list of lines, we can do: print content.keys()  to get a list of keys
@@ -179,19 +182,18 @@ def import_CSV(search_dir=None):
             bookcount = 0
             authcount = 0
             skipcount = 0
-            logger.debug(u"CSV: Found %s book%s in csv file" % (
-                         len(content.keys()), plural(len(content.keys()))))
-            for item in content.keys():
-                authorname = formatAuthorName(authorname)
-                title = content[item]['Title']
-                title = makeUnicode(title)
+            logger.debug("CSV: Found %s book%s in csv file" % (
+                         len(list(content.keys())), plural(len(list(content.keys())))))
+            for item in list(content.keys()):
+                authorname = formatAuthorName(content[item]['Author'])
+                title = makeUnicode(content[item]['Title'])
 
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
 
                 if authmatch:
-                    logger.debug(u"CSV: Author %s found in database" % authorname)
+                    logger.debug("CSV: Author %s found in database" % authorname)
                 else:
-                    logger.debug(u"CSV: Author %s not found" % authorname)
+                    logger.debug("CSV: Author %s not found" % authorname)
                     newauthor, authorid, new = addAuthorNameToDB(author=authorname,
                                                                  addbooks=lazylibrarian.CONFIG['NEWAUTHOR_BOOKS'])
                     if len(newauthor) and newauthor != authorname:
@@ -208,9 +210,9 @@ def import_CSV(search_dir=None):
                     bookid = bookmatch['BookID']
                     bookstatus = bookmatch['Status']
                     if bookstatus in ['Open', 'Wanted', 'Have']:
-                        logger.info(u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                        logger.info('Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
                     else:  # skipped/ignored
-                        logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                        logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
                         controlValueDict = {"BookID": bookid}
                         newValueDict = {"Status": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)

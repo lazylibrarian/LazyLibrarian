@@ -20,16 +20,10 @@ import lazylibrarian
 
 from lazylibrarian import logger, common, formatter
 
-# parse_qsl moved to urlparse module in v2.6
-# noinspection PyBroadException
-try:
-    from urlparse import parse_qsl  # @UnusedImport
-except Exception:
-    # noinspection PyDeprecation
-    from cgi import parse_qsl  # @Reimport
-
 import lib.oauth2 as oauth
 import lib.pythontwitter as twitter
+
+from lib.six.moves.urllib_parse import parse_qsl
 
 
 class TwitterNotifier:
@@ -117,14 +111,14 @@ class TwitterNotifier:
         access_token_key = lazylibrarian.CONFIG['TWITTER_USERNAME']
         access_token_secret = lazylibrarian.CONFIG['TWITTER_PASSWORD']
 
-        logger.info(u"Sending tweet: " + message)
+        logger.info("Sending tweet: " + message)
 
         api = twitter.Api(username, password, access_token_key, access_token_secret)
 
         try:
             api.PostUpdate(message)
         except Exception as e:
-            logger.error(u"Error Sending Tweet: %s" % e)
+            logger.error("Error Sending Tweet: %s" % e)
             return False
 
         return True

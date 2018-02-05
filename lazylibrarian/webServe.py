@@ -1,17 +1,15 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import datetime
 import hashlib
@@ -20,9 +18,10 @@ import random
 import re
 import threading
 import time
-import urllib
 from shutil import copyfile, rmtree
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_parse import quote_plus, unquote_plus
 
 import cherrypy
 import lazylibrarian
@@ -82,7 +81,7 @@ def serve_template(templatename, **kwargs):
         res = None
         myDB = database.DBConnection()
         cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
+        if cookie and 'll_uid' in list(cookie.keys()):
             res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
         else:
             cnt = myDB.match("select count('UserID') as counter from users")
@@ -163,7 +162,7 @@ class WebInterface(object):
     def profile(self):
         title = 'User Profile'
         cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
+        if cookie and 'll_uid' in list(cookie.keys()):
             myDB = database.DBConnection()
             user = myDB.match('SELECT UserName,Name,Email from users where UserID=?', (cookie['ll_uid'].value,))
             if user:
@@ -235,11 +234,11 @@ class WebInterface(object):
                 nrow.append(bar)
                 rows.append(nrow)  # add each rowlist to the masterlist
             if sSearch:
-                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
             else:
                 filtered = rows
             sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -289,7 +288,7 @@ class WebInterface(object):
 
         changes = ''
         cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
+        if cookie and 'll_uid' in list(cookie.keys()):
             userid = cookie['ll_uid'].value
             myDB = database.DBConnection()
             user = myDB.match('SELECT UserName,Name,Email,Password from users where UserID=?', (userid,))
@@ -351,7 +350,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         # is it a retry login (failed user/pass)
         cookie = cherrypy.request.cookie
-        if not cookie or 'll_uid' not in cookie.keys():
+        if not cookie or 'll_uid' not in list(cookie.keys()):
             cherrypy.response.cookie['ll_uid'] = ''
         username = ''
         password = ''
@@ -650,12 +649,12 @@ class WebInterface(object):
                 rows.append(entry)  # add the rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
             else:
                 filtered = rows
 
             sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -715,7 +714,7 @@ class WebInterface(object):
         HaveRead = []
         if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and lazylibrarian.CONFIG['USER_ACCOUNTS']:
             cookie = cherrypy.request.cookie
-            if cookie and 'll_uid' in cookie.keys():
+            if cookie and 'll_uid' in list(cookie.keys()):
                 res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
                                  (cookie['ll_uid'].value,))
                 if res:
@@ -759,7 +758,7 @@ class WebInterface(object):
                                 threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
                     elif action in ["Unread", "Read", "ToRead"]:
                         cookie = cherrypy.request.cookie
-                        if cookie and 'll_uid' in cookie.keys():
+                        if cookie and 'll_uid' in list(cookie.keys()):
                             res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
                                              (cookie['ll_uid'].value,))
                             if res:
@@ -871,7 +870,7 @@ class WebInterface(object):
 
         interface = lazylibrarian.CFG.get('General', 'http_look')
         # now the config file entries
-        for key in lazylibrarian.CONFIG_DEFINITIONS.keys():
+        for key in list(lazylibrarian.CONFIG_DEFINITIONS.keys()):
             item_type, section, default = lazylibrarian.CONFIG_DEFINITIONS[key]
             if key.lower() in kwargs:
                 value = kwargs[key.lower()]
@@ -1082,7 +1081,7 @@ class WebInterface(object):
             authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
 
         return serve_template(
-            templatename="author.html", title=urllib.quote_plus(authorname),
+            templatename="author.html", title=quote_plus(authorname),
             author=author, languages=languages, booklang=BookLang, types=types, library=library, ignored=Ignored,
             showseries=lazylibrarian.SHOW_SERIES)
 
@@ -1099,7 +1098,7 @@ class WebInterface(object):
             newValueDict = {'Status': status}
             myDB.upsert("authors", newValueDict, controlValueDict)
             logger.debug(
-                u'AuthorID [%s]-[%s] %s - redirecting to Author home page' % (AuthorID, AuthorName, status))
+                'AuthorID [%s]-[%s] %s - redirecting to Author home page' % (AuthorID, AuthorName, status))
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
         else:
             logger.debug('pauseAuthor Invalid authorid [%s]' % AuthorID)
@@ -1359,7 +1358,7 @@ class WebInterface(object):
         else:
             perm = 0
             cookie = cherrypy.request.cookie
-            if cookie and 'll_uid' in cookie.keys():
+            if cookie and 'll_uid' in list(cookie.keys()):
                 res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
                                  (cookie['ll_uid'].value,))
                 if res:
@@ -1467,7 +1466,7 @@ class WebInterface(object):
                                     filtered.append(list(row))
                                     break
                 else:
-                    filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+                    filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
 
             else:
                 filtered = rows
@@ -1493,11 +1492,11 @@ class WebInterface(object):
                 sortcolumn -= 2
 
             if sortcolumn in [4, 12]:  # date, series
-                self.natural_sort(filtered, key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
             elif sortcolumn in [2]:  # title
-                filtered.sort(key=lambda x: x[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
+                filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
             else:
-                filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -1586,10 +1585,10 @@ class WebInterface(object):
         else:
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 GB = GoogleBooks(bookid)
-                _ = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid]).start()
+                _ = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid, "Wanted"]).start()
             else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 GR = GoodReads(bookid)
-                _ = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid]).start()
+                _ = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid, "Wanted"]).start()
 
         if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
             books = [{"bookid": bookid}]
@@ -1651,7 +1650,7 @@ class WebInterface(object):
         prefix = ''
         title = 'Request Error'
         cookie = cherrypy.request.cookie
-        if cookie and 'll_uid' in cookie.keys():
+        if cookie and 'll_uid' in list(cookie.keys()):
             myDB = database.DBConnection()
             res = myDB.match('SELECT Name,UserName,UserID,Email from users where UserID=?', (cookie['ll_uid'].value,))
             if res:
@@ -1712,7 +1711,7 @@ class WebInterface(object):
         else:
             perm = 0
             cookie = cherrypy.request.cookie
-            if cookie and 'll_uid' in cookie.keys():
+            if cookie and 'll_uid' in list(cookie.keys()):
                 res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
                 if res:
                     perm = check_int(res['Perms'], 0)
@@ -2030,7 +2029,7 @@ class WebInterface(object):
                 if bookid not in ['book_table_length', 'ignored', 'library', 'booklang']:
                     if action in ["Unread", "Read", "ToRead"]:
                         cookie = cherrypy.request.cookie
-                        if cookie and 'll_uid' in cookie.keys():
+                        if cookie and 'll_uid' in list(cookie.keys()):
                             res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
                                              (cookie['ll_uid'].value,))
                             if res:
@@ -2294,7 +2293,7 @@ class WebInterface(object):
                 temp_title = mag['Title']
                 if PY2:
                     temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
-                this_mag['safetitle'] = urllib.quote_plus(temp_title)
+                this_mag['safetitle'] = quote_plus(temp_title)
                 mags.append(this_mag)
 
             if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
@@ -2398,12 +2397,12 @@ class WebInterface(object):
                 rows.append(thisrow)  # add each rowlist to the masterlist
 
             if sSearch:
-                filtered = filter(lambda x: sSearch.lower() in str(x).lower(), rows)
+                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
             else:
                 filtered = rows
 
             sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -2421,7 +2420,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def openMag(self, bookid=None):
-        bookid = urllib.unquote_plus(bookid)
+        bookid = unquote_plus(bookid)
         myDB = database.DBConnection()
         # we may want to open an issue with a hashed bookid
         mag_data = myDB.match('SELECT * from issues WHERE IssueID=?', (bookid,))
@@ -2444,7 +2443,7 @@ class WebInterface(object):
             logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             if PY2:
                 bookid = bookid.encode(lazylibrarian.SYS_ENCODING)
-            raise cherrypy.HTTPRedirect("issuePage?title=%s" % urllib.quote_plus(bookid))
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(bookid))
 
     @cherrypy.expose
     def markPastIssues(self, action=None, **args):
@@ -2635,7 +2634,7 @@ class WebInterface(object):
     @cherrypy.expose
     def searchForMag(self, bookid=None):
         myDB = database.DBConnection()
-        bookid = urllib.unquote_plus(bookid)
+        bookid = unquote_plus(bookid)
         bookdata = myDB.match('SELECT * from magazines WHERE Title=?', (bookid,))
         if bookdata:
             # start searchthreads
@@ -2667,7 +2666,7 @@ class WebInterface(object):
                 title = title.split('~', 1)[0].strip()
 
             # replace any non-ascii quotes/apostrophes with ascii ones eg "Collector's"
-            dic = {u'\u2018': u"'", u'\u2019': u"'", u'\u201c': u'"', u'\u201d': u'"'}
+            dic = {'\u2018': "'", '\u2019': "'", '\u201c': '"', '\u201d': '"'}
             title = replace_all(title, dic)
             exists = myDB.match('SELECT Title from magazines WHERE Title=?', (title,))
             if exists:
@@ -2923,12 +2922,12 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         if sSearch:
-            filtered = filter(lambda x: sSearch.lower() in str(x).lower(), lazylibrarian.LOGLIST[::])
+            filtered = [x for x in lazylibrarian.LOGLIST[::] if sSearch.lower() in str(x).lower()]
         else:
             filtered = lazylibrarian.LOGLIST[::]
 
         sortcolumn = int(iSortCol_0)
-        filtered.sort(key=lambda x: x[sortcolumn], reverse=sSortDir_0 == "desc")
+        filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
         if iDisplayLength < 0:  # display = all
             rows = filtered
         else:
@@ -3090,7 +3089,7 @@ class WebInterface(object):
         else:
             self.label_thread('CalSync')
             cookie = cherrypy.request.cookie
-            if cookie and 'll_uid' in cookie.keys():
+            if cookie and 'll_uid' in list(cookie.keys()):
                 userid = cookie['ll_uid'].value
                 msg = syncCalibreList(userid=userid)
                 self.label_thread('WEBSERVER')

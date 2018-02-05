@@ -1,17 +1,15 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import os
 import re
@@ -26,13 +24,15 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
-    deluge, rtorrent, synology, bencode
+    deluge, rtorrent, synology
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT, proxyList
 from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
 from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
-from magnet2torrent import magnet2torrent
+from .magnet2torrent import magnet2torrent
+from lib.bencode import encode, decode
+from lib.six import text_type
 
 
 def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
@@ -73,7 +73,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
             nzbpath = os.path.join(lazylibrarian.CONFIG['NZB_BLACKHOLEDIR'], nzbname)
             try:
                 with open(nzbpath, 'wb') as f:
-                    if isinstance(nzbfile, unicode):
+                    if isinstance(nzbfile, text_type):
                         nzbfile = nzbfile.encode('iso-8859-1')
                     f.write(nzbfile)
                 logger.debug('NZB file saved to: ' + nzbpath)
@@ -224,7 +224,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     msg = 'Opening '
                     with open(tor_path, 'wb') as torrent_file:
                         msg += 'Writing '
-                        if isinstance(torrent, unicode):
+                        if isinstance(torrent, text_type):
                             torrent = torrent.encode('iso-8859-1')
                         torrent_file.write(torrent)
                     msg += 'SettingPerm'
@@ -245,7 +245,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 msg = 'Opening '
                 with open(tor_path, 'wb') as torrent_file:
                     msg += 'Writing '
-                    if isinstance(torrent, unicode):
+                    if isinstance(torrent, text_type):
                         torrent = torrent.encode('iso-8859-1')
                     torrent_file.write(torrent)
                 msg += 'SettingPerm '
@@ -393,7 +393,8 @@ def CalcTorrentHash(torrent):
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
     else:
-        info = bencode.decode(torrent)["info"]
-        hashid = sha1(bencode.encode(info)).hexdigest()
+        # noinspection PyTypeChecker
+        info = dict(decode(torrent))["info"]  # python3 decode returns OrderedDict
+        hashid = sha1(encode(info)).hexdigest()
     logger.debug('Torrent Hash: ' + hashid)
     return hashid

@@ -28,7 +28,6 @@ import time
 import random
 import hmac
 import binascii
-import lib.httplib2 as httplib2
 
 from ._compat import PY3
 from ._compat import b
@@ -45,6 +44,11 @@ from ._compat import urlunsplit
 from ._compat import urlparse
 from ._compat import urlunparse
 from ._version import __version__
+
+if PY3:
+    import lib3.httplib2 as httplib2
+else:
+    import lib.httplib2 as httplib2
 
 OAUTH_VERSION = '1.0'  # Hi Blaine!
 HTTP_METHOD = 'GET'

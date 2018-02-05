@@ -1,17 +1,15 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import threading
 import traceback
@@ -69,9 +67,9 @@ def search_rss_book(books=None, library=None):
                         bookstatus = bookmatch['Status']
                         bookname = bookmatch['BookName']
                         if bookstatus in ['Open', 'Wanted', 'Have']:
-                            logger.info(u'Found book %s, already marked as "%s"' % (bookname, bookstatus))
+                            logger.info('Found book %s, already marked as "%s"' % (bookname, bookstatus))
                         else:  # skipped/ignored
-                            logger.info(u'Found book %s, marking as "Wanted"' % bookname)
+                            logger.info('Found book %s, marking as "Wanted"' % bookname)
                             controlValueDict = {"BookID": book['rss_bookid']}
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
@@ -97,9 +95,9 @@ def search_rss_book(books=None, library=None):
                         bookstatus = bookmatch['Status']
                         if bookstatus in ['Open', 'Wanted', 'Have']:
                             logger.info(
-                                u'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                                'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
                         else:  # skipped/ignored
-                            logger.info(u'Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                            logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {"Status": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)

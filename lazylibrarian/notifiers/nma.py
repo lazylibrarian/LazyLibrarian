@@ -24,9 +24,9 @@ class NMA_Notifier:
         if nma_priority is None:
             nma_priority = lazylibrarian.CONFIG['NMA_PRIORITY']
 
-        logger.debug(u"NMA: title: " + title)
-        logger.debug(u"NMA: event: " + event)
-        logger.debug(u"NMA: message: " + message)
+        logger.debug("NMA: title: " + title)
+        logger.debug("NMA: event: " + event)
+        logger.debug("NMA: message: " + message)
 
         batch = False
 

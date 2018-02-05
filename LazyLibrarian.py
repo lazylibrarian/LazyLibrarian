@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 #
-import ConfigParser
+from __future__ import print_function
+
 import locale
 import os
 import platform
@@ -15,6 +16,8 @@ import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
 from lazylibrarian.formatter import check_int
 
+from lib.six.moves import configparser
+
 # The following should probably be made configurable at the settings level
 # This fix is put in place for systems with broken SSL (like QNAP)
 opt_out_of_certificate_verification = True
@@ -24,8 +27,6 @@ if opt_out_of_certificate_verification:
         ssl._create_default_https_context = ssl._create_unverified_context
     except:
         pass
-
-
 # ==== end block (should be configurable at settings level)
 
 
@@ -143,12 +144,12 @@ def main():
     if not os.access(lazylibrarian.DATADIR, os.W_OK):
         raise SystemExit('Cannot write to the data directory: ' + lazylibrarian.DATADIR + '. Exit ...')
 
-    print "Lazylibrarian is starting up..."
+    print("Lazylibrarian is starting up...")
     time.sleep(4)  # allow a bit of time for old task to exit if restarting. Needs to free logfile and server port.
 
     # create database and config
     lazylibrarian.DBFILE = os.path.join(lazylibrarian.DATADIR, 'lazylibrarian.db')
-    lazylibrarian.CFG = ConfigParser.RawConfigParser()
+    lazylibrarian.CFG = configparser.RawConfigParser()
     lazylibrarian.CFG.read(lazylibrarian.CONFIGFILE)
 
     # REMINDER ############ NO LOGGING BEFORE HERE ###############

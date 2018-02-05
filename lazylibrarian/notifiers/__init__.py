@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-import androidpn
-import boxcar
-import custom_notify
-import email_notify
-import nma
-import prowl
-import pushbullet
-import pushover
-import slack
-import tweet
-import telegram
+from . import androidpn
+from . import boxcar
+from . import custom_notify
+from . import email_notify
+from . import nma
+from . import prowl
+from . import pushbullet
+from . import pushover
+from . import slack
+from . import tweet
+from . import telegram
 from lazylibrarian import logger
 
 # online

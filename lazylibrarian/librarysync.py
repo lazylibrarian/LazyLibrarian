@@ -1,32 +1,23 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import re
 import traceback
-import urllib
 import shutil
 from xml.etree import ElementTree
 from lib.six import PY2
 
 import lazylibrarian
-try:
-    import zipfile
-except ImportError:
-    import lib.zipfile as zipfile
-import lib.id3reader as id3reader
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
 from lazylibrarian.cache import cache_img, get_xml_request
@@ -38,6 +29,18 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
+
+from lib.six.moves.urllib_parse import quote_plus, urlencode
+
+import lib.id3reader as id3reader
+
+try:
+    import zipfile
+except ImportError:
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib3.zipfile as zipfile
 
 
 def get_book_info(fname):
@@ -395,7 +398,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     c = chr(directory[0])
                     ignorefile = b'.ll_ignore'
                 if c in ["_", "."]:
-                    logger.debug('Skipping %s' % directory)
+                    logger.debug('Skipping %s' % os.path.join(rootdir, directory))
                     dirnames.remove(directory)
                     # ignore directories containing this special file
                 elif os.path.exists(os.path.join(rootdir, directory, ignorefile)):
@@ -414,9 +417,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 # in case user keeps multiple different books in the same subdirectory
                 if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
                         (subdirectory in processed_subdirectories):
-                    logger.debug("[%s] already scanned" % subdirectory)
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
-                    logger.debug("[%s] already scanned" % subdirectory)
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("[%s] already scanned" % subdirectory)
                 elif not os.path.isdir(rootdir):
                     logger.debug("[%s] missing (renamed?)" % rootdir)
                 else:
@@ -506,22 +511,30 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 filename = os.path.join(rootdir, files)
                                 if PY2:
                                     filename = filename.encode(lazylibrarian.SYS_ENCODING)
-
+                                id3r = None
                                 try:
                                     id3r = id3reader.Reader(filename)
-                                    performer = id3r.getValue('performer')
-                                    composer = id3r.getValue('TCOM')
+                                    performer = id3r.get_value('performer')
+                                    composer = id3r.get_value('TCOM')
                                     if composer:  # if present, should be author
                                         author = composer
                                     elif performer:  # author, or narrator if composer == author
                                         author = performer
                                     else:
                                         author = None
-                                    book = id3r.getValue('album')
+                                    if author and type(author) is list:
+                                        lst = ', '.join(author)
+                                        logger.debug("id3reader author list [%s]" % lst)
+                                        author = author[0]  # if multiple authors, just use the first one
+                                    book = id3r.get_value('album')
                                     if author and book:
                                         match = True
+                                        author = makeUnicode(author)
+                                        book = makeUnicode(book)
                                 except Exception as e:
-                                    logger.debug("id3reader error %s %s" % (type(e).__name__, str(e)))
+                                    logger.debug("id3reader error %s %s [%s]" % (type(e).__name__, str(e), filename))
+                                    if id3r and int(lazylibrarian.LOGLEVEL) > 2:
+                                        logger.debug(id3r.dump())
                                     pass
 
                         # Failing anything better, just pattern match on filename
@@ -542,7 +555,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                                 book = makeUnicode(book)
                                 author = makeUnicode(author)
-                                if len(book) <= 2 or len(author) <= 2:
+                                if len(book) > 2 and len(author) > 2:
+                                    match = True
+                                    author = makeUnicode(author)
+                                    book = makeUnicode(book)
+                                else:
                                     match = False
                             if not match:
                                 logger.debug("Pattern match failed [%s]" % files)
@@ -568,9 +585,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                     logger.debug("Already cached Lang [%s] ISBN [%s]" % (language, isbnhead))
 
                             newauthor, authorid, new = addAuthorNameToDB(author)  # get the author name as we know it...
+
                             if len(newauthor) and newauthor != author:
                                 logger.debug("Preferred authorname changed from [%s] to [%s]" % (author, newauthor))
-                                author = newauthor
+                                author = makeUnicode(newauthor)
                             if author:
                                 # author exists, check if this book by this author is in our database
                                 # metadata might have quotes in book name
@@ -661,8 +679,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         searchname = cleanName(unaccented(searchname))
                                         if PY2:
                                             searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
-                                        searchterm = urllib.quote_plus(searchname)
-                                        set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+                                        searchterm = quote_plus(searchname)
+                                        set_url = base_url + searchterm + '&' + urlencode(params)
                                         # noinspection PyBroadException
                                         try:
                                             rootxml, in_cache = get_xml_request(set_url)
@@ -779,6 +797,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 if tokmatch:
                                                     break
                                                 for e in os.listdir(makeBytestr(rootdir)):
+                                                    e = makeUnicode(e)
                                                     if is_valid_booktype(e, booktype='audiobook') and token in e:
                                                         book_filename = os.path.join(rootdir, e)
                                                         logger.debug("Librarysync link to preferred part %s: %s" %
@@ -853,7 +872,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                   'bad_lang': stats['sum(bad_lang)'], 'bad_char': stats['sum(bad_char)'],
                   'uncached': stats['sum(uncached)'], 'duplicates': stats['sum(duplicates)']}
 
-            for item in st.keys():
+            for item in list(st.keys()):
                 if st[item] is None:
                     st[item] = 0
 

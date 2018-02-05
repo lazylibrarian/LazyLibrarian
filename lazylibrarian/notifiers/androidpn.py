@@ -73,24 +73,24 @@ class AndroidPNNotifier:
 
             # If you receive an HTTP status code of 400, it is because you failed to send the proper parameters
             elif status == '400':
-                logger.error(u"ANDROIDPN: Wrong data sent to AndroidPN")
+                logger.error("ANDROIDPN: Wrong data sent to AndroidPN")
             else:
-                logger.error(u"ANDROIDPN: Got error code %s" % status)
+                logger.error("ANDROIDPN: Got error code %s" % status)
             return False
 
         except Exception as e:
             # URLError only returns a reason, not a code. HTTPError gives a code
             # FIXME: Python 2.5 hack, it wrongly reports 201 as an error
             if hasattr(e, 'code') and e.code == 201:
-                logger.debug(u"ANDROIDPN: Notification successful.")
+                logger.debug("ANDROIDPN: Notification successful.")
                 return True
 
             # if we get an error back that doesn't have an error code then who knows what's really happening
             if not hasattr(e, 'code'):
-                logger.error(u"ANDROIDPN: Notification failed.")
+                logger.error("ANDROIDPN: Notification failed.")
             else:
                 # noinspection PyUnresolvedReferences
-                logger.error(u"ANDROIDPN: Notification failed. Error code: " + str(e.code))
+                logger.error("ANDROIDPN: Notification failed. Error code: " + str(e.code))
             return False
 
     def _notify(self, title, message, url=None, username=None, broadcast=None, force=False):

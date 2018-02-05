@@ -1,19 +1,16 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib
+
 import json
 import mimetypes
 import os
@@ -21,13 +18,16 @@ import platform
 import random
 import string
 import time
-import urllib
-import urllib2
 
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
+
+from lib.six.moves import http_cookiejar
+from lib.six.moves.urllib_parse import urlencode
+from lib.six.moves.urllib_request import HTTPCookieProcessor, build_opener, Request
+from lib.six.moves.urllib_error import URLError
 
 
 class qbittorrentclient(object):
@@ -54,16 +54,16 @@ class qbittorrentclient(object):
         self.base_url = host
         self.username = lazylibrarian.CONFIG['QBITTORRENT_USER']
         self.password = lazylibrarian.CONFIG['QBITTORRENT_PASS']
-        self.cookiejar = cookielib.CookieJar()
+        self.cookiejar = http_cookiejar.CookieJar()
         self.opener = self._make_opener()
         self._get_sid(self.base_url, self.username, self.password)
         self.api = self._api_version()
 
     def _make_opener(self):
         # create opener with cookie handler to carry QBitTorrent SID cookie
-        cookie_handler = urllib2.HTTPCookieProcessor(self.cookiejar)
+        cookie_handler = HTTPCookieProcessor(self.cookiejar)
         handlers = [cookie_handler]
-        return urllib2.build_opener(*handlers)
+        return build_opener(*handlers)
 
     def _api_version(self):
         # noinspection PyBroadException
@@ -76,7 +76,7 @@ class qbittorrentclient(object):
 
     def _get_sid(self, base_url, username, password):
         # login so we can capture SID cookie
-        login_data = makeBytestr(urllib.urlencode({'username': username, 'password': password}))
+        login_data = makeBytestr(urlencode({'username': username, 'password': password}))
         try:
             _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
@@ -97,11 +97,11 @@ class qbittorrentclient(object):
             data, headers = encode_multipart(args, files, '-------------------------acebdf13572468')
         else:
             if args:
-                data = makeBytestr(urllib.urlencode(args))
+                data = makeBytestr(urlencode(args))
             if content_type:
                 headers['Content-Type'] = content_type
 
-        request = urllib2.Request(url, data, headers)
+        request = Request(url, data, headers)
 
         if lazylibrarian.CONFIG['PROXY_HOST']:
             for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
@@ -130,7 +130,7 @@ class qbittorrentclient(object):
                     return False
             # some commands return nothing but response code (always 200)
             return True
-        except urllib2.URLError as err:
+        except URLError as err:
             logger.debug('Failed URL: %s' % url)
             logger.debug('QBitTorrent webUI raised the following error: %s' % err.reason)
             return False
@@ -350,7 +350,7 @@ def encode_multipart(fields, files, boundary=None):
     lines = []
 
     if fields:
-        for name, value in fields.items():
+        for name, value in list(fields.items()):
             lines.extend((
                 '--{0}'.format(boundary),
                 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)),
@@ -359,7 +359,7 @@ def encode_multipart(fields, files, boundary=None):
             ))
 
     if files:
-        for name, value in files.items():
+        for name, value in list(files.items()):
             filename = value['filename']
             if 'mimetype' in value:
                 mimetype = value['mimetype']

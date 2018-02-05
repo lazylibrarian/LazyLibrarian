@@ -16,6 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+
 '''A library that provides a Python interface to the Twitter API'''
 
 __author__ = 'python-twitter@googlegroups.com'
@@ -25,18 +27,18 @@ __version__ = '1.0.1'
 import base64
 import calendar
 import datetime
-import httplib
 import os
 import email
 import sys
 import tempfile
 import textwrap
 import time
-import urllib
-import urllib2
-import urlparse
 import gzip
-import StringIO
+
+from lib.six import PY2, text_type, StringIO
+from lib.six.moves.http_client import UNAUTHORIZED
+from lib.six.moves.urllib_error import HTTPError
+from lib.six.moves.urllib_parse import urlparse, urlunparse
 
 try:
   # Python >= 2.6
@@ -50,21 +52,21 @@ except ImportError:
       # Google App Engine
       from django.utils import simplejson
     except ImportError:
-      raise ImportError, "Unable to load a json library"
-
-# parse_qsl moved to urlparse module in v2.6
-try:
-  from urlparse import parse_qsl, parse_qs
-except ImportError:
-  from cgi import parse_qsl, parse_qs
+      raise ImportError("Unable to load a json library")
 
 try:
   from hashlib import md5
 except ImportError:
   from md5 import md5
 
+# lazylibrarian changes
 import lib.oauth2 as oauth
-
+def longint(x):
+  if PY2:
+    return long(x)
+  else:
+    return int(x)
+# lazylib changes end
 
 CHARACTER_LIMIT = 140
 
@@ -413,7 +415,7 @@ class Status(object):
       A human readable string representing the posting time
     '''
     fudge = 1.25
-    delta  = long(self.now) - long(self.created_at_in_seconds)
+    delta  = longint(self.now) - longint(self.created_at_in_seconds)
 
     if delta < (1 * fudge):
       return 'about a second ago'
@@ -2372,9 +2374,9 @@ class Api(object):
 
     if consumer_key is not None and (access_token_key is None or
                                      access_token_secret is None):
-      print >> sys.stderr, 'Twitter now requires an oAuth Access Token for API calls.'
-      print >> sys.stderr, 'If your using this library from a command line utility, please'
-      print >> sys.stderr, 'run the the included get_access_token.py tool to generate one.'
+      print('Twitter now requires an oAuth Access Token for API calls.', file=sys.stderr)
+      print('If your using this library from a command line utility, please', file=sys.stderr)
+      print('run the the included get_access_token.py tool to generate one.', file=sys.stderr)
 
       raise TwitterError('Twitter requires oAuth Access Token for all API access')
 
@@ -2480,13 +2482,13 @@ class Api(object):
 
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
 
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
 
@@ -2685,12 +2687,12 @@ class Api(object):
       parameters['count'] = count
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except ValueError:
         raise TwitterError("'since_id' must be an integer")
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except ValueError:
         raise TwitterError("'max_id' must be an integer")
     if trim_user:
@@ -2767,13 +2769,13 @@ class Api(object):
 
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
 
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
 
@@ -2834,7 +2836,7 @@ class Api(object):
     parameters = {}
 
     try:
-      parameters['id'] = long(id)
+      parameters['id'] = longint(id)
     except ValueError:
       raise TwitterError("'id' must be an integer.")
 
@@ -2866,7 +2868,7 @@ class Api(object):
       raise TwitterError("API must be authenticated.")
 
     try:
-      post_data = {'id': long(id)}
+      post_data = {'id': longint(id)}
     except:
       raise TwitterError("id must be an integer")
     url  = '%s/statuses/destroy/%s.json' % (self.base_url, id)
@@ -2931,10 +2933,10 @@ class Api(object):
 
     url = '%s/statuses/update.json' % self.base_url
 
-    if isinstance(status, unicode) or self._input_encoding is None:
+    if isinstance(status, text_type) or self._input_encoding is None:
       u_status = status
     else:
-      u_status = unicode(status, self._input_encoding)
+      u_status = text_type(status, self._input_encoding)
 
     #if self._calculate_status_length(u_status, self._shortlink_size) > CHARACTER_LIMIT:
     #  raise TwitterError("Text must be less than or equal to %d characters. "
@@ -3425,7 +3427,7 @@ class Api(object):
     json = self._FetchUrl(url, parameters=parameters)
     try:
       data = self._ParseAndCheckTwitter(json)
-    except TwitterError, e:
+    except TwitterError as e:
         _, e, _ = sys.exc_info()
         t = e.args[0]
         if len(t) == 1 and ('code' in t[0]) and (t[0]['code'] == 34):
@@ -3781,13 +3783,13 @@ class Api(object):
 
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
 
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
 
@@ -3859,12 +3861,12 @@ class Api(object):
         raise TwitterError("count must be an integer")
     if since_id:
       try:
-        parameters['since_id'] = long(since_id)
+        parameters['since_id'] = longint(since_id)
       except:
         raise TwitterError("since_id must be an integer")
     if max_id:
       try:
-        parameters['max_id'] = long(max_id)
+        parameters['max_id'] = longint(max_id)
       except:
         raise TwitterError("max_id must be an integer")
     if trim_user:
@@ -3937,14 +3939,14 @@ class Api(object):
     data = {}
     if list_id:
       try:
-        data['list_id']= long(list_id)
+        data['list_id']= longint(list_id)
       except:
         raise TwitterError("list_id must be an integer")
     elif slug:
       data['slug'] = slug
       if owner_id:
         try:
-          data['owner_id'] = long(owner_id)
+          data['owner_id'] = longint(owner_id)
         except:
           raise TwitterError("owner_id must be an integer")
       elif owner_screen_name:
@@ -3987,14 +3989,14 @@ class Api(object):
     data = {}
     if list_id:
       try:
-        data['list_id']= long(list_id)
+        data['list_id']= longint(list_id)
       except:
         raise TwitterError("list_id must be an integer")
     elif slug:
       data['slug'] = slug
       if owner_id:
         try:
-          data['owner_id'] = long(owner_id)
+          data['owner_id'] = longint(owner_id)
         except:
           raise TwitterError("owner_id must be an integer")
       elif owner_screen_name:
@@ -4036,14 +4038,14 @@ class Api(object):
     data = {}
     if list_id:
       try:
-        data['list_id']= long(list_id)
+        data['list_id']= longint(list_id)
       except:
         raise TwitterError("list_id must be an integer")
     elif slug:
       data['slug'] = slug
       if owner_id:
         try:
-          data['owner_id'] = long(owner_id)
+          data['owner_id'] = longint(owner_id)
         except:
           raise TwitterError("owner_id must be an integer")
       elif owner_screen_name:
@@ -4099,7 +4101,7 @@ class Api(object):
 
     if user_id is not None:
       try:
-        parameters['user_id'] = long(user_id)
+        parameters['user_id'] = longint(user_id)
       except:
         raise TwitterError('user_id must be an integer')
     elif screen_name is not None:
@@ -4143,7 +4145,7 @@ class Api(object):
     parameters = {}
     if user_id is not None:
       try:
-        parameters['user_id'] = long(user_id)
+        parameters['user_id'] = longint(user_id)
       except:
         raise TwitterError('user_id must be an integer')
     elif screen_name is not None:
@@ -4179,8 +4181,8 @@ class Api(object):
     url = '%s/account/verify_credentials.json' % self.base_url
     try:
       json = self._FetchUrl(url, no_cache=True)
-    except urllib2.HTTPError, http_error:
-      if http_error.code == httplib.UNAUTHORIZED:
+    except HTTPError as http_error:
+      if http_error.code == UNAUTHORIZED:
         return None
       else:
         raise http_error
@@ -4315,7 +4317,7 @@ class Api(object):
 
   def _BuildUrl(self, url, path_elements=None, extra_params=None):
     # Break url into constituent parts
-    (scheme, netloc, path, params, query, fragment) = urlparse.urlparse(url)
+    (scheme, netloc, path, params, query, fragment) = urlparse(url)
 
     # Add any additional path elements to the path
     if path_elements:
@@ -4335,7 +4337,7 @@ class Api(object):
         query = extra_query
 
     # Return the rebuilt URL
-    return urlparse.urlunparse((scheme, netloc, path, params, query, fragment))
+    return urlunparse((scheme, netloc, path, params, query, fragment))
 
   def _InitializeRequestHeaders(self, request_headers):
     if request_headers:
@@ -4354,16 +4356,16 @@ class Api(object):
   def _DecompressGzippedResponse(self, response):
     raw_data = response.read()
     if response.headers.get('content-encoding', None) == 'gzip':
-      url_data = gzip.GzipFile(fileobj=StringIO.StringIO(raw_data)).read()
+      url_data = gzip.GzipFile(fileobj=StringIO(raw_data)).read()
     else:
       url_data = raw_data
     return url_data
 
   def _Encode(self, s):
     if self._input_encoding:
-      return unicode(s, self._input_encoding).encode('utf-8')
+      return text_type(s, self._input_encoding).encode('utf-8')
     else:
-      return unicode(s).encode('utf-8')
+      return text_type(s).encode('utf-8')
 
   def _EncodeParameters(self, parameters):
     '''Return a string in key=value&key=value form
@@ -4381,7 +4383,7 @@ class Api(object):
     if parameters is None:
       return None
     else:
-      return urllib.urlencode(dict([(k, self._Encode(v)) for k, v in parameters.items() if v is not None]))
+      return urlencode(dict([(k, self._Encode(v)) for k, v in list(parameters.items()) if v is not None]))
 
   def _EncodePostData(self, post_data):
     '''Return a string in key=value&key=value form
@@ -4400,7 +4402,7 @@ class Api(object):
     if post_data is None:
       return None
     else:
-      return urllib.urlencode(dict([(k, self._Encode(v)) for k, v in post_data.items()]))
+      return urlencode(dict([(k, self._Encode(v)) for k, v in list(post_data.items())]))
 
   def _ParseAndCheckTwitter(self, json):
     """Try and parse the JSON returned from Twitter and return
@@ -4551,8 +4553,8 @@ class Api(object):
           response = opener.open(url, encoded_post_data)
           url_data = self._DecompressGzippedResponse(response)
           self._cache.Set(key, url_data)
-        except urllib2.HTTPError, e:
-          print e
+        except HTTPError as e:
+          print(e)
         opener.close()
       else:
         url_data = self._cache.Get(key)
@@ -4618,7 +4620,7 @@ class _FileCache(object):
              os.getenv('USERNAME') or \
              os.getlogin() or \
              'nobody'
-    except (AttributeError, IOError, OSError), e:
+    except (AttributeError, IOError, OSError) as e:
       return 'nobody'
 
   def _GetTmpCachePath(self):

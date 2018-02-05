@@ -167,6 +167,8 @@ class CORS(object):
         if origins is None:
             origins = [self.origin]
         origins = map(self._make_regex, origins)
+        if type(origins) is not list:  # py3 map returns a map object, not a list
+            origins = list(origins)
         return (
             self.origin is not None
             and any(origin.match(self.origin) for origin in origins)

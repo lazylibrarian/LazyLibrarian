@@ -1,30 +1,29 @@
-#  This file is part of LazyLibrarin.
-#
+#  This file is part of LazyLibrarian.
 #  LazyLibrarian is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  LazyLibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import cookielib
+
 import json
 import re
-import urllib
-import urllib2
-import urlparse
 
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import check_int, getList
 from lib.six import PY2
+from lib.six.moves import http_cookiejar
+from lib.six.moves.urllib_parse import quote_plus, urlencode, urljoin
+from lib.six.moves.urllib_request import HTTPCookieProcessor, HTTPBasicAuthHandler, \
+    build_opener, install_opener, Request
+from lib.six.moves.urllib_error import HTTPError
 
 
 class utorrentclient(object):
@@ -60,20 +59,20 @@ class utorrentclient(object):
     @staticmethod
     def _make_opener(realm, base_url, username, password):
         """uTorrent API need HTTP Basic Auth and cookie support for token verify."""
-        auth = urllib2.HTTPBasicAuthHandler()
+        auth = HTTPBasicAuthHandler()
         auth.add_password(realm=realm, uri=base_url, user=username, passwd=password)
-        opener = urllib2.build_opener(auth)
-        urllib2.install_opener(opener)
+        opener = build_opener(auth)
+        install_opener(opener)
 
-        cookie_jar = cookielib.CookieJar()
-        cookie_handler = urllib2.HTTPCookieProcessor(cookie_jar)
+        cookie_jar = http_cookiejar.CookieJar()
+        cookie_handler = HTTPCookieProcessor(cookie_jar)
 
         handlers = [auth, cookie_handler]
-        opener = urllib2.build_opener(*handlers)
+        opener = build_opener(*handlers)
         return opener
 
     def _get_token(self):
-        url = urlparse.urljoin(self.base_url, 'gui/token.html')
+        url = urljoin(self.base_url, 'gui/token.html')
         try:
             response = self.opener.open(url)
         except Exception as err:
@@ -85,7 +84,7 @@ class utorrentclient(object):
 
     def list(self, **kwargs):
         params = [('list', '1')]
-        params += kwargs.items()
+        params += list(kwargs.items())
         return self._action(params)
 
     def add_url(self, url):
@@ -146,7 +145,7 @@ class utorrentclient(object):
 
     def _action(self, params, body=None, content_type=None):
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
-        request = urllib2.Request(url)
+        request = Request(url)
         if lazylibrarian.CONFIG['PROXY_HOST']:
             for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
                 request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
@@ -164,7 +163,7 @@ class utorrentclient(object):
         try:
             response = self.opener.open(request)
             return response.code, json.loads(response.read())
-        except urllib2.HTTPError as err:
+        except HTTPError as err:
             logger.debug('URL: %s' % url)
             logger.debug('uTorrent webUI raised the following error: ' + str(err))
 

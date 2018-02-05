@@ -1,15 +1,12 @@
 #  This file is part of Lazylibrarian.
-
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -70,9 +67,9 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
         return "Response status %s: %s" % (r.status_code, msg), False
     except requests.exceptions.Timeout as e:
         if not retry:
-            logger.error(u"fetchURL: Timeout getting response from %s" % URL)
+            logger.error("fetchURL: Timeout getting response from %s" % URL)
             return "Timeout %s" % str(e), False
-        logger.debug(u"fetchURL: retrying - got timeout on %s" % URL)
+        logger.debug("fetchURL: retrying - got timeout on %s" % URL)
         result, success = fetchURL(URL, headers=headers, retry=False, raw=False)
         return result, success
     except Exception as e:
@@ -152,12 +149,12 @@ def get_cached_request(url, useCache=True, cache="XML"):
 
     if valid_cache:
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-        logger.debug(u"CacheHandler: Returning CACHED response for %s" % url)
+        logger.debug("CacheHandler: Returning CACHED response for %s" % url)
         if cache == "JSON":
             try:
                 source = json.load(open(hashfilename))
             except ValueError:
-                logger.debug(u"Error decoding json from %s" % hashfilename)
+                logger.debug("Error decoding json from %s" % hashfilename)
                 return None, False
         elif cache == "XML":
             with open(hashfilename, "r") as cachefile:
@@ -168,20 +165,20 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 except ElementTree.ParseError:
                     source = None
             if source is None:
-                logger.debug(u"Error reading xml from %s" % hashfilename)
+                logger.debug("Error reading xml from %s" % hashfilename)
                 os.remove(hashfilename)
                 return None, False
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
         result, success = fetchURL(url)
         if success:
-            logger.debug(u"CacheHandler: Storing %s for %s" % (cache, url))
+            logger.debug("CacheHandler: Storing %s for %s" % (cache, url))
             if cache == "JSON":
                 try:
                     source = json.loads(result)
                 except Exception as e:
-                    logger.debug(u"%s decoding json from %s" % (type(e).__name__, url))
-                    logger.debug(u"%s : %s" % (e, result))
+                    logger.debug("%s decoding json from %s" % (type(e).__name__, url))
+                    logger.debug("%s : %s" % (e, result))
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
@@ -189,15 +186,15 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     try:
                         source = ElementTree.fromstring(result)
                     except ElementTree.ParseError:
-                        logger.debug(u"Error parsing xml from %s" % url)
+                        logger.debug("Error parsing xml from %s" % url)
                         source = None
                 if source is not None:
                     with open(hashfilename, "w") as cachefile:
                         cachefile.write(result)
                 else:
-                    logger.debug(u"Error getting xml data from %s" % url)
+                    logger.debug("Error getting xml data from %s" % url)
                     return None, False
         else:
-            logger.debug(u"Got error response for %s: %s" % (url, result))
+            logger.debug("Got error response for %s: %s" % (url, result))
             return None, False
     return source, valid_cache

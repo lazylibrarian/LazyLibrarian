@@ -1,24 +1,20 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
 
 import os
 import shutil
 import time
-import urllib
 import traceback
-import lib.id3reader as id3reader
 from lib.six import PY2
 
 import lazylibrarian
@@ -27,6 +23,8 @@ from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
+from lib.six.moves.urllib_parse import quote_plus, urlencode
+import lib.id3reader as id3reader
 
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
@@ -68,10 +66,10 @@ def audioRename(bookid):
             audio_file = f
             try:
                 id3r = id3reader.Reader(os.path.join(r, f))
-                performer = id3r.getValue('performer')
-                composer = id3r.getValue('TCOM')
-                book = id3r.getValue('album')
-                track = id3r.getValue('track')
+                performer = id3r.get_value('performer')
+                composer = id3r.get_value('TCOM')
+                book = id3r.get_value('album')
+                track = id3r.get_value('track')
 
                 if not track:
                     track = '0'
@@ -684,11 +682,11 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
             lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
             if bookID:
                 if reason:
-                    logger.debug(u"getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
+                    logger.debug("getBookWork: Returning Cached entry for %s %s" % (bookID, reason))
                 else:
-                    logger.debug(u"getBookWork: Returning Cached workpage for %s" % bookID)
+                    logger.debug("getBookWork: Returning Cached workpage for %s" % bookID)
             else:
-                logger.debug(u"getBookWork: Returning Cached seriespage for %s" % item['seriesName'])
+                logger.debug("getBookWork: Returning Cached seriespage for %s" % item['seriesName'])
 
             if PY2:
                 with open(workfile, "r") as cachefile:
@@ -707,12 +705,12 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                     title = title.encode(lazylibrarian.SYS_ENCODING)
                     author = author.encode(lazylibrarian.SYS_ENCODING)
                 URL = 'http://www.librarything.com/api/whatwork.php?author=%s&title=%s' % \
-                      (urllib.quote_plus(author), urllib.quote_plus(title))
+                      (quote_plus(author), quote_plus(title))
             else:
                 seriesname = safe_unicode(item['seriesName'])
                 if PY2:
                     seriesname = seriesname.encode(lazylibrarian.SYS_ENCODING)
-                URL = 'http://www.librarything.com/series/%s' % urllib.quote_plus(seriesname)
+                URL = 'http://www.librarything.com/series/%s' % quote_plus(seriesname)
 
             librarything_wait()
             result, success = fetchURL(URL)
@@ -757,18 +755,18 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                 with open(workfile, "w") as cachefile:
                     cachefile.write(result)
                     if bookID:
-                        logger.debug(u"getBookWork: Caching workpage for %s" % workfile)
+                        logger.debug("getBookWork: Caching workpage for %s" % workfile)
                     else:
-                        logger.debug(u"getBookWork: Caching series page for %s" % workfile)
+                        logger.debug("getBookWork: Caching series page for %s" % workfile)
                     # return None if we got an error page back
                     if '</request><error>' in result:
                         return None
                 return result
             else:
                 if bookID:
-                    logger.debug(u"getBookWork: Unable to cache workpage, got %s" % result)
+                    logger.debug("getBookWork: Unable to cache workpage, got %s" % result)
                 else:
-                    logger.debug(u"getBookWork: Unable to cache series page, got %s" % result)
+                    logger.debug("getBookWork: Unable to cache series page, got %s" % result)
             return None
     else:
         if bookID:
@@ -869,8 +867,8 @@ def getSeriesAuthors(seriesid):
             searchname = cleanName(unaccented(searchname))
             if PY2:
                 searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
-            searchterm = urllib.quote_plus(searchname)
-            set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+            searchterm = quote_plus(searchname)
+            set_url = base_url + searchterm + '&' + urlencode(params)
             authorid = ''
             try:
                 rootxml, in_cache = get_xml_request(set_url)
@@ -899,8 +897,8 @@ def getSeriesAuthors(seriesid):
                     searchname = cleanName(unaccented(bookname))
                     if PY2:
                         searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
-                    searchterm = urllib.quote_plus(searchname)
-                    set_url = base_url + searchterm + '&' + urllib.urlencode(params)
+                    searchterm = quote_plus(searchname)
+                    set_url = base_url + searchterm + '&' + urlencode(params)
                     rootxml, in_cache = get_xml_request(set_url)
                     if rootxml is None:
                         logger.warn('Error getting XML for %s' % searchname)
@@ -1019,7 +1017,7 @@ def getBookCover(bookID=None, src=None):
         if not src or src == 'cache' or src == 'current':
             if os.path.isfile(coverfile):  # use cached image if there is one
                 lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-                logger.debug(u"getBookCover: Returning Cached response for %s" % coverfile)
+                logger.debug("getBookCover: Returning Cached response for %s" % coverfile)
                 coverlink = 'cache/book/' + bookID + '.jpg'
                 return coverlink
             elif src == 'cache':
@@ -1039,10 +1037,10 @@ def getBookCover(bookID=None, src=None):
                         if src == 'cover':
                             coverfile = os.path.join(cachedir, "book", bookID + '_cover.jpg')
                             coverlink = 'cache/book/' + bookID + '_cover.jpg'
-                            logger.debug(u"getBookCover: Caching cover.jpg for %s" % bookID)
+                            logger.debug("getBookCover: Caching cover.jpg for %s" % bookID)
                         else:
                             coverlink = 'cache/book/' + bookID + '.jpg'
-                            logger.debug(u"getBookCover: Caching book cover for %s" % coverfile)
+                            logger.debug("getBookCover: Caching book cover for %s" % coverfile)
                         shutil.copyfile(coverimg, coverfile)
                         return coverlink
             if src == 'cover':
@@ -1061,7 +1059,7 @@ def getBookCover(bookID=None, src=None):
                         else:
                             coverlink, success = cache_img("book", bookID, img)
                         if success:
-                            logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
+                            logger.debug("getBookCover: Caching librarything cover for %s" % bookID)
                             return coverlink
                         else:
                             logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
@@ -1078,7 +1076,7 @@ def getBookCover(bookID=None, src=None):
                         else:
                             coverlink, success = cache_img("book", bookID, img)
                         if success:
-                            logger.debug(u"getBookCover: Caching librarything cover for %s" % bookID)
+                            logger.debug("getBookCover: Caching librarything cover for %s" % bookID)
                             return coverlink
                         else:
                             logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
@@ -1103,7 +1101,7 @@ def getBookCover(bookID=None, src=None):
                 title = title.encode(lazylibrarian.SYS_ENCODING)
                 author = author.encode(lazylibrarian.SYS_ENCODING)
             booklink = item['BookLink']
-            safeparams = urllib.quote_plus("%s %s" % (author, title))
+            safeparams = quote_plus("%s %s" % (author, title))
 
         # try to get a cover from goodreads
         if not src or src == 'goodreads':
@@ -1199,7 +1197,7 @@ def getAuthorImage(authorid=None):
 
     if os.path.isfile(coverfile):  # use cached image if there is one
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-        logger.debug(u"getAuthorImage: Returning Cached response for %s" % coverfile)
+        logger.debug("getAuthorImage: Returning Cached response for %s" % coverfile)
         coverlink = 'cache/author/' + authorid + '.jpg'
         return coverlink
 
@@ -1210,7 +1208,7 @@ def getAuthorImage(authorid=None):
         authorname = safe_unicode(authors[0][0])
         if PY2:
             authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
-        safeparams = urllib.quote_plus("author %s" % authorname)
+        safeparams = quote_plus("author %s" % authorname)
         URL = "https://www.google.com/search?tbm=isch&tbs=ift:jpg&as_q=" + safeparams
         result, success = fetchURL(URL)
         if success:

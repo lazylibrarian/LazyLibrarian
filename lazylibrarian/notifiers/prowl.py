@@ -1,10 +1,9 @@
-from httplib import HTTPSConnection
-from urllib import urlencode
-
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lib.six import PY2
+from lib.six.moves.urllib_parse import urlencode
+from lib.six.moves.http_client import HTTPSConnection
 
 
 class Prowl_Notifier:

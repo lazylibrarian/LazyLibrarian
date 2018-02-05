@@ -1,31 +1,34 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import datetime
-import urllib
 import threading
 from xml.etree import ElementTree
 
 import lazylibrarian
-import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.directparser import GEN
 from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
 from lazylibrarian.torrentparser import KAT, TPB, ZOO, TDL, LIME
+from lib.six import PY2
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_parse import urlencode
+
+if PY2:
+    import lib.feedparser as feedparser
+else:
+    import lib3.feedparser as feedparser
 
 
 def test_provider(name):
@@ -49,7 +52,16 @@ def test_provider(name):
             prov = name.split('[')[1].split(']')[0]
             for provider in lazylibrarian.RSS_PROV:
                 if provider['NAME'] == 'RSS_%s' % prov and provider['HOST']:
-                    return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY']), provider['DISPNAME']
+                    if 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
+                        return GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                                         test=True), provider['DISPNAME']
+                    elif 'goodreads' in provider['HOST'] and '/list/show/' in provider['HOST']:
+                        # goodreads listopia
+                        return LISTOPIA(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                                        test=True), provider['DISPNAME']
+                    else:
+                        return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                                   test=True), provider['DISPNAME']
         except IndexError:
             pass
 
@@ -71,7 +83,7 @@ def test_provider(name):
                     return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['DISPNAME']
         except IndexError:
             pass
-    msg = "Unknown provider [%s]" % name
+    msg = "Unknown provider [%s], did you save config before test?" % name
     logger.error(msg)
     return False, msg
 
@@ -407,7 +419,7 @@ def IterateOverWishLists():
     return resultslist, providers
 
 
-def LISTOPIA(host=None, feednr=None, priority=0):
+def LISTOPIA(host=None, feednr=None, priority=0, test=False):
     """
     Goodreads Listopia query function, return all the results in a list
     """
@@ -426,6 +438,10 @@ def LISTOPIA(host=None, feednr=None, priority=0):
             URL = "%s?page=%i" % (host, page)
 
         result, success = fetchURL(URL)
+
+        if test:
+            return success
+
         next_page = False
 
         if not success:
@@ -466,7 +482,7 @@ def LISTOPIA(host=None, feednr=None, priority=0):
     return results
 
 
-def GOODREADS(host=None, feednr=None, priority=0):
+def GOODREADS(host=None, feednr=None, priority=0, test=False):
     """
     Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
     but expects goodreads format (looks for goodreads category names)
@@ -479,6 +495,10 @@ def GOODREADS(host=None, feednr=None, priority=0):
     URL = host
 
     result, success = fetchURL(URL)
+
+    if test:
+        return success
+
     if success:
         data = feedparser.parse(result)
     else:
@@ -673,7 +693,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
             host = 'http://' + host
         if host[-1:] == '/':
             host = host[:-1]
-        URL = host + '/api?' + urllib.urlencode(params)
+        URL = host + '/api?' + urlencode(params)
 
         sterm = makeUnicode(book['searchterm'])
 

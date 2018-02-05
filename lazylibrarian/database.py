@@ -111,7 +111,7 @@ class DBConnection:
 
     @staticmethod
     def genParams(myDict):
-        return [x + " = ?" for x in myDict.keys()]
+        return [x + " = ?" for x in list(myDict.keys())]
 
     def upsert(self, tableName, valueDict, keyDict):
         changesBefore = self.connection.total_changes
@@ -121,7 +121,7 @@ class DBConnection:
         query = "UPDATE " + tableName + " SET " + ", ".join(self.genParams(valueDict)) + \
                 " WHERE " + " AND ".join(self.genParams(keyDict))
 
-        self.action(query, valueDict.values() + keyDict.values())
+        self.action(query, list(valueDict.values()) + list(keyDict.values()))
 
         # This version of upsert is not thread safe, each action() is thread safe,
         # but it's possible for another thread to jump in between the
@@ -129,6 +129,6 @@ class DBConnection:
 
         if self.connection.total_changes == changesBefore:
             query = "INSERT INTO " + tableName + " ("
-            query += ", ".join(valueDict.keys() + keyDict.keys()) + ") VALUES ("
-            query += ", ".join(["?"] * len(valueDict.keys() + keyDict.keys())) + ")"
-            self.action(query, valueDict.values() + keyDict.values(), suppress="UNIQUE")
+            query += ", ".join(list(valueDict.keys()) + list(keyDict.keys())) + ") VALUES ("
+            query += ", ".join(["?"] * len(list(valueDict.keys()) + list(keyDict.keys()))) + ")"
+            self.action(query, list(valueDict.values()) + list(keyDict.values()), suppress="UNIQUE")

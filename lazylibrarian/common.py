@@ -23,10 +23,15 @@ import shutil
 import threading
 import time
 import traceback
+from lib.six import PY2
 try:
     import zipfile
 except ImportError:
-    import lib.zipfile as zipfile
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib3.zipfile as zipfile
+
 import re
 import ssl
 import sqlite3

@@ -1,38 +1,42 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+
 import traceback
-import urllib
-import urlparse
 
 import lazylibrarian
-import lib.feedparser as feedparser
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented, makeUnicode
-from lib.bs4 import BeautifulSoup
-from lib.six import text_type
+from lib.six import PY2, PY3, text_type
+from lib.six.moves.urllib_parse import quote_plus, quote, urlencode, urlsplit, urlunsplit
+
+if PY2:
+    from lib.bs4 import BeautifulSoup
+    import lib.feedparser as feedparser
+else:
+    from lib3.bs4 import BeautifulSoup
+    import lib3.feedparser as feedparser
 
 
 def url_fix(s, charset='utf-8'):
-    if isinstance(s, text_type):
+    if PY2 and isinstance(s, text_type):
         s = s.encode(charset, 'ignore')
-    scheme, netloc, path, qs, anchor = urlparse.urlsplit(s)
-    path = urllib.quote(path, '/%')
-    qs = urllib.quote_plus(qs, ':&=')
-    return urlparse.urlunsplit((scheme, netloc, path, qs, anchor))
+    elif PY3 and not isinstance(s, text_type):
+        s = s.decode(charset)
+    scheme, netloc, path, qs, anchor = urlsplit(s)
+    path = quote(path, '/%')
+    qs = quote_plus(qs, ':&=')
+    return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
 def TPB(book=None, test=False):
@@ -69,7 +73,7 @@ def TPB(book=None, test=False):
             "orderby": "99"
         }
 
-        searchURL = providerurl + "?%s" % urllib.urlencode(params)
+        searchURL = providerurl + "?%s" % urlencode(params)
 
         next_page = False
         result, success = fetchURL(searchURL)
@@ -179,14 +183,14 @@ def KAT(book=None, test=False):
     if not host.startswith('http'):
         host = 'http://' + host
 
-    providerurl = url_fix(host + "/usearch/" + urllib.quote(book['searchterm']))
+    providerurl = url_fix(host + "/usearch/" + quote(book['searchterm']))
 
     params = {
         "category": "books",
         "field": "seeders",
         "sorder": "desc"
     }
-    searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+    searchURL = providerurl + "/?%s" % urlencode(params)
 
     sterm = makeUnicode(book['searchterm'])
 
@@ -320,7 +324,7 @@ def WWT(book=None, test=False):
             "page": page,
             "cat": cat
         }
-        searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+        searchURL = providerurl + "/?%s" % urlencode(params)
 
         next_page = False
         result, success = fetchURL(searchURL)
@@ -440,7 +444,7 @@ def EXTRA(book=None, test=False):
         "s_cat": "2",
         "search": book['searchterm']
     }
-    searchURL = providerurl + "/?%s" % urllib.urlencode(params)
+    searchURL = providerurl + "/?%s" % urlencode(params)
 
     sterm = makeUnicode(book['searchterm'])
 
@@ -523,7 +527,7 @@ def ZOO(book=None, test=False):
         "category": "books",
         "fmt": "rss"
     }
-    searchURL = providerurl + "?%s" % urllib.urlencode(params)
+    searchURL = providerurl + "?%s" % urlencode(params)
 
     sterm = makeUnicode(book['searchterm'])
 
@@ -607,7 +611,7 @@ def LIME(book=None, test=False):
         "q": book['searchterm']
     }
     providerurl = url_fix(host + "/searchrss/other")
-    searchURL = providerurl + "?%s" % urllib.urlencode(params)
+    searchURL = providerurl + "?%s" % urlencode(params)
 
     sterm = makeUnicode(book['searchterm'])
 
@@ -696,7 +700,7 @@ def TDL(book=None, test=False):
         "cid": "2",
         "search": book['searchterm']
     }
-    searchURL = providerurl + "/rss.xml?%s" % urllib.urlencode(params)
+    searchURL = providerurl + "/rss.xml?%s" % urlencode(params)
 
     sterm = makeUnicode(book['searchterm'])
 

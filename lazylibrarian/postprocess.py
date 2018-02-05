@@ -21,12 +21,16 @@ import tarfile
 import threading
 import time
 import traceback
-
+from lib.six import PY2
 import lazylibrarian
 try:
     import zipfile
 except ImportError:
-    import lib.zipfile as zipfile
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib3.zipfile as zipfile
+        
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.bookwork import audioRename, seriesInfo
@@ -42,7 +46,7 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
-from lib.six import PY2
+
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?

@@ -22,7 +22,7 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
 from lazylibrarian.formatter import unaccented
-from pushbullet2 import PushBullet
+from .pushbullet2 import PushBullet
 
 
 class PushbulletNotifier:

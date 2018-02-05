@@ -1,28 +1,29 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-import urllib
-import urlparse
 
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
 from lazylibrarian.torrentparser import url_fix
-from lib.bs4 import BeautifulSoup
+from lib.six import PY2
+from lib.six.moves.urllib_parse import urlparse, urlencode
+
+if PY2:
+    from lib.bs4 import BeautifulSoup
+else:
+    from lib3.bs4 import BeautifulSoup
 
 
 # noinspection PyProtectedMember
@@ -31,11 +32,11 @@ def redirect_url(genhost, url):
         libgen might send us a book url that still contains http://libgen.io/  or /libgen.io/
         so we might need to redirect it to users genhost setting """
 
-    myurl = urlparse.urlparse(url)
+    myurl = urlparse(url)
     if myurl.netloc.lower() != 'libgen.io':
         return url
 
-    host = urlparse.urlparse(genhost)
+    host = urlparse(genhost)
     # genhost http://93.174.95.27 -> scheme http, netloc 93.174.95.27, path ""
     # genhost 93.174.95.27 -> scheme "", netloc "", path 93.174.95.27
     if host.netloc:
@@ -96,7 +97,7 @@ def GEN(book=None, prov=None, test=False):
             params['page'] = page
 
         providerurl = url_fix(host + "/%s" % search)
-        searchURL = providerurl + "?%s" % urllib.urlencode(params)
+        searchURL = providerurl + "?%s" % urlencode(params)
 
         next_page = False
         result, success = fetchURL(searchURL)
