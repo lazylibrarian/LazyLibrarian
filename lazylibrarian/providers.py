@@ -83,7 +83,7 @@ def test_provider(name):
                     return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['DISPNAME']
         except IndexError:
             pass
-    msg = "Unknown provider [%s]" % name
+    msg = "Unknown provider [%s], did you save config before test?" % name
     logger.error(msg)
     return False, msg
 
