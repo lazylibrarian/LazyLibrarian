@@ -52,7 +52,7 @@ def _safestr(s):
     """ Get a good string for printing, that won't throw exceptions,
         no matter what's in it.
     """
-    if type(s) in [list,tuple]:
+    if type(s) in [list, tuple]:
         s = str(s).strip('[]')
     try:
         if PY2:
@@ -265,7 +265,7 @@ class Reader:
         if len(bytes_read) < num:
             # if _t: _trace("short read with %d left, %d total" % (self.bytesLeft, self.header.size))
             # if _c: _coverage('short!')
-            raise Id3Error('Short read (%s): (%d < %d)' % (desc, len(bytes), num))
+            raise Id3Error('Short read (%s): (%d < %d)' % (desc, len(bytes_read), num))
 
         if self.header.bUnsynchronized:
             unsync = 0
@@ -397,6 +397,7 @@ class Reader:
             # print("in _read_id3, frame is {}".format(frame))
             if frame:
                 # print("in _read_id3, interpreting frame")
+                # noinspection PyProtectedMember
                 frame._interpret()
                 self.frames[frame.id] = frame
                 self.allFrames.append(frame)
@@ -485,7 +486,8 @@ class Reader:
             pass
         return
 
-    def _is_valid_id(self, id_bytes):
+    @staticmethod
+    def _is_valid_id(id_bytes):
         """ Determine if the id bytes make a valid ID3 id.
         """
         # print("id_bytes is {}".format(id_bytes))
@@ -617,7 +619,9 @@ class Reader:
                     if v:
                         return v
         else:
+            # noinspection PyArgumentList
             if bytes(tag_id, 'utf-8') in self.frames:
+                # noinspection PyArgumentList
                 tag_id = bytes(tag_id, 'utf-8')
                 if hasattr(self.frames[tag_id], 'value'):
                     return self.frames[tag_id].value
@@ -628,12 +632,14 @@ class Reader:
                         return v
         return None
 
-    def getRawData(self, f_id):
+    def get_raw_data(self, f_id):
         if PY2:
             if f_id in self.frames:
                 return self.frames[f_id].rawData
         else:
+            # noinspection PyArgumentList
             if bytes(f_id, 'utf-8') in self.frames:
+                # noinspection PyArgumentList
                 f_id = bytes(f_id, 'utf-8')
                 return self.frames[f_id].rawData
         return None
@@ -662,6 +668,7 @@ class Reader:
         feats = sorted(_features.keys())
         for feat in feats:
             print("Feature %-12s: %d" % (feat, _features[feat]))
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or '-?' in sys.argv:
