@@ -570,10 +570,7 @@ class GoodReads:
                                         amatch = True
                                     else:
                                         logger.debug('Ignoring %s for %s, role is %s' %
-                                                     (bookname, authorNameResult, role))
-                                        # else: # multiple authors or wrong author
-                                        #    logger.debug('Ignoring %s for %s, authorid %s' %
-                                        #                 (bookname, authorNameResult, aid))
+                                                     (anm, bookname, role))
                             if not amatch:
                                 logger.debug('Ignoring %s for %s, wrong author? (got %s)' %
                                              (bookname, authorNameResult, alist))

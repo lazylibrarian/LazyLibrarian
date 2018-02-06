@@ -944,82 +944,82 @@ class WebInterface(object):
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):
             lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get(
-                'newznab[%i][enabled]' % count, False))
+                'newznab_%i_enabled' % count, False))
             lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get(
-                'newznab[%i][host]' % count, '')
+                'newznab_%i_host' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get(
-                'newznab[%i][api]' % count, '')
+                'newznab_%i_api' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'newznab[%i][generalsearch]' % count, '')
+                'newznab_%i_generalsearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
-                'newznab[%i][booksearch]' % count, '')
+                'newznab_%i_booksearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
-                'newznab[%i][magsearch]' % count, '')
+                'newznab_%i_magsearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['AUDIOSEARCH'] = kwargs.get(
-                'newznab[%i][audiosearch]' % count, '')
+                'newznab_%i_audiosearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
-                'newznab[%i][bookcat]' % count, '')
+                'newznab_%i_bookcat' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGCAT'] = kwargs.get(
-                'newznab[%i][magcat]' % count, '')
+                'newznab_%i_magcat' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
-                'newznab[%i][audiocat]' % count, '')
+                'newznab_%i_audiocat' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['EXTENDED'] = kwargs.get(
-                'newznab[%i][extended]' % count, '')
+                'newznab_%i_extended' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['UPDATED'] = kwargs.get(
-                'newznab[%i][updated]' % count, '')
+                'newznab_%i_updated' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
-                'newznab[%i][manual]' % count, False))
+                'newznab_%i_manual' % count, False))
             if interface != 'legacy':
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
-                    'newznab[%i][dlpriority]' % count, 0), 0)
+                    'newznab_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.NEWZNAB_PROV[count]['DISPNAME'] = kwargs.get(
-                    'newznab[%i][dispname]' % count, '')
+                    'newznab_%i_dispname' % count, '')
             count += 1
 
         count = 0
         while count < len(lazylibrarian.TORZNAB_PROV):
             lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get(
-                'torznab[%i][enabled]' % count, False))
+                'torznab_%i_enabled' % count, False))
             lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get(
-                'torznab[%i][host]' % count, '')
+                'torznab_%i_host' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get(
-                'torznab[%i][api]' % count, '')
+                'torznab_%i_api' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'torznab[%i][generalsearch]' % count, '')
+                'torznab_%i_generalsearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
-                'torznab[%i][booksearch]' % count, '')
+                'torznab_%i_booksearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
-                'torznab[%i][magsearch]' % count, '')
+                'torznab_%i_magsearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['AUDIOSEARCH'] = kwargs.get(
-                'torznab[%i][audiosearch]' % count, '')
+                'torznab_%i_audiosearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
-                'torznab[%i][bookcat]' % count, '')
+                'torznab_%i_bookcat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGCAT'] = kwargs.get(
-                'torznab[%i][magcat]' % count, '')
+                'torznab_%i_magcat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
-                'torznab[%i][audiocat]' % count, '')
+                'torznab_%iaudiocat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['EXTENDED'] = kwargs.get(
-                'torznab[%i][extended]' % count, '')
+                'torznab_%i_extended' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['UPDATED'] = kwargs.get(
-                'torznab[%i][updated]' % count, '')
+                'torznab_%i_updated' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
-                'torznab[%i][manual]' % count, False))
+                'torznab_%i_manual' % count, False))
             if interface != 'legacy':
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
-                    'torznab[%i][dlpriority]' % count, 0), 0)
+                    'torznab_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.TORZNAB_PROV[count]['DISPNAME'] = kwargs.get(
-                    'torznab[%i][dispname]' % count, '')
+                    'torznab_%i_dispname' % count, '')
             count += 1
 
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
-            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
-            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
+            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss_%i_enabled' % count, False))
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss_%i_host' % count, '')
             if interface != 'legacy':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
-                    'rss[%i][dlpriority]' % count, 0), 0)
+                    'rss_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.RSS_PROV[count]['DISPNAME'] = kwargs.get(
-                    'rss[%i][dispname]' % count, '')
+                    'rss_%i_dispname' % count, '')
             count += 1
 
         lazylibrarian.config_write()
@@ -3015,8 +3015,15 @@ class WebInterface(object):
     def testprovider(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         if 'name' in kwargs and kwargs['name']:
-            result, name = test_provider(kwargs['name'])
+            host = ''
+            api = ''
+            if 'host' in kwargs and kwargs['host']:
+                host = kwargs['host']
+            if 'api' in kwargs and kwargs['api']:
+                api = kwargs['api']
+            result, name = test_provider(kwargs['name'] , host=host, api=api)
             if result:
+                lazylibrarian.config_write()
                 msg = "%s test PASSED" % name
             else:
                 msg = "%s test FAILED, check debug log" % name

@@ -720,9 +720,9 @@
                 else:
                     checked = ''
               %>
-              <input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
-              <input type="text" placeholder="Enter API Here" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
-              <input type="text" placeholder="Enter URL Here" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
+              <input type="checkbox" id="newznab_${loop.index}_enabled" name="newznab_${loop.index}_enabled" value=1 ${checked} style="margin-bottom:4px;" />
+              <input type="text" placeholder="Enter API Here" id="newznab_${loop.index}_api" name="newznab_${loop.index}_api" value="${prov['API']}" size="26" class="providers-input">
+              <input type="text" placeholder="Enter URL Here" id="newznab_${loop.index}_host" name="newznab_${loop.index}_host" value="${prov['HOST']}" size="26" class="providers-input">
               <br>
               %endfor
             </fieldset>
@@ -738,9 +738,9 @@
                 else:
                     checked = ''
               %>
-              <input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
-              <input type="text" placeholder="Enter API Here" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${prov['API']}" size="26" class="providers-input">
-              <input type="text" placeholder="Enter URL Here" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${prov['HOST']}" size="26" class="providers-input">
+              <input type="checkbox" id="torznab_${loop.index}_enabled" name="torznab_${loop.index}_enabled" value=1 ${checked} style="margin-bottom:4px;" />
+              <input type="text" placeholder="Enter API Here" id="torznab_${loop.index}_api" name="torznab_${loop.index}_api" value="${prov['API']}" size="26" class="providers-input">
+              <input type="text" placeholder="Enter URL Here" id="torznab_${loop.index}_host" name="torznab_${loop.index}_host" value="${prov['HOST']}" size="26" class="providers-input">
               <br>
               %endfor
             </fieldset>
@@ -757,8 +757,8 @@
                 else:
                     checked = ''
                 %>
-                <input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value=1 ${checked} style="margin-bottom:4px;" />
-                <input type="text" placeholder="Enter URL Here" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${prov['HOST']}" size="58" class="providers-rss-input">
+                <input type="checkbox" id="rss_${loop.index}_enabled" name="rss_${loop.index}_enabled" value=1 ${checked} style="margin-bottom:4px;" />
+                <input type="text" placeholder="Enter URL Here" id="rss_${loop.index}_host" name="rss_${loop.index}_host" value="${prov['HOST']}" size="58" class="providers-rss-input">
                 <br>
                 %endfor
               </fieldset>
@@ -1842,28 +1842,28 @@
                     %>
                 <h3><br>
                   ${provider['HOST']}</h3>
-                <input type="checkbox" id="newznab[${loop.index}][manual]" name="newznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
+                <input type="checkbox" id="newznab_${loop.index}_manual" name="newznab_${loop.index}_manual" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
                 <label ${hidden}> Tick to lock settings</label>
-                <input type="text" id="newznab[${loop.index}][name]" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
-                <input type="text" id="newznab[${loop.index}][updated]" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                <input type="text" id="newznab_${loop.index}_name" name="newznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="newznab_${loop.index}_updated" name="newznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
                 <label ${hidden}><br>
                   Extended Search</label>
-                <input type="text" placeholder="Enter Extended Here" id="newznab[${loop.index}][extended]" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Extended Here" id="newznab_${loop.index}_extended" name="newznab_${loop.index}_extended" value="${provider['EXTENDED']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   General Search</label>
-                <input type="text" placeholder="Enter General Search Here" id="newznab[${loop.index}][generalsearch]" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter General Search Here" id="newznab_${loop.index}_generalsearch" name="newznab_${loop.index}_generalsearch" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Book Categories</label>
-                <input type="text" placeholder="Enter Book Categories Here" id="newznab[${loop.index}][bookcat]" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Book Categories Here" id="newznab_${loop.index}_bookcat" name="newznab_${loop.index}_bookcat" value="${provider['BOOKCAT']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Book Search</label>
-                <input type="text" placeholder="Enter Book Search Here" id="newznab[${loop.index}][booksearch]" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Book Search Here" id="newznab_${loop.index}_booksearch" name="newznab_${loop.index}_booksearch" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Magazine Categories</label>
-                <input type="text" placeholder="Enter Mag Categories Here" id="newznab[${loop.index}][magcat]" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Mag Categories Here" id="newznab_${loop.index}_magcat" name="newznab_${loop.index}_magcat" value="${provider['MAGCAT']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Magazine Search</label>
-                <input type="text" placeholder="Enter Mag Search Here" id="newznab[${loop.index}][magsearch]" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Mag Search Here" id="newznab_${loop.index}_magsearch" name="newznab_${loop.index}_magsearch" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
                 %endfor
                 %for provider in lazylibrarian.TORZNAB_PROV:
                 <%
@@ -1880,28 +1880,28 @@
                     %>
                 <h3><br>
                   ${provider['HOST']}</h3>
-                <input type="checkbox" id="torznab[${loop.index}][manual]" name="torznab[${loop.index}][manual]" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
+                <input type="checkbox" id="torznab_${loop.index}_manual" name="torznab_${loop.index}_manual" value=1 ${checked} ${hidden} style="margin-bottom:4px;" />
                 <label ${hidden}> Tick to lock settings</label>
-                <input type="text" id="torznab[${loop.index}][name]" name="torznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
-                <input type="text" id="torznab[${loop.index}][updated]" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                <input type="text" id="torznab_${loop.index}_name" name="torznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="torznab_${loop.index}_updated" name="torznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
                 <label ${hidden}><br>
                   Extended Search</label>
-                <input type="text" placeholder="Enter Extended Here" id="torznab[${loop.index}][extended]" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Extended Here" id="torznab_${loop.index}_extended" name="torznab_${loop.index}_extended" value="${provider['EXTENDED']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   General Search</label>
-                <input type="text" placeholder="Enter General Search Here" id="torznab[${loop.index}][generalsearch]" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter General Search Here" id="torznab_${loop.index}_generalsearch" name="torznab_${loop.index}_generalsearch" value="${provider['GENERALSEARCH']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Book Categories</label>
-                <input type="text" placeholder="Enter Book Categories Here" id="torznab[${loop.index}][bookcat]" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Book Categories Here" id="torznab_${loop.index}_bookcat" name="torznab_${loop.index}_bookcat" value="${provider['BOOKCAT']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Book Search</label>
-                <input type="text" placeholder="Enter Book Search Here" id="torznab[${loop.index}][booksearch]" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Book Search Here" id="torznab_${loop.index}_booksearch" name="torznab_${loop.index}_booksearch" value="${provider['BOOKSEARCH']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Magazine Categories</label>
-                <input type="text" placeholder="Enter Mag Categories Here" id="torznab[${loop.index}][magcat]" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Mag Categories Here" id="torznab_${loop.index}_magcat" name="torznab_${loop.index}_magcat" value="${provider['MAGCAT']}" size="26" ${hidden}>
                 <label ${hidden}><br>
                   Magazine Search</label>
-                <input type="text" placeholder="Enter Mag Search Here" id="torznab[${loop.index}][magsearch]" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
+                <input type="text" placeholder="Enter Mag Search Here" id="torznab_${loop.index}_magsearch" name="torznab_${loop.index}_magsearch" value="${provider['MAGSEARCH']}" size="26" ${hidden}>
                 %endfor
               </fieldset>
             </td>

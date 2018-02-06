@@ -842,6 +842,7 @@ def config_write():
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
         TORZNAB_PROV, RSS_PROV
 
+    currentname = threading.currentThread().name
     threading.currentThread().name = "CONFIG_WRITE"
     myDB = database.DBConnection()
 
@@ -979,6 +980,7 @@ def config_write():
     except Exception as e:
         msg = '{} {} {} {}'.format('Unable to create new config file:', CONFIGFILE, type(e).__name__, str(e))
         logger.warn(msg)
+        threading.currentThread().name = currentname
         return
     try:
         os.remove(CONFIGFILE + '.bak')
@@ -1001,6 +1003,8 @@ def config_write():
     if not msg:
         msg = 'Config file [%s] has been updated' % CONFIGFILE
         logger.info(msg)
+
+    threading.currentThread().name = currentname
 
 
 # noinspection PyUnresolvedReferences
