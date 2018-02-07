@@ -838,10 +838,14 @@ def config_read(reloaded=False):
 
 
 # noinspection PyUnresolvedReferences
-def config_write():
+def config_write(part=None):
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
         TORZNAB_PROV, RSS_PROV
 
+    if part:
+        logger.info("Writing config for section [%s]" % part)
+
+    currentname = threading.currentThread().name
     threading.currentThread().name = "CONFIG_WRITE"
     myDB = database.DBConnection()
 
@@ -851,14 +855,15 @@ def config_write():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
             value = CONFIG[key]
+        elif part and section != part:
+            value = CFG.get(section, key.lower())  # keep the old value
+            # if CONFIG['LOGLEVEL'] > 2:
+            #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
         elif key not in CONFIG_NONWEB and not (interface == 'legacy' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
                 LOGLEVEL = check_int(value, 1)
-            # elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWNLOAD_DIR',
-            #             'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
-            #    value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
                 value = value.lower()
         else:
@@ -866,7 +871,6 @@ def config_write():
             value = CFG.get(section, key.lower())
             # if CONFIG['LOGLEVEL'] > 2:
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
-            CONFIG[key] = value
 
         if PY2 and isinstance(value, text_type):
             try:
@@ -876,79 +880,87 @@ def config_write():
                 value = unaccented_str(value)
 
         CFG.set(section, key.lower(), value)
+        CONFIG[key] = value
 
     # sanity check for typos...
     for key in list(CONFIG.keys()):
         if key not in list(CONFIG_DEFINITIONS.keys()):
-            logger.warn('Unsaved config key: %s' % key)
+            logger.warn('Unsaved/invalid config key: %s' % key)
 
-    for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
+    if not part or part.startswith('newznab_') or part.startswith('torznab_'):
+        NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH', 'AUDIOSEARCH',
+                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL']
+        for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
+            new_list = []
+            # strip out any empty slots
+            for provider in entry[0]:  # type: dict
+                if provider['HOST']:
+                    new_list.append(provider)
+
+            if part:  # only update the named provider
+                part = part.replace('_', '')
+                for provider in new_list:
+                    if provider['NAME'].lower() != part:  # keep old values
+                        if CONFIG['LOGLEVEL'] > 2:
+                            logger.debug("Keep %s" % provider['NAME'])
+                        for item in NAB_ITEMS:
+                            provider[item] = CFG.get(provider['NAME'], item.lower())
+
+            # renumber the items
+            for index, item in enumerate(new_list):
+                item['NAME'] = '%s%i' % (entry[1], index)
+
+            # delete the old entries
+            sections = CFG.sections()
+            for item in sections:
+                if item.startswith(entry[1]):
+                    CFG.remove_section(item)
+
+            for provider in new_list:
+                check_section(provider['NAME'])
+                for item in NAB_ITEMS:
+                    CFG.set(provider['NAME'], item, provider[item])
+
+            if entry[1] == 'Newznab':
+                NEWZNAB_PROV = new_list
+                add_newz_slot()
+            else:
+                TORZNAB_PROV = new_list
+                add_torz_slot()
+
+    if not part or part.startswith('rss_'):
+        RSS_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'DLPRIORITY']
         new_list = []
         # strip out any empty slots
-        for provider in entry[0]:  # type: dict
+        for provider in RSS_PROV:
             if provider['HOST']:
                 new_list.append(provider)
 
+        if part:  # only update the named provider
+            for provider in new_list:
+                if provider['NAME'].lower() != part:  # keep old values
+                    if CONFIG['LOGLEVEL'] > 2:
+                        logger.debug("Keep %s" % provider['NAME'])
+                    for item in RSS_ITEMS:
+                        provider[item] = CFG.get(provider['NAME'], item.lower())
+
         # renumber the items
         for index, item in enumerate(new_list):
-            item['NAME'] = '%s%i' % (entry[1], index)
+            item['NAME'] = 'RSS_%i' % index
 
-        # delete the old entries
+        # strip out the old config entries
         sections = CFG.sections()
         for item in sections:
-            if item.startswith(entry[1]):
+            if item.startswith('RSS_'):
                 CFG.remove_section(item)
 
         for provider in new_list:
             check_section(provider['NAME'])
-            CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-            CFG.set(provider['NAME'], 'DISPNAME', provider['DISPNAME'])
-            CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-            CFG.set(provider['NAME'], 'API', provider['API'])
-            CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
-            CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
-            CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
-            CFG.set(provider['NAME'], 'AUDIOSEARCH', provider['AUDIOSEARCH'])
-            CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
-            CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
-            CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
-            CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-            CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+            for item in RSS_ITEMS:
+                CFG.set(provider['NAME'], item, provider[item])
 
-        if entry[1] == 'Newznab':
-            NEWZNAB_PROV = new_list
-            add_newz_slot()
-        else:
-            TORZNAB_PROV = new_list
-            add_torz_slot()
-
-    new_list = []
-    # strip out any empty slots
-    for provider in RSS_PROV:
-        if provider['HOST']:
-            new_list.append(provider)
-
-    # renumber the items
-    for index, item in enumerate(new_list):
-        item['NAME'] = 'RSS_%i' % index
-
-    # strip out the old config entries
-    sections = CFG.sections()
-    for item in sections:
-        if item.startswith('RSS_'):
-            CFG.remove_section(item)
-
-    for provider in new_list:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        CFG.set(provider['NAME'], 'DISPNAME', provider['DISPNAME'])
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-
-    RSS_PROV = new_list
-    add_rss_slot()
+        RSS_PROV = new_list
+        add_rss_slot()
     #
     series_list = myDB.select('SELECT SeriesID from series')
     SHOW_SERIES = len(series_list)
@@ -979,6 +991,7 @@ def config_write():
     except Exception as e:
         msg = '{} {} {} {}'.format('Unable to create new config file:', CONFIGFILE, type(e).__name__, str(e))
         logger.warn(msg)
+        threading.currentThread().name = currentname
         return
     try:
         os.remove(CONFIGFILE + '.bak')
@@ -999,8 +1012,10 @@ def config_write():
         logger.warn(msg)
 
     if not msg:
-        msg = 'Config file [%s] has been updated' % CONFIGFILE
+        msg = 'Config file [%s] %s has been updated' % (CONFIGFILE, part)
         logger.info(msg)
+
+    threading.currentThread().name = currentname
 
 
 # noinspection PyUnresolvedReferences
@@ -1374,7 +1389,7 @@ def shutdown(restart=False, update=False):
         try:
             if versioncheck.update():
                 logmsg('info', 'Lazylibrarian version updated')
-                config_write()
+                config_write('Git')
         except Exception as e:
             logmsg('warn', 'LazyLibrarian failed to update: %s %s. Restarting.' % (type(e).__name__, str(e)))
 

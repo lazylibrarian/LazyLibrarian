@@ -31,59 +31,87 @@ else:
     import lib3.feedparser as feedparser
 
 
-def test_provider(name):
+def test_provider(name, host=None, api=None):
     book = {'searchterm': 'Agatha+Christie', 'library': 'eBook'}
     if name == 'TPB':
+        if host:
+            lazylibrarian.CONFIG['TPB_HOST'] = host
         return TPB(book, test=True), "Pirate Bay"
     if name == 'KAT':
+        if host:
+            lazylibrarian.CONFIG['KAT_HOST'] = host
         return KAT(book, test=True), "KickAss Torrents"
     if name == 'ZOO':
+        if host:
+            lazylibrarian.CONFIG['ZOO_HOST'] = host
         return ZOO(book, test=True), "Zooqle"
     if name == 'LIME':
+        if host:
+            lazylibrarian.CONFIG['LIME_HOST'] = host
         return LIME(book, test=True), "LimeTorrents"
     if name == 'TDL':
+        if host:
+            lazylibrarian.CONFIG['TDL_HOST'] = host
         return TDL(book, test=True), "TorrentDownloads"
     if name == 'GEN':
+        if host:
+            lazylibrarian.CONFIG['GEN_HOST'] = host
+        if api:
+            lazylibrarian.CONFIG['GEN_SEARCH'] = api
         return GEN(book, prov='GEN', test=True), "LibGen 1"
     if name == 'GEN2':
+        if host:
+            lazylibrarian.CONFIG['GEN2_HOST'] = host
+        if api:
+            lazylibrarian.CONFIG['GEN2_SEARCH'] = api
         return GEN(book, prov='GEN2', test=True), "LibGen 2"
-    if name.startswith('rss['):
+    if name.startswith('rss_'):
         try:
-            prov = name.split('[')[1].split(']')[0]
+            prov = name.split('_')[1]
             for provider in lazylibrarian.RSS_PROV:
-                if provider['NAME'] == 'RSS_%s' % prov and provider['HOST']:
-                    if 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
-                        return GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                if provider['NAME'] == 'RSS_%s' % prov:
+                    if not host:
+                        host = provider['HOST']
+                    if 'goodreads' in host and 'list_rss' in host:
+                        return GOODREADS(host, provider['NAME'], provider['DLPRIORITY'],
                                          test=True), provider['DISPNAME']
-                    elif 'goodreads' in provider['HOST'] and '/list/show/' in provider['HOST']:
+                    elif 'goodreads' in host and '/list/show/' in host:
                         # goodreads listopia
-                        return LISTOPIA(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                        return LISTOPIA(host, provider['NAME'], provider['DLPRIORITY'],
                                         test=True), provider['DISPNAME']
                     else:
-                        return RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'],
+                        return RSS(host, provider['NAME'], provider['DLPRIORITY'],
                                    test=True), provider['DISPNAME']
         except IndexError:
             pass
 
     # for torznab/newznab try book search if enabled, fall back to general search
     book.update({'authorName': 'Agatha Christie', 'bookName': 'Poirot', 'bookSub': ''})
-    if name.startswith('torznab['):
+    if name.startswith('torznab_'):
         try:
-            prov = name.split('[')[1].split(']')[0]
+            prov = name.split('_')[1]
             for provider in lazylibrarian.TORZNAB_PROV:
-                if provider['NAME'] == 'Torznab%s' % prov and provider['HOST']:
+                if provider['NAME'] == 'Torznab%s' % prov:
+                    if host:
+                        provider['HOST'] = host
+                    if api:
+                        provider['API'] = api
                     return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['DISPNAME']
         except IndexError:
             pass
-    if name.startswith('newznab['):
+    if name.startswith('newznab_'):
         try:
-            prov = name.split('[')[1].split(']')[0]
+            prov = name.split('_')[1]
             for provider in lazylibrarian.NEWZNAB_PROV:
-                if provider['NAME'] == 'Newznab%s' % prov and provider['HOST']:
+                if provider['NAME'] == 'Newznab%s' % prov:
+                    if host:
+                        provider['HOST'] = host
+                    if api:
+                        provider['API'] = api
                     return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['DISPNAME']
         except IndexError:
             pass
-    msg = "Unknown provider [%s], did you save config before test?" % name
+    msg = "Unknown provider [%s]" % name
     logger.error(msg)
     return False, msg
 
@@ -244,9 +272,7 @@ def get_capabilities(provider, force=False):
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
-            threadname = threading.currentThread().name
-            lazylibrarian.config_write()
-            threading.currentThread().name = threadname
+            lazylibrarian.config_write(provider['HOST'])
         else:
             logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider
@@ -662,9 +688,7 @@ def cancelSearchType(searchType, errorMsg, provider):
                             if str(provider['MANUAL']) == 'False':
                                 logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['HOST']))
                                 providerlist[count][msg] = ""
-                                threadname = threading.currentThread().name
-                                lazylibrarian.config_write()
-                                threading.currentThread().name = threadname
+                                lazylibrarian.config_write(provider['HOST'])
                                 return True
                         count += 1
             logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['HOST']))

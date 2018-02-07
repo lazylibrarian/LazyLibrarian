@@ -944,82 +944,82 @@ class WebInterface(object):
         count = 0
         while count < len(lazylibrarian.NEWZNAB_PROV):
             lazylibrarian.NEWZNAB_PROV[count]['ENABLED'] = bool(kwargs.get(
-                'newznab[%i][enabled]' % count, False))
+                'newznab_%i_enabled' % count, False))
             lazylibrarian.NEWZNAB_PROV[count]['HOST'] = kwargs.get(
-                'newznab[%i][host]' % count, '')
+                'newznab_%i_host' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['API'] = kwargs.get(
-                'newznab[%i][api]' % count, '')
+                'newznab_%i_api' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'newznab[%i][generalsearch]' % count, '')
+                'newznab_%i_generalsearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
-                'newznab[%i][booksearch]' % count, '')
+                'newznab_%i_booksearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
-                'newznab[%i][magsearch]' % count, '')
+                'newznab_%i_magsearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['AUDIOSEARCH'] = kwargs.get(
-                'newznab[%i][audiosearch]' % count, '')
+                'newznab_%i_audiosearch' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
-                'newznab[%i][bookcat]' % count, '')
+                'newznab_%i_bookcat' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MAGCAT'] = kwargs.get(
-                'newznab[%i][magcat]' % count, '')
+                'newznab_%i_magcat' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
-                'newznab[%i][audiocat]' % count, '')
+                'newznab_%i_audiocat' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['EXTENDED'] = kwargs.get(
-                'newznab[%i][extended]' % count, '')
+                'newznab_%i_extended' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['UPDATED'] = kwargs.get(
-                'newznab[%i][updated]' % count, '')
+                'newznab_%i_updated' % count, '')
             lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
-                'newznab[%i][manual]' % count, False))
+                'newznab_%i_manual' % count, False))
             if interface != 'legacy':
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
-                    'newznab[%i][dlpriority]' % count, 0), 0)
+                    'newznab_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.NEWZNAB_PROV[count]['DISPNAME'] = kwargs.get(
-                    'newznab[%i][dispname]' % count, '')
+                    'newznab_%i_dispname' % count, '')
             count += 1
 
         count = 0
         while count < len(lazylibrarian.TORZNAB_PROV):
             lazylibrarian.TORZNAB_PROV[count]['ENABLED'] = bool(kwargs.get(
-                'torznab[%i][enabled]' % count, False))
+                'torznab_%i_enabled' % count, False))
             lazylibrarian.TORZNAB_PROV[count]['HOST'] = kwargs.get(
-                'torznab[%i][host]' % count, '')
+                'torznab_%i_host' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['API'] = kwargs.get(
-                'torznab[%i][api]' % count, '')
+                'torznab_%i_api' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['GENERALSEARCH'] = kwargs.get(
-                'torznab[%i][generalsearch]' % count, '')
+                'torznab_%i_generalsearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKSEARCH'] = kwargs.get(
-                'torznab[%i][booksearch]' % count, '')
+                'torznab_%i_booksearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGSEARCH'] = kwargs.get(
-                'torznab[%i][magsearch]' % count, '')
+                'torznab_%i_magsearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['AUDIOSEARCH'] = kwargs.get(
-                'torznab[%i][audiosearch]' % count, '')
+                'torznab_%i_audiosearch' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['BOOKCAT'] = kwargs.get(
-                'torznab[%i][bookcat]' % count, '')
+                'torznab_%i_bookcat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MAGCAT'] = kwargs.get(
-                'torznab[%i][magcat]' % count, '')
+                'torznab_%i_magcat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
-                'torznab[%i][audiocat]' % count, '')
+                'torznab_%iaudiocat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['EXTENDED'] = kwargs.get(
-                'torznab[%i][extended]' % count, '')
+                'torznab_%i_extended' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['UPDATED'] = kwargs.get(
-                'torznab[%i][updated]' % count, '')
+                'torznab_%i_updated' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
-                'torznab[%i][manual]' % count, False))
+                'torznab_%i_manual' % count, False))
             if interface != 'legacy':
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
-                    'torznab[%i][dlpriority]' % count, 0), 0)
+                    'torznab_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.TORZNAB_PROV[count]['DISPNAME'] = kwargs.get(
-                    'torznab[%i][dispname]' % count, '')
+                    'torznab_%i_dispname' % count, '')
             count += 1
 
         count = 0
         while count < len(lazylibrarian.RSS_PROV):
-            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss[%i][enabled]' % count, False))
-            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss[%i][host]' % count, '')
+            lazylibrarian.RSS_PROV[count]['ENABLED'] = bool(kwargs.get('rss_%i_enabled' % count, False))
+            lazylibrarian.RSS_PROV[count]['HOST'] = kwargs.get('rss_%i_host' % count, '')
             if interface != 'legacy':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
-                    'rss[%i][dlpriority]' % count, 0), 0)
+                    'rss_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.RSS_PROV[count]['DISPNAME'] = kwargs.get(
-                    'rss[%i][dispname]' % count, '')
+                    'rss_%i_dispname' % count, '')
             count += 1
 
         lazylibrarian.config_write()
@@ -3015,8 +3015,15 @@ class WebInterface(object):
     def testprovider(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         if 'name' in kwargs and kwargs['name']:
-            result, name = test_provider(kwargs['name'])
+            host = ''
+            api = ''
+            if 'host' in kwargs and kwargs['host']:
+                host = kwargs['host']
+            if 'api' in kwargs and kwargs['api']:
+                api = kwargs['api']
+            result, name = test_provider(kwargs['name'], host=host, api=api)
             if result:
+                lazylibrarian.config_write(kwargs['name'])
                 msg = "%s test PASSED" % name
             else:
                 msg = "%s test FAILED, check debug log" % name
@@ -3132,7 +3139,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = kwargs['gr_oauth_secret']
         res = grsync.test_auth()
         if res.startswith('Pass:'):
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('API')
         return res
 
     # NOTIFIERS #########################################################
@@ -3177,7 +3184,7 @@ class WebInterface(object):
                 lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = False
         result = notifiers.androidpn_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('AndroidPN')
             return "Test AndroidPN notice sent successfully"
         else:
             return "Test AndroidPN notice failed"
@@ -3190,7 +3197,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['BOXCAR_TOKEN'] = kwargs['token']
         result = notifiers.boxcar_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Boxcar')
             return "Boxcar notification successful,\n%s" % result
         else:
             return "Boxcar notification failed"
@@ -3205,7 +3212,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['PUSHBULLET_DEVICEID'] = kwargs['device']
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('PushBullet')
             return "Pushbullet notification successful,\n%s" % result
         else:
             return "Pushbullet notification failed"
@@ -3225,7 +3232,7 @@ class WebInterface(object):
 
         result = notifiers.pushover_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Pushover')
             return "Pushover notification successful,\n%s" % result
         else:
             return "Pushover notification failed"
@@ -3241,7 +3248,7 @@ class WebInterface(object):
 
         result = notifiers.telegram_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Telegram')
             return "Test Telegram notice sent successfully"
         else:
             return "Test Telegram notice failed"
@@ -3257,7 +3264,7 @@ class WebInterface(object):
 
         result = notifiers.prowl_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Prowl')
             return "Test Prowl notice sent successfully"
         else:
             return "Test Prowl notice failed"
@@ -3271,7 +3278,7 @@ class WebInterface(object):
         if 'priority' in kwargs:
             lazylibrarian.CONFIG['NMA_PRIORITY'] = check_int(kwargs['priority'], 0)
 
-        result = notifiers.nma_notifier.test_notify()
+        result = notifiers.nma_notifier.test_notify('NMA')
         if result:
             lazylibrarian.config_write()
             return "Test NMA notice sent successfully"
@@ -3289,7 +3296,7 @@ class WebInterface(object):
         if result != "ok":
             return "Slack notification failed,\n%s" % result
         else:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Slack')
             return "Slack notification successful"
 
     @cherrypy.expose
@@ -3302,7 +3309,7 @@ class WebInterface(object):
         if result:
             return "Custom notification failed,\n%s" % result
         else:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Custom')
             return "Custom notification successful"
 
     @cherrypy.expose
@@ -3341,7 +3348,7 @@ class WebInterface(object):
         if not result:
             return "Email notification failed"
         else:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Email')
             return "Email notification successful, check your email"
 
     # API ###############################################################
@@ -3446,7 +3453,7 @@ class WebInterface(object):
                             msg += "Deluge daemon seems to have no labels set"
                         return msg
             # success, save settings
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('DELUGE')
             return msg
 
         except Exception as e:
@@ -3480,7 +3487,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['SAB_SUBDIR'] = kwargs['subdir']
         msg = sabnzbd.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('SABnzbd')
         return msg
 
     @cherrypy.expose
@@ -3501,7 +3508,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['NZBGET_PRIORITY'] = check_int(kwargs['pri'], 0)
         msg = nzbget.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('NZBGet')
         return msg
 
     @cherrypy.expose
@@ -3518,7 +3525,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['TRANSMISSION_PASS'] = kwargs['pwd']
         msg = transmission.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('TRANSMISSION')
         return msg
 
     @cherrypy.expose
@@ -3537,7 +3544,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['QBITTORRENT_LABEL'] = kwargs['label']
         msg = qbittorrent.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('QBITTORRENT')
         return msg
 
     @cherrypy.expose
@@ -3556,7 +3563,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['UTORRENT_LABEL'] = kwargs['label']
         msg = utorrent.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('UTORRENT')
         return msg
 
     @cherrypy.expose
@@ -3575,7 +3582,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['RTORRENT_LABEL'] = kwargs['label']
         msg = rtorrent.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('RTORRENT')
         return msg
 
     @cherrypy.expose
@@ -3594,7 +3601,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['SYNOLOGY_DIR'] = kwargs['dir']
         msg = synology.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('SYNOLOGY')
         return msg
 
     @cherrypy.expose

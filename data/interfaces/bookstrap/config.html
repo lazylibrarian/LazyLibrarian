@@ -452,7 +452,7 @@
                   </div>
                   <div class="form-group">
                     <label for="audiobook_type" class="control-label">AudioBooks:</label>
-                    <input type="text" id="ebook_type" name="audiobook_type" value="${lazylibrarian.CONFIG['AUDIOBOOK_TYPE']}" class="form-control" placeholder="AudioBook file formats">
+                    <input type="text" id="audiobook_type" name="audiobook_type" value="${lazylibrarian.CONFIG['AUDIOBOOK_TYPE']}" class="form-control" placeholder="AudioBook file formats">
                     <span class="help-block">Comma separated file extensions</span>
                   </div>
                   <div class="form-group">
@@ -974,29 +974,29 @@
                   <div class="col-md-4 form-group">
                     <div class="input-group">
                       <span class="input-group-addon">Name</span>
-                      <label for="newznab[${loop.index}][dispname]" class="sr-only">Newznab Name</label>
-                      <input type="text" id="newznab[${loop.index}][dispname]" name="newznab[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
+                      <label for="newznab_${loop.index}_dispname" class="sr-only">Newznab Name</label>
+                      <input type="text" id="newznab_${loop.index}_dispname" name="newznab_${loop.index}_dispname" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                      &nbsp;<input type="checkbox" id="newznab[${loop.index}][enabled]" name="newznab[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
+                      &nbsp;<input type="checkbox" id="newznab_${loop.index}_enabled" name="newznab_${loop.index}_enabled" value="1" ${checked} />&nbsp;
                       </span>
                     </div>
                     <div class="input-group">
                     <span class="input-group-addon"></span>
-                      <label for="newznab[${loop.index}][host]" class="sr-only">Newznab URL</label>
-                      <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab[${loop.index}][host]" name="newznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
+                      <label for="newznab_${loop.index}_host" class="sr-only">Newznab URL</label>
+                      <input type="text" placeholder="Newznab URL #${loop.index}" id="newznab_${loop.index}_host" name="newznab_${loop.index}_host" value="${provider['HOST']}" class="form-control">
                       <span class="input-group-addon"></span>
                     </div>
                     <div class="input-group">
                     <span class="input-group-addon"></span>
-                    <label for="newznab[${loop.index}][api]" class="sr-only">Newznab API Key</label>
-                    <input type="text" placeholder="Newznab API #${loop.index}" id="newznab[${loop.index}][api]" name="newznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                    <label for="newznab_${loop.index}_api" class="sr-only">Newznab API Key</label>
+                    <input type="text" placeholder="Newznab API #${loop.index}" id="newznab_${loop.index}_api" name="newznab_${loop.index}_api" value="${provider['API']}" class="form-control">
                     <span class="input-group-addon"></span>
                       </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
-                      <input type="text" id="newznab[${loop.index}][dlpriority]" name="newznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <input type="text" id="newznab_${loop.index}_dlpriority" name="newznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab[${loop.index}]"> Test</button>
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab_${loop.index}"> Test</button>
                       </span>
                     </div>
                   </div>
@@ -1017,29 +1017,29 @@
                   <div class="col-md-4 form-group">
                     <div class="input-group">
                       <span class="input-group-addon">Name</span>
-                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab Name</label>
-                      <input type="text" id="torznab[${loop.index}][dispname]" name="torznab[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
+                      <label for="torznab_${loop.index}_host" class="sr-only">Torznab Name</label>
+                      <input type="text" id="torznab_${loop.index}_dispname" name="torznab_${loop.index}_dispname" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        &nbsp;<input type="checkbox" id="torznab[${loop.index}][enabled]" name="torznab[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
+                        &nbsp;<input type="checkbox" id="torznab_${loop.index}_enabled" name="torznab_${loop.index}_enabled" value="1" ${checked} />&nbsp;
                         </span>
                     </div>
                     <div class="input-group">
                       <span class="input-group-addon"></span>
-                      <label for="torznab[${loop.index}][host]" class="sr-only">Torznab URL</label>
-                      <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab[${loop.index}][host]" name="torznab[${loop.index}][host]" value="${provider['HOST']}" class="form-control">
+                      <label for="torznab_${loop.index}_host" class="sr-only">Torznab URL</label>
+                      <input type="text" placeholder="Torznab URL #${loop.index}" id="torznab_${loop.index}_host" name="torznab_${loop.index}_host" value="${provider['HOST']}" class="form-control">
                       <span class="input-group-addon"></span>
                     </div>
                     <div class="input-group">
                     <span class="input-group-addon"></span>
-                    <label for="torznab[${loop.index}][api]" class="sr-only">Torznab API Key</label>
-                    <input type="text" placeholder="Torznab API #${loop.index}" id="torznab[${loop.index}][api]" name="torznab[${loop.index}][api]" value="${provider['API']}" class="form-control">
+                    <label for="torznab_${loop.index}_api" class="sr-only">Torznab API Key</label>
+                    <input type="text" placeholder="Torznab API #${loop.index}" id="torznab_${loop.index}_api" name="torznab_${loop.index}_api" value="${provider['API']}" class="form-control">
                     <span class="input-group-addon"></span>
                     </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
-                      <input type="text" id="torznab[${loop.index}][dlpriority]" name="torznab[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <input type="text" id="torznab_${loop.index}_dlpriority" name="torznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab[${loop.index}]"> Test</button>
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab_${loop.index}"> Test</button>
                       </span>
                     </div>
                   </div>
@@ -1060,16 +1060,16 @@
                   <div class="col-md-4 form-group">
                     <div class="input-group">
                       <span class="input-group-addon">Name</span>
-                      <label for="rss[${loop.index}][host]" class="sr-only">RSS Name</label>
-                      <input type="text" id="rss[${loop.index}][dispname]" name="rss[${loop.index}][dispname]" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
+                      <label for="rss_${loop.index}_host" class="sr-only">RSS Name</label>
+                      <input type="text" id="rss_${loop.index}_dispname" name="rss_${loop.index}_dispname" value="${provider['DISPNAME']}" class="form-control" placeholder="display name">
                       <span class="input-group-addon">
-                        &nbsp;<input type="checkbox" id="rss[${loop.index}][enabled]" name="rss[${loop.index}][enabled]" value="1" ${checked} />&nbsp;
+                        &nbsp;<input type="checkbox" id="rss_${loop.index}_enabled" name="rss_${loop.index}_enabled" value="1" ${checked} />&nbsp;
                       </span>
                     </div>
                     <div class="input-group">
                       <span class="input-group-addon"></span>
-                      <label for="rss[${loop.index}][host]" class="sr-only">RSS URL</label>
-                      <input type="text" placeholder="RSS URL #${loop.index}" id="rss[${loop.index}][host]" name="rss[${loop.index}][host]" value="${provider['HOST']}" class="form-control" />
+                      <label for="rss_${loop.index}_host" class="sr-only">RSS URL</label>
+                      <input type="text" placeholder="RSS URL #${loop.index}" id="rss_${loop.index}_host" name="rss_${loop.index}_host" value="${provider['HOST']}" class="form-control" />
                       <span class="input-group-addon"></span>
                     </div>
                       <%
@@ -1080,9 +1080,9 @@
                       %>
                     <div class="input-group">
                       <span class="input-group-addon">${label}</span>
-                      <input type="text" id="rss[${loop.index}][dlpriority]" name="rss[${loop.index}][dlpriority]" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <input type="text" id="rss_${loop.index}_dlpriority" name="rss_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                       <span class="input-group-addon">
-                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss[${loop.index}]"> Test</button>
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss_${loop.index}"> Test</button>
                       </span>
                     </div>
                   </div>
@@ -2417,43 +2417,43 @@
                     else:
                         checked = ''
                     %>
-                  <label for="newznab[${loop.index}][manual]" class="control-label" ${hidden}>
-                    <input type="checkbox" id="newznab[${loop.index}][manual]" name="newznab[${loop.index}][manual]" value="1" ${checked}  ${hidden}/>
+                  <label for="newznab_${loop.index}_manual" class="control-label" ${hidden}>
+                    <input type="checkbox" id="newznab_${loop.index}_manual" name="newznab_${loop.index}_manual" value="1" ${checked}  ${hidden}/>
                     Tick to lock settings</label>
                 </div>
-                <input type="text" id="newznab[${loop.index}][name]" name="newznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
-                <input type="text" id="newznab[${loop.index}][updated]" name="newznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                <input type="text" id="newznab_${loop.index}_name_" name="newznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="newznab_${loop.index}_updated" name="newznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][generalsearch]" class="control-label">General Search:</label>
-                  <input type="text" placeholder="General Search" id="newznab[${loop.index}][generalsearch]" name="newznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" class="form-control">
+                  <label for="newznab_${loop.index}_generalsearch" class="control-label">General Search:</label>
+                  <input type="text" placeholder="General Search" id="newznab_${loop.index}_generalsearch" name="newznab_${loop.index}_generalsearch" value="${provider['GENERALSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][extended]" class="control-label">Extended Search:</label>
-                  <input type="text" placeholder="Extended Search" id="newznab[${loop.index}][extended]" name="newznab[${loop.index}][extended]" value="${provider['EXTENDED']}" class="form-control">
+                  <label for="newznab_${loop.index}_extended" class="control-label">Extended Search:</label>
+                  <input type="text" placeholder="Extended Search" id="newznab_${loop.index}_extended" name="newznab_${loop.index}_extended" value="${provider['EXTENDED']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][booksearch]" class="control-label">Book Search:</label>
-                  <input type="text" placeholder="Book Search" id="newznab[${loop.index}][booksearch]" name="newznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" class="form-control">
+                  <label for="newznab_${loop.index}_booksearch" class="control-label">Book Search:</label>
+                  <input type="text" placeholder="Book Search" id="newznab_${loop.index}_booksearch" name="newznab_${loop.index}_booksearch" value="${provider['BOOKSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][bookcat]" class="control-label">Book Categories:</label>
-                  <input type="text" placeholder="Book Categories" id="newznab[${loop.index}][bookcat]" name="newznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" class="form-control">
+                  <label for="newznab_${loop.index}_bookcat" class="control-label">Book Categories:</label>
+                  <input type="text" placeholder="Book Categories" id="newznab_${loop.index}_bookcat" name="newznab_${loop.index}_bookcat" value="${provider['BOOKCAT']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][magsearch]" class="control-label">Magazine Search:</label>
-                  <input type="text" placeholder="Magazine Search" id="newznab[${loop.index}][magsearch]" name="newznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" class="form-control">
+                  <label for="newznab_${loop.index}_magsearch" class="control-label">Magazine Search:</label>
+                  <input type="text" placeholder="Magazine Search" id="newznab_${loop.index}_magsearch" name="newznab_${loop.index}_magsearch" value="${provider['MAGSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][magcat]" class="control-label">Magazine Categories:</label>
-                  <input type="text" placeholder="Magazine Categories" id="newznab[${loop.index}][magcat]" name="newznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" class="form-control">
+                  <label for="newznab_${loop.index}_magcat" class="control-label">Magazine Categories:</label>
+                  <input type="text" placeholder="Magazine Categories" id="newznab_${loop.index}_magcat" name="newznab_${loop.index}_magcat" value="${provider['MAGCAT']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][audiosearch]" class="control-label">AudioBook Search:</label>
-                  <input type="text" placeholder="AudioBook Search" id="newznab[${loop.index}][audiosearch]" name="newznab[${loop.index}][audiosearch]" value="${provider['AUDIOSEARCH']}" class="form-control">
+                  <label for="newznab_${loop.index}_audiosearch" class="control-label">AudioBook Search:</label>
+                  <input type="text" placeholder="AudioBook Search" id="newznab_${loop.index}_audiosearch" name="newznab_${loop.index}_audiosearch" value="${provider['AUDIOSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
-                  <input type="text" placeholder="AudioBook Categories" id="newznab[${loop.index}][audiocat]" name="newznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
+                  <label for="newznab_${loop.index}_audiocat" class="control-label">AudioBook Categories:</label>
+                  <input type="text" placeholder="AudioBook Categories" id="newznab_${loop.index}_audiocat" name="newznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
                 </div>
                 %endfor
@@ -2475,43 +2475,43 @@
                     else:
                         checked = ''
                   %>
-                  <label for="torznab[${loop.index}][manual]" class="control-label" ${hidden}>
-                    <input type="checkbox" id="torznab[${loop.index}][manual]" name="torznab[${loop.index}][manual]" value="1" ${checked} ${hidden}/>
+                  <label for="torznab_${loop.index}manual" class="control-label" ${hidden}>
+                    <input type="checkbox" id="torznab_${loop.index}_manual" name="torznab_${loop.index}_manual" value="1" ${checked} ${hidden}/>
                     Tick to prevent reloading values from provider</label>
                 </div>
-                <input type="text" id="torznab[${loop.index}][name]" name="torznab[${loop.index}][name]" value="${provider['NAME']}" class="hidden">
-                <input type="text" id="torznab[${loop.index}][updated]" name="torznab[${loop.index}][updated]" value="${provider['UPDATED']}" class="hidden">
+                <input type="text" id="torznab_${loop.index}_name" name="torznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="torznab_${loop.index}_updated" name="torznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][generalsearch]" class="control-label">General Search:</label>
-                  <input type="text" placeholder="General Search" id="torznab[${loop.index}][generalsearch]" name="torznab[${loop.index}][generalsearch]" value="${provider['GENERALSEARCH']}" class="form-control">
+                  <label for="torznab_${loop.index}_generalsearch" class="control-label">General Search:</label>
+                  <input type="text" placeholder="General Search" id="torznab_${loop.index}_generalsearch" name="torznab_${loop.index}_generalsearch" value="${provider['GENERALSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][extended]" class="control-label">Extended Search:</label>
-                  <input type="text" placeholder="Extended Search" id="torznab[${loop.index}][extended]" name="torznab[${loop.index}][extended]" value="${provider['EXTENDED']}" class="form-control">
+                  <label for="torznab_${loop.index}_extended" class="control-label">Extended Search:</label>
+                  <input type="text" placeholder="Extended Search" id="torznab_${loop.index}_extended" name="torznab_${loop.index}_extended" value="${provider['EXTENDED']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][booksearch]" class="control-label">Book Search:</label>
-                  <input type="text" placeholder="Book Search" id="torznab[${loop.index}][booksearch]" name="torznab[${loop.index}][booksearch]" value="${provider['BOOKSEARCH']}" class="form-control">
+                  <label for="torznab_${loop.index}_booksearch" class="control-label">Book Search:</label>
+                  <input type="text" placeholder="Book Search" id="torznab_${loop.index}_booksearch" name="torznab_${loop.index}_booksearch" value="${provider['BOOKSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][bookcat]" class="control-label">Book Categories:</label>
-                  <input type="text" placeholder="Book Categories" id="torznab[${loop.index}][bookcat]" name="torznab[${loop.index}][bookcat]" value="${provider['BOOKCAT']}" class="form-control">
+                  <label for="torznab_${loop.index}_bookcat" class="control-label">Book Categories:</label>
+                  <input type="text" placeholder="Book Categories" id="torznab_${loop.index}_bookcat" name="torznab_${loop.index}_bookcat" value="${provider['BOOKCAT']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][magsearch]" class="control-label">Magazine Search:</label>
-                  <input type="text" placeholder="Magazine Search" id="torznab[${loop.index}][magsearch]" name="torznab[${loop.index}][magsearch]" value="${provider['MAGSEARCH']}" class="form-control">
+                  <label for="torznab_${loop.index}_magsearch" class="control-label">Magazine Search:</label>
+                  <input type="text" placeholder="Magazine Search" id="torznab_${loop.index}_magsearch" name="torznab_${loop.index}_magsearch" value="${provider['MAGSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][magcat]" class="control-label">Magazine Categories:</label>
-                  <input type="text" placeholder="Magazine Categories" id="torznab[${loop.index}][magcat]" name="torznab[${loop.index}][magcat]" value="${provider['MAGCAT']}" class="form-control">
+                  <label for="torznab_${loop.index}_magcat" class="control-label">Magazine Categories:</label>
+                  <input type="text" placeholder="Magazine Categories" id="torznab_${loop.index}_magcat" name="torznab_${loop.index}_magcat" value="${provider['MAGCAT']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][audiosearch]" class="control-label">AudioBook Search:</label>
-                  <input type="text" placeholder="AudioBook Search" id="torznab[${loop.index}][audiosearch]" name="torznab[${loop.index}][audiosearch]" value="${provider['AUDIOSEARCH']}" class="form-control">
+                  <label for="torznab_${loop.index}_audiosearch" class="control-label">AudioBook Search:</label>
+                  <input type="text" placeholder="AudioBook Search" id="torznab_${loop.index}_audiosearch" name="torznab_${loop.index}_audiosearch" value="${provider['AUDIOSEARCH']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab[${loop.index}][audiocat]" class="control-label">AudioBook Categories:</label>
-                  <input type="text" placeholder="AudioBook Categories" id="torznab[${loop.index}][audiocat]" name="torznab[${loop.index}][audiocat]" value="${provider['AUDIOCAT']}" class="form-control">
+                  <label for="torznab_${loop.index}_audiocat" class="control-label">AudioBook Categories:</label>
+                  <input type="text" placeholder="AudioBook Categories" id="torznab_${loop.index}_audiocat" name="torznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
               </div>
             %endfor
@@ -2965,7 +2965,27 @@
 
         $("button[role='testprov']").on('click', function(e) {
             var prov = $(this).val();
-            $.get('testprovider', {'name': prov},
+            var host = ""
+            var api = ""
+            if ( 'KAT TPB ZOO TDL LIME GEN GEN2'.indexOf(prov) >= 0 ) {
+                var host = $("#" + prov.toLowerCase() + "_host").val();
+            }
+            if ( 'GEN GEN2'.indexOf(prov) >= 0 ) {
+                var api = $("#" + prov.toLowerCase() + "_search").val();
+            }
+            if ( prov.indexOf('newznab_') == 0 ) {
+                var host = $("#" + prov.toLowerCase() + "_host").val();
+                var api = $("#" + prov.toLowerCase() + "_api").val();
+            }
+            if ( prov.indexOf('torznab_') == 0 ) {
+                var host = $("#" + prov.toLowerCase() + "_host").val();
+                var api = $("#" + prov.toLowerCase() + "_api").val();
+            }
+            if ( prov.indexOf('rss_') == 0 ) {
+                var host = $("#" + prov.toLowerCase() + "_host").val();
+            }
+
+            $.get('testprovider', {'name': prov, 'host': host, 'api': api},
             function(data) {
                 bootbox.dialog({
                     title: 'Test Result',
