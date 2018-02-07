@@ -3021,9 +3021,9 @@ class WebInterface(object):
                 host = kwargs['host']
             if 'api' in kwargs and kwargs['api']:
                 api = kwargs['api']
-            result, name = test_provider(kwargs['name'] , host=host, api=api)
+            result, name = test_provider(kwargs['name'], host=host, api=api)
             if result:
-                lazylibrarian.config_write()
+                lazylibrarian.config_write(kwargs['name'])
                 msg = "%s test PASSED" % name
             else:
                 msg = "%s test FAILED, check debug log" % name
@@ -3139,7 +3139,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = kwargs['gr_oauth_secret']
         res = grsync.test_auth()
         if res.startswith('Pass:'):
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('API')
         return res
 
     # NOTIFIERS #########################################################
@@ -3184,7 +3184,7 @@ class WebInterface(object):
                 lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] = False
         result = notifiers.androidpn_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('AndroidPN')
             return "Test AndroidPN notice sent successfully"
         else:
             return "Test AndroidPN notice failed"
@@ -3197,7 +3197,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['BOXCAR_TOKEN'] = kwargs['token']
         result = notifiers.boxcar_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Boxcar')
             return "Boxcar notification successful,\n%s" % result
         else:
             return "Boxcar notification failed"
@@ -3212,7 +3212,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['PUSHBULLET_DEVICEID'] = kwargs['device']
         result = notifiers.pushbullet_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('PushBullet')
             return "Pushbullet notification successful,\n%s" % result
         else:
             return "Pushbullet notification failed"
@@ -3232,7 +3232,7 @@ class WebInterface(object):
 
         result = notifiers.pushover_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Pushover')
             return "Pushover notification successful,\n%s" % result
         else:
             return "Pushover notification failed"
@@ -3248,7 +3248,7 @@ class WebInterface(object):
 
         result = notifiers.telegram_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Telegram')
             return "Test Telegram notice sent successfully"
         else:
             return "Test Telegram notice failed"
@@ -3264,7 +3264,7 @@ class WebInterface(object):
 
         result = notifiers.prowl_notifier.test_notify()
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Prowl')
             return "Test Prowl notice sent successfully"
         else:
             return "Test Prowl notice failed"
@@ -3278,7 +3278,7 @@ class WebInterface(object):
         if 'priority' in kwargs:
             lazylibrarian.CONFIG['NMA_PRIORITY'] = check_int(kwargs['priority'], 0)
 
-        result = notifiers.nma_notifier.test_notify()
+        result = notifiers.nma_notifier.test_notify('NMA')
         if result:
             lazylibrarian.config_write()
             return "Test NMA notice sent successfully"
@@ -3296,7 +3296,7 @@ class WebInterface(object):
         if result != "ok":
             return "Slack notification failed,\n%s" % result
         else:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Slack')
             return "Slack notification successful"
 
     @cherrypy.expose
@@ -3309,7 +3309,7 @@ class WebInterface(object):
         if result:
             return "Custom notification failed,\n%s" % result
         else:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Custom')
             return "Custom notification successful"
 
     @cherrypy.expose
@@ -3348,7 +3348,7 @@ class WebInterface(object):
         if not result:
             return "Email notification failed"
         else:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('Email')
             return "Email notification successful, check your email"
 
     # API ###############################################################
@@ -3453,7 +3453,7 @@ class WebInterface(object):
                             msg += "Deluge daemon seems to have no labels set"
                         return msg
             # success, save settings
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('DELUGE')
             return msg
 
         except Exception as e:
@@ -3487,7 +3487,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['SAB_SUBDIR'] = kwargs['subdir']
         msg = sabnzbd.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('SABnzbd')
         return msg
 
     @cherrypy.expose
@@ -3508,7 +3508,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['NZBGET_PRIORITY'] = check_int(kwargs['pri'], 0)
         msg = nzbget.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('NZBGet')
         return msg
 
     @cherrypy.expose
@@ -3525,7 +3525,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['TRANSMISSION_PASS'] = kwargs['pwd']
         msg = transmission.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('TRANSMISSION')
         return msg
 
     @cherrypy.expose
@@ -3544,7 +3544,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['QBITTORRENT_LABEL'] = kwargs['label']
         msg = qbittorrent.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('QBITTORRENT')
         return msg
 
     @cherrypy.expose
@@ -3563,7 +3563,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['UTORRENT_LABEL'] = kwargs['label']
         msg = utorrent.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('UTORRENT')
         return msg
 
     @cherrypy.expose
@@ -3582,7 +3582,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['RTORRENT_LABEL'] = kwargs['label']
         msg = rtorrent.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('RTORRENT')
         return msg
 
     @cherrypy.expose
@@ -3601,7 +3601,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['SYNOLOGY_DIR'] = kwargs['dir']
         msg = synology.checkLink()
         if 'success' in msg:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('SYNOLOGY')
         return msg
 
     @cherrypy.expose

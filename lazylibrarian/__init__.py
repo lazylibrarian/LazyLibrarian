@@ -838,9 +838,12 @@ def config_read(reloaded=False):
 
 
 # noinspection PyUnresolvedReferences
-def config_write():
+def config_write(part=None):
     global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
         TORZNAB_PROV, RSS_PROV
+
+    if part:
+        logger.info("Writing config for section [%s]" % part)
 
     currentname = threading.currentThread().name
     threading.currentThread().name = "CONFIG_WRITE"
@@ -852,14 +855,13 @@ def config_write():
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
             value = CONFIG[key]
+        elif part and section != part:
+            value = CFG.get(section, key.lower())  # keep the old value
         elif key not in CONFIG_NONWEB and not (interface == 'legacy' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
             if key == 'LOGLEVEL':
                 LOGLEVEL = check_int(value, 1)
-            # elif key in ['LOGDIR', 'EBOOK_DIR', 'AUDIO_DIR', 'ALTERNATE_DIR', 'DOWNLOAD_DIR',
-            #             'EBOOK_DEST_FILE', 'EBOOK_DEST_FOLDER', 'MAG_DEST_FILE', 'MAG_DEST_FOLDER']:
-            #    value = value.encode(SYS_ENCODING)
             elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
                 value = value.lower()
         else:
@@ -867,7 +869,6 @@ def config_write():
             value = CFG.get(section, key.lower())
             # if CONFIG['LOGLEVEL'] > 2:
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
-            CONFIG[key] = value
 
         if PY2 and isinstance(value, text_type):
             try:
@@ -877,11 +878,12 @@ def config_write():
                 value = unaccented_str(value)
 
         CFG.set(section, key.lower(), value)
+        CONFIG[key] = value
 
     # sanity check for typos...
     for key in list(CONFIG.keys()):
         if key not in list(CONFIG_DEFINITIONS.keys()):
-            logger.warn('Unsaved config key: %s' % key)
+            logger.warn('Unsaved/invalid config key: %s' % key)
 
     for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
         new_list = []
@@ -1378,7 +1380,7 @@ def shutdown(restart=False, update=False):
         try:
             if versioncheck.update():
                 logmsg('info', 'Lazylibrarian version updated')
-                config_write()
+                config_write('Git')
         except Exception as e:
             logmsg('warn', 'LazyLibrarian failed to update: %s %s. Restarting.' % (type(e).__name__, str(e)))
 

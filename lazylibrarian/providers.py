@@ -272,9 +272,7 @@ def get_capabilities(provider, force=False):
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
-            threadname = threading.currentThread().name
-            lazylibrarian.config_write()
-            threading.currentThread().name = threadname
+            lazylibrarian.config_write(provider['HOST'])
         else:
             logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider
@@ -690,9 +688,7 @@ def cancelSearchType(searchType, errorMsg, provider):
                             if str(provider['MANUAL']) == 'False':
                                 logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['HOST']))
                                 providerlist[count][msg] = ""
-                                threadname = threading.currentThread().name
-                                lazylibrarian.config_write()
-                                threading.currentThread().name = threadname
+                                lazylibrarian.config_write(provider['HOST'])
                                 return True
                         count += 1
             logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['HOST']))
