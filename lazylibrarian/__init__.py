@@ -857,6 +857,8 @@ def config_write(part=None):
             value = CONFIG[key]
         elif part and section != part:
             value = CFG.get(section, key.lower())  # keep the old value
+            # if CONFIG['LOGLEVEL'] > 2:
+            #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
         elif key not in CONFIG_NONWEB and not (interface == 'legacy' and key in CONFIG_NONDEFAULT):
             check_section(section)
             value = CONFIG[key]
@@ -885,73 +887,80 @@ def config_write(part=None):
         if key not in list(CONFIG_DEFINITIONS.keys()):
             logger.warn('Unsaved/invalid config key: %s' % key)
 
-    for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
+    if not part or part.startswith('newznab_') or part.startswith('torznab_'):
+        NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH', 'AUDIOSEARCH',
+                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL']
+        for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
+            new_list = []
+            # strip out any empty slots
+            for provider in entry[0]:  # type: dict
+                if provider['HOST']:
+                    new_list.append(provider)
+
+            if part:  # only update the named provider
+                part = part.replace('_', '')
+                for provider in new_list:
+                    if provider['NAME'].lower() != part:  # keep old values
+                        if CONFIG['LOGLEVEL'] > 2:
+                            logger.debug("Keep %s" % provider['NAME'])
+                        for item in NAB_ITEMS:
+                            provider[item] = CFG.get(provider['NAME'], item.lower())
+
+            # renumber the items
+            for index, item in enumerate(new_list):
+                item['NAME'] = '%s%i' % (entry[1], index)
+
+            # delete the old entries
+            sections = CFG.sections()
+            for item in sections:
+                if item.startswith(entry[1]):
+                    CFG.remove_section(item)
+
+            for provider in new_list:
+                check_section(provider['NAME'])
+                for item in NAB_ITEMS:
+                    CFG.set(provider['NAME'], item, provider[item])
+
+            if entry[1] == 'Newznab':
+                NEWZNAB_PROV = new_list
+                add_newz_slot()
+            else:
+                TORZNAB_PROV = new_list
+                add_torz_slot()
+
+    if not part or part.startswith('rss_'):
+        RSS_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'DLPRIORITY']
         new_list = []
         # strip out any empty slots
-        for provider in entry[0]:  # type: dict
+        for provider in RSS_PROV:
             if provider['HOST']:
                 new_list.append(provider)
 
+        if part:  # only update the named provider
+            for provider in new_list:
+                if provider['NAME'].lower() != part:  # keep old values
+                    if CONFIG['LOGLEVEL'] > 2:
+                        logger.debug("Keep %s" % provider['NAME'])
+                    for item in RSS_ITEMS:
+                        provider[item] = CFG.get(provider['NAME'], item.lower())
+
         # renumber the items
         for index, item in enumerate(new_list):
-            item['NAME'] = '%s%i' % (entry[1], index)
+            item['NAME'] = 'RSS_%i' % index
 
-        # delete the old entries
+        # strip out the old config entries
         sections = CFG.sections()
         for item in sections:
-            if item.startswith(entry[1]):
+            if item.startswith('RSS_'):
                 CFG.remove_section(item)
 
         for provider in new_list:
             check_section(provider['NAME'])
-            CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-            CFG.set(provider['NAME'], 'DISPNAME', provider['DISPNAME'])
-            CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-            CFG.set(provider['NAME'], 'API', provider['API'])
-            CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
-            CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
-            CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
-            CFG.set(provider['NAME'], 'AUDIOSEARCH', provider['AUDIOSEARCH'])
-            CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
-            CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
-            CFG.set(provider['NAME'], 'AUDIOCAT', provider['AUDIOCAT'])
-            CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-            CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
+            for item in RSS_ITEMS:
+                CFG.set(provider['NAME'], item, provider[item])
 
-        if entry[1] == 'Newznab':
-            NEWZNAB_PROV = new_list
-            add_newz_slot()
-        else:
-            TORZNAB_PROV = new_list
-            add_torz_slot()
-
-    new_list = []
-    # strip out any empty slots
-    for provider in RSS_PROV:
-        if provider['HOST']:
-            new_list.append(provider)
-
-    # renumber the items
-    for index, item in enumerate(new_list):
-        item['NAME'] = 'RSS_%i' % index
-
-    # strip out the old config entries
-    sections = CFG.sections()
-    for item in sections:
-        if item.startswith('RSS_'):
-            CFG.remove_section(item)
-
-    for provider in new_list:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        CFG.set(provider['NAME'], 'DISPNAME', provider['DISPNAME'])
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'DLPRIORITY', check_int(provider['DLPRIORITY'], 0))
-
-    RSS_PROV = new_list
-    add_rss_slot()
+        RSS_PROV = new_list
+        add_rss_slot()
     #
     series_list = myDB.select('SELECT SeriesID from series')
     SHOW_SERIES = len(series_list)
@@ -1003,7 +1012,7 @@ def config_write(part=None):
         logger.warn(msg)
 
     if not msg:
-        msg = 'Config file [%s] has been updated' % CONFIGFILE
+        msg = 'Config file [%s] %s has been updated' % (CONFIGFILE, part)
         logger.info(msg)
 
     threading.currentThread().name = currentname
