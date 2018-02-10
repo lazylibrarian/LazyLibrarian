@@ -18,7 +18,7 @@ import subprocess
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-from lib.six import PY2
+from lazylibrarian.formatter import makeUnicode
 
 
 class CustomNotifier:
@@ -60,12 +60,8 @@ class CustomNotifier:
                         params.append(str(dictionary[item]))
 
                 try:
-                    if PY2:
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                    else:
-                        # noinspection PyArgumentList
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
-                    return res
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    return makeUnicode(res).strip()
                 except Exception as e:
                     logger.warn('Error sending command: %s' % e)
                     return False

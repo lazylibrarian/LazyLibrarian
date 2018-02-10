@@ -12,7 +12,6 @@
 
 import time
 import datetime
-import threading
 from xml.etree import ElementTree
 
 import lazylibrarian

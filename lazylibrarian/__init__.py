@@ -1248,7 +1248,6 @@ def build_monthtable():
 
     for lang in getList(CONFIG['IMP_MONTHLANG']):
         try:
-            lang = str(lang)
             if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
                 logger.debug('Month names for %s already loaded' % lang)
             else:
@@ -1269,8 +1268,8 @@ def build_monthtable():
             try:
                 wanted_lang = lang.split('_')[0]
                 params = ['locale', '-a']
-                # noinspection PyArgumentList
-                all_locales = subprocess.check_output(params).split()
+                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                all_locales = makeUnicode(res).split()
                 locale_list = []
                 for a_locale in all_locales:
                     if a_locale.startswith(wanted_lang):
@@ -1413,21 +1412,15 @@ def shutdown(restart=False, update=False):
             if platform.system() == "Windows":
                 params = ["where", prg]
                 try:
-                    if PY2:
-                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                    else:
-                        # noinspection PyArgumentList
-                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
+                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    executable = makeUnicode(executable).strip()
                 except Exception as e:
                     logger.debug("where %s failed: %s %s" % (prg, type(e).__name__, str(e)))
             else:
                 params = ["which", prg]
                 try:
-                    if PY2:
-                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                    else:
-                        # noinspection PyArgumentList
-                        executable = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
+                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    executable = makeUnicode(executable).strip()
                 except Exception as e:
                     logger.debug("which %s failed: %s %s" % (prg, type(e).__name__, str(e)))
 

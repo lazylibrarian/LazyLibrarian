@@ -139,11 +139,8 @@ def create_cover(issuefile=None, refresh=False):
                 postfix = '[0]'
             try:
                 params = [converter, '%s%s' % (issuefile, postfix), '%s' % coverfile]
-                if PY2:
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                else:
-                    # noinspection PyArgumentList
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
+                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                res = makeUnicode(res).strip()
                 if res:
                     logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
             except Exception as e:
@@ -159,22 +156,16 @@ def create_cover(issuefile=None, refresh=False):
             if not os.path.isfile(GS):
                 params = ["where", "gswin64c"]
                 try:
-                    if PY2:
-                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                    else:
-                        # noinspection PyArgumentList
-                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    GS = makeUnicode(GS).strip()
                     generator = "gswin64c"
                 except Exception as e:
                     logger.debug("where gswin64c failed: %s %s" % (type(e).__name__, str(e)))
             if not os.path.isfile(GS):
                 params = ["where", "gswin32c"]
                 try:
-                    if PY2:
-                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                    else:
-                        # noinspection PyArgumentList
-                        GS = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
+                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    GS = makeUnicode(GS).strip()
                     generator = "gswin32c"
                 except Exception as e:
                     logger.debug("where gswin32c failed: %s %s" % (type(e).__name__, str(e)))
@@ -185,21 +176,17 @@ def create_cover(issuefile=None, refresh=False):
                 # noinspection PyBroadException
                 try:
                     params = [GS, "--version"]
-                    if PY2:
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    else:
-                        # noinspection PyArgumentList
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    res = makeUnicode(res).strip()
                     logger.debug("Found %s [%s] version %s" % (generator, GS, res))
                     generator = "%s version %s" % (generator, res)
                     issuefile = issuefile.split('[')[0]
                     params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
                               "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                    if PY2:
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    else:
-                        # noinspection PyArgumentList
-                        res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
+                    
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    res = makeUnicode(res).strip()
+
                     if not os.path.isfile(coverfile):
                         logger.debug("Failed to create jpg: %s" % res)
                 except Exception:  # as why:
@@ -242,11 +229,8 @@ def create_cover(issuefile=None, refresh=False):
                         GS = ""
                         params = ["which", "gs"]
                         try:
-                            if PY2:
-                                GS = subprocess.check_output(params, stderr=subprocess.STDOUT).strip()
-                            else:
-                                # noinspection PyArgumentList
-                                GS = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8').strip()
+                            GS = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            GS = makeUnicode(GS).strip()
                             generator = GS
                         except Exception as e:
                             logger.debug("which gs failed: %s %s" % (type(e).__name__, str(e)))
@@ -255,21 +239,15 @@ def create_cover(issuefile=None, refresh=False):
                             generator = "(no gs found)"
                         else:
                             params = [GS, "--version"]
-                            if PY2:
-                                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            else:
-                                # noinspection PyArgumentList
-                                res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
+                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            res = makeUnicode(res).strip()
                             logger.debug("Found gs [%s] version %s" % (GS, res))
                             generator = "%s version %s" % (generator, res)
                             issuefile = issuefile.split('[')[0]
                             params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
                                       "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                            if PY2:
-                                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            else:
-                                # noinspection PyArgumentList
-                                res = subprocess.check_output(params, stderr=subprocess.STDOUT, encoding='utf-8')
+                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                            res = makeUnicode(res).strip()
                             if not os.path.isfile(coverfile):
                                 logger.debug("Failed to create jpg: %s" % res)
             except Exception as e:
