@@ -32,7 +32,10 @@ from lib.mobi import Mobi
 
 from lib.six.moves.urllib_parse import quote_plus, urlencode
 
-import lib.id3reader as id3reader
+try:
+    from lib.tinytag import TinyTag
+except ImportError:
+    TinyTag = None
 
 try:
     import zipfile
@@ -512,30 +515,34 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 if PY2:
                                     filename = filename.encode(lazylibrarian.SYS_ENCODING)
                                 id3r = None
-                                try:
-                                    id3r = id3reader.Reader(filename)
-                                    performer = id3r.get_value('performer')
-                                    composer = id3r.get_value('TCOM')
-                                    if composer:  # if present, should be author
-                                        author = composer
-                                    elif performer:  # author, or narrator if composer == author
-                                        author = performer
-                                    else:
-                                        author = None
-                                    if author and type(author) is list:
-                                        lst = ', '.join(author)
-                                        logger.debug("id3reader author list [%s]" % lst)
-                                        author = author[0]  # if multiple authors, just use the first one
-                                    book = id3r.get_value('album')
-                                    if author and book:
-                                        match = True
-                                        author = makeUnicode(author)
-                                        book = makeUnicode(book)
-                                except Exception as e:
-                                    logger.debug("id3reader error %s %s [%s]" % (type(e).__name__, str(e), filename))
-                                    if id3r and int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug(id3r.dump())
-                                    pass
+                                if TinyTag:
+                                    try:
+                                        id3r = TinyTag.get(filename)
+                                        performer = id3r.artist
+                                        composer = id3r.composer
+                                        book = id3r.album
+                                        if lazylibrarian.LOGLEVEL > 2:
+                                            logger.debug("id3r.filename [%s]" % filename)
+                                            logger.debug("id3r.performer [%s]" % performer)
+                                            logger.debug("id3r.composer [%s]" % composer)
+                                            logger.debug("id3r.album [%s]" % book)
+                                        if composer:  # if present, should be author
+                                            author = composer
+                                        elif performer:  # author, or narrator if composer == author
+                                            author = performer
+                                        else:
+                                            author = None
+                                        if author and type(author) is list:
+                                            lst = ', '.join(author)
+                                            logger.debug("id3reader author list [%s]" % lst)
+                                            author = author[0]  # if multiple authors, just use the first one
+                                        if author and book:
+                                            match = True
+                                            author = makeUnicode(author)
+                                            book = makeUnicode(book)
+                                    except Exception as e:
+                                        logger.debug("tinytag error %s %s [%s]" % (type(e).__name__, str(e), filename))
+                                        pass
 
                         # Failing anything better, just pattern match on filename
                         if not match:
@@ -557,8 +564,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 author = makeUnicode(author)
                                 if len(book) > 2 and len(author) > 2:
                                     match = True
-                                    author = makeUnicode(author)
-                                    book = makeUnicode(book)
                                 else:
                                     match = False
                             if not match:

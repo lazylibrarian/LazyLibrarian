@@ -30,7 +30,7 @@ from lib.six import PY2
 
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, makeUnicode
 
 
 def logmsg(level, msg):
@@ -67,19 +67,19 @@ def runGit(args):
 
         cmd = cur_git + ' ' + args
 
+        cmd = makeUnicode(cmd)
         try:
-            logmsg('debug', '(RunGit)Trying to execute: "' + cmd + '" with shell in ' + lazylibrarian.PROG_DIR)
+            logmsg('debug', '(RunGit)Trying to execute: "%s" with shell in %s' % (cmd, lazylibrarian.PROG_DIR))
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
-            if not PY2:
-                if output:
-                    # noinspection PyArgumentList
-                    output = str(output, "utf-8")
-                if err:
-                    # noinspection PyArgumentList
-                    err = str(err, "utf-8")
-            logmsg('debug', '(RunGit)Git output: [%s]' % output.strip('\n'))
+
+            if output:
+                output = makeUnicode(output).strip('\n')
+            if err:
+                err = makeUnicode(err)
+
+            logmsg('debug', '(RunGit)Git output: [%s]' % output)
 
         except OSError:
             logmsg('debug', '(RunGit)Command ' + cmd + ' didn\'t work, couldn\'t find git')

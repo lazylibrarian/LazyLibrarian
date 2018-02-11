@@ -24,7 +24,10 @@ from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented,
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
 from lib.six.moves.urllib_parse import quote_plus, urlencode
-import lib.id3reader as id3reader
+try:
+    from lib.tinytag import TinyTag
+except ImportError:
+    TinyTag = None
 
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
@@ -53,11 +56,16 @@ def audioRename(bookid):
         logger.debug("Invalid bookid in audioRename %s" % bookid)
         return ''
 
+    if not TinyTag:
+        logger.warn("TinyTag library not available")
+        return ''
+
     cnt = 0
     parts = []
     author = ''
     book = ''
     track = ''
+    total = ''
     audio_file = ''
     for f in os.listdir(makeBytestr(r)):
         f = makeUnicode(f)
@@ -65,11 +73,12 @@ def audioRename(bookid):
             cnt += 1
             audio_file = f
             try:
-                id3r = id3reader.Reader(os.path.join(r, f))
-                performer = id3r.get_value('performer')
-                composer = id3r.get_value('TCOM')
-                book = id3r.get_value('album')
-                track = id3r.get_value('track')
+                id3r = TinyTag.get(os.path.join(r, f))
+                performer = id3r.artist
+                composer = id3r.composer
+                book = id3r.album
+                track = id3r.track
+                total = id3r.track_total
 
                 if not track:
                     track = '0'
@@ -80,7 +89,7 @@ def audioRename(bookid):
                 if author and book:
                     parts.append([track, book, author, f])
             except Exception as e:
-                logger.debug("id3reader %s %s" % (type(e).__name__, str(e)))
+                logger.debug("tinytag %s %s" % (type(e).__name__, str(e)))
                 pass
 
     logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
@@ -92,8 +101,11 @@ def audioRename(bookid):
         logger.warn("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
         return book_filename
 
-    # does the track include total (eg 1/12)
-    if '/' in track:
+    if check_int(total, 0) and check_int(total, 0) != cnt:
+        logger.warn("%s: Reported %s parts, got %i" % (exists['BookName'], b, cnt))
+        return book_filename
+
+    if '/' in track:  # does the track include total (eg 1/12)
         a, b = track.split('/')
         if check_int(b, 0) and check_int(b, 0) != cnt:
             logger.warn("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))

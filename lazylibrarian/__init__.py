@@ -869,6 +869,7 @@ def config_write(part=None):
         else:
             # keep the old value
             value = CFG.get(section, key.lower())
+            CONFIG[key] = value
             # if CONFIG['LOGLEVEL'] > 2:
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
 
@@ -880,7 +881,7 @@ def config_write(part=None):
                 value = unaccented_str(value)
 
         CFG.set(section, key.lower(), value)
-        CONFIG[key] = value
+
 
     # sanity check for typos...
     for key in list(CONFIG.keys()):
@@ -1012,6 +1013,8 @@ def config_write(part=None):
         logger.warn(msg)
 
     if not msg:
+        if part is None:
+            part = ''
         msg = 'Config file [%s] %s has been updated' % (CONFIGFILE, part)
         logger.info(msg)
 
