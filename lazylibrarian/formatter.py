@@ -317,10 +317,12 @@ def safe_unicode(obj, *args):
     if not PY2:
         return str(obj, *args)
     try:
+        # noinspection PyCompatibility
         return unicode(obj, *args)
     except UnicodeDecodeError:
         # obj is byte string
         ascii_text = str(obj).encode('string_escape')
+        # noinspection PyCompatibility
         return unicode(ascii_text)
 
 
