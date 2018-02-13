@@ -18,6 +18,7 @@ from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
 from lazylibrarian.torrentparser import url_fix
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlparse, urlencode
 
 if PY2:

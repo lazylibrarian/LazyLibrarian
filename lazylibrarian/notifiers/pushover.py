@@ -19,7 +19,9 @@
 
 
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode
+# noinspection PyUnresolvedReferences
 from lib.six.moves.http_client import HTTPSConnection
 
 import lazylibrarian

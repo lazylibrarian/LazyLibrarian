@@ -23,6 +23,7 @@ from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, urlencode
 try:
     from lib.tinytag import TinyTag
@@ -102,7 +103,7 @@ def audioRename(bookid):
         return book_filename
 
     if check_int(total, 0) and check_int(total, 0) != cnt:
-        logger.warn("%s: Reported %s parts, got %i" % (exists['BookName'], b, cnt))
+        logger.warn("%s: Reported %s parts, got %i" % (exists['BookName'], total, cnt))
         return book_filename
 
     if '/' in track:  # does the track include total (eg 1/12)

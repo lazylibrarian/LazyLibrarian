@@ -230,8 +230,8 @@ def md5_utf8(txt):
 def makeUnicode(txt):
     # convert a bytestring to unicode, don't know what encoding it might be so try a few
     # it could be a file on a windows filesystem, unix...
-    if txt is None:
-        return txt
+    if txt is None or not txt:
+        return u''
     elif isinstance(txt, text_type):
         return txt
     for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1', 'utf-8']:
@@ -248,8 +248,8 @@ def makeUnicode(txt):
 def makeBytestr(txt):
     # convert unicode to bytestring, needed for os.walk and os.listdir
     # listdir falls over if given unicode startdir and a filename in a subdir can't be decoded to ascii
-    if txt is None:
-        return txt
+    if txt is None or not txt:
+        return b''
     elif not isinstance(txt, text_type):  # nothing to do if already bytestring
         return txt
     for encoding in [lazylibrarian.SYS_ENCODING, 'latin-1', 'utf-8']:

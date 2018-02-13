@@ -192,15 +192,16 @@ else:
 
 # sgmllib is not available by default in Python 3; if the end user doesn't have
 # it available then we'll lose illformed XML parsing and content santizing
+_SGML_AVAILABLE = 0
 try:
     import sgmllib
+    _SGML_AVAILABLE = 1
 except ImportError:
     # This is probably Python 3, which doesn't include sgmllib anymore
     try:
-        import lib.sgmllib3 as sgmllib
+        import lib3.sgmllib as sgmllib
+        _SGML_AVAILABLE = 1
     except ImportError:
-        _SGML_AVAILABLE = 0
-
         # Mock sgmllib enough to allow subclassing later on
         class sgmllib(object):
             class SGMLParser(object):
@@ -208,8 +209,6 @@ except ImportError:
                     pass
                 def parse_starttag(self, i):
                     pass
-else:
-    _SGML_AVAILABLE = 1
 
     # sgmllib defines a number of module-level regular expressions that are
     # insufficient for the XML parsing feedparser needs. Rather than modify

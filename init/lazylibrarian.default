@@ -8,7 +8,7 @@
 # the service to not start.
 
 # [required] set path where lazylibrarian is installed:
-APP_PATH=/opt/lazylibrarian
+APP_PATH=/opt/LazyLibrarian
 
 # [optional] change to 1 to enable daemon
 ENABLE_DAEMON=1

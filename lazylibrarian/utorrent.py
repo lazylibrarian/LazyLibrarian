@@ -19,10 +19,14 @@ from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT
 from lazylibrarian.formatter import check_int, getList
 from lib.six import PY2
+# noinspection PyUnresolvedReferences
 from lib.six.moves import http_cookiejar
-from lib.six.moves.urllib_parse import quote_plus, urlencode, urljoin
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_parse import urljoin, urlencode
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_request import HTTPCookieProcessor, HTTPBasicAuthHandler, \
     build_opener, install_opener, Request
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_error import HTTPError
 
 
@@ -144,7 +148,7 @@ class utorrentclient(object):
         return self._action(params)
 
     def _action(self, params, body=None, content_type=None):
-        url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urllib.urlencode(params)
+        url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urlencode(params)
         request = Request(url)
         if lazylibrarian.CONFIG['PROXY_HOST']:
             for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):

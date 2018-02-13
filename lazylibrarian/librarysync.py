@@ -29,7 +29,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
-
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, urlencode
 
 try:
@@ -514,7 +514,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 filename = os.path.join(rootdir, files)
                                 if PY2:
                                     filename = filename.encode(lazylibrarian.SYS_ENCODING)
-                                id3r = None
                                 if TinyTag:
                                     try:
                                         id3r = TinyTag.get(filename)

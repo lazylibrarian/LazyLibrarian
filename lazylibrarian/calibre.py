@@ -16,7 +16,7 @@ import time
 import cherrypy
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import unaccented, getList
+from lazylibrarian.formatter import unaccented, getList, makeUnicode
 from lazylibrarian.importer import addAuthorNameToDB, search_for, import_book
 from lazylibrarian.librarysync import find_book_in_db
 from lib.fuzzywuzzy import fuzz
@@ -356,21 +356,20 @@ def calibreTest():
     if '(calibre ' in res and res.endswith(')'):
         # extract calibredb version number
         res = res.split('(calibre ')[1]
-        res = 'calibredb ok, version ' + res[:-1]
+        vernum = res[:-1]
+        res = 'calibredb ok, version ' + vernum
         # get a list of categories and counters from the database
         cats, err, rc = calibredb('list_categories', ['-i'])
         cnt = 0
-        if rc:
+        if not len(cats):
             res = res + '\nDatabase READ Failed'
         else:
-            res = res + '\nDatabase: ' + err
             for entry in cats.split('\n'):
-                try:
-                    words = entry.split()
-                    if words[-1].isdigit():
-                        cnt += int(words[-1])
-                except IndexError:
-                    cnt += 0
+                words = entry.split()
+                if 'ITEMS' in words:
+                    idx = words.index('ITEMS') + 1
+                    if words[idx].isdigit():
+                        cnt += int(words[idx])
         if cnt:
             res = res + '\nDatabase READ ok'
             wrt, err, rc = calibredb('add', ['--authors', 'LazyLibrarian', '--title', 'dummy', '--empty'], [])
@@ -378,7 +377,10 @@ def calibreTest():
                 res = res + '\nDatabase WRITE Failed'
             else:
                 calibre_id = wrt.split("book ids: ", 1)[1].split("\n", 1)[0]
-                rmv, err, rc = calibredb('remove', ['--permanent', calibre_id], [])
+                if vernum.startswith('2'):
+                    rmv, err, rc = calibredb('remove', [calibre_id], [])
+                else:
+                    rmv, err, rc = calibredb('remove', ['--permanent', calibre_id], [])
                 if not rc:
                     res = res + '\nDatabase WRITE ok'
                 else:
@@ -421,9 +423,13 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         p = Popen(params, stdout=PIPE, stderr=PIPE)
         res, err = p.communicate()
         rc = p.returncode
+        res = makeUnicode(res)
+        err = makeUnicode(err)
         if rc:
             if 'Errno 111' in err:
                 logger.debug("calibredb returned %s: Connection refused" % rc)
+            elif cmd == 'list_categories' and len(res):
+                rc = 0  # false error return of 1 on v2.xx calibredb
             else:
                 logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
     except Exception as e:
@@ -444,6 +450,8 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         try:
             q = Popen(params, stdout=PIPE, stderr=PIPE)
             res, err = q.communicate()
+            res = makeUnicode(res)
+            err = makeUnicode(err)
             rc = q.returncode
             if rc:
                 logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))

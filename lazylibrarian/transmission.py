@@ -220,7 +220,7 @@ def torrentAction(method, arguments):
         session_id = response.headers['x-transmission-session-id']
 
     if not session_id:
-        logger.error("Expected a Session ID from Transmission")
+        logger.error("Expected a Session ID from Transmission, got %s" % response.status_code)
         return
 
     # Prepare next request

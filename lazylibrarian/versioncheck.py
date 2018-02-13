@@ -26,8 +26,6 @@ try:
 except ImportError:
     import lib.requests as requests
 
-from lib.six import PY2
-
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int, makeUnicode
@@ -74,10 +72,8 @@ def runGit(args):
                                  shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
 
-            if output:
-                output = makeUnicode(output).strip('\n')
-            if err:
-                err = makeUnicode(err)
+            output = makeUnicode(output).strip('\n')
+            err = makeUnicode(err)
 
             logmsg('debug', '(RunGit)Git output: [%s]' % output)
 
