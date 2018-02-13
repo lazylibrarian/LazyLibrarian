@@ -30,7 +30,7 @@ except ImportError:
         import lib.zipfile as zipfile
     else:
         import lib3.zipfile as zipfile
-        
+
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
 from lazylibrarian.bookwork import audioRename, seriesInfo
@@ -160,11 +160,11 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     # move the book and any related files too, other book formats, or opf, jpg with same title
     # (files begin with fname) from sourcedir to new targetdir
     # can't move metadata.opf or cover.jpg or similar as can't be sure they are ours
+    # return how many files you moved
+    cnt = 0
     list_dir = os.listdir(makeBytestr(sourcedir))
     list_dir = [makeUnicode(item) for item in list_dir]
     for ourfile in list_dir:
-        if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Checking %s for %s" % (ourfile, fname))
         if ourfile.startswith(fname) or is_valid_booktype(ourfile, booktype="audiobook"):
             if is_valid_booktype(ourfile, booktype="book") \
                     or is_valid_booktype(ourfile, booktype="audiobook") \
@@ -174,12 +174,18 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                     if lazylibrarian.CONFIG['DESTINATION_COPY'] or move == 'copy':
                         shutil.copyfile(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
+                        logger.debug("copy_into_subdir %s" % ourfile)
+                        cnt += 1
                     else:
                         shutil.move(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
                         setperm(os.path.join(targetdir, ourfile))
+                        logger.debug("move_into_subdir %s" % ourfile)
+                        cnt += 1
                 except Exception as why:
-                    logger.debug("Failed to copy/move file %s to [%s], %s %s" %
+                    logger.warn("Failed to copy/move file %s to [%s], %s %s" %
                                  (ourfile, targetdir, type(why).__name__, str(why)))
+                    continue
+    return cnt
 
 
 def unpack_archive(pp_path, download_dir, title):
@@ -399,7 +405,7 @@ def processDir(reset=False):
                                 pp_path = os.path.join(download_dir, fname)
 
                                 if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug("processDir %s %s" % (type(pp_path), repr(pp_path)))
+                                    logger.debug("processDir found %s %s" % (type(pp_path), repr(pp_path)))
 
                                 if os.path.isfile(pp_path):
                                     # Check for single file downloads first. Book/mag file in download root.
@@ -416,7 +422,7 @@ def processDir(reset=False):
                                             logger.debug("Skipping %s, found a .bts file" % download_dir)
                                         else:
                                             aname = os.path.splitext(fname)[0]
-                                            while aname[-1] in '. ':
+                                            while aname[-1] in '_. ':
                                                 aname = aname[:-1]
                                             targetdir = os.path.join(download_dir, aname)
                                             if not os.path.isdir(targetdir):
@@ -430,10 +436,14 @@ def processDir(reset=False):
                                             if os.path.isdir(targetdir):
                                                 if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
                                                         lazylibrarian.CONFIG['KEEP_SEEDING']:
-                                                    move_into_subdir(download_dir, targetdir, fname, move='copy')
+                                                    cnt = move_into_subdir(download_dir, targetdir, aname, move='copy')
                                                 else:
-                                                    move_into_subdir(download_dir, targetdir, fname)
+                                                    cnt = move_into_subdir(download_dir, targetdir, aname)
                                                 pp_path = targetdir
+                                                if cnt:  # mark the folder to skip next time round
+                                                    btsfile = os.path.join(targetdir, "%s.bts" % aname)
+                                                    with open(btsfile, 'a'):
+                                                        os.utime(btsfile, None)
                                     else:
                                         # Is file an archive, if so look inside and extract to new dir
                                         res = unpack_archive(pp_path, download_dir, matchtitle)
@@ -442,7 +452,7 @@ def processDir(reset=False):
                                         else:
                                             logger.debug('Skipping unhandled file %s' % fname)
 
-                                elif os.path.isdir(pp_path):
+                                if os.path.isdir(pp_path):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                                  (match, pp_path, book_type, matchtitle))
 
@@ -475,6 +485,8 @@ def processDir(reset=False):
                                         skipped = True
                                     if not skipped:
                                         matches.append([match, pp_path, book])
+                                        if match == 100:  # no point looking any further
+                                            break
                                 else:
                                     logger.debug('%s is not a file or a directory?' % pp_path)
                             else:
