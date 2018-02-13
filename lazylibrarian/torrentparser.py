@@ -18,6 +18,7 @@ from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.formatter import plural, unaccented, makeUnicode
 from lib.six import PY2, PY3, text_type
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, quote, urlencode, urlsplit, urlunsplit
 
 if PY2:

@@ -29,7 +29,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import update_totals, addAuthorNameToDB
 from lib.fuzzywuzzy import fuzz
 from lib.mobi import Mobi
-
+# noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, urlencode
 
 try:

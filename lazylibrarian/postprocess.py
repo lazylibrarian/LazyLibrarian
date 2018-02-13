@@ -183,7 +183,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                         cnt += 1
                 except Exception as why:
                     logger.warn("Failed to copy/move file %s to [%s], %s %s" %
-                                 (ourfile, targetdir, type(why).__name__, str(why)))
+                                (ourfile, targetdir, type(why).__name__, str(why)))
                     continue
     return cnt
 

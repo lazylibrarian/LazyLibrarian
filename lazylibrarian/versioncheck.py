@@ -26,8 +26,6 @@ try:
 except ImportError:
     import lib.requests as requests
 
-from lib.six import PY2
-
 from lazylibrarian import logger, version
 from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int, makeUnicode
