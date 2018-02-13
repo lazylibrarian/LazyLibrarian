@@ -514,7 +514,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 filename = os.path.join(rootdir, files)
                                 if PY2:
                                     filename = filename.encode(lazylibrarian.SYS_ENCODING)
-                                id3r = None
                                 if TinyTag:
                                     try:
                                         id3r = TinyTag.get(filename)

@@ -74,10 +74,8 @@ def runGit(args):
                                  shell=True, cwd=lazylibrarian.PROG_DIR)
             output, err = p.communicate()
 
-            if output:
-                output = makeUnicode(output).strip('\n')
-            if err:
-                err = makeUnicode(err)
+            output = makeUnicode(output).strip('\n')
+            err = makeUnicode(err)
 
             logmsg('debug', '(RunGit)Git output: [%s]' % output)
 

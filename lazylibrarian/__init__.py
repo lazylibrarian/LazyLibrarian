@@ -882,7 +882,6 @@ def config_write(part=None):
 
         CFG.set(section, key.lower(), value)
 
-
     # sanity check for typos...
     for key in list(CONFIG.keys()):
         if key not in list(CONFIG_DEFINITIONS.keys()):
