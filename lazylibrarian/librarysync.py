@@ -449,11 +449,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         extn = os.path.splitext(files)[1]
 
                         # if it's an epub or a mobi we can try to read metadata from it
-                        if (extn == ".epub") or (extn == ".mobi"):
+                        if extn in [".epub", ".mobi"]:
                             book_filename = os.path.join(rootdir, files)
                             if PY2:
                                 book_filename = book_filename.encode(lazylibrarian.SYS_ENCODING)
-
                             try:
                                 res = get_book_info(book_filename)
                             except Exception as e:

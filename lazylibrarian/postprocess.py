@@ -105,10 +105,14 @@ def processAlternate(source_dir=None):
                 logger.debug('No metadata file found for %s' % new_book)
             if 'title' not in metadata or 'creator' not in metadata:
                 # if not got both, try to get metadata from the book file
-                try:
-                    metadata = get_book_info(new_book)
-                except Exception as e:
-                    logger.debug('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
+                extn = os.path.splitext(new_book)[1]
+                if extn in [".epub", ".mobi"]:
+                    if PY2:
+                        new_book = new_book.encode(lazylibrarian.SYS_ENCODING)
+                    try:
+                        metadata = get_book_info(new_book)
+                    except Exception as e:
+                        logger.debug('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
             if 'title' in metadata and 'creator' in metadata:
                 authorname = metadata['creator']
                 bookname = metadata['title']
