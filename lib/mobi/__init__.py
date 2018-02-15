@@ -13,6 +13,7 @@ import unittest
 from struct import *
 from pprint import pprint
 from lib.six import PY2
+
 if PY2:
     import utils
     from lz77 import uncompress_lz77
@@ -358,7 +359,10 @@ class Mobi:
     self.offset += resultsDict['header length'];
 
     def onebits(x, width=16):
-        return len(filter(lambda x: x == "1", (str((x>>i)&1) for i in xrange(width-1,-1,-1))));
+        if PY2:
+            return len(filter(lambda x: x == "1", (str((x>>i)&1) for i in xrange(width-1,-1,-1))));
+        else:
+            return len([x for x in (str((x>>i)&1) for i in range(width-1,-1,-1)) if x == "1"]);
 
     resultsDict['extra bytes'] = 2*onebits(unpack(">H", self.contents[self.offset-2:self.offset])[0] & 0xFFFE)
 

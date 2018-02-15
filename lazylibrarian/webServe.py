@@ -1892,7 +1892,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
-                   manual='0', authorname='', cover='', **kwargs):
+                   manual='0', authorname='', cover='', newid='', **kwargs):
 
         myDB = database.DBConnection()
         if bookid:
@@ -1905,6 +1905,17 @@ class WebInterface(object):
                 if bookgenre == 'None':
                     bookgenre = ''
                 manual = bool(check_int(manual, 0))
+
+                if not (bookid == newid):
+                    cmd = "SELECT BookName,Authorname from books,authors "
+                    cmd += "WHERE books.AuthorID = authors.AuthorID and BookID=?"
+                    match = myDB.match(cmd, (newid,))
+                    if match:
+                        logger.warn("Cannot change bookid to %s, in use by %s/%s" %
+                                    (newid, match['BookName'], match['AuthorName']))
+                    else:
+                        logger.warn("Updating bookid is not supported yet")
+                        # edited += "BookID "
                 if not (bookdata["BookName"] == bookname):
                     edited += "Title "
                 if not (bookdata["BookSub"] == booksub):
@@ -2001,6 +2012,7 @@ class WebInterface(object):
                 else:
                     logger.debug('Book [%s] has not been moved' % bookname)
                 # if edited or moved:
+
                 raise cherrypy.HTTPRedirect("editBook?bookid=%s" % bookid)
 
         raise cherrypy.HTTPRedirect("books")
