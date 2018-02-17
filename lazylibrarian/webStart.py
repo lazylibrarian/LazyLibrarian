@@ -64,6 +64,9 @@ def initialize(options=None):
             'tools.staticdir.root': os.path.join(lazylibrarian.PROG_DIR, 'data'),
             'tools.proxy.on': options['http_proxy']  # pay attention to X-Forwarded-Proto header
         },
+        '/api': {
+            'cors.expose.on': True,
+        },
         '/interfaces': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': os.path.join(lazylibrarian.PROG_DIR, 'data', 'interfaces')
@@ -108,11 +111,9 @@ def initialize(options=None):
                 options['http_user']: options['http_pass']
             })
         })
-        conf['/api'] = {
+        conf['/api'].update({
             'tools.auth_basic.on': False,
-            'cors.expose.on': True,
-        }
-
+        })
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
     cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)
