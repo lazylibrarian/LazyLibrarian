@@ -179,23 +179,35 @@ def search_rss_book(books=None, library=None):
 
             if library is None or library == 'eBook':
                 if searchbook['Status'] == "Wanted":
-                    searchlist.append(
-                        {"bookid": searchbook['BookID'],
-                         "bookName": searchbook['BookName'],
-                         "bookSub": searchbook['BookSub'],
-                         "authorName": searchbook['AuthorName'],
-                         "library": "eBook",
-                         "searchterm": searchterm})
+                    cmd = 'SELECT BookID from wanted WHERE BookID=? and AuxInfo="eBook" and Status="Snatched"'
+                    snatched = myDB.match(cmd, (searchbook["BookID"], ))
+                    if snatched:
+                        logger.warn('eBook %s %s already marked snatched in wanted table' %
+                                    (searchbook['AuthorName'], searchbook['BookName']))
+                    else:
+                        searchlist.append(
+                            {"bookid": searchbook['BookID'],
+                             "bookName": searchbook['BookName'],
+                             "bookSub": searchbook['BookSub'],
+                             "authorName": searchbook['AuthorName'],
+                             "library": "eBook",
+                             "searchterm": searchterm})
 
             if library is None or library == 'AudioBook':
                 if searchbook['AudioStatus'] == "Wanted":
-                    searchlist.append(
-                        {"bookid": searchbook['BookID'],
-                         "bookName": searchbook['BookName'],
-                         "bookSub": searchbook['BookSub'],
-                         "authorName": searchbook['AuthorName'],
-                         "library": "AudioBook",
-                         "searchterm": searchterm})
+                    cmd = 'SELECT BookID from wanted WHERE BookID=? and AuxInfo="AudioBook" and Status="Snatched"'
+                    snatched = myDB.match(cmd, (searchbook["BookID"], ))
+                    if snatched:
+                        logger.warn('AudioBook %s %s already marked snatched in wanted table' %
+                                    (searchbook['AuthorName'], searchbook['BookName']))
+                    else:
+                        searchlist.append(
+                            {"bookid": searchbook['BookID'],
+                             "bookName": searchbook['BookName'],
+                             "bookSub": searchbook['BookSub'],
+                             "authorName": searchbook['AuthorName'],
+                             "library": "AudioBook",
+                             "searchterm": searchterm})
 
         rss_count = 0
         for book in searchlist:

@@ -210,7 +210,7 @@ def findBestResult(resultlist, book, searchtype, source):
 
 def downloadResult(match, book):
     """ match:  best result from search providers
-        book:   book we are downloading
+        book:   book we are downloading (needed for reporting author name)
         return: True if already snatched, False if failed to snatch, >True if we snatched it
     """
     # noinspection PyBroadException
@@ -221,48 +221,53 @@ def downloadResult(match, book):
         newValueDict = match[2]
         controlValueDict = match[3]
 
-        if book['library'] == 'AudioBook':
-            auxinfo = 'AudioBook'
-        else:  # elif book['library'] == 'eBook':
-            auxinfo = 'eBook'
-
-        if auxinfo == 'eBook':
-            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID=? and Status="Snatched"',
-                                       (newValueDict["BookID"],))
-        else:
-            snatchedbooks = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus="Snatched"',
-                                       (newValueDict["BookID"],))
-
-        if snatchedbooks:
-            logger.debug('%s %s already marked snatched' % (book['authorName'], book['bookName']))
+        # It's possible to get book and wanted tables "Snatched" status out of sync
+        # for example if a user marks a book as "Wanted" after a search task snatches it and before postprocessor runs
+        # so check status in both tables here
+        snatched = myDB.match('SELECT BookID from wanted WHERE BookID=? and AuxInfo=? and Status="Snatched"',
+                              (newValueDict["BookID"], newValueDict["AuxInfo"]))
+        if snatched:
+            logger.debug('%s %s %s already marked snatched in wanted table' %
+                         (newValueDict["AuxInfo"], book['authorName'], book['bookName']))
             return True  # someone else already found it
-        else:
-            myDB.upsert("wanted", newValueDict, controlValueDict)
-            if 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
-                snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                              controlValueDict["NZBurl"], resultTitle, auxinfo)
-            elif newValueDict['NZBmode'] in ["torznab", "torrent", "magnet"]:
-                snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                           controlValueDict["NZBurl"], auxinfo)
-            elif newValueDict['NZBmode'] == 'nzb':
-                snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                           controlValueDict["NZBurl"], auxinfo)
-            else:
-                logger.error('Unhandled NZBmode [%s] for %s' % (newValueDict['NZBmode'], controlValueDict["NZBurl"]))
-                snatch = False
 
-            if snatch:
-                logger.info('Downloading %s %s from %s' %
-                            (auxinfo, newValueDict["NZBtitle"], newValueDict["NZBprov"]))
-                notify_snatch("%s %s from %s at %s" %
-                              (auxinfo, newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
-                custom_notify_snatch(newValueDict["BookID"])
-                # at this point we could add NZBprov to the blocklist with a short timeout, a second or two?
-                # This would implement a round-robin search system. Blocklist with an incremental counter.
-                # If number of active providers == number blocklisted, so no unblocked providers are left,
-                # either sleep for a while, or unblock the one with the lowest counter.
-                scheduleJob(action='Start', target='processDir')
-                return True + True  # we found it
+        if newValueDict["AuxInfo"] == 'eBook':
+            snatched = myDB.match('SELECT BookID from books WHERE BookID=? and Status="Snatched"',
+                                  (newValueDict["BookID"],))
+        else:
+            snatched = myDB.match('SELECT BookID from books WHERE BookID=? and AudioStatus="Snatched"',
+                                  (newValueDict["BookID"],))
+        if snatched:
+            logger.debug('%s %s %s already marked snatched in book table' %
+                         (newValueDict["AuxInfo"], book['authorName'], book['bookName']))
+            return True  # someone else already found it
+
+        myDB.upsert("wanted", newValueDict, controlValueDict)
+        if 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
+            snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                          controlValueDict["NZBurl"], resultTitle, newValueDict["AuxInfo"])
+        elif newValueDict['NZBmode'] in ["torznab", "torrent", "magnet"]:
+            snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                       controlValueDict["NZBurl"], newValueDict["AuxInfo"])
+        elif newValueDict['NZBmode'] == 'nzb':
+            snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                       controlValueDict["NZBurl"], newValueDict["AuxInfo"])
+        else:
+            logger.error('Unhandled NZBmode [%s] for %s' % (newValueDict['NZBmode'], controlValueDict["NZBurl"]))
+            snatch = False
+
+        if snatch:
+            logger.info('Downloading %s %s from %s' %
+                        (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"]))
+            notify_snatch("%s %s from %s at %s" %
+                          (newValueDict["AuxInfo"], newValueDict["NZBtitle"], newValueDict["NZBprov"], now()))
+            custom_notify_snatch(newValueDict["BookID"])
+            # at this point we could add NZBprov to the blocklist with a short timeout, a second or two?
+            # This would implement a round-robin search system. Blocklist with an incremental counter.
+            # If number of active providers == number blocklisted, so no unblocked providers are left,
+            # either sleep for a while, or unblock the one with the lowest counter.
+            scheduleJob(action='Start', target='processDir')
+            return True + True  # we found it
         return False
     except Exception:
         logger.error('Unhandled exception in downloadResult: %s' % traceback.format_exc())
