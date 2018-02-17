@@ -300,11 +300,19 @@ def cron_processDir():
 
 
 def processDir(reset=False):
+    count = 0
+    for threadname in [n.name for n in [t for t in threading.enumerate()]]:
+        if threadname == 'POSTPROCESS':
+            count += 1
+
+    threadname = threading.currentThread().name
+    if threadname == 'POSTPROCESS':
+        count -= 1
+    if count:
+        logger.debug("POSTPROCESS is already running")
+        return
     # noinspection PyBroadException,PyStatementEffect
     try:
-        threadname = threading.currentThread().name
-        if "Thread-" in threadname:
-            threading.currentThread().name = "POSTPROCESS"
         ppcount = 0
         myDB = database.DBConnection()
         skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb', '.unpack']
@@ -1125,12 +1133,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 
             res, err, rc = calibredb('add', ['-1'], [pp_path])
 
-            if res:
-                logger.debug('%s result : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
-            if err:
-                logger.debug('%s error  : %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(err)))
-
-            if rc or not res:
+            if rc:
                 return False, 'calibredb rc %s from %s' % (rc, lazylibrarian.CONFIG['IMP_CALIBREDB'])
             elif 'already exist' in err or 'already exist' in res:  # needed for different calibredb versions
                 return False, 'Calibre failed to import %s %s, already exists' % (authorname, bookname)
@@ -1141,6 +1144,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             logger.debug('Calibre ID: %s' % calibre_id)
 
             our_opf = False
+            rc = 0
             if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
                 # we can pass an opf with all the info, and a cover image
                 myDB = database.DBConnection()
@@ -1152,27 +1156,20 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 else:
                     processIMG(pp_path, data['BookID'], data['BookImg'], global_name)
                     opfpath, our_opf = processOPF(pp_path, data, global_name, True)
-                    res, err, rc = calibredb('set_metadata', None, [calibre_id, opfpath])
-                    if res and not rc:
-                        logger.debug(
-                            '%s set opf reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+                    _, _, rc = calibredb('set_metadata', None, [calibre_id, opfpath])
+                if rc:
+                    logger.warn("calibredb unable to set opf")
 
-            if not our_opf:  # pre-existing opf might not have our preferred authorname/title/identifier
-                res, err, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)],
-                                         [calibre_id])
-                if res and not rc:
-                    logger.debug(
-                        '%s set author reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
-
-                res, err, rc = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], [calibre_id])
-                if res and not rc:
-                    logger.debug(
-                        '%s set title reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
-
-                res, err, rc = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], [calibre_id])
-                if res and not rc:
-                    logger.debug(
-                        '%s set identifier reports: %s' % (lazylibrarian.CONFIG['IMP_CALIBREDB'], unaccented_str(res)))
+            if not our_opf and not rc:  # pre-existing opf might not have our preferred authorname/title/identifier
+                _, _, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
+                if rc:
+                    logger.warn("calibredb unable to set author")
+                _, _, rc = calibredb('set_metadata', ['--field', 'title:%s' % unaccented(bookname)], [calibre_id])
+                if rc:
+                    logger.warn("calibredb unable to set title")
+                _, _, rc = calibredb('set_metadata', ['--field', 'identifiers:%s' % identifier], [calibre_id])
+                if rc:
+                    logger.warn("calibredb unable to set identifier")
 
             # calibre does not like accents or quotes in names
             if authorname.endswith('.'):  # calibre replaces trailing dot with underscore eg Jr. becomes Jr_
