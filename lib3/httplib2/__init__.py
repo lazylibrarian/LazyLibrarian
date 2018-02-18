@@ -1,4 +1,4 @@
-
+from __future__ import print_function
 """
 httplib2
 
@@ -24,7 +24,7 @@ __contributors__ = ["Thomas Broyer (t.broyer@ltgt.net)",
     "Louis Nyffenegger",
     "Mark Pilgrim"]
 __license__ = "MIT"
-__version__ = "0.9.2"
+__version__ = "0.10.3"
 
 import re
 import sys
@@ -123,8 +123,9 @@ DEFAULT_MAX_REDIRECTS = 5
 # Which headers are hop-by-hop headers by default
 HOP_BY_HOP = ['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade']
 
-# Use system CA certificates
-CA_CERTS = "/etc/ssl/certs/ca-certificates.crt"
+# Default CA certificates file bundled with httplib2.
+CA_CERTS = os.path.join(
+        os.path.dirname(os.path.abspath(__file__ )), "cacerts.txt")
 
 def _get_end2end_headers(response):
     hopbyhop = list(HOP_BY_HOP)
@@ -197,7 +198,7 @@ def _convert_byte_str(s):
     if not isinstance(s, str):
         return str(s, 'utf-8')
     return s
-    
+
 def _parse_cache_control(headers):
     retval = {}
     if 'cache-control' in headers:
@@ -333,7 +334,7 @@ def _decompressContent(response, new_content):
             if encoding == 'gzip':
                 content = gzip.GzipFile(fileobj=io.BytesIO(new_content)).read()
             if encoding == 'deflate':
-                content = zlib.decompress(content)
+                content = zlib.decompress(content, -zlib.MAX_WBITS)
             response['content-length'] = str(len(content))
             # Record the historical presence of the encoding in a way the won't interfere.
             response['-content-encoding'] = response['content-encoding']
@@ -718,7 +719,7 @@ class KeyCerts(Credentials):
 
 class ProxyInfo(object):
   """Collect information required to use a proxy."""
-  def __init__(self, proxy_type, proxy_host, proxy_port, proxy_rdns=True, proxy_user=None, proxy_pass=None):
+  def __init__(self, proxy_type, proxy_host, proxy_port, proxy_rdns=True, proxy_user=None, proxy_pass=None, proxy_headers=None):
       """
         Args:
           proxy_type: The type of proxy server.  This must be set to one of
@@ -739,12 +740,14 @@ class ProxyInfo(object):
           proxy_user: The username used to authenticate with the proxy server.
 
           proxy_pass: The password used to authenticate with the proxy server.
+
+          proxy_headers: Additional or modified headers for the proxy connect request.
       """
-      self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns, self.proxy_user, self.proxy_pass = proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass
+      self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns, self.proxy_user, self.proxy_pass, self.proxy_headers = proxy_type, proxy_host, proxy_port, proxy_rdns, proxy_user, proxy_pass, proxy_headers
 
   def astuple(self):
     return (self.proxy_type, self.proxy_host, self.proxy_port, self.proxy_rdns,
-            self.proxy_user, self.proxy_pass)
+            self.proxy_user, self.proxy_pass, self.proxy_headers)
 
   def isgood(self):
     return socks and (self.proxy_host != None) and (self.proxy_port != None)
@@ -797,6 +800,7 @@ def proxy_info_from_url(url, method='http'):
         proxy_port = port,
         proxy_user = username or None,
         proxy_pass = password or None,
+        proxy_headers = None,
     )
 
 
@@ -814,6 +818,7 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
     def __init__(self, host, port=None, timeout=None, proxy_info=None):
         http.client.HTTPConnection.__init__(self, host, port=port,
                                             timeout=timeout)
+        # TODO: implement proxy_info
         self.proxy_info = proxy_info
 
 
@@ -830,15 +835,19 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  timeout=None, proxy_info=None,
                  ca_certs=None, disable_ssl_certificate_validation=False):
+        # TODO: implement proxy_info
         self.proxy_info = proxy_info
         context = None
         if ca_certs is None:
             ca_certs = CA_CERTS
-        if (cert_file or ca_certs) and not disable_ssl_certificate_validation:
+        if (cert_file or ca_certs):
             if not hasattr(ssl, 'SSLContext'):
                 raise CertificateValidationUnsupportedInPython31()
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            context.verify_mode = ssl.CERT_REQUIRED
+            if disable_ssl_certificate_validation:
+                context.verify_mode = ssl.CERT_NONE
+            else:
+                context.verify_mode = ssl.CERT_REQUIRED
             if cert_file:
                 context.load_cert_chain(cert_file, key_file)
             if ca_certs:
@@ -846,7 +855,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
         http.client.HTTPSConnection.__init__(
                 self, host, port=port, key_file=key_file,
                 cert_file=cert_file, timeout=timeout, context=context,
-                check_hostname=True)
+                check_hostname=disable_ssl_certificate_validation ^ True)
 
 
 SCHEME_TO_CONNECTION = {
