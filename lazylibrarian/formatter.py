@@ -226,7 +226,6 @@ def md5_utf8(txt):
     return hashlib.md5(txt).hexdigest()
 
 
-# noinspection PyBroadException
 def makeUnicode(txt):
     # convert a bytestring to unicode, don't know what encoding it might be so try a few
     # it could be a file on a windows filesystem, unix...
@@ -244,7 +243,6 @@ def makeUnicode(txt):
     return txt
 
 
-# noinspection PyBroadException
 def makeBytestr(txt):
     # convert unicode to bytestring, needed for os.walk and os.listdir
     # listdir falls over if given unicode startdir and a filename in a subdir can't be decoded to ascii

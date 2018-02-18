@@ -465,10 +465,10 @@ class GoodReads:
                                                 try:
                                                     bookLanguage = BOOK_rootxml.find('./book/language_code').text
                                                 except Exception as e:
-                                                    logger.debug("%s finding language_code in book xml: %s" %
+                                                    logger.error("%s finding language_code in book xml: %s" %
                                                                  (type(e).__name__, str(e)))
                                         except Exception as e:
-                                            logger.debug("%s getting book xml: %s" % (type(e).__name__, str(e)))
+                                            logger.error("%s getting book xml: %s" % (type(e).__name__, str(e)))
 
                                         if not in_cache:
                                             gr_lang_hits += 1
@@ -502,7 +502,7 @@ class GoodReads:
                                         # continue
 
                                 except Exception as e:
-                                    logger.debug("Goodreads language search failed: %s %s" %
+                                    logger.error("Goodreads language search failed: %s %s" %
                                                  (type(e).__name__, str(e)))
 
                             if bookLanguage not in valid_langs:

@@ -23,6 +23,7 @@ import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
+from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl
 
@@ -60,14 +61,17 @@ class grauth:
 
         try:
             response, content = client.request(request_token_url, 'GET')
-        except Exception as e:
-            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
 
-        if response['status'] != '200':
-            return 'Invalid response from: %s' % request_token_url
+        except Exception as e:
+            logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+            return "Exception in client.request: see debug log"
+
+        if not response['status'].startswith('2'):
+            return 'Invalid response [%s] from: %s' % (response['status'], request_token_url)
 
         request_token = dict(parse_qsl(content))
-
+        if not PY2:
+            request_token = {key.decode("utf-8"): request_token[key].decode("utf-8") for key in request_token}
         authorize_link = '%s?oauth_token=%s' % (authorize_url, request_token['oauth_token'])
         # print authorize_link
         return authorize_link
@@ -75,11 +79,11 @@ class grauth:
     @staticmethod
     def goodreads_oauth2():
         global request_token, consumer, token, client
-        # noinspection PyBroadException
         try:
             token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
-        except Exception:
-            return "Unable to run oAuth2. Have you run oAuth1?"
+        except Exception as e:
+            logger.error("Exception in oAuth2: %s %s" % (type(e).__name__, traceback.format_exc()))
+            return "Unable to run oAuth2 - Have you run oAuth1?"
 
         access_token_url = '%s/oauth/access_token' % 'https://www.goodreads.com'
 
@@ -88,17 +92,20 @@ class grauth:
         try:
             response, content = client.request(access_token_url, 'POST')
         except Exception as e:
-            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+            logger.error("Exception in oauth2 client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+            return "Error in oauth2 client request: see error log"
 
-        if response['status'] != '200':
-            return 'Invalid response: %s' % response['status']
+        if not response['status'].startswith('2'):
+            return 'Invalid response [%s] from %s' % (response['status'], access_token_url)
 
         access_token = dict(parse_qsl(content))
+        if not PY2:
+            access_token = {key.decode("utf-8"): access_token[key].decode("utf-8") for key in access_token}
         # print access_token
         lazylibrarian.CONFIG['GR_OAUTH_TOKEN'] = access_token['oauth_token']
         lazylibrarian.CONFIG['GR_OAUTH_SECRET'] = access_token['oauth_token_secret']
         lazylibrarian.config_write('API')
-        return {"Authorisation complete"}
+        return "Authorisation complete"
 
     def get_user_id(self):
         global consumer, client, token, user_id
@@ -115,7 +122,7 @@ class grauth:
                 user_id = self.getUserId()
                 return user_id
             except Exception as e:
-                logger.debug("Unable to get UserID: %s %s" % (type(e).__name__, str(e)))
+                logger.error("Unable to get UserID: %s %s" % (type(e).__name__, str(e)))
                 return ""
 
     def get_shelf_list(self):
@@ -154,10 +161,10 @@ class grauth:
                 try:
                     response, content = client.request(request_url, 'GET', body, headers)
                 except Exception as e:
-                    logger.error("Exception in client.request: %s %s" % (type(e).__name__, str(e)))
+                    logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
                     return shelves
 
-                if response['status'] != '200':
+                if not response['status'].startswith('2'):
                     raise Exception('Failure status: %s for page %s' % (response['status'], current_page))
                 xmldoc = xml.dom.minidom.parseString(content)
 
@@ -206,7 +213,8 @@ class grauth:
                 response, content = client.request('%s/author_followings' % 'https://www.goodreads.com', 'POST', body,
                                                    headers)
             except Exception as e:
-                return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+                logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+                return False, "Error in client.request: see error log"
         else:
             body = urlencode({'format': 'xml'})
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -214,7 +222,8 @@ class grauth:
                 response, content = client.request('%s/author_followings/%s' % ('https://www.goodreads.com', authorid),
                                                    'DELETE', body, headers)
             except Exception as e:
-                return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+                logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+                return False, "Error in client.request: see error log"
 
         if follow and response['status'] == '422':
             return True, 'Already following'
@@ -249,9 +258,10 @@ class grauth:
             response, content = client.request('%s/user_shelves.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
         except Exception as e:
-            return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+            logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+            return False, "Error in client.request: see error log"
 
-        if response['status'] != '200' and response['status'] != '201':
+        if not response['status'].startswith('2'):
             msg = 'Failure status: %s' % response['status']
             return False, msg
         return True, ''
@@ -321,9 +331,9 @@ class grauth:
         try:
             response, content = client.request('%s/api/auth_user' % 'https://www.goodreads.com', 'GET')
         except Exception as e:
-            logger.error("Exception in client.request: %s %s" % (type(e).__name__, str(e)))
+            logger.error("Error in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
             return ''
-        if response['status'] != '200':
+        if not response['status'].startswith('2'):
             logger.error('Cannot fetch resource: %s' % response['status'])
             return ''
 
@@ -352,8 +362,9 @@ class grauth:
         try:
             response, content = client.request(request_url, 'GET', body, headers)
         except Exception as e:
-            return "Exception in client.request: %s %s" % (type(e).__name__, str(e))
-        if response['status'] != '200':
+            logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+            return "Error in client.request: see error log"
+        if not response['status'].startswith('2'):
             raise Exception('Failure status: %s for page %s' % (response['status'], page))
         return content
 
@@ -383,9 +394,10 @@ class grauth:
             response, content = client.request('%s/shelf/add_to_shelf.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
         except Exception as e:
-            return False, "Exception in client.request: %s %s" % (type(e).__name__, str(e))
+            logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
+            return False, "Error in client.request: see error log"
 
-        if response['status'] != '200' and response['status'] != '201':
+        if not response['status'].startswith('2'):
             msg = 'Failure status: %s' % response['status']
             return False, msg
         return True, content
@@ -433,7 +445,7 @@ def sync_to_gr():
             msg += "Sync Owned books is disabled\n"
         logger.info(msg.strip('\n').replace('\n', ', '))
     except Exception as e:
-        logger.debug("Exception in sync_to_gr: %s %s" % (type(e).__name__, str(e)))
+        logger.error("Exception in sync_to_gr: %s %s" % (type(e).__name__, str(e)))
     finally:
         threading.currentThread().name = 'WEBSERVER'
         return msg
@@ -536,7 +548,7 @@ def grsync(status, shelf):
             try:
                 res, content = GA.BookToList(book, shelf, action='remove')
             except Exception as e:
-                logger.debug("Error removing %s from %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
+                logger.error("Error removing %s from %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
                 res = None
                 content = ''
             if res:
@@ -572,7 +584,7 @@ def grsync(status, shelf):
             try:
                 res, content = GA.BookToList(book, shelf, action='add')
             except Exception as e:
-                logger.debug("Error adding %s to %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
+                logger.error("Error adding %s to %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
                 res = None
                 content = ''
             if res:
@@ -609,7 +621,7 @@ def grsync(status, shelf):
                         try:
                             res, content = GA.BookToList(book, shelf, action='remove')
                         except Exception as e:
-                            logger.debug("Error removing %s from %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
+                            logger.error("Error removing %s from %s: %s %s" % (book, shelf, type(e).__name__, str(e)))
                             res = None
                             content = ''
                         if res:

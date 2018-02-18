@@ -90,7 +90,7 @@ def audioRename(bookid):
                 if author and book:
                     parts.append([track, book, author, f])
             except Exception as e:
-                logger.debug("tinytag %s %s" % (type(e).__name__, str(e)))
+                logger.error("tinytag %s %s" % (type(e).__name__, str(e)))
                 pass
 
     logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
@@ -195,7 +195,7 @@ def audioRename(bookid):
             r = dest_path
         except Exception as why:
             if not os.path.isdir(dest_path):
-                logger.debug('Unable to create directory %s: %s' % (dest_path, why))
+                logger.error('Unable to create directory %s: %s' % (dest_path, why))
 
     for part in parts:
         pattern = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
@@ -316,7 +316,7 @@ def bookRename(bookid):
             r = dest_path
         except Exception as why:
             if not os.path.isdir(dest_path):
-                logger.debug('Unable to create directory %s: %s' % (dest_path, why))
+                logger.error('Unable to create directory %s: %s' % (dest_path, why))
 
     book_basename, prefextn = os.path.splitext(os.path.basename(f))
     new_basename = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
@@ -413,7 +413,7 @@ def setBookAuthors(book):
                                     (authorid, book['bookid']), suppress='UNIQUE')
                         newrefs += 1
     except Exception as e:
-        logger.debug("Error parsing authorlist for %s: %s %s" % (book['bookname'], type(e).__name__, str(e)))
+        logger.error("Error parsing authorlist for %s: %s %s" % (book['bookname'], type(e).__name__, str(e)))
     return newauthors, newrefs
 
 
@@ -756,12 +756,11 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                                 except IndexError:
                                     errmsg = "Unknown Error"
                                 # still cache if whatwork returned a result without a link, so we don't keep retrying
-                                logger.debug("getBookWork: Librarything: [%s] for ISBN %s" %
-                                             (errmsg, item['BookISBN']))
+                                logger.debug("Librarything: [%s] for ISBN %s" % (errmsg, item['BookISBN']))
                                 success = True
                     else:
                         # still cache if whatwork returned a result without a link, so we don't keep retrying
-                        msg = "getBookWork: Librarything: [" + errmsg + "] for "
+                        msg = "Librarything: [" + errmsg + "] for "
                         logger.debug(msg + item['AuthorName'] + ' ' + item['BookName'])
                         success = True
             if success:

@@ -45,7 +45,7 @@ def getServer():
         logger.debug("rTorrent client version = %s" % result)
     except Exception as e:
         socket.setdefaulttimeout(None)  # reset timeout if failed
-        logger.debug("xmlrpc_client error: %s" % repr(e))
+        logger.error("xmlrpc_client error: %s" % repr(e))
         return False
     if result:
         return server

@@ -73,7 +73,7 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
     try:
         nzbGetRPC = xmlrpc_client.ServerProxy(url)
     except Exception as e:
-        logger.debug("NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e)))
+        logger.error("NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e)))
         return False
 
     if cmd == "test":

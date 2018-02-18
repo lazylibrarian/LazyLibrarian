@@ -100,7 +100,7 @@ def processAlternate(source_dir=None):
                 try:
                     metadata = get_book_info(metafile)
                 except Exception as e:
-                    logger.debug('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
+                    logger.warn('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
             else:
                 logger.debug('No metadata file found for %s' % new_book)
             if 'title' not in metadata or 'creator' not in metadata:
@@ -112,7 +112,7 @@ def processAlternate(source_dir=None):
                     try:
                         metadata = get_book_info(new_book)
                     except Exception as e:
-                        logger.debug('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
+                        logger.warn('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
             if 'title' in metadata and 'creator' in metadata:
                 authorname = metadata['creator']
                 bookname = metadata['title']
@@ -128,7 +128,7 @@ def processAlternate(source_dir=None):
                         author_gr = GR.find_author_id()
                     except Exception as e:
                         author_gr = {}
-                        logger.debug("No author id for [%s] %s" % (authorname, type(e).__name__))
+                        logger.warn("No author id for [%s] %s" % (authorname, type(e).__name__))
                     if author_gr:
                         grauthorname = author_gr['authorname']
                         authorid = author_gr['authorid']
@@ -370,9 +370,9 @@ def processDir(reset=False):
                                 if 'name' in result:
                                     torrentname = unaccented_str(result['name'])
                             except Exception as e:
-                                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+                                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                     except Exception as e:
-                        logger.debug("Failed to get updated torrent name from %s for %s: %s %s" %
+                        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
                                      (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
 
                     matchtitle = unaccented_str(book['NZBtitle'])
@@ -677,7 +677,7 @@ def processDir(reset=False):
                                         logger.debug('Deleted %s, %s from %s' %
                                                      (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                     except Exception as why:
-                                        logger.debug("Unable to remove %s, %s %s" %
+                                        logger.error("Unable to remove %s, %s %s" %
                                                      (pp_path, type(why).__name__, str(why)))
                             else:
                                 if lazylibrarian.CONFIG['DESTINATION_COPY']:
@@ -716,7 +716,7 @@ def processDir(reset=False):
                             try:
                                 shutil.rmtree(pp_path + '.fail')
                             except Exception as why:
-                                logger.debug("Unable to remove %s, %s %s" %
+                                logger.error("Unable to remove %s, %s %s" %
                                              (pp_path + '.fail', type(why).__name__, str(why)))
                         try:
                             shutil.move(pp_path, pp_path + '.fail')
@@ -851,7 +851,7 @@ def delete_task(Source, DownloadID, remove_data):
                 client.connect()
                 client.call('core.remove_torrent', DownloadID, remove_data)
             except Exception as e:
-                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                 return False
         elif Source == 'DIRECT':
             return True
@@ -861,7 +861,7 @@ def delete_task(Source, DownloadID, remove_data):
         return True
 
     except Exception as e:
-        logger.debug("Failed to delete task %s from %s: %s %s" % (DownloadID, Source, type(e).__name__, str(e)))
+        logger.warn("Failed to delete task %s from %s: %s %s" % (DownloadID, Source, type(e).__name__, str(e)))
         return False
 
 
@@ -965,7 +965,7 @@ def import_book(pp_path=None, bookID=None):
                         try:
                             shutil.rmtree(pp_path)
                         except Exception as why:
-                            logger.debug("Unable to remove %s, %s %s" % (pp_path, type(why).__name__, str(why)))
+                            logger.warn("Unable to remove %s, %s %s" % (pp_path, type(why).__name__, str(why)))
                 else:
                     if lazylibrarian.CONFIG['DESTINATION_COPY']:
                         logger.debug("Not removing original files as Keep Files is set")
@@ -988,7 +988,7 @@ def import_book(pp_path=None, bookID=None):
                     try:
                         shutil.rmtree(pp_path + '.fail')
                     except Exception as why:
-                        logger.debug("Unable to remove %s, %s %s" % (pp_path + '.fail', type(why).__name__, str(why)))
+                        logger.warn("Unable to remove %s, %s %s" % (pp_path + '.fail', type(why).__name__, str(why)))
                 try:
                     shutil.move(pp_path, pp_path + '.fail')
                     logger.warn('Residual files remain in %s.fail' % pp_path)
@@ -1377,7 +1377,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     try:
         shutil.copyfile(cachefile, coverfile)
     except Exception as e:
-        logger.debug("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
+        logger.error("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
         return
 
 

@@ -230,7 +230,7 @@ def GEN(book=None, prov=None, test=False):
                                 else:
                                     url = redirect_url(host, url)
                             except Exception as e:
-                                logger.debug('%s parsing bookresult for %s: %s' % (type(e).__name__, link, str(e)))
+                                logger.error('%s parsing bookresult for %s: %s' % (type(e).__name__, link, str(e)))
                                 url = None
 
                         if url:

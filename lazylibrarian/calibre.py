@@ -433,8 +433,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         else:
             logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
     except Exception as e:
-        err = "calibredb exception: %s %s" % (type(e).__name__, str(e))
-        logger.debug(err)
+        logger.error("calibredb exception: %s %s" % (type(e).__name__, str(e)))
         rc = 1
 
     if rc and dest_url.startswith('http') and not res.startswith('Forbidden'):
@@ -456,8 +455,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
             if rc:
                 logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
         except Exception as e:
-            err = "calibredb retry exception: %s %s" % (type(e).__name__, str(e))
-            logger.debug(err)
+            logger.error("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
             rc = 1
     if rc:
         return res, err, rc

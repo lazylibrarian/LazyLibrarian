@@ -1831,7 +1831,7 @@ class WebInterface(object):
                                     authorimg = 'cache/author/' + authorid + '.jpg'
                                     rejected = False
                                 except Exception as why:
-                                    logger.debug("Failed to copy file %s, %s %s" %
+                                    logger.warn("Failed to copy file %s, %s %s" %
                                                  (authorimg, type(why).__name__, str(why)))
 
                         if authorimg.startswith('http'):
@@ -2097,8 +2097,8 @@ class WebInterface(object):
                                         rmtree(os.path.dirname(bookfile), ignore_errors=True)
                                         deleted = True
                                     except Exception as e:
-                                        logger.debug('rmtree failed on %s, %s %s' %
-                                                     (bookfile, type(e).__name__, str(e)))
+                                        logger.warn('rmtree failed on %s, %s %s' %
+                                                    (bookfile, type(e).__name__, str(e)))
                                         deleted = False
 
                                     if deleted:
@@ -2589,7 +2589,7 @@ class WebInterface(object):
                 logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
             return True
         except Exception as e:
-            logger.debug('delete issue failed on %s, %s %s' % (issuefile, type(e).__name__, str(e)))
+            logger.warn('delete issue failed on %s, %s %s' % (issuefile, type(e).__name__, str(e)))
         return False
 
     @cherrypy.expose
@@ -3126,10 +3126,15 @@ class WebInterface(object):
         return msg
 
     @cherrypy.expose
-    def grauthStep1(self):
+    def grauthStep1(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'gr_api' in kwargs:
+            lazylibrarian.CONFIG['GR_API'] = kwargs['gr_api']
+        if 'gr_secret' in kwargs:
+            lazylibrarian.CONFIG['GR_SECRET'] = kwargs['gr_secret']
         GA = grsync.grauth()
-        return GA.goodreads_oauth1()
+        res = GA.goodreads_oauth1()
+        return res
 
     @cherrypy.expose
     def grauthStep2(self):

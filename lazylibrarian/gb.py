@@ -132,8 +132,7 @@ class GoogleBooks:
                             else:
                                 errmsg = str(err)
                             logger.warn(
-                                'Google Books API Error [%s]: Check your API key or wait a while' %
-                                errmsg)
+                                'Google Books API Error [%s]: Check your API key or wait a while' % errmsg)
                             break
 
                         startindex += 40

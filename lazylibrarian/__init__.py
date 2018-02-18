@@ -1183,9 +1183,9 @@ def build_bookstrap_themes():
             themelist.append(theme['name'].lower())
     except Exception as e:
         # error reading results
-        logger.debug('JSON Error reading bookstrap themes, %s %s' % (type(e).__name__, str(e)))
+        logger.warn('JSON Error reading bookstrap themes, %s %s' % (type(e).__name__, str(e)))
 
-    logger.debug("Bookstrap found %i themes" % len(themelist))
+    logger.info("Bookstrap found %i themes" % len(themelist))
     return themelist
 
 

@@ -82,7 +82,7 @@ def magnet2torrent(magnet, output_name=None):
         try:
             shutil.rmtree(tempdir)
         except Exception as e:
-            logger.debug("%s removing directory: %s" % (type(e).__name__, str(e)))
+            logger.error("%s removing directory: %s" % (type(e).__name__, str(e)))
         return False
     ses.pause()
 
@@ -108,5 +108,5 @@ def magnet2torrent(magnet, output_name=None):
     try:
         shutil.rmtree(tempdir)
     except Exception as e:
-        logger.debug("%s removing directory: %s" % (type(e).__name__, str(e)))
+        logger.error("%s removing directory: %s" % (type(e).__name__, str(e)))
     return output

@@ -73,7 +73,7 @@ class qbittorrentclient(object):
         try:
             version = int(self._command('version/api'))
         except Exception as err:
-            logger.debug('Error getting api version. qBittorrent %s: %s' % (type(err).__name__, str(err)))
+            logger.warn('Error getting api version. qBittorrent %s: %s' % (type(err).__name__, str(err)))
             version = 1
         return version
 
@@ -83,8 +83,8 @@ class qbittorrentclient(object):
         try:
             _ = self.opener.open(base_url + '/login', login_data)
         except Exception as err:
-            logger.debug('Error getting SID. qBittorrent %s: %s' % (type(err).__name__, str(err)))
-            logger.debug('Unable to log in to %s/login' % base_url)
+            logger.error('Error getting SID. qBittorrent %s: %s' % (type(err).__name__, str(err)))
+            logger.warn('Unable to log in to %s/login' % base_url)
             return
         for cookie in self.cookiejar:
             logger.debug('login cookie: ' + cookie.name + ', value: ' + cookie.value)

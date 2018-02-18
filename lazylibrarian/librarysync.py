@@ -60,7 +60,7 @@ def get_book_info(fname):
             book = Mobi(fname)
             book.parse()
         except Exception as e:
-            logger.debug('Unable to parse mobi in %s, %s %s' % (fname, type(e).__name__, str(e)))
+            logger.error('Unable to parse mobi in %s, %s %s' % (fname, type(e).__name__, str(e)))
             return res
 
         res['creator'] = makeUnicode(book.author())
@@ -94,7 +94,7 @@ def get_book_info(fname):
         try:
             zipdata = zipfile.ZipFile(fname)
         except Exception as e:
-            logger.debug('Unable to parse epub file %s, %s %s' % (fname, type(e).__name__, str(e)))
+            logger.error('Unable to parse epub file %s, %s %s' % (fname, type(e).__name__, str(e)))
             return res
 
         # find the contents metafile
@@ -305,7 +305,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         else:
                             myDB.action('UPDATE authors set AuthorName=? WHERE AuthorID=?', (authorname, authorid))
             except Exception as e:
-                logger.info('%s %s' % (type(e).__name__, str(e)))
+                logger.error('%s %s' % (type(e).__name__, str(e)))
         else:
             if authid:
                 match = myDB.match('SELECT authorid from authors where authorid=?', (authid,))
@@ -456,7 +456,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             try:
                                 res = get_book_info(book_filename)
                             except Exception as e:
-                                logger.debug('get_book_info failed for %s, %s %s' %
+                                logger.error('get_book_info failed for %s, %s %s' %
                                              (book_filename, type(e).__name__, str(e)))
                                 res = {}
                             # title and creator are the minimum we need
@@ -487,7 +487,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                             metafile = opf_file(rootdir)
                             res = get_book_info(metafile)
                         except Exception as e:
-                            logger.debug('get_book_info failed for %s, %s %s' % (metafile, type(e).__name__, str(e)))
+                            logger.error('get_book_info failed for %s, %s %s' % (metafile, type(e).__name__, str(e)))
 
                         # title and creator are the minimum we need
                         if res and 'title' in res and 'creator' in res:
@@ -539,7 +539,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             author = makeUnicode(author)
                                             book = makeUnicode(book)
                                     except Exception as e:
-                                        logger.debug("tinytag error %s %s [%s]" % (type(e).__name__, str(e), filename))
+                                        logger.error("tinytag error %s %s [%s]" % (type(e).__name__, str(e), filename))
                                         pass
 
                         # Failing anything better, just pattern match on filename
@@ -956,6 +956,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
         return new_book_count
 
     except Exception:
+        logger.error('Unhandled exception in libraryScan: %s' % traceback.format_exc())
         if startdir == destdir:  # full library scan
             if library == 'eBook':
                 lazylibrarian.EBOOK_UPDATE = 0
@@ -968,4 +969,3 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     controlValueDict = {"AuthorID": authid}
                     newValueDict = {"Status": "Active"}
                     myDB.upsert("authors", newValueDict, controlValueDict)
-        logger.error('Unhandled exception in libraryScan: %s' % traceback.format_exc())
