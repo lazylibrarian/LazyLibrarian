@@ -1832,7 +1832,7 @@ class WebInterface(object):
                                     rejected = False
                                 except Exception as why:
                                     logger.warn("Failed to copy file %s, %s %s" %
-                                                 (authorimg, type(why).__name__, str(why)))
+                                                (authorimg, type(why).__name__, str(why)))
 
                         if authorimg.startswith('http'):
                             # cache image from url
