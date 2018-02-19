@@ -777,8 +777,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                                 dt = datetime.datetime.strptime(nzbdate, "%a, %d %b %Y %H:%M:%S").timetuple()
                                 nzbage = age('%04d-%02d-%02d' % (dt.tm_year, dt.tm_mon, dt.tm_mday))
                             except Exception as e:
-                                logger.debug('Unable to get age from [%s] %s %s' %
-                                             (thisnzb['nzbdate'], type(e).__name__, str(e)))
+                                logger.warn('Unable to get age from [%s] %s %s' %
+                                            (thisnzb['nzbdate'], type(e).__name__, str(e)))
                                 nzbage = 0
                             if nzbage <= maxage:
                                 nzbcount += 1

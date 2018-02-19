@@ -100,7 +100,7 @@ def processAlternate(source_dir=None):
                 try:
                     metadata = get_book_info(metafile)
                 except Exception as e:
-                    logger.debug('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
+                    logger.warn('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
             else:
                 logger.debug('No metadata file found for %s' % new_book)
             if 'title' not in metadata or 'creator' not in metadata:
@@ -112,7 +112,7 @@ def processAlternate(source_dir=None):
                     try:
                         metadata = get_book_info(new_book)
                     except Exception as e:
-                        logger.debug('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
+                        logger.warn('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
             if 'title' in metadata and 'creator' in metadata:
                 authorname = metadata['creator']
                 bookname = metadata['title']
@@ -128,7 +128,7 @@ def processAlternate(source_dir=None):
                         author_gr = GR.find_author_id()
                     except Exception as e:
                         author_gr = {}
-                        logger.debug("No author id for [%s] %s" % (authorname, type(e).__name__))
+                        logger.warn("No author id for [%s] %s" % (authorname, type(e).__name__))
                     if author_gr:
                         grauthorname = author_gr['authorname']
                         authorid = author_gr['authorid']
@@ -222,7 +222,7 @@ def unpack_archive(pp_path, download_dir, title):
                         setperm(targetdir)
                     except OSError as why:
                         if not os.path.isdir(targetdir):
-                            logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            logger.error('Failed to create dir [%s], %s' % (targetdir, why.strerror))
                             return ''
                 if PY2:
                     fmode = 'wb'
@@ -250,7 +250,7 @@ def unpack_archive(pp_path, download_dir, title):
                         setperm(targetdir)
                     except OSError as why:
                         if not os.path.isdir(targetdir):
-                            logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            logger.error('Failed to create dir [%s], %s' % (targetdir, why.strerror))
                             return ''
                 if PY2:
                     fmode = 'wb'
@@ -278,7 +278,7 @@ def unpack_archive(pp_path, download_dir, title):
                         setperm(targetdir)
                     except OSError as why:
                         if not os.path.isdir(targetdir):
-                            logger.debug('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            logger.error('Failed to create dir [%s], %s' % (targetdir, why.strerror))
                             return ''
                 if PY2:
                     fmode = 'wb'
@@ -315,8 +315,7 @@ def processDir(reset=False):
     try:
         ppcount = 0
         myDB = database.DBConnection()
-        skipped_extensions = ['.fail', '.part', '.bts', '.!ut', '.torrent', '.magnet', '.nzb', '.unpack']
-
+        skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
         templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'], ',')
         if len(templist) and lazylibrarian.DIRECTORY("Download") != templist[0]:
             templist.insert(0, lazylibrarian.DIRECTORY("Download"))
@@ -370,9 +369,9 @@ def processDir(reset=False):
                                 if 'name' in result:
                                     torrentname = unaccented_str(result['name'])
                             except Exception as e:
-                                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+                                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                     except Exception as e:
-                        logger.debug("Failed to get updated torrent name from %s for %s: %s %s" %
+                        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
                                      (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
 
                     matchtitle = unaccented_str(book['NZBtitle'])
@@ -400,7 +399,7 @@ def processDir(reset=False):
                         if int(lazylibrarian.LOGLEVEL) > 2:
                             logger.debug("Checking extn on %s" % fname)
                         extn = os.path.splitext(fname)[1]
-                        if not extn or extn not in skipped_extensions:
+                        if not extn or extn.strip('.') not in skipped_extensions:
                             # This is to get round differences in torrent filenames.
                             # Usenet is ok, but Torrents aren't always returned with the name we searched for
                             # We ask the torrent downloader for the torrent name, but don't always get an answer
@@ -436,26 +435,34 @@ def processDir(reset=False):
                                             aname = os.path.splitext(fname)[0]
                                             while aname[-1] in '_. ':
                                                 aname = aname[:-1]
-                                            targetdir = os.path.join(download_dir, aname)
+
+                                            if lazylibrarian.CONFIG['DESTINATION_COPY'] or \
+                                                (book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and
+                                                    lazylibrarian.CONFIG['KEEP_SEEDING']):
+                                                targetdir = os.path.join(download_dir, aname + '.unpack')
+                                                move = 'copy'
+                                            else:
+                                                targetdir = os.path.join(download_dir, aname)
+                                                move = 'move'
+
                                             if not os.path.isdir(targetdir):
                                                 try:
                                                     os.makedirs(targetdir)
                                                     setperm(targetdir)
                                                 except OSError as why:
                                                     if not os.path.isdir(targetdir):
-                                                        logger.debug('Failed to create directory [%s], %s' %
+                                                        logger.error('Failed to create directory [%s], %s' %
                                                                      (targetdir, why.strerror))
                                             if os.path.isdir(targetdir):
-                                                if book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and \
-                                                        lazylibrarian.CONFIG['KEEP_SEEDING']:
-                                                    cnt = move_into_subdir(download_dir, targetdir, aname, move='copy')
+                                                cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
+                                                if cnt:
+                                                    pp_path = targetdir
                                                 else:
-                                                    cnt = move_into_subdir(download_dir, targetdir, aname)
-                                                pp_path = targetdir
-                                                if cnt:  # mark the folder to skip next time round
-                                                    btsfile = os.path.join(targetdir, "%s.bts" % aname)
-                                                    with open(btsfile, 'a'):
-                                                        os.utime(btsfile, None)
+                                                    try:
+                                                        os.rmdir(targetdir)
+                                                    except OSError as why:
+                                                        logger.warn("Unable to delete %s: %s" %
+                                                                    (targetdir, why.strerror))
                                     else:
                                         # Is file an archive, if so look inside and extract to new dir
                                         res = unpack_archive(pp_path, download_dir, matchtitle)
@@ -599,7 +606,7 @@ def processDir(reset=False):
                                                             global_name, book['BookID'], book_type)
                     if success:
                         logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
-                        # only update the snatched ones in case multiple matches for same book/magazine issue
+                        # only update the snatched ones in case some already marked failed/processed in history
                         controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
                         newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                         myDB.upsert("wanted", newValueDict, controlValueDict)
@@ -677,8 +684,8 @@ def processDir(reset=False):
                                         logger.debug('Deleted %s, %s from %s' %
                                                      (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                     except Exception as why:
-                                        logger.debug("Unable to remove %s, %s %s" %
-                                                     (pp_path, type(why).__name__, str(why)))
+                                        logger.warn("Unable to remove %s, %s %s" %
+                                                    (pp_path, type(why).__name__, str(why)))
                             else:
                                 if lazylibrarian.CONFIG['DESTINATION_COPY']:
                                     logger.debug("Not removing original files as Keep Files is set")
@@ -716,13 +723,13 @@ def processDir(reset=False):
                             try:
                                 shutil.rmtree(pp_path + '.fail')
                             except Exception as why:
-                                logger.debug("Unable to remove %s, %s %s" %
-                                             (pp_path + '.fail', type(why).__name__, str(why)))
+                                logger.warn("Unable to remove %s, %s %s" %
+                                            (pp_path + '.fail', type(why).__name__, str(why)))
                         try:
                             shutil.move(pp_path, pp_path + '.fail')
                             logger.warn('Residual files remain in %s.fail' % pp_path)
                         except Exception as why:
-                            logger.error("[processDir] Unable to rename %s, %s %s" %
+                            logger.error("Unable to rename %s, %s %s" %
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
@@ -736,7 +743,7 @@ def processDir(reset=False):
             for entry in downloads:
                 if "LL.(" in entry:
                     dname, extn = os.path.splitext(entry)
-                    if not extn or extn not in skipped_extensions:
+                    if not extn or extn.strip('.') not in skipped_extensions:
                         bookID = entry.split("LL.(")[1].split(")")[0]
                         logger.debug("Book with id: %s found in download directory" % bookID)
                         data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
@@ -851,7 +858,7 @@ def delete_task(Source, DownloadID, remove_data):
                 client.connect()
                 client.call('core.remove_torrent', DownloadID, remove_data)
             except Exception as e:
-                logger.debug('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
                 return False
         elif Source == 'DIRECT':
             return True
@@ -861,7 +868,7 @@ def delete_task(Source, DownloadID, remove_data):
         return True
 
     except Exception as e:
-        logger.debug("Failed to delete task %s from %s: %s %s" % (DownloadID, Source, type(e).__name__, str(e)))
+        logger.warn("Failed to delete task %s from %s: %s %s" % (DownloadID, Source, type(e).__name__, str(e)))
         return False
 
 
@@ -965,7 +972,7 @@ def import_book(pp_path=None, bookID=None):
                         try:
                             shutil.rmtree(pp_path)
                         except Exception as why:
-                            logger.debug("Unable to remove %s, %s %s" % (pp_path, type(why).__name__, str(why)))
+                            logger.warn("Unable to remove %s, %s %s" % (pp_path, type(why).__name__, str(why)))
                 else:
                     if lazylibrarian.CONFIG['DESTINATION_COPY']:
                         logger.debug("Not removing original files as Keep Files is set")
@@ -988,7 +995,7 @@ def import_book(pp_path=None, bookID=None):
                     try:
                         shutil.rmtree(pp_path + '.fail')
                     except Exception as why:
-                        logger.debug("Unable to remove %s, %s %s" % (pp_path + '.fail', type(why).__name__, str(why)))
+                        logger.warn("Unable to remove %s, %s %s" % (pp_path + '.fail', type(why).__name__, str(why)))
                 try:
                     shutil.move(pp_path, pp_path + '.fail')
                     logger.warn('Residual files remain in %s.fail' % pp_path)
@@ -1377,7 +1384,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     try:
         shutil.copyfile(cachefile, coverfile)
     except Exception as e:
-        logger.debug("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
+        logger.error("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
         return
 
 

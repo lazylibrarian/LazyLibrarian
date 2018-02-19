@@ -100,7 +100,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
                     img.write(result)
                 return link, True
             except Exception as e:
-                logger.debug("%s writing image to %s, %s" % (type(e).__name__, cachefile, str(e)))
+                logger.error("%s writing image to %s, %s" % (type(e).__name__, cachefile, str(e)))
                 return str(e), False
         return result, False
     else:
@@ -108,7 +108,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
             shutil.copyfile(img_url, cachefile)
             return link, True
         except Exception as e:
-            logger.debug("%s copying image to %s, %s" % (type(e).__name__, cachefile, str(e)))
+            logger.error("%s copying image to %s, %s" % (type(e).__name__, cachefile, str(e)))
             return str(e), False
 
 
@@ -177,7 +177,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 try:
                     source = json.loads(result)
                 except Exception as e:
-                    logger.debug("%s decoding json from %s" % (type(e).__name__, url))
+                    logger.error("%s decoding json from %s" % (type(e).__name__, url))
                     logger.debug("%s : %s" % (e, result))
                     return None, False
                 json.dump(source, open(hashfilename, "w"))

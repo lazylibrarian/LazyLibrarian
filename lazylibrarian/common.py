@@ -248,6 +248,8 @@ def opf_file(search_dir=None):
 
 
 def bts_file(search_dir=None):
+    if 'bts' not in getList(lazylibrarian.CONFIG['SKIPPED_EXT']):
+        return ''
     return any_file(search_dir, '.bts')
 
 

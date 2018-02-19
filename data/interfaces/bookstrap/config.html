@@ -3487,7 +3487,9 @@
         });
 
         $('#grauthStep1').click(function () {
-            $.get("grauthStep1", {},
+            var gr_api = $.trim($("#gr_api").val());
+            var gr_secret = $.trim($("#gr_secret").val());
+            $.get("grauthStep1", {'gr_api': gr_api, 'gr_secret': gr_secret},
                 function (data) {
                 if ( data.substr(0, 4) == 'http') { window.alert("When you click [OK] a new page will open to authorise lazylibrarian. Follow the prompts, then go back to LazyLibrarian and request oAuth2\nIf the page does not open, visit this link...\n" + data); window.open(data); }
                 else { window.alert(data) } })

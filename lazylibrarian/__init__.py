@@ -147,7 +147,7 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL']
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -204,6 +204,7 @@ CONFIG_DEFINITIONS = {
     'PROXY_TYPE': ('str', 'General', ''),
     'PROXY_LOCAL': ('str', 'General', ''),
     'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
+    'SKIPPED_EXT': ('str', 'General', 'fail, part, bts, !ut, torrent, magnet, nzb, unpack'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
@@ -449,12 +450,13 @@ CONFIG_DEFINITIONS = {
 }
 
 
-# noinspection PyUnresolvedReferences
 def check_section(sec):
     """ Check if INI section exists, if not create it """
+    # noinspection PyUnresolvedReferences
     if CFG.has_section(sec):
         return True
     else:
+        # noinspection PyUnresolvedReferences
         CFG.add_section(sec)
         return False
 
@@ -1183,9 +1185,9 @@ def build_bookstrap_themes():
             themelist.append(theme['name'].lower())
     except Exception as e:
         # error reading results
-        logger.debug('JSON Error reading bookstrap themes, %s %s' % (type(e).__name__, str(e)))
+        logger.warn('JSON Error reading bookstrap themes, %s %s' % (type(e).__name__, str(e)))
 
-    logger.debug("Bookstrap found %i themes" % len(themelist))
+    logger.info("Bookstrap found %i themes" % len(themelist))
     return themelist
 
 

@@ -99,7 +99,7 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
                         if check_exist_author:
                             new = True
                     except Exception as e:
-                        logger.debug('Failed to add author [%s] to db: %s %s' % (author, type(e).__name__, str(e)))
+                        logger.error('Failed to add author [%s] to db: %s %s' % (author, type(e).__name__, str(e)))
     # check author exists in db, either newly loaded or already there
     if not check_exist_author:
         logger.debug("Failed to match author [%s] in database" % author)
