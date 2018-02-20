@@ -299,7 +299,7 @@ def cron_processDir():
         processDir()
 
 
-def processDir(reset=False):
+def processDir(reset=False, startdir=None):
     count = 0
     for threadname in [n.name for n in [t for t in threading.enumerate()]]:
         if threadname == 'POSTPROCESS':
@@ -316,13 +316,18 @@ def processDir(reset=False):
         ppcount = 0
         myDB = database.DBConnection()
         skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
-        templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'], ',')
-        if len(templist) and lazylibrarian.DIRECTORY("Download") != templist[0]:
-            templist.insert(0, lazylibrarian.DIRECTORY("Download"))
+        if startdir:
+            templist = [startdir]
+        else:
+            templist = getList(lazylibrarian.CONFIG['DOWNLOAD_DIR'], ',')
+            if len(templist) and lazylibrarian.DIRECTORY("Download") != templist[0]:
+                templist.insert(0, lazylibrarian.DIRECTORY("Download"))
         dirlist = []
         for item in templist:
             if os.path.isdir(item):
                 dirlist.append(item)
+            else:
+                logger.debug("[%s] is not a directory" % item)
         for download_dir in dirlist:
             try:
                 downloads = os.listdir(makeBytestr(download_dir))
