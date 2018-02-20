@@ -76,7 +76,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
             'forceRSSSearch': '[&wait] search all entries in rss wishlists',
-            'forceProcess': 'process books/mags in download dir',
+            'forceProcess': '[&dir] process books/mags in download or named dir',
             'pauseAuthor': '&id= pause author by AuthorID',
             'resumeAuthor': '&id= resume author by AuthorID',
             'ignoreAuthor': '&id= ignore author by AuthorID',
@@ -659,8 +659,11 @@ class Api(object):
             self.data = "No search methods set, check config"
 
     @staticmethod
-    def _forceProcess():
-        processDir()
+    def _forceProcess(**kwargs):
+        startdir = None
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        processDir(startdir=startdir)
 
     @staticmethod
     def _forceLibraryScan(**kwargs):
