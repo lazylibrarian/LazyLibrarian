@@ -1315,7 +1315,7 @@ class WebInterface(object):
             if snatch:
                 logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
-                custom_notify_snatch(bookid)
+                custom_notify_snatch("%s %s" % (bookid, library))
                 scheduleJob(action='Start', target='processDir')
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
@@ -2549,7 +2549,7 @@ class WebInterface(object):
                     myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', ("Snatched", items['nzburl']))
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
-                    custom_notify_snatch(items['bookid'])
+                    custom_notify_snatch("%s %s" % (items['bookid'], 'Magazine'))
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
 

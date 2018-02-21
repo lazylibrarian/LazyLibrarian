@@ -701,11 +701,11 @@ def processDir(reset=False, startdir=None):
 
                         ppcount += 1
                         if bookname:
-                            custom_notify_download(book['BookID'])
+                            custom_notify_download("%s %s" % (book['BookID'], book_type))
                             notify_download("%s %s from %s at %s" %
                                             (book_type, global_name, book['NZBprov'], now()), book['BookID'])
                         else:
-                            custom_notify_download(iss_id)
+                            custom_notify_download("%s %s" % (book['BookID'], book['NZBUrl']))
                             notify_download("%s %s from %s at %s" %
                                             (book_type, global_name, book['NZBprov'], now()), iss_id)
 
@@ -985,7 +985,7 @@ def import_book(pp_path=None, bookID=None):
                         logger.debug("Not removing original files as in download root")
 
                 logger.info('Successfully processed: %s' % global_name)
-                custom_notify_download(bookID)
+                custom_notify_download("%s %s" % (bookID, book_type))
                 if snatched_from == "manually added":
                     frm = ''
                 else:

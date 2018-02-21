@@ -33,7 +33,7 @@ from lazylibrarian.csvfile import import_CSV, export_CSV
 from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.grsync import grfollow
+from lazylibrarian.grsync import grfollow, grsync
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan, create_covers
@@ -133,6 +133,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory',
+            'grSync': '&status= &shelf= Sync books with given status to a goodreads shelf',
             'grFollow': '&id= Follow an author on goodreads',
             'grFollowAll': 'Follow all lazylibrarian authors on goodreads',
             'grUnfollow': '&id= Unfollow an author on goodreads',
@@ -919,14 +920,24 @@ class Api(object):
                 myDB.action('UPDATE authors SET GRfollow=? WHERE AuthorID=?', (followid, author['AuthorID']))
         self.data = "Added follow to %s author%s" % (count, plural(count))
 
+    def _grSync(self, **kwargs):
+        if 'shelf' not in kwargs:
+            self.data = 'Missing parameter: shelf'
+            return
+        if 'status' not in kwargs:
+            self.data = 'Missing parameter: status'
+            return
+        try:
+            self.data = grsync(kwargs['status'], kwargs['shelf'])
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
     def _grFollow(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
-        else:
-            self.id = kwargs['id']
         try:
-            self.data = grfollow(authorid=self.id, follow=True)
+            self.data = grfollow(authorid=kwargs['id'], follow=True)
         except Exception as e:
             self.data = "%s %s" % (type(e).__name__, str(e))
 
@@ -934,10 +945,8 @@ class Api(object):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
-        else:
-            self.id = kwargs['id']
         try:
-            self.data = grfollow(authorid=self.id, follow=False)
+            self.data = grfollow(authorid=kwargs['id'], follow=False)
         except Exception as e:
             self.data = "%s %s" % (type(e).__name__, str(e))
 

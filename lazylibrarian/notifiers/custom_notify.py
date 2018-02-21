@@ -32,22 +32,49 @@ class CustomNotifier:
         if not lazylibrarian.CONFIG['USE_CUSTOM'] and not force:
             return False
 
-        subject = event
-
         logger.debug('Custom Event: %s' % event)
         logger.debug('Custom Message: %s' % message)
         myDB = database.DBConnection()
-        if subject == "Test":
-            # grab the first entry in the book table
-            data = myDB.match('SELECT * from books')
+        if event == "Test":
+            # grab the first entry in the book table and wanted table
+            book = myDB.match('SELECT * from books')
+            wanted = myDB.match('SELECT * from wanted')
         else:
-            # message is a bookid or a magazineid
-            data = myDB.match('SELECT * from books where BookID=?', (message,))
-            if not data:
-                data = myDB.match('SELECT * from magazines where BookID=?', (message,))
-        dictionary = dict(list(zip(list(data.keys()), data)))
+            # message is a bookid followed by type (eBook/AudioBook)
+            # or a magazine title followed by it's NZBUrl
+            words = message.split()
+            ident = words[-1]
+            bookid = " ".join(words[:-1])
+            book = myDB.match('SELECT * from books where BookID=?', (bookid,))
+            if not book:
+                book = myDB.match('SELECT * from magazines where BookID=?', (bookid,))
+
+            if event == 'Added to Library':
+                wanted_status = 'Processed'
+            else:
+                wanted_status = 'Snatched'
+
+            if ident in ['eBook', 'AudioBook']:
+                wanted = myDB.match('SELECT * from wanted where BookID=? AND AuxInfo=? AND Status=?',
+                                    (bookid, ident, wanted_status))
+            else:
+                wanted = myDB.match('SELECT * from wanted where BookID=? AND NZBUrl=? AND Status=?',
+                                    (bookid, ident, wanted_status))
+
+        if book:
+            dictionary = dict(list(zip(list(book.keys()), book)))
+        else:
+            dictionary = {}
+
         dictionary['Event'] = event
 
+        if wanted:
+            wanted_dictionary = dict(list(zip(list(wanted.keys()), wanted)))
+            for item in wanted_dictionary:
+                if item in ['Status', 'BookID']:  # rename to avoid clash
+                    dictionary['Wanted_' + item] = wanted_dictionary[item]
+                else:
+                    dictionary[item] = wanted_dictionary[item]
         try:
             # call the custom notifier script here, passing dictionary deconstructed as strings
             if lazylibrarian.CONFIG['CUSTOM_SCRIPT']:
