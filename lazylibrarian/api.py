@@ -143,6 +143,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'showCaps': '&provider= get a list of capabilities from a provider',
             'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
             'syncCalibreList': '[&toread=] [&read=] sync list of read/toread books with calibre',
+            'logMessage': '&level= &text=  send a message to lazylibrarian logger',
             }
 
 
@@ -208,7 +209,7 @@ class Api(object):
                 remote_ip = cherrypy.request.headers['Host']  # nginx
             else:
                 remote_ip = cherrypy.request.remote.ip
-            logger.info('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
+            logger.debug('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
             if 'callback' not in self.kwargs:
@@ -380,6 +381,29 @@ class Api(object):
 
     def _getLogs(self):
         self.data = lazylibrarian.LOGLIST
+
+    def _logMessage(self, **kwargs):
+        if 'level' not in kwargs:
+            self.data = 'Missing parameter: level'
+            return
+        if 'text' not in kwargs:
+            self.data = 'Missing parameter: text'
+            return
+        self.data = kwargs['text']
+        if kwargs['level'].upper() == 'INFO':
+            logger.info(self.data)
+            return
+        if kwargs['level'].upper() == 'WARN':
+            logger.warn(self.data)
+            return
+        if kwargs['level'].upper() == 'ERROR':
+            logger.error(self.data)
+            return
+        if kwargs['level'].upper() == 'DEBUG':
+            logger.debug(self.data)
+            return
+        self.data = 'Invalid level: %s' % kwargs['level']
+        return
 
     def _getDebug(self):
         self.data = logHeader().replace('\n', '<br>')
@@ -987,7 +1011,7 @@ class Api(object):
         authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
         if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
-            logger.info("Removing all references to author: %s" % AuthorName)
+            logger.debug("Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
             myDB.action('DELETE from books WHERE AuthorID=?', (kwargs['id'],))
 
