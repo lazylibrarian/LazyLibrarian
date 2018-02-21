@@ -705,7 +705,7 @@ def processDir(reset=False, startdir=None):
                             notify_download("%s %s from %s at %s" %
                                             (book_type, global_name, book['NZBprov'], now()), book['BookID'])
                         else:
-                            custom_notify_download("%s %s" % (iss_id, book_type))
+                            custom_notify_download("%s %s" % (book['BookID'], book['NZBUrl']))
                             notify_download("%s %s from %s at %s" %
                                             (book_type, global_name, book['NZBprov'], now()), iss_id)
 
