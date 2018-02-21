@@ -21,11 +21,16 @@ n = len(args)
 mydict = {}
 
 while n:
-    mydict[args[n-2]] = args[n-1]
-    n -= 2
+    try:
+        mydict[args[n-2]] = args[n-1]
+        n -= 2
+    except IndexError:
+        break
 
-# mydict is now a dictionary of the book/magazine table entry for the relevant book/magazine
-# You can look up available fields in the database structure, or print mydict here to list them
+# mydict is now a dictionary of the book/magazine table entry
+# and the wanted table entry for the relevant book/magazine
+# You can look up available fields in the database structure,
+# or just print mydict here to list them
 # This example just uses "Event" "BookFile"  and "BookName"
 
 msg = ''

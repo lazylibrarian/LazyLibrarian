@@ -10,17 +10,17 @@ except Exception as e:
     err = str(e)
 with open('notification.out', 'w') as f:
     if err:
-	f.write(err)
+        f.write(err)
     else:
-        try:
-            n = len(args)
-            mydict = {}
-            while n:
+        mydict = {}
+        n = len(args)
+        while n:
+            try:
                 mydict[args[n-2]] = args[n-1]
-            	n -= 2
-        except Exception as e:
-            f.write(str(e))
+                n -= 2
+            except IndexError:
+                break
 
-    for item in mydict:
-        # column name: value
-        f.write("%s: %s\n" % (item, mydict[item]))
+        for item in mydict:
+            # column name: value
+            f.write("%s: %s\n" % (item, mydict[item]))
