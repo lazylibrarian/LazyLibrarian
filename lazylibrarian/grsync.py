@@ -165,22 +165,23 @@ class grauth:
                     return shelves
 
                 if not response['status'].startswith('2'):
-                    raise Exception('Failure status: %s for page %s' % (response['status'], current_page))
-                xmldoc = xml.dom.minidom.parseString(content)
+                    logger.error('Failure status: %s for page %s' % (response['status'], current_page))
+                else:
+                    xmldoc = xml.dom.minidom.parseString(content)
 
-                shelf_list = xmldoc.getElementsByTagName('shelves')[0]
-                for item in shelf_list.getElementsByTagName('user_shelf'):
-                    shelf_name = item.getElementsByTagName('name')[0].firstChild.nodeValue
-                    shelf_count = item.getElementsByTagName('book_count')[0].firstChild.nodeValue
-                    shelf_exclusive = item.getElementsByTagName('exclusive_flag')[0].firstChild.nodeValue
-                    shelves.append({'name': shelf_name, 'books': shelf_count, 'exclusive': shelf_exclusive})
-                    page_shelves += 1
+                    shelf_list = xmldoc.getElementsByTagName('shelves')[0]
+                    for item in shelf_list.getElementsByTagName('user_shelf'):
+                        shelf_name = item.getElementsByTagName('name')[0].firstChild.nodeValue
+                        shelf_count = item.getElementsByTagName('book_count')[0].firstChild.nodeValue
+                        shelf_exclusive = item.getElementsByTagName('exclusive_flag')[0].firstChild.nodeValue
+                        shelves.append({'name': shelf_name, 'books': shelf_count, 'exclusive': shelf_exclusive})
+                        page_shelves += 1
+
+                        if lazylibrarian.LOGLEVEL > 2:
+                            logger.debug('Shelf %s : %s: Exclusive %s' % (shelf_name, shelf_count, shelf_exclusive))
 
                     if lazylibrarian.LOGLEVEL > 2:
-                        logger.debug('Shelf %s : %s: Exclusive %s' % (shelf_name, shelf_count, shelf_exclusive))
-
-                if lazylibrarian.LOGLEVEL > 2:
-                    logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
+                        logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
 
             logger.debug('Found %s shelves on %s page%s' % (len(shelves), current_page - 1, plural(current_page - 1)))
             # print shelves
@@ -365,7 +366,7 @@ class grauth:
             logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
             return "Error in client.request: see error log"
         if not response['status'].startswith('2'):
-            raise Exception('Failure status: %s for page %s' % (response['status'], page))
+            logger.error('Failure status: %s for page %s' % (response['status'], page))
         return content
 
     #############################
