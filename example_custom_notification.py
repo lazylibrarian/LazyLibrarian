@@ -1,26 +1,23 @@
 #!/usr/bin/python
 # The parameter list passed is a list of database columns (name and data)
 # for a book or magazine. Read them back into a dictionary.
-# For this example, just write the dictionary to a file
+# For this example, just return the formatted dictionary
 import sys
-err = ''
+
+mydict = {}
 try:
     args = sys.argv[1:]
-except Exception as e:
-    err = str(e)
-with open('notification.out', 'w') as f:
-    if err:
-        f.write(err)
-    else:
-        mydict = {}
-        n = len(args)
-        while n:
-            try:
-                mydict[args[n-2]] = args[n-1]
-                n -= 2
-            except IndexError:
-                break
+    while len(args) > 1:
+        mydict[args[0]] = args[1]
+        args = args[2:]
+except Exception as err:
+    sys.stderr.write("%s\n" % err)
+    exit(1)
 
-        for item in mydict:
-            # column name: value
-            f.write("%s: %s\n" % (item, mydict[item]))
+res = ''
+for item in mydict:
+    # column name: value
+    res = res + "%s: %s\n" % (item, mydict[item])
+
+print(res)
+exit(0)

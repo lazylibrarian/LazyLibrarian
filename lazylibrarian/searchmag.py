@@ -354,9 +354,10 @@ def search_magazines(mags=None, reset=False):
 
                             # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
                             if not regex_pass:
+                                nouns = ["issue", "no", "nr", "vol", "volume"]
                                 pos = 0
                                 while pos < len(nzbtitle_exploded):
-                                    if nzbtitle_exploded[pos].lower() in ["issue", "no", "nr", "vol"]:
+                                    if nzbtitle_exploded[pos].lower().strip('.') in nouns:
                                         if pos + 1 < len(nzbtitle_exploded):
                                             issue = check_int(nzbtitle_exploded[pos + 1], 0)
                                             if issue:

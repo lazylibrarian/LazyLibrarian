@@ -5,10 +5,10 @@
 # program from calibre to make sure we have both epub and mobi of the new book.
 # Note it is not fully error trapped, just a basic working example.
 # Would be better to check "res" return value from the converter too
-# The result returned (in this case "msg") is passed back to the "test" button
-# and gets displayed as an error message (telling you why the test failed).
-# Returning "msg" at this point is useful for testing the notifier script
-# Always exit zero.
+# Error messages appear as errors in the lazylibrarian log
+# Anything you print to stdout appears as debug messages in the log
+# The exit code is passed back to the "test" button
+# Always exit zero on success, non-zero on fail
 
 import sys
 import os
@@ -16,16 +16,15 @@ import subprocess
 
 converter = "ebook-convert"  # if not in your "path", put the full pathname here
 
-args = sys.argv[1:]
-n = len(args)
 mydict = {}
-
-while n:
-    try:
-        mydict[args[n-2]] = args[n-1]
-        n -= 2
-    except IndexError:
-        break
+try:
+    args = sys.argv[1:]
+    while len(args) > 1:
+        mydict[args[0]] = args[1]
+        args = args[2:]
+except Exception as err:
+    sys.stderr.write("%s\n" % err)
+    exit(1)
 
 # mydict is now a dictionary of the book/magazine table entry
 # and the wanted table entry for the relevant book/magazine
@@ -41,24 +40,29 @@ if 'Event' in mydict and mydict['Event'] == 'Added to Library':
         basename, extn = os.path.splitext(mydict['BookFile'])
         have_epub = os.path.exists(basename + '.epub')
         have_mobi = os.path.exists(basename + '.mobi')
+
         if have_epub and not have_mobi:
             params = [converter, basename + '.epub', basename + '.mobi']
             try:
                 res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                msg = "Created mobi for %s" % mydict['BookName']
+                print("Created mobi for %s" % mydict['BookName'])
+                exit(0)
             except Exception as e:
-                msg = str(e)
+                sys.stderr.write("%s\n" % e)
+                exit(1)
+
         if have_mobi and not have_epub:
             params = [converter, basename + '.mobi', basename + '.epub']
             try:
                 res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                msg = "Created epub for %s" % mydict['BookName']
+                print("Created epub for %s" % mydict['BookName'])
+                exit(0)
             except Exception as e:
-                msg = str(e)
+                sys.stderr.write("%s\n" % e)
+                exit(1)
     else:
-        msg = "No bookfile found"
+        sys.stderr.write("%s\n" % "No bookfile found")
+        exit(1)
 else:
-    msg = "Not a download event"
-if len(msg):
-    sys.stderr.write("%s\n" % msg)
-exit(0)
+    sys.stderr.write("%s\n" % "Not a download event")
+    exit(1)

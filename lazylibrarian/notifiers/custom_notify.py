@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess
+from subprocess import Popen, PIPE
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -47,7 +47,7 @@ class CustomNotifier:
             bookid = " ".join(words[:-1])
             book = myDB.match('SELECT * from books where BookID=?', (bookid,))
             if not book:
-                book = myDB.match('SELECT * from magazines where BookID=?', (bookid,))
+                book = myDB.match('SELECT * from magazines where Title=?', (bookid,))
 
             if event == 'Added to Library':
                 wanted_status = 'Processed'
@@ -87,8 +87,16 @@ class CustomNotifier:
                         params.append(str(dictionary[item]))
 
                 try:
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    return makeUnicode(res).strip()
+                    p = Popen(params, stdout=PIPE, stderr=PIPE)
+                    res, err = p.communicate()
+                    rc = p.returncode
+                    res = makeUnicode(res)
+                    err = makeUnicode(err)
+                    if rc:
+                        logger.error("Custom notifier returned %s: res[%s] err[%s]" % (rc, res, err))
+                        return False
+                    logger.debug(res)
+                    return True
                 except Exception as e:
                     logger.warn('Error sending command: %s' % e)
                     return False
@@ -113,9 +121,6 @@ class CustomNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
     def test_notify(self, title="Test"):
-        res = self._notify(message=title, event="Test", force=True)
-        logger.debug(res)
-        return res
-
+        return self._notify(message=title, event="Test", force=True)
 
 notifier = CustomNotifier

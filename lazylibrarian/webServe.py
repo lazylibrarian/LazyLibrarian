@@ -3323,8 +3323,8 @@ class WebInterface(object):
         if 'script' in kwargs:
             lazylibrarian.CONFIG['CUSTOM_SCRIPT'] = kwargs['script']
         result = notifiers.custom_notifier.test_notify()
-        if result:
-            return "Custom notification failed,\n%s" % result
+        if result is False:
+            return "Custom notification failed"
         else:
             lazylibrarian.config_write('Custom')
             return "Custom notification successful"
