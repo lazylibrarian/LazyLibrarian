@@ -123,4 +123,5 @@ class CustomNotifier:
     def test_notify(self, title="Test"):
         return self._notify(message=title, event="Test", force=True)
 
+
 notifier = CustomNotifier

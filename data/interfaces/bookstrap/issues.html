@@ -8,7 +8,7 @@
       %if perm&lazylibrarian.perm_force:
         <a href="forceSearch?source=magazines&title=${title | u}" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
         <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary">Force Post-Processing</a>
-        <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
+        <a href="magazineScan?title=${title | u}"" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
         <a href="pastIssues?mag=${title | u}" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-o"></i> Past Issues</a>
       %endif
       <a href="magWall?title=${title | u}" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Recent Issues</a>

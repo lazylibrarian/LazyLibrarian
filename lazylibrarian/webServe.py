@@ -2770,10 +2770,19 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def magazineScan(self):
+    def magazineScan(self, **kwargs):
+        if 'title' in kwargs:
+            title = kwargs['title']
+            title = title.replace('&amp;', '&')
+        else:
+            title = ''
+
         if 'MAGAZINE_SCAN' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
+                if title:
+                    threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[title]).start()
+                else:
+                    threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
             except Exception as e:
                 logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
