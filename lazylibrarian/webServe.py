@@ -2787,7 +2787,10 @@ class WebInterface(object):
                 logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('MAGAZINE_SCAN already running')
-        raise cherrypy.HTTPRedirect("magazines")
+        if title:
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
+        else:
+            raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose
     def includeAlternate(self):

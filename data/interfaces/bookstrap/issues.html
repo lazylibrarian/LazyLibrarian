@@ -18,6 +18,9 @@
 
 <%def name="body()">
   <h1>${title}</h1>
+    %if lazylibrarian.MAG_UPDATE == True:
+        <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Library scan in progress ...</p>
+    %endif
     <form name="markIssues" id="markIssues" action="markIssues" method="get" class="form-inline" onsubmit="return false;">
       <div class="form-group">
         <label for="action" class="control-label">Selected issues:</label>
@@ -74,6 +77,9 @@
     </form>
   </%def>
   <%def name="headIncludes()">
+    %if lazylibrarian.MAG_UPDATE == True:
+    <meta http-equiv="refresh" content="10">
+    %endif
   </%def>
 <%def name="javascriptIncludes()">
   <script type="text/javascript">
