@@ -21,7 +21,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import scheduleJob
-from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod
+from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import plural, now, unaccented_str, replace_all, unaccented, \
     nzbdate2format, getList, month2num, datecompare, check_int, check_year
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
@@ -218,13 +218,13 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
 
                         if not rejected:
+                            # Need to make sure that substrings of magazine titles don't get found
+                            # (e.g. Maxim USA will find Maximum PC USA) so split into "words"
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
                             nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
-                            # Need to make sure that substrings of magazine titles don't get found
-                            # (e.g. Maxim USA will find Maximum PC USA)
-                            # remove extra spaces if they're in a row
                             if nzbtitle_formatted and nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
                                 nzbtitle_formatted = nzbtitle_formatted[1:-1]
+                            # remove extra spaces if they're in a row
                             nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
                             nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
 
@@ -233,7 +233,7 @@ def search_magazines(mags=None, reset=False):
                             else:
                                 bookid_exploded = [bookid]
 
-                            # check nzb has magazine title and a date/issue nr
+                            # Check nzb has magazine title and a date/issue nr
                             # eg The MagPI July 2015
 
                             if len(nzbtitle_exploded) > len(bookid_exploded):
@@ -253,7 +253,7 @@ def search_magazines(mags=None, reset=False):
                                         "Magazine title match failed " + bookid + " for " + nzbtitle_formatted)
                                 else:
                                     logger.debug(
-                                        "Magazine matched " + bookid + " for " + nzbtitle_formatted)
+                                        "Magazine title matched " + bookid + " for " + nzbtitle_formatted)
                             else:
                                 logger.debug("Magazine name too short (%s)" % len(nzbtitle_exploded))
                                 rejected = True
@@ -281,140 +281,20 @@ def search_magazines(mags=None, reset=False):
                                     logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                     break
 
-                        regex_pass = 0
                         if not rejected:
-                            # Magazine names have many different styles of date
-                            # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
-                            # MonthName DD YYYY or MonthName DD, YYYY
-                            # YYYY MM or YYYY MM DD
-                            # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
-                            # nn YYYY issue number without "Nr" before it
-                            # issue and year as a single 6 digit string eg 222015
-                            newdatish = "none"
-                            # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
-                            pos = 0
-                            while pos < len(nzbtitle_exploded):
-                                year = check_year(nzbtitle_exploded[pos])
-                                if year and pos:
-                                    month = month2num(nzbtitle_exploded[pos - 1])
-                                    if month:
-                                        if pos - 1:
-                                            day = check_int(nzbtitle_exploded[pos - 2], 1)
-                                            if day > 31:  # probably issue number nn
-                                                day = 1
-                                        else:
-                                            day = 1
-                                        newdatish = "%04d-%02d-%02d" % (year, month, day)
-                                        try:
-                                            _ = datetime.date(year, month, day)
-                                            regex_pass = 1
-                                            break
-                                        except ValueError:
-                                            regex_pass = 0
-                                pos += 1
-
-                            # MonthName DD YYYY or MonthName DD, YYYY
-                            if not regex_pass:
-                                pos = 0
-                                while pos < len(nzbtitle_exploded):
-                                    year = check_year(nzbtitle_exploded[pos])
-                                    if year and (pos - 1):
-                                        month = month2num(nzbtitle_exploded[pos - 2])
-                                        if month:
-                                            day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
-                                            try:
-                                                _ = datetime.date(year, month, day)
-                                                newdatish = "%04d-%02d-%02d" % (year, month, day)
-                                                regex_pass = 2
-                                                break
-                                            except ValueError:
-                                                regex_pass = 0
-                                    pos += 1
-
-                            # YYYY MM or YYYY MM DD
-                            if not regex_pass:
-                                pos = 0
-                                while pos < len(nzbtitle_exploded):
-                                    year = check_year(nzbtitle_exploded[pos])
-                                    if year and pos + 1 < len(nzbtitle_exploded):
-                                        month = check_int(nzbtitle_exploded[pos + 1], 0)
-                                        if month:
-                                            if pos + 2 < len(nzbtitle_exploded):
-                                                day = check_int(nzbtitle_exploded[pos + 2], 1)
-                                            else:
-                                                day = 1
-                                            try:
-                                                _ = datetime.date(year, month, day)
-                                                newdatish = "%04d-%02d-%02d" % (year, month, day)
-                                                regex_pass = 3
-                                                break
-                                            except ValueError:
-                                                regex_pass = 0
-                                    pos += 1
-
-                            # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
-                            if not regex_pass:
-                                nouns = ["issue", "no", "nr", "vol", "volume"]
-                                pos = 0
-                                while pos < len(nzbtitle_exploded):
-                                    if nzbtitle_exploded[pos].lower().strip('.') in nouns:
-                                        if pos + 1 < len(nzbtitle_exploded):
-                                            issue = check_int(nzbtitle_exploded[pos + 1], 0)
-                                            if issue:
-                                                newdatish = str(issue)  # 4 == 04 == 004
-                                                if pos + 2 < len(nzbtitle_exploded):
-                                                    year = check_year(nzbtitle_exploded[pos + 2])
-                                                    if year and year < int(datetime.date.today().year):
-                                                        newdatish = '0'  # it's old
-                                                    regex_pass = 4  # Issue/No/Nr/Vol nn, YYYY
-                                                else:
-                                                    regex_pass = 5  # Issue/No/Nr/Vol nn
-                                                break
-                                    pos += 1
-
-                            # nn YYYY issue number without "Nr" before it
-                            if not regex_pass:
-                                pos = 1
-                                while pos < len(nzbtitle_exploded):
-                                    year = check_year(nzbtitle_exploded[pos])
-                                    if year:
-                                        issue = check_int(nzbtitle_exploded[pos - 1], 0)
-                                        if issue:
-                                            newdatish = str(issue)  # 4 == 04 == 004
-                                            regex_pass = 6
-                                            if year < int(datetime.date.today().year):
-                                                newdatish = '0'  # it's old
-                                            break
-                                    pos += 1
-
-                            # issue and year as a single 6 digit string eg 222015
-                            if not regex_pass:
-                                pos = 0
-                                while pos < len(nzbtitle_exploded):
-                                    issue = nzbtitle_exploded[pos]
-                                    if issue.isdigit() and len(issue) == 6:
-                                        year = int(issue[2:])
-                                        issue = int(issue[:2])
-                                        newdatish = str(issue)  # 4 == 04 == 004
-                                        regex_pass = 7
-                                        if year < int(datetime.date.today().year):
-                                            newdatish = '0'  # it's old
-                                        break
-                                    pos += 1
-
+                            regex_pass, issuedate = get_issue_date(nzbtitle_exploded)
                             if not regex_pass:
                                 logger.debug('Magazine %s not in a recognised date format.' % nzbtitle_formatted)
                                 bad_date += 1
                                 # allow issues with good name but bad date to be included
                                 # so user can manually select them, incl those with issue numbers
-                                newdatish = "1970-01-01"  # provide a fake date for bad-date issues
-                                regex_pass = 99
+                                issuedate = "1970-01-01"  # provide a fake date for bad-date issues
 
                         if rejected:
                             rejects += 1
                         else:
                             if lazylibrarian.LOGLEVEL > 2:
-                                logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, newdatish))
+                                logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, issuedate))
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped"
                             insert_table = "pastissues"
@@ -422,14 +302,14 @@ def search_magazines(mags=None, reset=False):
 
                             control_date = results['IssueDate']
                             if control_date is None:  # we haven't got any copies of this magazine yet
-                                # get a rough time just over a month ago to compare to, in format yyyy-mm-dd
+                                # get a rough time just over MAX_AGE days ago to compare to, in format yyyy-mm-dd
                                 # could perhaps calc differently for weekly, biweekly etc
-                                # or for magazines with only an issue number, use zero
+                                # For magazines with only an issue number use zero as we can't tell age
 
-                                if str(newdatish).isdigit():
-                                    logger.debug('Magazine comparing issue numbers (%s)' % newdatish)
+                                if str(issuedate).isdigit():
+                                    logger.debug('Magazine comparing issue numbers (%s)' % issuedate)
                                     control_date = 0
-                                elif re.match('\d+-\d\d-\d\d', str(newdatish)):
+                                elif re.match('\d+-\d\d-\d\d', str(issuedate)):
                                     start_time = time.time()
                                     start_time -= int(
                                         lazylibrarian.CONFIG['MAG_AGE']) * 24 * 60 * 60  # number of seconds in days
@@ -438,19 +318,19 @@ def search_magazines(mags=None, reset=False):
                                     control_date = time.strftime("%Y-%m-%d", time.localtime(start_time))
                                     logger.debug('Magazine date comparing to %s' % control_date)
                                 else:
-                                    logger.debug('Magazine unable to find comparison type [%s]' % newdatish)
+                                    logger.debug('Magazine unable to find comparison type [%s]' % issuedate)
                                     control_date = 0
 
-                            if str(control_date).isdigit() and str(newdatish).isdigit():
+                            if str(control_date).isdigit() and str(issuedate).isdigit():
                                 # for issue numbers, check if later than last one we have
-                                comp_date = int(newdatish) - int(control_date)
-                                newdatish = "%s" % newdatish
-                                newdatish = newdatish.zfill(4)  # pad so we sort correctly
+                                comp_date = int(issuedate) - int(control_date)
+                                issuedate = "%s" % issuedate
+                                issuedate = issuedate.zfill(4)  # pad so we sort correctly
                             elif re.match('\d+-\d\d-\d\d', str(control_date)) and \
-                                    re.match('\d+-\d\d-\d\d', str(newdatish)):
+                                    re.match('\d+-\d\d-\d\d', str(issuedate)):
                                 # only grab a copy if it's newer than the most recent we have,
                                 # or newer than a month ago if we have none
-                                comp_date = datecompare(newdatish, control_date)
+                                comp_date = datecompare(issuedate, control_date)
                             else:
                                 # invalid comparison of date and issue number
                                 if re.match('\d+-\d\d-\d\d', str(control_date)):
@@ -458,13 +338,13 @@ def search_magazines(mags=None, reset=False):
                                 else:
                                     logger.debug('Magazine %s failed: Expecting issue number' % nzbtitle_formatted)
                                 bad_date += 1
-                                newdatish = "1970-01-01"  # this is our fake date for ones we can't decipher
+                                issuedate = "1970-01-01"  # this is our fake date for ones we can't decipher
                                 comp_date = 0
 
                             if comp_date > 0:
                                 # keep track of what we're going to download so we don't download dupes
                                 new_date += 1
-                                issue = bookid + ',' + newdatish
+                                issue = bookid + ',' + issuedate
                                 if issue not in issues:
                                     maglist.append({
                                         'bookid': bookid,
@@ -484,7 +364,7 @@ def search_magazines(mags=None, reset=False):
                                 else:
                                     logger.debug('This issue of %s is already flagged for download' % issue)
                             else:
-                                if newdatish != "1970-01-01":  # this is our fake date for ones we can't decipher
+                                if issuedate != "1970-01-01":  # this is our fake date for ones we can't decipher
                                     logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
                                     old_date += 1
 
@@ -508,7 +388,7 @@ def search_magazines(mags=None, reset=False):
                                     "NZBurl": nzburl,
                                     "BookID": bookid,
                                     "NZBdate": nzbdate,
-                                    "AuxInfo": newdatish,
+                                    "AuxInfo": issuedate,
                                     "Status": insert_status,
                                     "NZBsize": nzbsize,
                                     "NZBmode": nzbmode
@@ -528,6 +408,13 @@ def search_magazines(mags=None, reset=False):
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
+                            'magazine')
+                    elif 'libgen' in magazine['nzbprov']:
+                        snatch = DirectDownloadMethod(
+                            magazine['bookid'],
+                            magazine['nzbtitle'],
+                            magazine['nzburl'],
+                            bookid,
                             'magazine')
                     else:
                         snatch = NZBDownloadMethod(
@@ -551,3 +438,127 @@ def search_magazines(mags=None, reset=False):
         logger.error('Unhandled exception in search_magazines: %s' % traceback.format_exc())
     finally:
         threading.currentThread().name = "WEBSERVER"
+
+
+def get_issue_date(nzbtitle_exploded):
+    regex_pass = 0
+    issuedate = ''
+    # Magazine names have many different styles of date
+    # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
+    # MonthName DD YYYY or MonthName DD, YYYY
+    # YYYY MM or YYYY MM DD
+    # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
+    # nn YYYY issue number without "Nr" before it
+    # issue and year as a single 6 digit string eg 222015
+    # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
+    pos = 0
+    while pos < len(nzbtitle_exploded):
+        year = check_year(nzbtitle_exploded[pos])
+        if year and pos:
+            month = month2num(nzbtitle_exploded[pos - 1])
+            if month:
+                if pos - 1:
+                    day = check_int(nzbtitle_exploded[pos - 2], 1)
+                    if day > 31:  # probably issue number nn
+                        day = 1
+                else:
+                    day = 1
+                issuedate = "%04d-%02d-%02d" % (year, month, day)
+                try:
+                    _ = datetime.date(year, month, day)
+                    regex_pass = 1
+                    break
+                except ValueError:
+                    regex_pass = 0
+        pos += 1
+
+    # MonthName DD YYYY or MonthName DD, YYYY
+    if not regex_pass:
+        pos = 0
+        while pos < len(nzbtitle_exploded):
+            year = check_year(nzbtitle_exploded[pos])
+            if year and (pos - 1):
+                month = month2num(nzbtitle_exploded[pos - 2])
+                if month:
+                    day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
+                    try:
+                        _ = datetime.date(year, month, day)
+                        issuedate = "%04d-%02d-%02d" % (year, month, day)
+                        regex_pass = 2
+                        break
+                    except ValueError:
+                        regex_pass = 0
+            pos += 1
+
+    # YYYY MM or YYYY MM DD
+    if not regex_pass:
+        pos = 0
+        while pos < len(nzbtitle_exploded):
+            year = check_year(nzbtitle_exploded[pos])
+            if year and pos + 1 < len(nzbtitle_exploded):
+                month = check_int(nzbtitle_exploded[pos + 1], 0)
+                if month:
+                    if pos + 2 < len(nzbtitle_exploded):
+                        day = check_int(nzbtitle_exploded[pos + 2], 1)
+                    else:
+                        day = 1
+                    try:
+                        _ = datetime.date(year, month, day)
+                        issuedate = "%04d-%02d-%02d" % (year, month, day)
+                        regex_pass = 3
+                        break
+                    except ValueError:
+                        regex_pass = 0
+            pos += 1
+
+    # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
+    if not regex_pass:
+        nouns = ["issue", "no", "nr", "vol", "volume"]
+        pos = 0
+        while pos < len(nzbtitle_exploded):
+            if nzbtitle_exploded[pos].lower().strip('.') in nouns:
+                if pos + 1 < len(nzbtitle_exploded):
+                    issue = check_int(nzbtitle_exploded[pos + 1], 0)
+                    if issue:
+                        issuedate = str(issue)  # 4 == 04 == 004
+                        if pos + 2 < len(nzbtitle_exploded):
+                            year = check_year(nzbtitle_exploded[pos + 2])
+                            if year and year < int(datetime.date.today().year):
+                                issuedate = '0'  # it's old
+                            regex_pass = 4  # Issue/No/Nr/Vol nn, YYYY
+                        else:
+                            regex_pass = 5  # Issue/No/Nr/Vol nn
+                        break
+            pos += 1
+
+    # nn YYYY issue number without "Nr" before it
+    if not regex_pass:
+        pos = 1
+        while pos < len(nzbtitle_exploded):
+            year = check_year(nzbtitle_exploded[pos])
+            if year:
+                issue = check_int(nzbtitle_exploded[pos - 1], 0)
+                if issue:
+                    issuedate = str(issue)  # 4 == 04 == 004
+                    regex_pass = 6
+                    if year < int(datetime.date.today().year):
+                        issuedate = '0'  # it's old
+                    break
+            pos += 1
+
+    # issue and year as a single 6 digit string eg 222015
+    if not regex_pass:
+        pos = 0
+        while pos < len(nzbtitle_exploded):
+            issue = nzbtitle_exploded[pos]
+            if issue.isdigit() and len(issue) == 6:
+                year = int(issue[2:])
+                issue = int(issue[:2])
+                issuedate = str(issue)  # 4 == 04 == 004
+                regex_pass = 7
+                if year < int(datetime.date.today().year):
+                    issuedate = '0'  # it's old
+                break
+            pos += 1
+
+    return regex_pass, issuedate
