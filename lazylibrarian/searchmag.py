@@ -561,4 +561,15 @@ def get_issue_date(nzbtitle_exploded):
                 break
             pos += 1
 
+    # issue as a single 4 digit string eg 0063
+    if not regex_pass:
+        pos = 0
+        while pos < len(nzbtitle_exploded):
+            issue = nzbtitle_exploded[pos]
+            if issue.isdigit() and len(issue) == 4:
+                issuedate = issue
+                regex_pass = 8
+                break
+            pos += 1
+
     return regex_pass, issuedate
