@@ -30,11 +30,11 @@
   </div>
 </%def>
 <%def name="body()">
+  <h1>${title}</h1>
+  %if lazylibrarian.MAG_UPDATE == True:
+      <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Library scan in progress ...</p>
+  %endif
   <form name="markMagazines" id="markMagazines" action="markMagazines" method="get" class="form-inline" onsubmit="return false;">
-    <h1>${title}</h1>
-    %if lazylibrarian.MAG_UPDATE == True:
-        <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Library scan in progress ...</p>
-    %endif
     <div class="indented">
       % if perm%lazylibrarian.perm_status:
       <div class="form-group">

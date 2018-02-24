@@ -299,7 +299,7 @@ def cron_processDir():
         processDir()
 
 
-def processDir(reset=False, startdir=None):
+def processDir(reset=False, startdir=None, ignorekeepseeding=False):
     count = 0
     for threadname in [n.name for n in [t for t in threading.enumerate()]]:
         if threadname == 'POSTPROCESS':
@@ -311,6 +311,8 @@ def processDir(reset=False, startdir=None):
     if count:
         logger.debug("POSTPROCESS is already running")
         return
+
+    threading.currentThread().name = "POSTPROCESS"
     # noinspection PyBroadException,PyStatementEffect
     try:
         ppcount = 0
@@ -654,7 +656,7 @@ def processDir(reset=False, startdir=None):
                         # calibre or ll copied/moved the files we want, now delete source files
 
                         to_delete = True
-                        if book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
+                        if ignorekeepseeding is False and book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
                             # Only delete torrents if we don't want to keep seeding
                             if lazylibrarian.CONFIG['KEEP_SEEDING']:
                                 logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
@@ -830,7 +832,7 @@ def processDir(reset=False, startdir=None):
         logger.error('Unhandled exception in processDir: %s' % traceback.format_exc())
 
     finally:
-        threading.currentThread().name = "WEBSERVER"
+        threading.currentThread().name = threadname
 
 
 def delete_task(Source, DownloadID, remove_data):

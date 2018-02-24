@@ -30,7 +30,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
 from lazylibrarian.csvfile import import_CSV, export_CSV
-from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr
+from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr, replace_all
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.grsync import grfollow, grsync
@@ -40,7 +40,7 @@ from lazylibrarian.magazinescan import magazineScan, create_covers
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
-from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.searchmag import search_magazines, get_issue_date
 from lazylibrarian.searchrss import search_rss_book
 from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.providers import get_capabilities
@@ -72,11 +72,12 @@ cmd_dict = {'help': 'list available commands. ' +
             'clearLogs': 'clear current log',
             'getMagazines': 'list magazines',
             'getIssues': '&name= list issues of named magazine',
+            'getIssueName': '&name= get name of issue from path/filename',
             'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
             'forceRSSSearch': '[&wait] search all entries in rss wishlists',
-            'forceProcess': '[&dir] process books/mags in download or named dir',
+            'forceProcess': '[&dir] [ignorekeepseeding] process books/mags in download or named dir',
             'pauseAuthor': '&id= pause author by AuthorID',
             'resumeAuthor': '&id= resume author by AuthorID',
             'ignoreAuthor': '&id= ignore author by AuthorID',
@@ -492,15 +493,40 @@ class Api(object):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
-        else:
-            self.id = kwargs['name']
-
+        self.id = kwargs['name']
         magazine = self._dic_from_query(
             'SELECT * from magazines WHERE Title="' + self.id + '"')
         issues = self._dic_from_query(
             'SELECT * from issues WHERE Title="' + self.id + '" order by IssueDate DESC')
 
         self.data = {'magazine': magazine, 'issues': issues}
+
+    def _getIssueName(self, **kwargs):
+        if 'name' not in kwargs:
+            self.data = 'Missing parameter: name'
+            return
+        self.data = ''
+        filename = os.path.basename(kwargs['name'])
+        dirname = os.path.dirname(kwargs['name'])
+        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
+        name_formatted = replace_all(filename, dic).strip()
+        if name_formatted and name_formatted[0] == '[' and name_formatted[-1] == ']':
+            name_formatted = name_formatted[1:-1]
+        # remove extra spaces if they're in a row
+        name_formatted = " ".join(name_formatted.split())
+        name_exploded = name_formatted.split(' ')
+        regex_pass, issuedate = get_issue_date(name_exploded)
+        if regex_pass:
+            if dirname:
+                title = os.path.basename(dirname)
+                if '$Title' in lazylibrarian.CONFIG['MAG_DEST_FILE']:
+                    fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate).replace(
+                            '$Title', title)
+                else:
+                    fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate)
+                self.data = os.path.join(dirname, fname + '.' + name_exploded[-1])
+            else:
+                self.data = issuedate
 
     def _createMagCovers(self, **kwargs):
         if 'refresh' in kwargs:
@@ -688,7 +714,10 @@ class Api(object):
         startdir = None
         if 'dir' in kwargs:
             startdir = kwargs['dir']
-        processDir(startdir=startdir)
+        iks = False
+        if 'ignorekeepseeding' in kwargs:
+            iks = True
+        processDir(startdir=startdir, ignorekeepseeding=iks)
 
     @staticmethod
     def _forceLibraryScan(**kwargs):

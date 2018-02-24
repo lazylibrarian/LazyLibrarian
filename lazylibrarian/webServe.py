@@ -2770,15 +2770,27 @@ class WebInterface(object):
         raise cherrypy.HTTPRedirect("books")
 
     @cherrypy.expose
-    def magazineScan(self):
+    def magazineScan(self, **kwargs):
+        if 'title' in kwargs:
+            title = kwargs['title']
+            title = title.replace('&amp;', '&')
+        else:
+            title = ''
+
         if 'MAGAZINE_SCAN' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
+                if title:
+                    threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[title]).start()
+                else:
+                    threading.Thread(target=magazinescan.magazineScan, name='MAGAZINE_SCAN', args=[]).start()
             except Exception as e:
                 logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('MAGAZINE_SCAN already running')
-        raise cherrypy.HTTPRedirect("magazines")
+        if title:
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
+        else:
+            raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose
     def includeAlternate(self):
@@ -3323,8 +3335,8 @@ class WebInterface(object):
         if 'script' in kwargs:
             lazylibrarian.CONFIG['CUSTOM_SCRIPT'] = kwargs['script']
         result = notifiers.custom_notifier.test_notify()
-        if result:
-            return "Custom notification failed,\n%s" % result
+        if result is False:
+            return "Custom notification failed"
         else:
             lazylibrarian.config_write('Custom')
             return "Custom notification successful"

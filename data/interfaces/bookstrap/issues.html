@@ -8,7 +8,7 @@
       %if perm&lazylibrarian.perm_force:
         <a href="forceSearch?source=magazines&title=${title | u}" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Force Search</a>
         <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary">Force Post-Processing</a>
-        <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
+        <a href="magazineScan?title=${title | u}"" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
         <a href="pastIssues?mag=${title | u}" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-o"></i> Past Issues</a>
       %endif
       <a href="magWall?title=${title | u}" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Recent Issues</a>
@@ -18,6 +18,9 @@
 
 <%def name="body()">
   <h1>${title}</h1>
+    %if lazylibrarian.MAG_UPDATE == True:
+        <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Library scan in progress ...</p>
+    %endif
     <form name="markIssues" id="markIssues" action="markIssues" method="get" class="form-inline" onsubmit="return false;">
       <div class="form-group">
         <label for="action" class="control-label">Selected issues:</label>
@@ -74,6 +77,9 @@
     </form>
   </%def>
   <%def name="headIncludes()">
+    %if lazylibrarian.MAG_UPDATE == True:
+    <meta http-equiv="refresh" content="10">
+    %endif
   </%def>
 <%def name="javascriptIncludes()">
   <script type="text/javascript">

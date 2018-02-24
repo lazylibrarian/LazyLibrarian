@@ -274,8 +274,10 @@ def create_id(issuename=None):
     return hashID
 
 
-def magazineScan():
+def magazineScan(title=None):
     lazylibrarian.MAG_UPDATE = 1
+    onetitle = title
+
     # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
@@ -290,7 +292,8 @@ def magazineScan():
 
         if PY2:
             mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
-        if lazylibrarian.CONFIG['FULL_SCAN']:
+
+        if lazylibrarian.CONFIG['FULL_SCAN'] and not onetitle:
             mags = myDB.select('select * from Issues')
             # check all the issues are still there, delete entry if not
             for mag in mags:
@@ -320,6 +323,11 @@ def magazineScan():
                 if not issues:
                     logger.debug('Magazine %s deleted as no issues found' % title)
                     myDB.action('DELETE from magazines WHERE Title=?', (title,))
+
+        if onetitle:
+            match = myDB.match('SELECT LatestCover from magazines where Title=?', (onetitle,))
+            if match:
+                mag_path = os.path.dirname(match['LatestCover'])
 
         logger.info(' Checking [%s] for magazines' % mag_path)
 
@@ -457,12 +465,14 @@ def magazineScan():
                             newValueDict["LatestCover"] = os.path.splitext(issuefile)[0] + '.jpg'
                         myDB.upsert("magazines", newValueDict, controlValueDict)
 
-        magcount = myDB.match("select count(*) from magazines")
-        isscount = myDB.match("select count(*) from issues")
-
-        logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
-                    (magcount['count(*)'], plural(magcount['count(*)']),
-                     isscount['count(*)'], plural(isscount['count(*)'])))
+        if lazylibrarian.CONFIG['FULL_SCAN'] and not onetitle:
+            magcount = myDB.match("select count(*) from magazines")
+            isscount = myDB.match("select count(*) from issues")
+            logger.info("Magazine scan complete, found %s magazine%s, %s issue%s" %
+                        (magcount['count(*)'], plural(magcount['count(*)']),
+                         isscount['count(*)'], plural(isscount['count(*)'])))
+        else:
+            logger.info("Magazine scan complete")
         lazylibrarian.MAG_UPDATE = 0
 
     except Exception:
