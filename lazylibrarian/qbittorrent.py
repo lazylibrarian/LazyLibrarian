@@ -224,9 +224,12 @@ def checkLink():
 
 def addTorrent(link, hashid):
     logger.debug('addTorrent(%s)' % link)
-
+    args = {}
     qbclient = qbittorrentclient()
-    args = {'savepath': lazylibrarian.DIRECTORY('Download')}
+    dl_dir = lazylibrarian.CONFIG['QBITTORRENT_DIR']
+    if dl_dir:
+        args['savepath'] = dl_dir
+
     if lazylibrarian.CONFIG['QBITTORRENT_LABEL']:
         if 6 < qbclient.api < 10:
             args['label'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']

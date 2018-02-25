@@ -487,7 +487,9 @@ def setTorrentPath(result):
     if not any(delugeweb_auth):
         _get_auth()
 
-    if lazylibrarian.DIRECTORY('Download'):
+    dl_dir = lazylibrarian.CONFIG['DELUGE_DIR']
+
+    if dl_dir:
         post_data = json.dumps({"method": "core.set_torrent_move_completed",
                                 "params": [result['hash'], True],
                                 "id": 7})
@@ -495,14 +497,12 @@ def setTorrentPath(result):
             post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, headers=headers)
 
-        move_to = lazylibrarian.DIRECTORY('Download')
-
-        if not os.path.exists(move_to):
-            logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % move_to)
-            os.makedirs(move_to)
-            setperm(move_to)
+        if not os.path.exists(dl_dir):
+            logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % dl_dir)
+            os.makedirs(dl_dir)
+            setperm(dl_dir)
         post_data = json.dumps({"method": "core.set_torrent_move_completed_path",
-                                "params": [result['hash'], move_to],
+                                "params": [result['hash'], dl_dir],
                                 "id": 8})
         if PY2:
             post_data = post_data.encode(lazylibrarian.SYS_ENCODING)

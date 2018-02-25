@@ -152,7 +152,7 @@
                       Single user bypass login</label>
                     </div>
                     <fieldset id="admin_options">
-                    <div id="admin_options" class="form-group">
+                    <div class="form-group">
                       <label for="admin_email" class="control-label">Contact Email:</label>
                       <input type="text" id="admin_email" name="admin_email" value="${lazylibrarian.CONFIG['ADMIN_EMAIL']}" class="form-control" placeholder="Contact email for requests/registration">
                     </div>
@@ -193,7 +193,7 @@
                       Enable API</label>
                     </div>
                     <fieldset id="api_options">
-                      <div id="api_options" class="form-group">
+                      <div class="form-group">
                         <label>API key</label>
                         <input type="text" name="api_key" id="api_key" value="${lazylibrarian.CONFIG['API_KEY']}" size="36">
                         <input class="button btn btn-sm btn-primary" type="button" value="Generate" id="generateAPI" onClick="document.location.reload(true)">
@@ -721,6 +721,11 @@
                       <input type="text" id="deluge_label" name="deluge_label" value="${lazylibrarian.CONFIG['DELUGE_LABEL']}" class="form-control" placeholder="Deluge Label">
                     </div>
                     <div class="form-group col-md-6">
+                      <label for="deluge_dir" class="control-label">Download directory :</label>
+                      <input type="text" id="deluge_dir" name="deluge_dir" value="${lazylibrarian.CONFIG['DELUGE_DIR']}" class="form-control" placeholder="Deluge Download Directory">
+                      <span class="help-block">Leave blank to use deluge default</span>
+                    </div>
+                    <div class="form-group col-md-6">
                       <label for="testDeluge" class="control-label">Deluge Connection:</label><br>
                       <button class="button btn btn-sm btn-primary" type="button" value="Test Deluge" id="testDeluge"><i class="fa fa-list-ul"></i> Test Deluge</button>
                       <br>
@@ -752,11 +757,16 @@
                     </div>
                     <div class="form-group col-md-6">
                       <label for="transmission_user" class="control-label">Username :</label>
-                      <input type="text" id="transmission_user" name="transmission_user" value="${lazylibrarian.CONFIG['TRANSMISSION_USER']}" clas  s="form-control" placeholder="Transmission Username">
+                      <input type="text" id="transmission_user" name="transmission_user" value="${lazylibrarian.CONFIG['TRANSMISSION_USER']}" class="form-control" placeholder="Transmission Username">
                     </div>
                     <div class="form-group col-md-6">
                       <label for="transmission_pass" class="control-label">Password :</label>
                       <input type="password" id="transmission_pass" name="transmission_pass" value="${lazylibrarian.CONFIG['TRANSMISSION_PASS']}" class="form-control" placeholder="Transmission Password">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="transmission_dir" class="control-label">Download directory :</label>
+                      <input type="text" id="transmission_dir" name="transmission_dir" value="${lazylibrarian.CONFIG['TRANSMISSION_DIR']}" class="form-control" placeholder="Transmission Download Directory">
+                      <span class="help-block">Leave blank to use transmission default</span>
                     </div>
                   </div>
                   <div class="form-group col-md-6">
@@ -799,10 +809,8 @@
                     <div class="form-group col-md-6">
                       <label for="rtorrent_dir" class="control-label">rTorrent Directory:</label>
                       <input type="text" id="rtorrent_dir" name="rtorrent_dir" value="${lazylibrarian.CONFIG['RTORRENT_DIR']}" class="form-control" placeholder="rTorrent Directory">
+                      <span class="help-block">Leave blank to use rtorrent default</span>
                     </div>
-                    <div class="form-group col-md-6">
-                      <span class="help-block">Leave rTorrent directory blank to use rtorrent defaults
-                      </span></div>
                     <div>
                       <div class="form-group col-md-6">
                         <label for="testrTorrent" class="control-label">rTorrent Connection:</label><br>
@@ -810,91 +818,98 @@
                         <br>
                         <br>
                       </div>
-                    </fieldset>
-                    <div class="checkbox">
-                      <%
-                        if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                      %>
-                      <label for="tor_downloader_utorrent" class="control-label">
-                        <input type="checkbox" id="tor_downloader_utorrent" name="tor_downloader_utorrent" value="1" ${checked} />
-                        Use uTorrent</label>
                     </div>
-                    <fieldset id="utorrent_options">
-                      <legend>uTorrent</legend>
-                      <div class="row">
-                        <div class="form-group col-md-8">
-                          <label for="utorrent_host" class="control-label">uTorrent Host:</label>
-                          <input type="text" id="utorrent_host" name="utorrent_host" value="${lazylibrarian.CONFIG['UTORRENT_HOST']}" class="form-control" placeholder="uTorrent Host">
-                        </div>
-                        <div class="form-group col-md-4">
-                          <label for="utorrent_port" class="control-label">uTorrent Port:</label>
-                          <input type="text" id="utorrent_port" name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" class="form-control" placeholder="uTorrent Port">
-                        </div>
-                        <div class="form-group col-md-6">
-                          <label for="utorrent_user" class="control-label">Username:</label>
-                          <input type="text" id="utorrent_user" name="utorrent_user" value="${lazylibrarian.CONFIG['UTORRENT_USER']}" class="form-control" placeholder="uTorrent Username">
-                        </div>
-                        <div class="form-group col-md-6">
-                          <label>Password:</label>
-                          <input type="password" id="utorrent_pass" name="utorrent_pass" value="${lazylibrarian.CONFIG['UTORRENT_PASS']}" class="form-control" placeholder="uTorrent Password">
-                        </div>
-                      </div>
-                      <div class="form-group col-md-6">
-                        <label for="utorrent_label" class="control-label">uTorrent Label:</label>
-                        <input type="text" id="utorrent_label" name="utorrent_label" value="${lazylibrarian.CONFIG['UTORRENT_LABEL']}" class="form-control" placeholder="uTorrent Label">
-                      </div>
-                      <div class="form-group col-md-6">
-                        <label for="testuTorrent" class="control-label">uTorrent Connection:</label><br>
-                        <button class="button btn btn-sm btn-primary" type="button" value="Test uTorrent" id="testuTorrent"><i class="fa fa-list-ul"></i> Test uTorrent</button>
-                        <br>
-                        <br>
-                      </div>
-                    </fieldset>
-                    <div class="checkbox">
-                      <%
-                        if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                        %>
-                      <label for="tor_downloader_qbittorrent" class="control-label">
-                        <input type="checkbox" id="tor_downloader_qbittorrent" name="tor_downloader_qbittorrent" value="1" ${checked} />
-                        Use qBitTorrent</label>
+                  </div>
+                </fieldset>
+                <div class="checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <label for="tor_downloader_utorrent" class="control-label">
+                    <input type="checkbox" id="tor_downloader_utorrent" name="tor_downloader_utorrent" value="1" ${checked} />
+                    Use uTorrent</label>
+                </div>
+                <fieldset id="utorrent_options">
+                  <legend>uTorrent</legend>
+                  <div class="row">
+                    <div class="form-group col-md-8">
+                      <label for="utorrent_host" class="control-label">uTorrent Host:</label>
+                      <input type="text" id="utorrent_host" name="utorrent_host" value="${lazylibrarian.CONFIG['UTORRENT_HOST']}" class="form-control" placeholder="uTorrent Host">
                     </div>
-                    <fieldset id="qbittorrent_options">
-                      <legend>qBitTorrent</legend>
-                      <div class="row">
-                        <div class="form-group col-md-8">
-                          <label for="qbittorrent_host" class="control-label">qBitTorrent Host:</label>
-                          <input type="text" id="qbittorrent_host" name="qbittorrent_host" value="${lazylibrarian.CONFIG['QBITTORRENT_HOST']}" class="form-control" placeholder="qBitTorrent Host">
-                        </div>
-                        <div class="form-group col-md-4">
-                          <label for="qbittorrent_port" class="control-label">qBitTorrent Port:</label>
-                          <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" class="form-control" placeholder="qBitTorrent Port">
-                        </div>
-                        <div class="form-group col-md-6">
-                          <label for="qbittorrent_user" class="control-label">Username:</label>
-                          <input type="text" id="qbittorrent_user" name="qbittorrent_user" value="${lazylibrarian.CONFIG['QBITTORRENT_USER']}" class="form-control" placeholder="qBitTorrent Username">
-                        </div>
-                        <div class="form-group col-md-6">
-                          <label>Password:</label>
-                          <input type="password" id="qbittorrent_pass" name="qbittorrent_pass" value="${lazylibrarian.CONFIG['QBITTORRENT_PASS']}" class="form-control" placeholder="qBitTorrent Password">
-                        </div>
-                      </div>
-                      <div class="form-group col-md-6">
-                        <label for="qbittorrent_label" class="control-label">qBitTorrent Label/Category:</label>
-                        <input type="text" id="qbittorrent_label" name="qbittorrent_label" value="${lazylibrarian.CONFIG['QBITTORRENT_LABEL']}" class="form-control" placeholder="qBitTorrent Label/Category">
-                      </div>
-                      <div class="form-group col-md-6">
-                        <label for="testqBittorrent" class="control-label">qBittorrent Connection:</label><br>
-                        <button class="button btn btn-sm btn-primary" type="button" value="Test qBittorrent" id="testqBittorrent"><i class="fa fa-list-ul"></i> Test qBittorrent</button>
-                        <br>
-                        <br>
-                      </div>
-                    </fieldset>
+                    <div class="form-group col-md-4">
+                      <label for="utorrent_port" class="control-label">uTorrent Port:</label>
+                      <input type="text" id="utorrent_port" name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" class="form-control" placeholder="uTorrent Port">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="utorrent_user" class="control-label">Username:</label>
+                      <input type="text" id="utorrent_user" name="utorrent_user" value="${lazylibrarian.CONFIG['UTORRENT_USER']}" class="form-control" placeholder="uTorrent Username">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label>Password:</label>
+                      <input type="password" id="utorrent_pass" name="utorrent_pass" value="${lazylibrarian.CONFIG['UTORRENT_PASS']}" class="form-control" placeholder="uTorrent Password">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="utorrent_label" class="control-label">uTorrent Label:</label>
+                      <input type="text" id="utorrent_label" name="utorrent_label" value="${lazylibrarian.CONFIG['UTORRENT_LABEL']}" class="form-control" placeholder="uTorrent Label">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="testuTorrent" class="control-label">uTorrent Connection:</label><br>
+                      <button class="button btn btn-sm btn-primary" type="button" value="Test uTorrent" id="testuTorrent"><i class="fa fa-list-ul"></i> Test uTorrent</button>
+                      <br>
+                      <br>
+                    </div>
+                  </div>
+                </fieldset>
+                <div class="checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                  %>
+                  <label for="tor_downloader_qbittorrent" class="control-label">
+                    <input type="checkbox" id="tor_downloader_qbittorrent" name="tor_downloader_qbittorrent" value="1" ${checked} />
+                    Use qBitTorrent</label>
+                </div>
+                <fieldset id="qbittorrent_options">
+                  <legend>qBitTorrent</legend>
+                  <div class="row">
+                    <div class="form-group col-md-8">
+                      <label for="qbittorrent_host" class="control-label">qBitTorrent Host:</label>
+                      <input type="text" id="qbittorrent_host" name="qbittorrent_host" value="${lazylibrarian.CONFIG['QBITTORRENT_HOST']}" class="form-control" placeholder="qBitTorrent Host">
+                    </div>
+                    <div class="form-group col-md-4">
+                      <label for="qbittorrent_port" class="control-label">qBitTorrent Port:</label>
+                      <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" class="form-control" placeholder="qBitTorrent Port">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="qbittorrent_user" class="control-label">Username:</label>
+                      <input type="text" id="qbittorrent_user" name="qbittorrent_user" value="${lazylibrarian.CONFIG['QBITTORRENT_USER']}" class="form-control" placeholder="qBitTorrent Username">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="qbittorrent_pass" class="control-label">Password:</label>
+                      <input type="password" id="qbittorrent_pass" name="qbittorrent_pass" value="${lazylibrarian.CONFIG['QBITTORRENT_PASS']}" class="form-control" placeholder="qBitTorrent Password">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="qbittorrent_label" class="control-label">qBitTorrent Label/Category:</label>
+                      <input type="text" id="qbittorrent_label" name="qbittorrent_label" value="${lazylibrarian.CONFIG['QBITTORRENT_LABEL']}" class="form-control" placeholder="qBitTorrent Label/Category">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="qbittorrent_dir" class="control-label">Download directory :</label>
+                      <input type="text" id="qbittorrent_dir" name="qbittorrent_dir" value="${lazylibrarian.CONFIG['QBITTORRENT_DIR']}" class="form-control" placeholder="qBitTorrent Download Directory">
+                      <span class="help-block">Leave blank to use qbittorrent default</span>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="testqBittorrent" class="control-label">qBittorrent Connection:</label><br>
+                      <button class="button btn btn-sm btn-primary" type="button" value="Test qBittorrent" id="testqBittorrent"><i class="fa fa-list-ul"></i> Test qBittorrent</button>
+                      <br>
+                      <br>
+                    </div>
+                  </div>
+                </fieldset>
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE'] == True:
@@ -1282,7 +1297,7 @@
         <div role="tabpanel" class="tab-pane" id="searchprocessing">
           <div class="configtable">
             <div class="row">
-              <div class="col-md-4">
+              <fieldset class="col-md-4">
                 <fieldset>
                   <legend>Intervals</legend>
                   <div class="form-group">
@@ -1325,6 +1340,7 @@
                   </div>
                   <div class="help-block">Changes to the scan intervals only take effect when the jobs are restarted</div>
                 </fieldset>
+                <fieldset>
                 <legend>Status</legend>
                   <div class="form-group">
                     <label for="notfound_status">Missing Book Status:</label>
@@ -1397,7 +1413,6 @@
                   </div>
                 </fieldset>
                 <legend>Calibre</legend>
-                  <fieldset>
                   <div class="form-group">
                     <label for="imp_calibredb">Calibredb import program:</label>
                     <input type="text" id="imp_calibredb" name="imp_calibredb" value="${lazylibrarian.CONFIG['IMP_CALIBREDB']}" class="form-control">
@@ -1639,6 +1654,7 @@
                       <span class="help-block">Maximum results to show on coverwall</span>
                     </div>
                   </div>
+                  </div>
                 </fieldset>
                 <fieldset>
                   <div class="form-group">
@@ -1734,6 +1750,7 @@
                       Search when added</label>
                     <span class="help-block">Auto search for books/mags as soon as you add them to the database.  Leave unticked to search for them later.</span>
                   </div>
+                </fieldset>
               </div>
             </div>
             <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
@@ -2475,7 +2492,7 @@
                     else:
                         checked = ''
                   %>
-                  <label for="torznab_${loop.index}manual" class="control-label" ${hidden}>
+                  <label for="torznab_${loop.index}_manual" class="control-label" ${hidden}>
                     <input type="checkbox" id="torznab_${loop.index}_manual" name="torznab_${loop.index}_manual" value="1" ${checked} ${hidden}/>
                     Tick to prevent reloading values from provider</label>
                 </div>
