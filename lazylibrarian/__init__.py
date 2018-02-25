@@ -154,7 +154,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
-                     'AUTOADDMAG', 'AUTOADD_MAGONLY']
+                     'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -288,15 +288,18 @@ CONFIG_DEFINITIONS = {
     'QBITTORRENT_USER': ('str', 'QBITTORRENT', ''),
     'QBITTORRENT_PASS': ('str', 'QBITTORRENT', ''),
     'QBITTORRENT_LABEL': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_DIR': ('str', 'QBITTORRENT', ''),
     'TRANSMISSION_HOST': ('str', 'TRANSMISSION', ''),
     'TRANSMISSION_PORT': ('int', 'TRANSMISSION', 0),
     'TRANSMISSION_USER': ('str', 'TRANSMISSION', ''),
     'TRANSMISSION_PASS': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_DIR': ('str', 'TRANSMISSION', ''),
     'DELUGE_HOST': ('str', 'DELUGE', ''),
     'DELUGE_PORT': ('int', 'DELUGE', 0),
     'DELUGE_USER': ('str', 'DELUGE', ''),
     'DELUGE_PASS': ('str', 'DELUGE', ''),
     'DELUGE_LABEL': ('str', 'DELUGE', ''),
+    'DELUGE_DIR': ('str', 'DELUGE', ''),
     'SYNOLOGY_HOST': ('str', 'SYNOLOGY', ''),
     'SYNOLOGY_PORT': ('int', 'SYNOLOGY', 0),
     'SYNOLOGY_USER': ('str', 'SYNOLOGY', ''),

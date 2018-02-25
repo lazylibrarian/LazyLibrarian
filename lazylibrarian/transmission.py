@@ -35,9 +35,12 @@ from lib.six.moves.urllib_parse import urlparse, urlunparse
 
 def addTorrent(link, directory=None):
     method = 'torrent-add'
-    if directory is None:
-        directory = lazylibrarian.DIRECTORY('Download')
-    arguments = {'filename': link, 'download-dir': directory}
+    arguments = {'filename': link}
+    if not directory:
+        directory = lazylibrarian.CONFIG['TRANSMISSION_DIR']
+    if directory:
+        arguments['download-dir'] = directory
+
     logger.debug('addTorrent args(%s)' % arguments)
     response = torrentAction(method, arguments)  # type: dict
 
