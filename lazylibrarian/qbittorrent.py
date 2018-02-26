@@ -191,8 +191,10 @@ class qbittorrentclient(object):
 
 def removeTorrent(hashid, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
     # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
     if torrentList:
@@ -226,6 +228,9 @@ def addTorrent(link, hashid):
     logger.debug('addTorrent(%s)' % link)
     args = {}
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
     dl_dir = lazylibrarian.CONFIG['QBITTORRENT_DIR']
     if dl_dir:
         args['savepath'] = dl_dir
@@ -254,8 +259,10 @@ def addTorrent(link, hashid):
 
 def addFile(data):
     logger.debug('addFile(data)')
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
     files = {'torrents': {'filename': '', 'content': data}}
     # noinspection PyProtectedMember
     return qbclient._command('command/upload', files=files)
@@ -263,8 +270,10 @@ def addFile(data):
 
 def getName(hashid):
     logger.debug('getName(%s)' % hashid)
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return ''
     RETRIES = 5
     torrents = []
     while RETRIES:
@@ -284,8 +293,10 @@ def getName(hashid):
 
 def getFolder(hashid):
     logger.debug('getFolder(%s)' % hashid)
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return None
 
     # Get Active Directory from settings
     # noinspection PyProtectedMember
@@ -349,7 +360,7 @@ def encode_multipart(fields, files, boundary=None):
     """
 
     def escape_quote(s):
-        return s.replace('"', '\\"')
+        return s.replace(b'"', b'\\"')
 
     if boundary is None:
         boundary = ''.join(random.choice(_BOUNDARY_CHARS) for _ in range(30))
@@ -357,18 +368,21 @@ def encode_multipart(fields, files, boundary=None):
 
     if fields:
         for name, value in list(fields.items()):
+            name = makeBytestr(name)
+            value = makeBytestr(value)
             lines.extend((
                 '--{0}'.format(boundary),
                 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)),
                 '',
-                str(value),
+                value,
             ))
 
     if files:
         for name, value in list(files.items()):
-            filename = value['filename']
+            name = makeBytestr(name)
+            filename = makeBytestr(value['filename'])
             if 'mimetype' in value:
-                mimetype = value['mimetype']
+                mimetype = makeBytestr(value['mimetype'])
             else:
                 mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
             lines.extend((
