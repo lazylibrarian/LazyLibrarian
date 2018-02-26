@@ -283,7 +283,10 @@ def search_magazines(mags=None, reset=False):
 
                         if not rejected:
                             regex_pass, issuedate = get_issue_date(nzbtitle_exploded)
-                            if not regex_pass:
+                            if regex_pass:
+                                logger.debug('Issue %s (regex %s) for %s ' %
+                                             (issuedate, regex_pass, nzbtitle_formatted))
+                            else:
                                 logger.debug('Magazine %s not in a recognised date format.' % nzbtitle_formatted)
                                 bad_date += 1
                                 # allow issues with good name but bad date to be included
@@ -561,12 +564,12 @@ def get_issue_date(nzbtitle_exploded):
                 break
             pos += 1
 
-    # issue as a single 4 digit string eg 0063
+    # issue as a 3 or more digit string with leading zero eg 0063
     if not regex_pass:
         pos = 0
         while pos < len(nzbtitle_exploded):
             issue = nzbtitle_exploded[pos]
-            if issue.isdigit() and len(issue) == 4:
+            if issue.isdigit() and len(issue) > 2 and issue[0] == '0':
                 issuedate = issue
                 regex_pass = 8
                 break
