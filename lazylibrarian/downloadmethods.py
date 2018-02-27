@@ -388,7 +388,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
 
 def CalcTorrentHash(torrent):
-    if torrent and torrent.startswith('magnet'):
+    if isinstance(torrent, text_type) and torrent.startswith('magnet'):
         hashid = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
