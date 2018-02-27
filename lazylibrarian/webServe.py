@@ -1448,23 +1448,19 @@ class WebInterface(object):
             if sSearch:
                 if library is not None:
                     if library == 'AudioBook':
-                        searchFields = ['AuthorName', 'BookName', 'BookRate', 'BookDate', 'AudioStatus',
+                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'AudioStatus',
                                         'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
                     else:
-                        searchFields = ['AuthorName', 'BookName', 'BookRate', 'BookDate', 'Status',
+                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'Status',
                                         'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
                     filtered = list()
+                    sSearch_lower = sSearch.lower()
                     for row in rowlist:
                         _dict = dict(row)
                         for key in searchFields:
-                            if key == 'BookRate':
-                                if check_int(sSearch, 0) == int(_dict.get(key, '')):
-                                    filtered.append(list(row))
-                                    break
-                            else:
-                                if sSearch.lower() in _dict.get(key, '').lower():
-                                    filtered.append(list(row))
-                                    break
+                            if _dict[key] and sSearch_lower in _dict[key].lower():
+                                filtered.append(list(row))
+                                break
                 else:
                     filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
 
