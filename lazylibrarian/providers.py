@@ -237,7 +237,8 @@ def get_capabilities(provider, force=False):
                     elif cat.attrib['name'].lower() == 'books':
                         bookcat = cat.attrib['id']  # keep main bookcat for starting magazines later
                         provider['BOOKCAT'] = bookcat
-                        provider['MAGCAT'] = ''
+                        # if no specific magazine subcategory, use books
+                        provider['MAGCAT'] = bookcat
                         # set default booksearch
                         if provider['BOOKCAT'] == '7000':
                             # looks like newznab+, should support book-search
@@ -259,15 +260,9 @@ def get_capabilities(provider, force=False):
                         subcats = cat.getiterator('subcat')
                         for subcat in subcats:
                             if 'ebook' in subcat.attrib['name'].lower():
-                                provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'], subcat.attrib['id'])
+                                provider['BOOKCAT'] = subcat.attrib['id']
                             if 'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
-                                if provider['MAGCAT']:
-                                    provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'], subcat.attrib['id'])
-                                else:
-                                    provider['MAGCAT'] = subcat.attrib['id']
-                        # if no specific magazine subcategory, use books
-                        if not provider['MAGCAT']:
-                            provider['MAGCAT'] = bookcat
+                                provider['MAGCAT'] = subcat.attrib['id']
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
