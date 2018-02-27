@@ -518,7 +518,7 @@ class Api(object):
         regex_pass, issuedate = get_issue_date(name_exploded)
         if regex_pass:
             if int(regex_pass) > 3:  # it's an issue number
-                if isdigit(issuedate):
+                if issuedate.isdigit():
                     issuedate = issuedate.zfill(4)  # pad with leading zeros
             if dirname:
                 title = os.path.basename(dirname)

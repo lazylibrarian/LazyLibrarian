@@ -3433,7 +3433,7 @@ class WebInterface(object):
         library = 'eBook'
         if 'library' in kwargs:
             library = kwargs['library']
-        if whichStatus is None or whichstatus == 'None':
+        if not whichStatus or whichStatus == 'None':
             whichStatus = "Wanted"
         types = ['eBook']
         if lazylibrarian.SHOW_AUDIO:
