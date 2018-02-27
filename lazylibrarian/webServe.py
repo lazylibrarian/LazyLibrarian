@@ -1325,7 +1325,7 @@ class WebInterface(object):
     @cherrypy.expose
     def audio(self, BookLang=None):
         myDB = database.DBConnection()
-        if BookLang == '':
+        if not BookLang or BookLang == 'None':
             BookLang = None
         languages = myDB.select(
             'SELECT DISTINCT BookLang from books WHERE AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"')
@@ -1335,7 +1335,7 @@ class WebInterface(object):
     @cherrypy.expose
     def books(self, BookLang=None):
         myDB = database.DBConnection()
-        if BookLang == '' or BookLang == 'None':
+        if not BookLang or BookLang == 'None':
             BookLang = None
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
         return serve_template(templatename="books.html", title='Books', books=[],
@@ -1448,23 +1448,19 @@ class WebInterface(object):
             if sSearch:
                 if library is not None:
                     if library == 'AudioBook':
-                        searchFields = ['AuthorName', 'BookName', 'BookRate', 'BookDate', 'AudioStatus',
+                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'AudioStatus',
                                         'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
                     else:
-                        searchFields = ['AuthorName', 'BookName', 'BookRate', 'BookDate', 'Status',
+                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'Status',
                                         'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
                     filtered = list()
+                    sSearch_lower = sSearch.lower()
                     for row in rowlist:
                         _dict = dict(row)
                         for key in searchFields:
-                            if key == 'BookRate':
-                                if check_int(sSearch, 0) == int(_dict.get(key, '')):
-                                    filtered.append(list(row))
-                                    break
-                            else:
-                                if sSearch.lower() in _dict.get(key, '').lower():
-                                    filtered.append(list(row))
-                                    break
+                            if _dict[key] and sSearch_lower in _dict[key].lower():
+                                filtered.append(list(row))
+                                break
                 else:
                     filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
 
@@ -2365,11 +2361,11 @@ class WebInterface(object):
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None, mag=None):
-        if mag is None:
+        if not mag or mag == 'None':
             title = "Past Issues"
         else:
             title = mag
-        if whichStatus is None:
+        if not whichStatus or whichStatus == 'None':
             whichStatus = "Skipped"
         return serve_template(
             templatename="manageissues.html", title=title, issues=[], whichStatus=whichStatus, mag=mag)
@@ -2669,7 +2665,7 @@ class WebInterface(object):
     @cherrypy.expose
     def addMagazine(self, title=None):
         myDB = database.DBConnection()
-        if title is None or not title:
+        if not title or title == 'None':
             raise cherrypy.HTTPRedirect("magazines")
         else:
             reject = None
@@ -2999,7 +2995,7 @@ class WebInterface(object):
     @cherrypy.expose
     def clearhistory(self, status=None):
         myDB = database.DBConnection()
-        if status == 'all':
+        if not status or status == 'all':
             logger.info("Clearing all history")
             # also reset the Snatched status in book table to Wanted and cancel any failed download task
             # ONLY reset if status is still Snatched, as maybe a later task succeeded
@@ -3433,7 +3429,7 @@ class WebInterface(object):
         library = 'eBook'
         if 'library' in kwargs:
             library = kwargs['library']
-        if whichStatus is None:
+        if not whichStatus or whichStatus == 'None':
             whichStatus = "Wanted"
         types = ['eBook']
         if lazylibrarian.SHOW_AUDIO:

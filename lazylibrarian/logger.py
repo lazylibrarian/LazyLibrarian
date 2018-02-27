@@ -90,7 +90,7 @@ class RotatingLogger(object):
         if level != 'DEBUG' or lazylibrarian.LOGLEVEL >= 2:
             # Limit the size of the "in-memory" log, as gets slow if too long
             lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, threadname, program, method, lineno, message))
-            if len(lazylibrarian.LOGLIST) > lazylibrarian.CONFIG['LOGLIMIT']:
+            if len(lazylibrarian.LOGLIST) > formatter.check_int(lazylibrarian.CONFIG['LOGLIMIT'], 500):
                 del lazylibrarian.LOGLIST[-1]
 
         message = "%s : %s:%s:%s : %s" % (threadname, program, method, lineno, message)

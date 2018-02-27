@@ -517,6 +517,9 @@ class Api(object):
         name_exploded = name_formatted.split(' ')
         regex_pass, issuedate = get_issue_date(name_exploded)
         if regex_pass:
+            if int(regex_pass) > 3:  # it's an issue number
+                if issuedate.isdigit():
+                    issuedate = issuedate.zfill(4)  # pad with leading zeros
             if dirname:
                 title = os.path.basename(dirname)
                 if '$Title' in lazylibrarian.CONFIG['MAG_DEST_FILE']:

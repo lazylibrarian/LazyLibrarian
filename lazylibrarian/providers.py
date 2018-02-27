@@ -271,7 +271,7 @@ def get_capabilities(provider, force=False):
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
-            lazylibrarian.config_write(provider['HOST'])
+            lazylibrarian.config_write(provider['NAME'])
         else:
             logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider

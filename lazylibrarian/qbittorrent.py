@@ -191,8 +191,10 @@ class qbittorrentclient(object):
 
 def removeTorrent(hashid, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
     # noinspection PyProtectedMember
     torrentList = qbclient._get_list()
     if torrentList:
@@ -226,6 +228,9 @@ def addTorrent(link, hashid):
     logger.debug('addTorrent(%s)' % link)
     args = {}
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
     dl_dir = lazylibrarian.CONFIG['QBITTORRENT_DIR']
     if dl_dir:
         args['savepath'] = dl_dir
@@ -237,6 +242,7 @@ def addTorrent(link, hashid):
             args['category'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
     logger.debug('addTorrent args(%s)' % args)
     args['urls'] = link
+
     # noinspection PyProtectedMember
     if qbclient._command('command/download', args, 'multipart/form-data'):
         return True
@@ -254,8 +260,10 @@ def addTorrent(link, hashid):
 
 def addFile(data):
     logger.debug('addFile(data)')
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
     files = {'torrents': {'filename': '', 'content': data}}
     # noinspection PyProtectedMember
     return qbclient._command('command/upload', files=files)
@@ -263,8 +271,10 @@ def addFile(data):
 
 def getName(hashid):
     logger.debug('getName(%s)' % hashid)
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return ''
     RETRIES = 5
     torrents = []
     while RETRIES:
@@ -284,8 +294,10 @@ def getName(hashid):
 
 def getFolder(hashid):
     logger.debug('getFolder(%s)' % hashid)
-
     qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return None
 
     # Get Active Directory from settings
     # noinspection PyProtectedMember
@@ -349,6 +361,7 @@ def encode_multipart(fields, files, boundary=None):
     """
 
     def escape_quote(s):
+        s = makeUnicode(s)
         return s.replace('"', '\\"')
 
     if boundary is None:
@@ -356,12 +369,13 @@ def encode_multipart(fields, files, boundary=None):
     lines = []
 
     if fields:
+        fields = dict((makeBytestr(k), makeBytestr(v)) for k, v in fields.items())
         for name, value in list(fields.items()):
             lines.extend((
                 '--{0}'.format(boundary),
                 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)),
                 '',
-                str(value),
+                makeUnicode(value),
             ))
 
     if files:
@@ -384,7 +398,7 @@ def encode_multipart(fields, files, boundary=None):
         '--{0}--'.format(boundary),
         '',
     ))
-    body = '\r\n'.join(lines)
+    body = makeBytestr('\r\n'.join(lines))
 
     headers = {
         'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary),
