@@ -904,7 +904,7 @@ def config_write(part=None):
 
             if part:  # only update the named provider
                 for provider in new_list:
-                    if provider['NAME'].lower() != part:  # keep old values
+                    if provider['NAME'].lower() != part.lower():  # keep old values
                         if CONFIG['LOGLEVEL'] > 2:
                             logger.debug("Keep %s" % provider['NAME'])
                         for item in NAB_ITEMS:
