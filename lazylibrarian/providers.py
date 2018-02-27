@@ -190,9 +190,26 @@ def get_capabilities(provider, force=False):
         else:
             logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
             data = ''
-        if len(data):
+        if not len(data):
+            logger.warn("Unable to get capabilities for %s: No data returned" % URL)
+            # might be a temporary error
+            if provider['BOOKCAT'] or provider['MAGCAT'] or provider['AUDIOCAT']:
+                logger.debug('Using old stored capabilities for %s' % provider['HOST'])
+            else:
+                # or might be provider doesn't do caps
+                logger.debug('Using default capabilities for %s' % provider['HOST'])
+                provider['GENERALSEARCH'] = 'search'
+                provider['EXTENDED'] = '1'
+                provider['BOOKCAT'] = ''
+                provider['MAGCAT'] = ''
+                provider['AUDIOCAT'] = ''
+                provider['BOOKSEARCH'] = ''
+                provider['MAGSEARCH'] = ''
+                provider['AUDIOSEARCH'] = ''
+                provider['UPDATED'] = today()
+                lazylibrarian.config_write(provider['NAME'])
+        else:
             logger.debug("Parsing xml for capabilities of %s" % URL)
-
             #
             # book search isn't mentioned in the caps xml returned by
             # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
@@ -267,8 +284,6 @@ def get_capabilities(provider, force=False):
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
             lazylibrarian.config_write(provider['NAME'])
-        else:
-            logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider
 
 

@@ -892,7 +892,7 @@ def config_write(part=None):
         if key not in list(CONFIG_DEFINITIONS.keys()):
             logger.warn('Unsaved/invalid config key: %s' % key)
 
-    if not part or part.startswith('newznab_') or part.startswith('torznab_'):
+    if not part or part.startswith('Newznab') or part.startswith('Torznab'):
         NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH', 'AUDIOSEARCH',
                      'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL']
         for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
@@ -903,7 +903,6 @@ def config_write(part=None):
                     new_list.append(provider)
 
             if part:  # only update the named provider
-                part = part.replace('_', '')
                 for provider in new_list:
                     if provider['NAME'].lower() != part:  # keep old values
                         if CONFIG['LOGLEVEL'] > 2:
