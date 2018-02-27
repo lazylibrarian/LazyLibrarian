@@ -232,7 +232,7 @@ def get_capabilities(provider, force=False):
                         subcats = cat.getiterator('subcat')
                         for subcat in subcats:
                             if 'audiobook' in subcat.attrib['name'].lower():
-                                provider['AUDIOCAT'] = "%s,%s" % (provider['AUDIOCAT'], subcat.attrib['id'])
+                                provider['AUDIOCAT'] = subcat.attrib['id']
 
                     elif cat.attrib['name'].lower() == 'books':
                         bookcat = cat.attrib['id']  # keep main bookcat for starting magazines later
