@@ -242,6 +242,7 @@ def addTorrent(link, hashid):
             args['category'] = lazylibrarian.CONFIG['QBITTORRENT_LABEL']
     logger.debug('addTorrent args(%s)' % args)
     args['urls'] = link
+
     # noinspection PyProtectedMember
     if qbclient._command('command/download', args, 'multipart/form-data'):
         return True
@@ -360,29 +361,28 @@ def encode_multipart(fields, files, boundary=None):
     """
 
     def escape_quote(s):
-        return s.replace(b'"', b'\\"')
+        s = makeUnicode(s)
+        return s.replace('"', '\\"')
 
     if boundary is None:
         boundary = ''.join(random.choice(_BOUNDARY_CHARS) for _ in range(30))
     lines = []
 
     if fields:
+        fields = dict((makeBytestr(k), makeBytestr(v)) for k, v in fields.items())
         for name, value in list(fields.items()):
-            name = makeBytestr(name)
-            value = makeBytestr(value)
             lines.extend((
                 '--{0}'.format(boundary),
                 'Content-Disposition: form-data; name="{0}"'.format(escape_quote(name)),
                 '',
-                value,
+                makeUnicode(value),
             ))
 
     if files:
         for name, value in list(files.items()):
-            name = makeBytestr(name)
-            filename = makeBytestr(value['filename'])
+            filename = value['filename']
             if 'mimetype' in value:
-                mimetype = makeBytestr(value['mimetype'])
+                mimetype = value['mimetype']
             else:
                 mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
             lines.extend((
@@ -398,7 +398,7 @@ def encode_multipart(fields, files, boundary=None):
         '--{0}--'.format(boundary),
         '',
     ))
-    body = '\r\n'.join(lines)
+    body = makeBytestr('\r\n'.join(lines))
 
     headers = {
         'Content-Type': 'multipart/form-data; boundary={0}'.format(boundary),
