@@ -190,9 +190,26 @@ def get_capabilities(provider, force=False):
         else:
             logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
             data = ''
-        if len(data):
+        if not len(data):
+            logger.warn("Unable to get capabilities for %s: No data returned" % URL)
+            # might be a temporary error
+            if provider['BOOKCAT'] or provider['MAGCAT'] or provider['AUDIOCAT']:
+                logger.debug('Using old stored capabilities for %s' % provider['HOST'])
+            else:
+                # or might be provider doesn't do caps
+                logger.debug('Using default capabilities for %s' % provider['HOST'])
+                provider['GENERALSEARCH'] = 'search'
+                provider['EXTENDED'] = '1'
+                provider['BOOKCAT'] = ''
+                provider['MAGCAT'] = ''
+                provider['AUDIOCAT'] = ''
+                provider['BOOKSEARCH'] = ''
+                provider['MAGSEARCH'] = ''
+                provider['AUDIOSEARCH'] = ''
+                provider['UPDATED'] = today()
+                lazylibrarian.config_write(provider['NAME'])
+        else:
             logger.debug("Parsing xml for capabilities of %s" % URL)
-
             #
             # book search isn't mentioned in the caps xml returned by
             # nzbplanet,jackett,oznzb,usenet-crawler, so we can't use it as a test
@@ -232,12 +249,13 @@ def get_capabilities(provider, force=False):
                         subcats = cat.getiterator('subcat')
                         for subcat in subcats:
                             if 'audiobook' in subcat.attrib['name'].lower():
-                                provider['AUDIOCAT'] = "%s,%s" % (provider['AUDIOCAT'], subcat.attrib['id'])
+                                provider['AUDIOCAT'] = subcat.attrib['id']
 
                     elif cat.attrib['name'].lower() == 'books':
                         bookcat = cat.attrib['id']  # keep main bookcat for starting magazines later
                         provider['BOOKCAT'] = bookcat
-                        provider['MAGCAT'] = ''
+                        # if no specific magazine subcategory, use books
+                        provider['MAGCAT'] = bookcat
                         # set default booksearch
                         if provider['BOOKCAT'] == '7000':
                             # looks like newznab+, should support book-search
@@ -259,21 +277,13 @@ def get_capabilities(provider, force=False):
                         subcats = cat.getiterator('subcat')
                         for subcat in subcats:
                             if 'ebook' in subcat.attrib['name'].lower():
-                                provider['BOOKCAT'] = "%s,%s" % (provider['BOOKCAT'], subcat.attrib['id'])
+                                provider['BOOKCAT'] = subcat.attrib['id']
                             if 'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
-                                if provider['MAGCAT']:
-                                    provider['MAGCAT'] = "%s,%s" % (provider['MAGCAT'], subcat.attrib['id'])
-                                else:
-                                    provider['MAGCAT'] = subcat.attrib['id']
-                        # if no specific magazine subcategory, use books
-                        if not provider['MAGCAT']:
-                            provider['MAGCAT'] = bookcat
+                                provider['MAGCAT'] = subcat.attrib['id']
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
             lazylibrarian.config_write(provider['NAME'])
-        else:
-            logger.warn("Unable to get capabilities for %s: No data returned" % URL)
     return provider
 
 

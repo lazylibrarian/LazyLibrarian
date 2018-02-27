@@ -209,7 +209,12 @@ def unpack_archive(pp_path, download_dir, title):
     elif zipfile.is_zipfile(pp_path):
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug('%s is a zip file' % pp_path)
-        z = zipfile.ZipFile(pp_path)
+        try:
+            z = zipfile.ZipFile(pp_path)
+        except Exception as e:
+            logger.error("Failed to unzip %s: %s" % (pp_path, e))
+            return ''
+
         namelist = z.namelist()
         for item in namelist:
             if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
@@ -237,7 +242,12 @@ def unpack_archive(pp_path, download_dir, title):
     elif tarfile.is_tarfile(pp_path):
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug('%s is a tar file' % pp_path)
-        z = tarfile.TarFile(pp_path)
+        try:
+            z = tarfile.TarFile(pp_path)
+        except Exception as e:
+            logger.error("Failed to untar %s: %s" % (pp_path, e))
+            return ''
+
         namelist = z.getnames()
         for item in namelist:
             if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
@@ -265,7 +275,12 @@ def unpack_archive(pp_path, download_dir, title):
     elif gotrar and rarfile.is_rarfile(pp_path):
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug('%s is a rar file' % pp_path)
-        z = rarfile.RarFile(pp_path)
+        try:
+            z = rarfile.RarFile(pp_path)
+        except Exception as e:
+            logger.error("Failed to unrar %s: %s" % (pp_path, e))
+            return ''
+
         namelist = z.namelist()
         for item in namelist:
             if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
