@@ -29,7 +29,7 @@ import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import restartJobs, logHeader
+from lazylibrarian.common import restartJobs, logHeader, mymakedirs
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
 from lib.apscheduler.scheduler import Scheduler
 from lib.six import PY2, text_type
@@ -540,12 +540,11 @@ def initialize():
             CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
 
         # Create logdir
-        if not os.path.exists(CONFIG['LOGDIR']):
-            try:
-                os.makedirs(CONFIG['LOGDIR'])
-            except OSError as e:
-                if LOGLEVEL:
-                    print('%s : Unable to create folder for logs: %s' % (CONFIG['LOGDIR'], str(e)))
+        try:
+            mymakedirs(CONFIG['LOGDIR'])
+        except Exception as e:
+            if LOGLEVEL:
+                print('%s : Unable to create folder for logs: %s' % (CONFIG['LOGDIR'], str(e)))
 
         # Start the logger, silence console logging if we need to
         CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
@@ -573,18 +572,18 @@ def initialize():
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
         try:
-            os.makedirs(CACHEDIR)
-        except OSError as e:
+            mymakedirs(CACHEDIR)
+        except Exception as e:
             if not os.path.isdir(CACHEDIR):
-                logger.error('Could not create cachedir; %s' % e.strerror)
+                logger.error('Could not create cachedir; %s' % e)
 
         for item in ['book', 'author', 'SeriesCache', 'JSONCache', 'XMLCache', 'WorkCache', 'magazine']:
             cachelocation = os.path.join(CACHEDIR, item)
             try:
-                os.makedirs(cachelocation)
-            except OSError as e:
+                mymakedirs(cachelocation)
+            except Exception as e:
                 if not os.path.isdir(cachelocation):
-                    logger.error('Could not create %s: %s' % (cachelocation, e.strerror))
+                    logger.error('Could not create %s: %s' % (cachelocation, e))
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either

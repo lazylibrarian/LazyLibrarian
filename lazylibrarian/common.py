@@ -198,6 +198,18 @@ OjAwC98hhgAAAABJRU5ErkJggg==" alt="embedded icon" align="middle"><br><br>
 ''' % (title, body)
 
 
+def mymakedirs(path):
+    if not path or os.path.isdir(path):
+        return
+    head, tail = os.path.split(path)
+    mymakedirs(head)
+    try:
+        os.mkdir(path)
+    except OSError:
+        raise
+    setperm(path)
+
+
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--

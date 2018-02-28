@@ -36,7 +36,7 @@ from lazylibrarian import database, logger, utorrent, transmission, qbittorrent,
 from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
-from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, mymakedirs
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr
 from lazylibrarian.gr import GoodReads
@@ -223,11 +223,10 @@ def unpack_archive(pp_path, download_dir, title):
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
                     try:
-                        os.makedirs(targetdir)
-                        setperm(targetdir)
-                    except OSError as why:
+                        mymakedirs(targetdir)
+                    except Exception as why:
                         if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
                             return ''
                 if PY2:
                     fmode = 'wb'
@@ -256,11 +255,10 @@ def unpack_archive(pp_path, download_dir, title):
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
                     try:
-                        os.makedirs(targetdir)
-                        setperm(targetdir)
-                    except OSError as why:
+                        mymakedirs(targetdir)
+                    except Exception as why:
                         if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
                             return ''
                 if PY2:
                     fmode = 'wb'
@@ -289,11 +287,10 @@ def unpack_archive(pp_path, download_dir, title):
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
                     try:
-                        os.makedirs(targetdir)
-                        setperm(targetdir)
-                    except OSError as why:
+                        mymakedirs(targetdir)
+                    except Exception as why:
                         if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why.strerror))
+                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
                             return ''
                 if PY2:
                     fmode = 'wb'
@@ -314,7 +311,7 @@ def cron_processDir():
         processDir()
 
 
-def processDir(reset=False, startdir=None, ignorekeepseeding=False):
+def processDir(reset=False, startdir=None, ignoreclient=False):
     count = 0
     for threadname in [n.name for n in [t for t in threading.enumerate()]]:
         if threadname == 'POSTPROCESS':
@@ -469,12 +466,11 @@ def processDir(reset=False, startdir=None, ignorekeepseeding=False):
 
                                             if not os.path.isdir(targetdir):
                                                 try:
-                                                    os.makedirs(targetdir)
-                                                    setperm(targetdir)
-                                                except OSError as why:
+                                                    mymakedirs(targetdir)
+                                                except Exception as why:
                                                     if not os.path.isdir(targetdir):
                                                         logger.error('Failed to create directory [%s], %s' %
-                                                                     (targetdir, why.strerror))
+                                                                     (targetdir, why))
                                             if os.path.isdir(targetdir):
                                                 cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
                                                 if cnt:
@@ -671,13 +667,13 @@ def processDir(reset=False, startdir=None, ignorekeepseeding=False):
                         # calibre or ll copied/moved the files we want, now delete source files
 
                         to_delete = True
-                        if ignorekeepseeding is False and book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
+                        if ignoreclient is False and book['NZBmode'] in ['torrent', 'magnet', 'torznab']:
                             # Only delete torrents if we don't want to keep seeding
                             if lazylibrarian.CONFIG['KEEP_SEEDING']:
                                 logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
                                 to_delete = False
 
-                        if to_delete:
+                        if ignoreclient is False and to_delete:
                             # ask downloader to delete the torrent, but not the files
                             # we may delete them later, depending on other settings
                             if not book['Source']:
@@ -1241,11 +1237,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
         try:
-            os.makedirs(dest_path)
-            setperm(dest_path)
-        except OSError as why:
-            if not os.path.isdir(dest_path):
-                return False, 'Unable to create directory %s: %s' % (dest_path, why.strerror)
+            mymakedirs(dest_path)
+        except Exception as why:
+            return False, 'Unable to create directory %s: %s' % (dest_path, why)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks

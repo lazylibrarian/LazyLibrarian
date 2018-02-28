@@ -179,7 +179,7 @@ def get_capabilities(provider, force=False):
         if not success:
             if provider['API']:
                 URL = URL + '&apikey=' + provider['API']
-                logger.debug('Requesting capabilities for %s' % URL)
+                logger.debug('Retrying capabilities with apikey for %s' % URL)
                 source_xml, success = fetchURL(URL)
         if success:
             try:
@@ -252,10 +252,9 @@ def get_capabilities(provider, force=False):
                                 provider['AUDIOCAT'] = subcat.attrib['id']
 
                     elif cat.attrib['name'].lower() == 'books':
-                        bookcat = cat.attrib['id']  # keep main bookcat for starting magazines later
-                        provider['BOOKCAT'] = bookcat
+                        provider['BOOKCAT'] = cat.attrib['id']
                         # if no specific magazine subcategory, use books
-                        provider['MAGCAT'] = bookcat
+                        provider['MAGCAT'] = cat.attrib['id']
                         # set default booksearch
                         if provider['BOOKCAT'] == '7000':
                             # looks like newznab+, should support book-search
@@ -274,12 +273,24 @@ def get_capabilities(provider, force=False):
                                 else:
                                     provider['BOOKSEARCH'] = ''
 
+                        # subcategories override main category (not in addition to)
+                        # but allow multile subcategories (mags->english, mags->french)
                         subcats = cat.getiterator('subcat')
+                        ebooksubs = ''
+                        magsubs = ''
                         for subcat in subcats:
                             if 'ebook' in subcat.attrib['name'].lower():
-                                provider['BOOKCAT'] = subcat.attrib['id']
+                                if ebooksubs:
+                                    ebooksubs = ebooksubs + ','
+                                ebooksubs = ebooksubs + subcat.attrib['id']
                             if 'magazines' in subcat.attrib['name'].lower() or 'mags' in subcat.attrib['name'].lower():
-                                provider['MAGCAT'] = subcat.attrib['id']
+                                if magsubs:
+                                    magsubs = magsubs + ','
+                                magsubs = magsubs + subcat.attrib['id']
+                        if ebooksubs:
+                            provider ['BOOKCAT'] = ebooksubs
+                        if magsubs:
+                            provider['MAGCAT'] = magsubs
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
                          (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
             provider['UPDATED'] = today()
