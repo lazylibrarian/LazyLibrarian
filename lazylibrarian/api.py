@@ -717,10 +717,10 @@ class Api(object):
         startdir = None
         if 'dir' in kwargs:
             startdir = kwargs['dir']
-        iks = False
-        if 'ignorekeepseeding' in kwargs:
-            iks = True
-        processDir(startdir=startdir, ignorekeepseeding=iks)
+        ignore = False
+        if 'ignoreclient' in kwargs:
+            ignore = True
+        processDir(startdir=startdir, ignoreclient=ignore)
 
     @staticmethod
     def _forceLibraryScan(**kwargs):
