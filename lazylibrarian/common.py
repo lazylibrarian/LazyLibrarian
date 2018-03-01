@@ -199,9 +199,11 @@ OjAwC98hhgAAAABJRU5ErkJggg==" alt="embedded icon" align="middle"><br><br>
 
 
 def mymakedirs(path):
-    if not path or os.path.isdir(path):
+    if not path or os.path.exists(path):
         return
     head, tail = os.path.split(path)
+    if not tail:
+        return
     mymakedirs(head)
     try:
         os.mkdir(path)
