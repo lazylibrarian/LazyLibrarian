@@ -292,7 +292,7 @@ def get_capabilities(provider, force=False):
                                     magsubs = magsubs + ','
                                 magsubs = magsubs + subcat.attrib['id']
                         if ebooksubs:
-                            provider ['BOOKCAT'] = ebooksubs
+                            provider['BOOKCAT'] = ebooksubs
                         if magsubs:
                             provider['MAGCAT'] = magsubs
             logger.debug("Categories: Books %s : Mags %s : Audio %s" %
