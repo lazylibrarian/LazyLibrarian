@@ -175,26 +175,38 @@ def get_capabilities(provider, force=False):
         # most providers will give you caps without an api key
         logger.debug('Requesting capabilities for %s' % URL)
         source_xml, success = fetchURL(URL)
-        if success and "ng api key" in source_xml:  # catches wrong or missing
-            success = False
-        # If it failed, retry with api key
         if not success:
+            logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
+        else:
+            try:
+                data = ElementTree.fromstring(source_xml)
+            except ElementTree.ParseError:
+                logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
+                success = False
+            if success and data.tag == 'error':
+                logger.debug("Unable to get capabilities: %s" % data.attrib)
+                success = False
+        if not success:
+            # If it failed, retry with api key
             if provider['API']:
                 URL = URL + '&apikey=' + provider['API']
                 logger.debug('Retrying capabilities with apikey for %s' % URL)
                 source_xml, success = fetchURL(URL)
+                if not success:
+                    logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
+                else:
+                    try:
+                        data = ElementTree.fromstring(source_xml)
+                    except ElementTree.ParseError:
+                        logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
+                        success = False
+                    if success and data.tag == 'error':
+                        logger.debug("Unable to get capabilities: %s" % data.attrib)
+                        success = False
             else:
                 logger.debug('Unable to retry capabilities, no apikey for %s' % URL)
-        if success:
-            try:
-                data = ElementTree.fromstring(source_xml)
-            except ElementTree.ParseError:
-                data = ''
-                logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
-        else:
-            logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
-            data = ''
-        if not len(data):
+
+        if not success:
             logger.warn("Unable to get capabilities for %s: No data returned" % URL)
             # might be a temporary error
             if provider['BOOKCAT'] or provider['MAGCAT'] or provider['AUDIOCAT']:
