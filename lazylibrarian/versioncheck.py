@@ -218,7 +218,7 @@ def checkForUpdates():
     if 'Thread-' in threading.currentThread().name:
         threading.currentThread().name = "CRON-VERSIONCHECK"
         auto_update = lazylibrarian.CONFIG['AUTO_UPDATE']
-    logmsg('debug', 'Set Install Type, Current & Latest Version and Commit status')
+    logmsg('debug', 'Setting Install Type, Current & Latest Version and Commit status')
     getInstallType()
     lazylibrarian.CONFIG['CURRENT_VERSION'] = getCurrentVersion()
     lazylibrarian.CONFIG['LATEST_VERSION'] = getLatestVersion()
@@ -226,13 +226,13 @@ def checkForUpdates():
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
         lazylibrarian.COMMIT_LIST = ""
     else:
-        behind, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
-        lazylibrarian.CONFIG['COMMITS_BEHIND'] = behind
-        if auto_update and behind > 0:
+        commits, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
+        lazylibrarian.CONFIG['COMMITS_BEHIND'] = commits
+        if auto_update and commits > 0:
             plural = ''
-            if behind > 1:
+            if commits > 1:
                 plural = 's'
-            logmsg('info', 'Auto updating %s commit%s in 10 seconds' % (behind, plural))
+            logmsg('info', 'Auto updating %s commit%s in 10 seconds' % (commits, plural))
             time.sleep(10)
             lazylibrarian.SIGNAL = 'update'
     logmsg('debug', 'Update check complete')
@@ -307,7 +307,8 @@ def getLatestVersion_FromGit():
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
                     logmsg('debug', 'Not modified, currently on Latest Version')
                 else:
-                    logmsg('warn', 'git latest version returned %s' % r.status_code)
+                    logmsg('warn', 'Could not get the latest commit from github')
+                    logmsg('debug', 'git latest version returned %s' % r.status_code)
                     latest_version = 'Not_Available_From_GitHUB'
             except Exception as e:
                 logmsg('warn', 'Could not get the latest commit from github')
@@ -324,8 +325,9 @@ def getCommitDifferenceFromGit():
     commits = -1
     if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
         commits = 0  # don't report a commit diff as we don't know anything
-    if lazylibrarian.CONFIG['CURRENT_VERSION'] and commits != 0:
-        logmsg('debug', 'Comparing currently installed version with latest github version')
+        commit_list = 'Unable to get latest version from GitHub'
+        logmsg('info', commit_list)
+    elif lazylibrarian.CONFIG['CURRENT_VERSION'] and commits != 0:
         url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (
             lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['CURRENT_VERSION'],
             lazylibrarian.CONFIG['LATEST_VERSION'])
@@ -337,47 +339,29 @@ def getCommitDifferenceFromGit():
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
             git = r.json()
-            logmsg('debug', 'pull total_commits from json object')
-            if 'total_commits' in str(git):
+            if 'total_commits' in git:
                 commits = int(git['total_commits'])
-                msg = 'GitHub reports as follows '
-                msg += 'Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
+                msg = 'Github: Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
                     git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
                 logmsg('debug', msg)
             else:
-                logmsg('warn', 'Could not get difference status from GitHub: %s' %
-                       str(git))
-                commits = -1
+                logmsg('warn', 'Could not get difference status from GitHub: %s' % str(git))
 
-            if int(git['total_commits']) > 0:
-                messages = []
+            if commits > 0:
                 for item in git['commits']:
-                    messages.insert(0, item['commit']['message'])
-                for line in messages:
-                    commit_list = "%s\n%s" % (commit_list, line)
+                    commit_list = "%s\n%s" % (item['commit']['message'], commit_list)
         except Exception as e:
-            logmsg('warn', '%s -  could not get difference status from GitHub' %
-                   type(e).__name__)
+            logmsg('warn', 'Could not get difference status from GitHub: %s' % type(e).__name__)
 
-        if commits > 1:
-            logmsg('info', 'New version is available. You are %s commits behind' % commits)
-        elif commits == 1:
-            logmsg('info', 'New version is available. You are one commit behind')
-        elif commits == 0:
-            logmsg('info', 'Lazylibrarian is up to date')
-        elif commits < 0:
-            msg = 'You are running an unknown version of lazylibrarian. '
-            msg += 'Run the updater to identify your version'
-            logmsg('info', msg)
-
-    elif lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
-        commit_list = 'Unable to get latest version from GitHub'
-        logmsg('info', commit_list)
+    if commits > 1:
+        logmsg('info', 'New version is available. You are %s commits behind' % commits)
+    elif commits == 1:
+        logmsg('info', 'New version is available. You are one commit behind')
+    elif commits == 0:
+        logmsg('info', 'Lazylibrarian is up to date')
     else:
-        logmsg('info', 'You are running an unknown version of lazylibrarian. Run the updater to identify your version')
+        logmsg('info', 'Unknown version of lazylibrarian. Run the updater to identify your version')
 
-    logmsg('debug', 'Exiting with commit value of [%s]' % commits)
-    # lazylibrarian.CONFIG['COMMITS_BEHIND'] = commits
     return commits, commit_list
 
 
@@ -400,7 +384,7 @@ def updateVersionFile(new_version_id):
         return True
     except IOError as e:
         logmsg('error',
-               "Unable to write current version to version.txt, update not complete: %s" % str(e))
+               "Unable to write current version to version.txt: %s" % str(e))
         return False
 
 
