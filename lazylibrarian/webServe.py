@@ -1389,8 +1389,12 @@ class WebInterface(object):
             cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
             cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
 
-        library = None
+        library = 'eBook'
         status_type = 'books.status'
+        if 'library' in kwargs:
+            library = kwargs['library']
+        if library == 'AudioBook':
+            status_type = 'audiostatus'
         args = []
         if kwargs['source'] == "Manage":
             if kwargs['whichStatus'] == 'ToRead':
@@ -1398,22 +1402,13 @@ class WebInterface(object):
             elif kwargs['whichStatus'] == 'Read':
                 cmd += ' and books.bookID in (' + ', '.join(HaveRead) + ')'
             else:
-                cmd += ' and books.STATUS="' + kwargs['whichStatus'] + '"'
+                cmd += ' and ' + status_type + '="' + kwargs['whichStatus'] + '"'
+
         elif kwargs['source'] == "Books":
             cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
         elif kwargs['source'] == "Audio":
             cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
-            status_type = 'audiostatus'
         elif kwargs['source'] == "Author":
-            library = 'eBook'
-            if 'library' in kwargs:
-                library = kwargs['library']
-
-            if library == 'AudioBook':
-                status_type = 'audiostatus'
-            else:
-                status_type = 'books.status'
-
             cmd += ' and books.AuthorID=?'
             args.append(kwargs['AuthorID'])
             if 'ignored' in kwargs and kwargs['ignored'] == "True":
@@ -3434,7 +3429,7 @@ class WebInterface(object):
         types = ['eBook']
         if lazylibrarian.SHOW_AUDIO:
             types.append('AudioBook')
-        return serve_template(templatename="managebooks.html", title="Manage Books",
+        return serve_template(templatename="managebooks.html", title="Manage %ss" % library,
                               books=[], types=types, library=library, whichStatus=whichStatus)
 
     @cherrypy.expose
