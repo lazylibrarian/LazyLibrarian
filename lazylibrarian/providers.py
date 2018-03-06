@@ -31,6 +31,7 @@ else:
 
 
 def test_provider(name, host=None, api=None):
+    logger.debug("Testing provider %s" % name)
     book = {'searchterm': 'Agatha+Christie', 'library': 'eBook'}
     if name == 'TPB':
         if host:
