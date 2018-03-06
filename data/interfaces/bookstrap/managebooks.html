@@ -4,38 +4,42 @@
 %>
 
 <%def name="headerIncludes()">
-    <div id="subhead_container" class="row">
-      <form action="search" method="get">
-        <div id="subhead_menu"  class="col-xs-12 col-md-8">
-          %if perm&lazylibrarian.perm_force:
-          <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
-          <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
-          <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">
-          <i class="fa fa-download"></i> Import CSV</button>
-          <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv">
-          <i class="fa fa-upload"></i> Export CSV</button>
-          %if lazylibrarian.CONFIG['GR_SYNC'] == True:
-            <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads">
-            <i class="fa fa-link"></i> Goodreads Sync</button>
-        %endif
-        %endif
-        <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
-        <i class="fa fa-link"></i> Calibre Sync</button>
-        </div>
-        <div class="clearfix visible-xs"><hr/></div>
-        %if perm&lazylibrarian.perm_search:
-        <div class="col-xs-12 col-md-4">
+    <div id="subhead_container">
+      <form id="subhead_menu" action="search" method="get">
         <div class="form-group">
-          <label class="sr-only">Search</label>
-          <div class="input-group">
-            <input type="text" class="form-control deletable input-sm col-xs-12" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox" name="searchbox">
-            <span class="input-group-btn">
-              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
-            </span>
+          %if library != 'AudioBook':
+            %if perm&lazylibrarian.perm_force:
+              <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
+              <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
+              <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">
+              <i class="fa fa-download"></i> Import CSV</button>
+              <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv">
+              <i class="fa fa-upload"></i> Export CSV</button>
+              %if lazylibrarian.CONFIG['GR_SYNC'] == True:
+                <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads">
+                <i class="fa fa-link"></i> Goodreads Sync</button>
+              %endif
+              <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
+              <i class="fa fa-link"></i> Calibre Sync</button>
+            %endif
+          %endif
+          <div class="pull-right">
+            %if len(types) > 1:
+              %if  perm&lazylibrarian.perm_audio:
+                <!--label for="chooselib"><small>&nbsp;Library</small></label-->
+                <select class="form-control input-sm" name="chooselib" id="chooselib">
+                  %for item in types:
+                    <option value="${item}"
+                        %if library == item:
+                            selected = "selected"
+                        %endif
+                    >${item}</option>
+                  %endfor
+                </select>
+              %endif
+            %endif
           </div>
         </div>
-        </div>
-        %endif
       </form>
     </div>
 </%def>
@@ -118,8 +122,14 @@
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
 
+        $('#chooselib').change(function(){
+            new_settings = 'manage?whichStatus=' + $('#whichStatus').val() + '&library=' + $(this).val()
+            window.location = new_settings
+        })
+
         $('#whichStatus').change(function(){
-            window.location = 'manage?whichStatus=' + $(this).val()
+            new_settings = 'manage?whichStatus=' + $(this).val() + '&library=' + $('#chooselib').val()
+            window.location = new_settings
         })
 
         $('#exportcsv').on('click', function(e) {
@@ -227,7 +237,7 @@
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[2, 'asc']],
                 "bServerSide": true,
-                "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
+                "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&library=${library}&source=Manage',
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $('td', nRow).eq(0).addClass('text-center');
