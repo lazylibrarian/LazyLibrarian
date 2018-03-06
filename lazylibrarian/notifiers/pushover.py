@@ -143,8 +143,12 @@ class PushoverNotifier:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD], notificationType='note')
 
     def test_notify(self, title="Test"):
-        return self._notify(message="This is a test notification from LazyLibrarian",
-                            event=title, notificationType=None, force=True)
+        res = self._notify(message="This notification asks for the device list",
+                           event=title, notificationType=None, force=True)
+        if res:
+            _ = self._notify(message="This is a test notification from LazyLibrarian",
+                             event=title, notificationType='note', force=True)
+        return res
 
     def update_library(self, showName=None):
         pass
