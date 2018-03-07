@@ -96,7 +96,11 @@ def test_provider(name, host=None, api=None):
                         provider['HOST'] = host
                     if api:
                         provider['API'] = api
-                    return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['DISPNAME']
+                    success, errorMsg = NewzNabPlus(book, provider, 'book', 'torznab', True)
+                    if not success:
+                        if cancelSearchType('book', errorMsg, provider):
+                            success, _ = NewzNabPlus(book, provider, 'general', 'torznab', True)
+                    return success, provider['DISPNAME']
         except IndexError:
             pass
     if name.startswith('newznab_'):
@@ -108,7 +112,11 @@ def test_provider(name, host=None, api=None):
                         provider['HOST'] = host
                     if api:
                         provider['API'] = api
-                    return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['DISPNAME']
+                    success, errorMsg = NewzNabPlus(book, provider, 'book', 'newznab', True)
+                    if not success:
+                        if cancelSearchType('book', errorMsg, provider):
+                            success, _ = NewzNabPlus(book, provider, 'general', 'newznab', True)
+                    return success, provider['DISPNAME']
         except IndexError:
             pass
     msg = "Unknown provider [%s]" % name
@@ -723,12 +731,12 @@ def cancelSearchType(searchType, errorMsg, provider):
                     while count < len(providerlist):
                         if providerlist[count]['HOST'] == provider['HOST']:
                             if str(provider['MANUAL']) == 'False':
-                                logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['HOST']))
+                                logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['DISPNAME']))
                                 providerlist[count][msg] = ""
-                                lazylibrarian.config_write(provider['HOST'])
+                                lazylibrarian.config_write(provider['NAME'])
                                 return True
                         count += 1
-            logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['HOST']))
+            logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['DISPNAME']))
     return False
 
 
@@ -768,7 +776,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 success = False
             if not success:
                 logger.debug(result)
-            return success
+            return success, result
 
         if success:
             try:

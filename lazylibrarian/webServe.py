@@ -3300,7 +3300,7 @@ class WebInterface(object):
 
         result = notifiers.nma_notifier.test_notify('NMA')
         if result:
-            lazylibrarian.config_write()
+            lazylibrarian.config_write('NMA')
             return "Test NMA notice sent successfully"
         else:
             return "Test NMA notice failed"
