@@ -107,12 +107,11 @@ class TwitterNotifier:
 
         username = self.consumer_key
         password = self.consumer_secret
-        if not lazylibrarian.CONFIG['TWITTER_USERNAME'] and lazylibrarian.CONFIG['TWITTER_PASSWORD']:
-            logger.error("No authorization found for twitter")
-            return False
-
         access_token_key = lazylibrarian.CONFIG['TWITTER_USERNAME']
         access_token_secret = lazylibrarian.CONFIG['TWITTER_PASSWORD']
+        if not access_token_key or not access_token_secret:
+            logger.error("No authorization found for twitter")
+            return False
 
         logger.info("Sending tweet: " + message)
 
