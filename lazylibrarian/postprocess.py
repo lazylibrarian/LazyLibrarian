@@ -353,9 +353,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
             snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
             logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
-            logger.debug('Checking %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
+            logger.debug('Found %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
 
-            if len(snatched) > 0 and len(downloads) > 0:
+            if len(snatched) and len(downloads):
                 for book in snatched:
                     # if torrent, see if we can get current status from the downloader as the name
                     # may have been changed once magnet resolved, or download started or completed
@@ -751,52 +751,53 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
-            # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
-            # do a fresh listdir in case we processed and deleted any earlier
-            # and don't process any we've already done as we might not want to delete originals
-            downloads = os.listdir(makeBytestr(download_dir))
-            downloads = [makeUnicode(item) for item in downloads]
-            if int(lazylibrarian.LOGLEVEL) > 2:
-                logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
-            for entry in downloads:
-                if "LL.(" in entry:
-                    dname, extn = os.path.splitext(entry)
-                    if not extn or extn.strip('.') not in skipped_extensions:
-                        bookID = entry.split("LL.(")[1].split(")")[0]
-                        logger.debug("Book with id: %s found in download directory" % bookID)
-                        data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
-                        if data and data['BookFile'] and os.path.isfile(data['BookFile']):
-                            logger.debug('Skipping BookID %s, already exists' % bookID)
-                        else:
-                            pp_path = os.path.join(download_dir, entry)
+            if downloads:
+                # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
+                # do a fresh listdir in case we processed and deleted any earlier
+                # and don't process any we've already done as we might not want to delete originals
+                downloads = os.listdir(makeBytestr(download_dir))
+                downloads = [makeUnicode(item) for item in downloads]
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
+                for entry in downloads:
+                    if "LL.(" in entry:
+                        dname, extn = os.path.splitext(entry)
+                        if not extn or extn.strip('.') not in skipped_extensions:
+                            bookID = entry.split("LL.(")[1].split(")")[0]
+                            logger.debug("Book with id: %s found in download directory" % bookID)
+                            data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
+                            if data and data['BookFile'] and os.path.isfile(data['BookFile']):
+                                logger.debug('Skipping BookID %s, already exists' % bookID)
+                            else:
+                                pp_path = os.path.join(download_dir, entry)
 
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("Checking type of %s" % pp_path)
-
-                            if os.path.isfile(pp_path):
                                 if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug("%s is a file" % pp_path)
-                                pp_path = os.path.join(download_dir)
+                                    logger.debug("Checking type of %s" % pp_path)
 
-                            if os.path.isdir(pp_path):
-                                if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug("%s is a dir" % pp_path)
-                                if import_book(pp_path, bookID):
+                                if os.path.isfile(pp_path):
                                     if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug("Imported %s" % pp_path)
-                                    ppcount += 1
+                                        logger.debug("%s is a file" % pp_path)
+                                    pp_path = os.path.join(download_dir)
+
+                                if os.path.isdir(pp_path):
+                                    if int(lazylibrarian.LOGLEVEL) > 2:
+                                        logger.debug("%s is a dir" % pp_path)
+                                    if import_book(pp_path, bookID):
+                                        if int(lazylibrarian.LOGLEVEL) > 2:
+                                            logger.debug("Imported %s" % pp_path)
+                                        ppcount += 1
+                        else:
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("Skipping extn %s" % entry)
                     else:
                         if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("Skipping extn %s" % entry)
-                else:
-                    if int(lazylibrarian.LOGLEVEL) > 2:
-                        logger.debug("Skipping (not LL) %s" % entry)
+                            logger.debug("Skipping (not LL) %s" % entry)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched) > 0:
+        if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched):
             for book in snatched:
                 book_type = book['AuxInfo']
                 if book_type != 'AudioBook' and book_type != 'eBook':

@@ -31,6 +31,7 @@ else:
 
 
 def test_provider(name, host=None, api=None):
+    logger.debug("Testing provider %s" % name)
     book = {'searchterm': 'Agatha+Christie', 'library': 'eBook'}
     if name == 'TPB':
         if host:
@@ -95,7 +96,11 @@ def test_provider(name, host=None, api=None):
                         provider['HOST'] = host
                     if api:
                         provider['API'] = api
-                    return NewzNabPlus(book, provider, 'book', 'torznab', True), provider['DISPNAME']
+                    success, errorMsg = NewzNabPlus(book, provider, 'book', 'torznab', True)
+                    if not success:
+                        if cancelSearchType('book', errorMsg, provider):
+                            success, _ = NewzNabPlus(book, provider, 'general', 'torznab', True)
+                    return success, provider['DISPNAME']
         except IndexError:
             pass
     if name.startswith('newznab_'):
@@ -107,7 +112,11 @@ def test_provider(name, host=None, api=None):
                         provider['HOST'] = host
                     if api:
                         provider['API'] = api
-                    return NewzNabPlus(book, provider, 'book', 'nzb', True), provider['DISPNAME']
+                    success, errorMsg = NewzNabPlus(book, provider, 'book', 'newznab', True)
+                    if not success:
+                        if cancelSearchType('book', errorMsg, provider):
+                            success, _ = NewzNabPlus(book, provider, 'general', 'newznab', True)
+                    return success, provider['DISPNAME']
         except IndexError:
             pass
     msg = "Unknown provider [%s]" % name
@@ -175,26 +184,38 @@ def get_capabilities(provider, force=False):
         # most providers will give you caps without an api key
         logger.debug('Requesting capabilities for %s' % URL)
         source_xml, success = fetchURL(URL)
-        if success and "ng api key" in source_xml:  # catches wrong or missing
-            success = False
-        # If it failed, retry with api key
         if not success:
+            logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
+        else:
+            try:
+                data = ElementTree.fromstring(source_xml)
+            except ElementTree.ParseError:
+                logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
+                success = False
+            if success and data.tag == 'error':
+                logger.debug("Unable to get capabilities: %s" % data.attrib)
+                success = False
+        if not success:
+            # If it failed, retry with api key
             if provider['API']:
                 URL = URL + '&apikey=' + provider['API']
                 logger.debug('Retrying capabilities with apikey for %s' % URL)
                 source_xml, success = fetchURL(URL)
+                if not success:
+                    logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
+                else:
+                    try:
+                        data = ElementTree.fromstring(source_xml)
+                    except ElementTree.ParseError:
+                        logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
+                        success = False
+                    if success and data.tag == 'error':
+                        logger.debug("Unable to get capabilities: %s" % data.attrib)
+                        success = False
             else:
                 logger.debug('Unable to retry capabilities, no apikey for %s' % URL)
-        if success:
-            try:
-                data = ElementTree.fromstring(source_xml)
-            except ElementTree.ParseError:
-                data = ''
-                logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
-        else:
-            logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
-            data = ''
-        if not len(data):
+
+        if not success:
             logger.warn("Unable to get capabilities for %s: No data returned" % URL)
             # might be a temporary error
             if provider['BOOKCAT'] or provider['MAGCAT'] or provider['AUDIOCAT']:
@@ -710,12 +731,12 @@ def cancelSearchType(searchType, errorMsg, provider):
                     while count < len(providerlist):
                         if providerlist[count]['HOST'] == provider['HOST']:
                             if str(provider['MANUAL']) == 'False':
-                                logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['HOST']))
+                                logger.error("Disabled %s=%s for %s" % (msg, provider[msg], provider['DISPNAME']))
                                 providerlist[count][msg] = ""
-                                lazylibrarian.config_write(provider['HOST'])
+                                lazylibrarian.config_write(provider['NAME'])
                                 return True
                         count += 1
-            logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['HOST']))
+            logger.error('Unable to disable searchtype [%s] for %s' % (searchType, provider['DISPNAME']))
     return False
 
 
@@ -755,7 +776,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 success = False
             if not success:
                 logger.debug(result)
-            return success
+            return success, result
 
         if success:
             try:

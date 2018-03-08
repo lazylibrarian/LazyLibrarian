@@ -208,6 +208,11 @@ def mymakedirs(path):
     try:
         os.mkdir(path)
     except OSError:
+        parent = os.path.split(path)[0]
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Parent: %s Mode: %s UID: %s GID: %s W_OK: %s X_OK: %s" % (parent,
+                         oct(os.stat(parent).st_mode), os.stat(parent).st_uid, os.stat(parent).st_gid,
+                         os.access(parent, os.W_OK), os.access(parent, os.X_OK)))
         raise
     setperm(path)
 
@@ -217,7 +222,7 @@ def setperm(file_or_dir):
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
     """
     if not file_or_dir:
-        return
+        return False
 
     if os.path.isdir(file_or_dir):
         value = lazylibrarian.CONFIG['DIR_PERM']
@@ -638,9 +643,9 @@ def saveLog():
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
     passchars = string.ascii_letters + string.digits + ':_/'  # used by slack, telegram and googlebooks
-    redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ',  'keys ->',
-                  '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': ", "'--password', u'",
-                  "'--password', '"]
+    redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ',  'keys -> ',
+                  'apitoken -> ', 'username -> ', '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': ",
+                  "'--password', u'", "'--password', '", "api:", "keys:", "token:", "secret="]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0

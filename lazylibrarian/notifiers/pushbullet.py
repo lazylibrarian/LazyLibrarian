@@ -49,7 +49,7 @@ class PushbulletNotifier:
 
         pb = PushBullet(str(pushbullet_token))
 
-        if event == 'LLTest':  # special case, return device list
+        if event == 'DeviceList':  # special case, return device list
             devices = pb.getDevices()
             ret = ""
             for device in devices:
@@ -94,8 +94,11 @@ class PushbulletNotifier:
         if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
-    def test_notify(self, title="LLTest"):
-        return self._notify("This test notification asks for the device list", event=title, force=True)
+    def test_notify(self, title="Test"):
+        res = self._notify("This test notification asks for the device list", event='DeviceList', force=True)
+        if res:
+            _ = self._notify("This is a test notification from LazyLibrarian", event=title, force=True)
+        return res
 
     def update_library(self, showName=None):
         pass
