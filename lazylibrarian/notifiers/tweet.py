@@ -111,13 +111,13 @@ class TwitterNotifier:
         logger.info("Sending tweet: " + message)
 
         api = twitter.Api(username, password, access_token_key, access_token_secret)
+        message = formatter.makeBytestr(message)
 
         try:
             api.PostUpdate(message)
         except Exception as e:
             logger.error("Error Sending Tweet: %s" % e)
             return False
-
         return True
 
     def _notifyTwitter(self, message='', force=False):

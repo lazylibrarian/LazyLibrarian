@@ -3526,8 +3526,8 @@
         });
 
         $('#testTwitter').click(function () {
-            $.get("testTwitter",
-                function (data) { $('#testTwitter-result').html(data); });
+            $.get("testTwitter", {},
+                function (data) { window.alert(data) });
         });
 
         $('#testBoxcar').click(function () {
