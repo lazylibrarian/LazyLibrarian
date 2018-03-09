@@ -64,7 +64,6 @@ class TwitterNotifier:
         else:
             # noinspection PyDeprecation
             request_token = dict(parse_qsl(content))
-
             lazylibrarian.CONFIG['TWITTER_USERNAME'] = request_token['oauth_token']
             lazylibrarian.CONFIG['TWITTER_PASSWORD'] = request_token['oauth_token_secret']
             logger.debug('Twitter oauth_token = %s oauth_secret = %s' % (lazylibrarian.CONFIG['TWITTER_USERNAME'],
@@ -75,7 +74,6 @@ class TwitterNotifier:
         request_token = {'oauth_token': lazylibrarian.CONFIG['TWITTER_USERNAME'],
                          'oauth_token_secret': lazylibrarian.CONFIG['TWITTER_PASSWORD'],
                          'oauth_callback_confirmed': 'true'}
-
         token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
         token.set_verifier(key)
 
@@ -85,11 +83,8 @@ class TwitterNotifier:
         oauth_consumer = oauth.Consumer(key=self.consumer_key, secret=self.consumer_secret)
         logger.debug('Twitter oauth_consumer: ' + str(oauth_consumer))
         oauth_client = oauth.Client(oauth_consumer, token)
-        # logger.info('oauth_client: ' + str(oauth_client))
         resp, content = oauth_client.request(self.ACCESS_TOKEN_URL, method='POST', body='oauth_verifier=%s' % key)
         logger.debug('resp, content: ' + str(resp) + ',' + str(content))
-
-        logger.debug('resp[status] = ' + str(resp['status']))
         if resp['status'] != '200':
             logger.error('The request for an access token did not succeed: ' + str(resp['status']))
             return False
