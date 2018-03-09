@@ -3172,12 +3172,15 @@ class WebInterface(object):
     @cherrypy.expose
     def twitterStep2(self, key):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        result = notifiers.twitter_notifier._get_credentials(key)
-        logger.info("result: " + str(result))
-        if result:
-            return "Key verification successful"
+        if key:
+            result = notifiers.twitter_notifier._get_credentials(key)
+            if result:
+                lazylibrarian.config_write('Twitter')
+                return "Key verification successful"
+            else:
+                return "Unable to verify key"
         else:
-            return "Unable to verify key"
+            return "No Key provided"
 
     @cherrypy.expose
     def testTwitter(self):
