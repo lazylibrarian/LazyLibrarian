@@ -615,10 +615,11 @@ class GoodReads:
 
                         if check_status or not rejected:
                             updated = False
-                            existing = myDB.match('SELECT Status,Manual,BookAdded,BookName FROM books WHERE BookID=?',
-                                                  (bookid,))
+                            cmd = 'SELECT Status,AudioStatus,Manual,BookAdded,BookName FROM books WHERE BookID=?'
+                            existing = myDB.match(cmd, (bookid,))
                             if existing:
                                 book_status = existing['Status']
+                                audio_status = existing['AudioStatus']
                                 locked = existing['Manual']
                                 added = existing['BookAdded']
                                 if bookname != existing['BookName']:
@@ -629,6 +630,7 @@ class GoodReads:
                                     locked = bool(int(locked))
                             else:
                                 book_status = bookstatus  # new_book status, or new_author status
+                                audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
                                 added = today()
                                 locked = False
 
@@ -652,7 +654,7 @@ class GoodReads:
                                     "BookDate": pubyear,
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
-                                    "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
+                                    "AudioStatus": audio_status,
                                     "BookAdded": added
                                 }
 

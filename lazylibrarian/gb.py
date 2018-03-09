@@ -560,10 +560,11 @@ class GoogleBooks:
                             # GoodReads sometimes has multiple bookids for the same book (same author/title, different
                             # editions) and sometimes uses the same bookid if the book is the same but the title is
                             # slightly different. Not sure if googlebooks does too, but we only want one...
-                            existing_book = myDB.match('SELECT Status,Manual,BookAdded FROM books WHERE BookID=?',
-                                                       (bookid,))
+                            cmd = 'SELECT Status,AudioStatus,Manual,BookAdded FROM books WHERE BookID=?'
+                            existing_book = myDB.match(cmd, (bookid,))
                             if existing_book:
                                 book_status = existing_book['Status']
+                                audio_status = existing_book['AudioStatus']
                                 locked = existing_book['Manual']
                                 added = existing_book['BookAdded']
                                 if locked is None:
@@ -572,6 +573,7 @@ class GoogleBooks:
                                     locked = bool(int(locked))
                             else:
                                 book_status = bookstatus  # new_book status, or new_author status
+                                audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
                                 added = today()
                                 locked = False
 
@@ -631,7 +633,7 @@ class GoogleBooks:
                                     "BookDate": bookdate,
                                     "BookLang": booklang,
                                     "Status": book_status,
-                                    "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
+                                    "AudioStatus": audio_status,
                                     "BookAdded": added
                                 }
                                 resultcount += 1
