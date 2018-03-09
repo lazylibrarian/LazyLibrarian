@@ -39,6 +39,10 @@ from lib.six import PY2, text_type, StringIO
 from lib.six.moves.http_client import UNAUTHORIZED
 from lib.six.moves.urllib_error import HTTPError
 from lib.six.moves.urllib_parse import urlparse, urlunparse
+if PY2:
+  import urllib2
+else:
+  import urllib.request
 
 try:
   # Python >= 2.6
@@ -66,6 +70,20 @@ def longint(x):
     return long(x)
   else:
     return int(x)
+
+def makeBytestr(txt):
+    # convert unicode to bytestring, needed for post data
+    if txt is None or not txt:
+        return b''
+    elif not isinstance(txt, text_type):  # nothing to do if already bytestring
+        return txt
+    for encoding in ['utf-8', 'latin-1']:
+        try:
+            txt = txt.encode(encoding)
+            return txt
+        except UnicodeError:
+            pass
+    return txt
 # lazylib changes end
 
 CHARACTER_LIMIT = 140
@@ -2354,15 +2372,18 @@ class Api(object):
         Set to True to enable debug output from urllib2 when performing
         any HTTP requests.  Defaults to False. [Optional]
     '''
+
     self.SetCache(cache)
-    self._urllib         = urllib2
+    if PY2:
+      self._urllib       = urllib2
+    else:
+      self._urllib       = urllib.request
     self._cache_timeout  = Api.DEFAULT_CACHE_TIMEOUT
     self._input_encoding = input_encoding
     self._use_gzip       = use_gzip_compression
     self._debugHTTP      = debugHTTP
     self._oauth_consumer = None
     self._shortlink_size = 19
-
     self._InitializeRequestHeaders(request_headers)
     self._InitializeUserAgent()
     self._InitializeDefaultParameters()
@@ -2381,6 +2402,7 @@ class Api(object):
       raise TwitterError('Twitter requires oAuth Access Token for all API access')
 
     self.SetCredentials(consumer_key, consumer_secret, access_token_key, access_token_secret)
+
 
   def SetCredentials(self,
                      consumer_key,
@@ -2954,9 +2976,11 @@ class Api(object):
       data['display_coordinates'] = 'true'
     if trim_user:
       data['trim_user'] = 'true'
+
     json = self._FetchUrl(url, post_data=data)
     data = self._ParseAndCheckTwitter(json)
     return Status.NewFromJsonDict(data)
+
 
   def PostUpdates(self, status, continuation=None, **kwargs):
     '''Post one or more twitter status messages from the authenticated user.
@@ -4347,7 +4371,7 @@ class Api(object):
 
   def _InitializeUserAgent(self):
     user_agent = 'Python-urllib/%s (python-twitter/%s)' % \
-                 (self._urllib.__version__, __version__)
+                  (self._urllib.__version__, __version__)
     self.SetUserAgent(user_agent)
 
   def _InitializeDefaultParameters(self):
@@ -4525,6 +4549,7 @@ class Api(object):
 
       if http_method == "POST":
         encoded_post_data = req.to_postdata()
+
       else:
         encoded_post_data = None
         url = req.to_url()
@@ -4534,6 +4559,7 @@ class Api(object):
 
     # Open and return the URL immediately if we're not going to cache
     if encoded_post_data or no_cache or not self._cache or not self._cache_timeout:
+      encoded_post_data = makeBytestr(encoded_post_data)
       response = opener.open(url, encoded_post_data)
       url_data = self._DecompressGzippedResponse(response)
       opener.close()
@@ -4550,6 +4576,7 @@ class Api(object):
       # If the cached version is outdated then fetch another and store it
       if not last_cached or time.time() >= last_cached + self._cache_timeout:
         try:
+          encoded_post_data = makeBytestr(encoded_post_data)
           response = opener.open(url, encoded_post_data)
           url_data = self._DecompressGzippedResponse(response)
           self._cache.Set(key, url_data)
