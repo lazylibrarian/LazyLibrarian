@@ -161,8 +161,11 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     downloadID = False
     Source = ''
     full_url = tor_url  # keep the url as stored in "wanted" table
-    if tor_url and tor_url.startswith('magnet'):
+    if tor_url and tor_url.startswith('magnet:?'):
         torrent = tor_url  # allow magnet link to write to blackhole and hash to utorrent/rtorrent
+    elif 'magnet:?' in tor_url:
+        # discard any other parameters and just use the magnet link
+        torrent = 'magnet:?' + tor_url.split('magnet:?')[1]
     else:
         # h = HTMLParser()
         # tor_url = h.unescape(tor_url)
@@ -178,6 +181,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             value = makeUnicode(value)  # ensure unicode
             value = unicodedata.normalize('NFC', value)  # normalize to short form
             value = value.encode('unicode-escape')  # then escape the result
+            value = makeUnicode(value)  # ensure unicode
             value = value.replace(' ', '%20')  # and encode any spaces
             tor_url = url + '&file=' + value
 
@@ -190,17 +194,20 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         proxies = proxyList()
         try:
             r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
+            torrent = r.content
         except requests.exceptions.Timeout:
             logger.warn('Timeout fetching file from url: %s' % tor_url)
             return False
         except Exception as e:
-            if hasattr(e, 'reason'):
-                logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+            # some jackett providers redirect http to a magnet link
+            if "magnet:?" in str(e):
+                torrent = 'magnet:?' + str(e).split('magnet:?')[1]. strip("'")
             else:
-                logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
-            return False
-
-        torrent = r.content
+                if hasattr(e, 'reason'):
+                    logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+                else:
+                    logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
+                return False
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
@@ -387,7 +394,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
 
 def CalcTorrentHash(torrent):
-    if isinstance(torrent, text_type) and torrent.startswith('magnet'):
+    # torrent could be a unicode magnet link or a bytes object torrent file contents
+    if makeUnicode(torrent[:6]) == 'magnet':
+        #torrent = makeUnicode(torrent)
         hashid = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()
