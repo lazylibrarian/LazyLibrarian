@@ -36,7 +36,7 @@ from lazylibrarian import database, logger, utorrent, transmission, qbittorrent,
 from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
-from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, mymakedirs
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr
 from lazylibrarian.gr import GoodReads
@@ -223,8 +223,9 @@ def unpack_archive(pp_path, download_dir, title):
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
                     try:
-                        mymakedirs(targetdir)
-                    except Exception as why:
+                        os.makedirs(targetdir)
+                        setperm(targetdir)
+                    except OSError as why:
                         if not os.path.isdir(targetdir):
                             logger.error('Failed to create dir [%s], %s' % (targetdir, why))
                             return ''
@@ -255,8 +256,9 @@ def unpack_archive(pp_path, download_dir, title):
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
                     try:
-                        mymakedirs(targetdir)
-                    except Exception as why:
+                        os.makedirs(targetdir)
+                        setperm(targetdir)
+                    except OSError as why:
                         if not os.path.isdir(targetdir):
                             logger.error('Failed to create dir [%s], %s' % (targetdir, why))
                             return ''
@@ -287,8 +289,9 @@ def unpack_archive(pp_path, download_dir, title):
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
                     try:
-                        mymakedirs(targetdir)
-                    except Exception as why:
+                        os.makedirs(targetdir)
+                        setperm(targetdir)
+                    except OSError as why:
                         if not os.path.isdir(targetdir):
                             logger.error('Failed to create dir [%s], %s' % (targetdir, why))
                             return ''
@@ -466,8 +469,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                                             if not os.path.isdir(targetdir):
                                                 try:
-                                                    mymakedirs(targetdir)
-                                                except Exception as why:
+                                                    os.makedirs(targetdir)
+                                                    setperm(targetdir)
+                                                except OSError as why:
                                                     if not os.path.isdir(targetdir):
                                                         logger.error('Failed to create directory [%s], %s' %
                                                                      (targetdir, why))
@@ -1238,8 +1242,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
         try:
-            mymakedirs(dest_path)
-        except Exception as why:
+            os.makedirs(dest_path)
+            setperm(dest_path)
+        except OSError as why:
             return False, 'Unable to create directory %s: %s' % (dest_path, why)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.

@@ -33,8 +33,8 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import mymakedirs
 from lazylibrarian.formatter import check_int
+from lazylibrarian.common import setperm
 from lib.six import PY2
 
 delugeweb_auth = {}
@@ -500,8 +500,9 @@ def setTorrentPath(result):
         if not os.path.isdir(dl_dir):
             logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % dl_dir)
             try:
-                mymakedirs(dl_dir)
-            except Exception as e:
+                os.makedirs(dl_dir)
+                setperm(dl_dir)
+            except OSError as e:
                 if not os.path.isdir(dl_dir):
                     logger.debug("Error creating directory %s, %s" % (dl_dir, e))
 

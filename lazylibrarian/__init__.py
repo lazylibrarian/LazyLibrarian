@@ -29,7 +29,7 @@ import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import restartJobs, logHeader, mymakedirs
+from lazylibrarian.common import restartJobs, logHeader
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
 from lib.apscheduler.scheduler import Scheduler
 from lib.six import PY2, text_type
@@ -541,8 +541,8 @@ def initialize():
 
         # Create logdir
         try:
-            mymakedirs(CONFIG['LOGDIR'])
-        except Exception as e:
+            os.makedirs(CONFIG['LOGDIR'])
+        except OSError as e:
             if LOGLEVEL:
                 print('%s : Unable to create folder for logs: %s' % (CONFIG['LOGDIR'], str(e)))
 
@@ -572,16 +572,16 @@ def initialize():
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
         try:
-            mymakedirs(CACHEDIR)
-        except Exception as e:
+            os.makedirs(CACHEDIR)
+        except OSError as e:
             if not os.path.isdir(CACHEDIR):
                 logger.error('Could not create cachedir; %s' % e)
 
         for item in ['book', 'author', 'SeriesCache', 'JSONCache', 'XMLCache', 'WorkCache', 'magazine']:
             cachelocation = os.path.join(CACHEDIR, item)
             try:
-                mymakedirs(cachelocation)
-            except Exception as e:
+                os.makedirs(cachelocation)
+            except OSError as e:
                 if not os.path.isdir(cachelocation):
                     logger.error('Could not create %s: %s' % (cachelocation, e))
 

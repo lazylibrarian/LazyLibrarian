@@ -26,7 +26,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import setperm, USER_AGENT, proxyList, mymakedirs
+from lazylibrarian.common import setperm, USER_AGENT, proxyList
 from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
 from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
@@ -127,8 +127,9 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
     destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
     try:
-        mymakedirs(destdir)
-    except Exception as e:
+        os.makedirs(destdir)
+        setperm(destdir)
+    except OSError as e:
         if not os.path.isdir(destdir):
             logger.debug("Error creating directory %s, %s" % (destdir, e))
 
@@ -200,6 +201,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             return False
         except Exception as e:
             # some jackett providers redirect http to a magnet link
+            # which requests can't handle, so throws an exception
             if "magnet:?" in str(e):
                 torrent = 'magnet:?' + str(e).split('magnet:?')[1]. strip("'")
             else:
@@ -396,7 +398,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 def CalcTorrentHash(torrent):
     # torrent could be a unicode magnet link or a bytes object torrent file contents
     if makeUnicode(torrent[:6]) == 'magnet':
-        #torrent = makeUnicode(torrent)
+        # torrent = makeUnicode(torrent)
         hashid = re.findall('urn:btih:([\w]{32,40})', torrent)[0]
         if len(hashid) == 32:
             hashid = b16encode(b32decode(hashid)).lower()

@@ -198,25 +198,6 @@ OjAwC98hhgAAAABJRU5ErkJggg==" alt="embedded icon" align="middle"><br><br>
 ''' % (title, body)
 
 
-def mymakedirs(path):
-    if not path or os.path.exists(path):
-        return
-    head, tail = os.path.split(path)
-    if not tail:
-        return
-    mymakedirs(head)
-    try:
-        os.mkdir(path)
-    except Exception as e:
-        parent = os.path.split(path)[0]
-        if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Parent: %s Mode: %s UID: %s GID: %s W_OK: %s X_OK: %s Error: %s" % (parent,
-                         oct(os.stat(parent).st_mode), os.stat(parent).st_uid, os.stat(parent).st_gid,
-                         os.access(parent, os.W_OK), os.access(parent, os.X_OK), str(e)))
-        raise
-    setperm(path)
-
-
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
