@@ -3029,6 +3029,7 @@ class WebInterface(object):
     @cherrypy.expose
     def testprovider(self, **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        threading.currentThread().name = "TESTPROVIDER"
         if 'name' in kwargs and kwargs['name']:
             host = ''
             api = ''

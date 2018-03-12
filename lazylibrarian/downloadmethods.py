@@ -126,11 +126,11 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
     logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
     destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
-    try:
-        os.makedirs(destdir)
-        setperm(destdir)
-    except OSError as e:
-        if not os.path.isdir(destdir):
+    if not os.path.isdir(destdir):
+        try:
+            os.makedirs(destdir)
+            setperm(destdir)
+        except OSError as e:
             logger.debug("Error creating directory %s, %s" % (destdir, e))
 
     destfile = os.path.join(destdir, bookname)

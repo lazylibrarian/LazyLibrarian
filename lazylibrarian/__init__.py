@@ -540,10 +540,10 @@ def initialize():
             CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
 
         # Create logdir
-        try:
-            os.makedirs(CONFIG['LOGDIR'])
-        except OSError as e:
-            if LOGLEVEL:
+        if not os.path.isdir(CONFIG['LOGDIR']):
+            try:
+                os.makedirs(CONFIG['LOGDIR'])
+            except OSError as e:
                 print('%s : Unable to create folder for logs: %s' % (CONFIG['LOGDIR'], str(e)))
 
         # Start the logger, silence console logging if we need to
@@ -571,18 +571,18 @@ def initialize():
 
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
-        try:
-            os.makedirs(CACHEDIR)
-        except OSError as e:
-            if not os.path.isdir(CACHEDIR):
+        if not os.path.isdir(CACHEDIR):
+            try:
+                os.makedirs(CACHEDIR)
+            except OSError as e:
                 logger.error('Could not create cachedir; %s' % e)
 
         for item in ['book', 'author', 'SeriesCache', 'JSONCache', 'XMLCache', 'WorkCache', 'magazine']:
             cachelocation = os.path.join(CACHEDIR, item)
-            try:
-                os.makedirs(cachelocation)
-            except OSError as e:
-                if not os.path.isdir(cachelocation):
+            if not os.path.isdir(cachelocation):
+                try:
+                    os.makedirs(cachelocation)
+                except OSError as e:
                     logger.error('Could not create %s: %s' % (cachelocation, e))
 
         # keep track of last api calls so we don't call more than once per second
@@ -1105,7 +1105,7 @@ def DIRECTORY(dirname):
                 f.write('test')
             os.remove(os.path.join(usedir, 'll_temp'))
         except Exception as why:
-            logger.warn("%s dir [%s] not usable, using %s: %s" % (dirname, usedir, DATADIR, str(why)))
+            logger.warn("%s dir [%s] not writeable, using %s: %s" % (dirname, usedir, DATADIR, str(why)))
             logger.debug("Folder: %s Mode: %s UID: %s GID: %s W_OK: %s X_OK: %s" % (usedir,
                          oct(os.stat(usedir).st_mode), os.stat(usedir).st_uid, os.stat(usedir).st_gid,
                          os.access(usedir, os.W_OK), os.access(usedir, os.X_OK)))

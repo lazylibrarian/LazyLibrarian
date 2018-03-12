@@ -503,8 +503,7 @@ def setTorrentPath(result):
                 os.makedirs(dl_dir)
                 setperm(dl_dir)
             except OSError as e:
-                if not os.path.isdir(dl_dir):
-                    logger.debug("Error creating directory %s, %s" % (dl_dir, e))
+                logger.debug("Error creating directory %s, %s" % (dl_dir, e))
 
         post_data = json.dumps({"method": "core.set_torrent_move_completed_path",
                                 "params": [result['hash'], dl_dir],

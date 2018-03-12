@@ -6,26 +6,27 @@ from __future__ import print_function
 import locale
 import os
 import platform
-import stat
 import sys
 import threading
 import time
-import re
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
 from lazylibrarian.formatter import check_int
 
+# noinspection PyUnresolvedReferences
 from lib.six.moves import configparser
 
 # The following should probably be made configurable at the settings level
 # This fix is put in place for systems with broken SSL (like QNAP)
 opt_out_of_certificate_verification = True
 if opt_out_of_certificate_verification:
+    # noinspection PyBroadException
     try:
         import ssl
+        # noinspection PyProtectedMember
         ssl._create_default_https_context = ssl._create_unverified_context
-    except:
+    except Exception:
         pass
 # ==== end block (should be configurable at settings level)
 
@@ -135,7 +136,7 @@ def main():
             lazylibrarian.PIDFILE = str(options.pidfile)
 
     # create and check (optional) paths
-    if not os.path.exists(lazylibrarian.DATADIR):
+    if not os.path.isdir(lazylibrarian.DATADIR):
         try:
             os.makedirs(lazylibrarian.DATADIR)
         except OSError:
@@ -161,7 +162,8 @@ def main():
     versioncheck.checkForUpdates()
 
     logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
-        lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'], lazylibrarian.CONFIG['INSTALL_TYPE']))
+        lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'],
+        lazylibrarian.CONFIG['INSTALL_TYPE']))
 
     if lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'] == 0:
         logger.debug('Automatic update checks are disabled')
@@ -219,7 +221,9 @@ def main():
     })
 
     if lazylibrarian.CONFIG['LAUNCH_BROWSER'] and not options.nolaunch:
-        lazylibrarian.launch_browser(lazylibrarian.CONFIG['HTTP_HOST'], lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT'])
+        lazylibrarian.launch_browser(lazylibrarian.CONFIG['HTTP_HOST'],
+                                     lazylibrarian.CONFIG['HTTP_PORT'],
+                                     lazylibrarian.CONFIG['HTTP_ROOT'])
 
     if curr_ver:
         threading.Thread(target=dbupgrade.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()

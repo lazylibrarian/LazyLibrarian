@@ -226,9 +226,8 @@ def unpack_archive(pp_path, download_dir, title):
                         os.makedirs(targetdir)
                         setperm(targetdir)
                     except OSError as why:
-                        if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
-                            return ''
+                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                        return ''
                 if PY2:
                     fmode = 'wb'
                 else:
@@ -259,9 +258,8 @@ def unpack_archive(pp_path, download_dir, title):
                         os.makedirs(targetdir)
                         setperm(targetdir)
                     except OSError as why:
-                        if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
-                            return ''
+                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                        return ''
                 if PY2:
                     fmode = 'wb'
                 else:
@@ -292,9 +290,8 @@ def unpack_archive(pp_path, download_dir, title):
                         os.makedirs(targetdir)
                         setperm(targetdir)
                     except OSError as why:
-                        if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
-                            return ''
+                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                        return ''
                 if PY2:
                     fmode = 'wb'
                 else:
@@ -472,9 +469,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                     os.makedirs(targetdir)
                                                     setperm(targetdir)
                                                 except OSError as why:
-                                                    if not os.path.isdir(targetdir):
-                                                        logger.error('Failed to create directory [%s], %s' %
-                                                                     (targetdir, why))
+                                                    logger.error('Failed to create directory [%s], %s' %
+                                                                 (targetdir, why))
                                             if os.path.isdir(targetdir):
                                                 cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
                                                 if cnt:

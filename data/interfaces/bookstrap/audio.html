@@ -90,20 +90,6 @@
   <script type="text/javascript">
     $(document).ready(function() {
 
-        $('#go').click(function () {
-                var action = $("#action").val();
-                if (action == "Delete") {
-                    if (confirm('Are you sure you want to permanently delete the selected books?')) {
-                        return
-                    } else {
-                        $("#action").val("Leave")
-                        return
-                    }
-                } else {
-                    return
-                }
-            });
-
         $('#chooselanguage').val(getUrlVars()['BookLang']);
 
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
