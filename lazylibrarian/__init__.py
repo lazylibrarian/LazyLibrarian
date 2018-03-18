@@ -294,6 +294,7 @@ CONFIG_DEFINITIONS = {
     'TRANSMISSION_USER': ('str', 'TRANSMISSION', ''),
     'TRANSMISSION_PASS': ('str', 'TRANSMISSION', ''),
     'TRANSMISSION_DIR': ('str', 'TRANSMISSION', ''),
+    'DELUGE_CERT': ('str', 'DELUGE', ''),
     'DELUGE_HOST': ('str', 'DELUGE', ''),
     'DELUGE_PORT': ('int', 'DELUGE', 0),
     'DELUGE_USER': ('str', 'DELUGE', ''),
