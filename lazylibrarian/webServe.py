@@ -3442,14 +3442,22 @@ class WebInterface(object):
         threading.currentThread().name = "WEBSERVER"
         if 'host' in kwargs:
             lazylibrarian.CONFIG['DELUGE_HOST'] = kwargs['host']
+        if 'cert' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_CERT'] = kwargs['cert']
         if 'port' in kwargs:
             lazylibrarian.CONFIG['DELUGE_PORT'] = check_int(kwargs['port'], 0)
-        if 'user' in kwargs:
-            lazylibrarian.CONFIG['DELUGE_USER'] = kwargs['user']
         if 'pwd' in kwargs:
             lazylibrarian.CONFIG['DELUGE_PASS'] = kwargs['pwd']
         if 'label' in kwargs:
             lazylibrarian.CONFIG['DELUGE_LABEL'] = kwargs['label']
+        if 'user' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_USER'] = kwargs['user']
+            # if daemon, no cert used
+            lazylibrarian.CONFIG['DELUGE_CERT'] = ''
+            # and host must not contain http:// or https://
+            host = lazylibrarian.CONFIG['DELUGE_HOST']
+            host = host.replace('https://', '').replace('http://', '')
+            lazylibrarian.CONFIG['DELUGE_HOST'] = host
 
         try:
             if not lazylibrarian.CONFIG['DELUGE_USER']:
