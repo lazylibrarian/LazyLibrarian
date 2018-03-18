@@ -169,7 +169,7 @@
             "sPaginationType": "full_numbers",
             "aaSorting": [[0, 'asc']],
             "bServerSide": true,
-            "sAjaxSource": 'getBooks?source=Audio&booklang=${booklang}',
+            "sAjaxSource": 'getBooks?source=Audio&library=AudioBook&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 %if perm&lazylibrarian.perm_status:
