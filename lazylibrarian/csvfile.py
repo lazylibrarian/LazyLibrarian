@@ -26,7 +26,7 @@ except ImportError:
     if PY2:
         from lib.csv import writer, reader, QUOTE_MINIMAL
     else:
-        from lib.csv import writer, reader, QUOTE_MINIMAL
+        from lib3.csv import writer, reader, QUOTE_MINIMAL
 
 
 def export_CSV(search_dir=None, status="Wanted"):
