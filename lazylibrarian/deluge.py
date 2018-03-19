@@ -124,7 +124,12 @@ def addTorrent(link, data=None):
                 # remove '.torrent' suffix
                 if name[-len('.torrent'):] == '.torrent':
                     name = name[:-len('.torrent')]
-            logger.debug('Deluge: Sending Deluge torrent with name %s and content [%s...]' % (name, torrentfile[:40]))
+            try:
+                logger.debug('Deluge: Sending Deluge torrent with name %s and content [%s...]' %
+                             (name, str(torrentfile)[:40]))
+            except UnicodeDecodeError:
+                logger.debug('Deluge: Sending Deluge torrent with name %s and content [%s...]' %
+                             (name.decode('utf-8'), str(torrentfile)[:40]))
             result = {'type': 'torrent',
                       'name': name,
                       'content': torrentfile}
@@ -235,13 +240,8 @@ def _get_auth():
 
     delugeweb_password = lazylibrarian.CONFIG['DELUGE_PASS']
 
-    if not delugeweb_host.startswith("http://") and not delugeweb_host.startswith("https://"):
+    if not delugeweb_host.startswith("http"):
         delugeweb_host = 'http://%s' % delugeweb_host
-
-    if delugeweb_host.endswith('/'):
-        delugeweb_host = delugeweb_host[:-1]
-
-    delugeweb_host = "%s:%s" % (delugeweb_host, delugeweb_port)
 
     if delugeweb_cert is None or delugeweb_cert.strip() == '':
         deluge_verify_cert = False
@@ -251,6 +251,10 @@ def _get_auth():
         delugeweb_host = delugeweb_host.replace('http:', 'https:')
         logger.debug('Deluge: Using certificate %s, host is now %s' % (deluge_verify_cert, delugeweb_host))
 
+    if delugeweb_host.endswith('/'):
+        delugeweb_host = delugeweb_host[:-1]
+
+    delugeweb_host = "%s:%s" % (delugeweb_host, delugeweb_port)
     delugeweb_url = delugeweb_host + '/json'
 
     post_data = json.dumps({"method": "auth.login",
@@ -283,13 +287,10 @@ def _get_auth():
         return None
 
     auth = json.loads(response.text)["result"]
-    if auth is False:
-        auth_error = json.loads(response.text)["error"]
-        logger.debug('Deluge: Authentication result: %s, Error: %s' % (auth, auth_error))
-        return None
-
+    auth_error = json.loads(response.text)["error"]
+    logger.debug('Deluge: Authentication result: %s, Error: %s' % (auth, auth_error))
     delugeweb_auth = response.cookies
-
+    logger.debug('Deluge: Authentication cookies: %s' % str(delugeweb_auth.get_dict()))
     post_data = json.dumps({"method": "web.connected",
                             "params": [],
                             "id": 10})
@@ -322,6 +323,7 @@ def _get_auth():
             return None
 
         delugeweb_hosts = json.loads(response.text)['result']
+        # Check if delugeweb_hosts is None before checking its length
         if not delugeweb_hosts or len(delugeweb_hosts) == 0:
             logger.error('Deluge: WebUI does not contain daemons')
             delugeweb_auth = {}
@@ -394,7 +396,7 @@ def _add_torrent_url(result):
     try:
         post_data = json.dumps({"method": "core.add_torrent_url",
                                 "params": [result['url'], {}],
-                                "id": 2})
+                                "id": 32})
         if PY2:
             post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
@@ -418,8 +420,8 @@ def _add_torrent_file(result):
     try:
         # content is torrent file contents that needs to be encoded to base64
         post_data = json.dumps({"method": "core.add_torrent_file",
-                                "params":
-                                    [result['name'] + '.torrent', b64encode(result['content'].encode('utf8')), {}],
+                                "params": [result['name'] + '.torrent',
+                                b64encode(result['content'].encode('utf8')), {}],
                                 "id": 2})
         if PY2:
             post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
