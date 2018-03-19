@@ -108,7 +108,8 @@ cmd_dict = {'help': 'list available commands. ' +
             'loadCFG': 'reload config from file',
             'getBookCover': '&id= [&src=] fetch cover link from cache/cover/librarything/goodreads/google for BookID',
             'getAllBooks': 'list all books in the database',
-            'getNoLang': 'list all books in the database with unknown language',
+            'listNoLang': 'list all books in the database with unknown language',
+            'listNoISBN': 'list all books in the database with no isbn',
             'listIgnoredAuthors': 'list all authors in the database marked ignored',
             'listIgnoredBooks': 'list all books in the database marked ignored',
             'listIgnoredSeries': 'list all series in the database marked ignored',
@@ -120,7 +121,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'showThreads': 'show threaded processes',
             'checkRunningJobs': 'ensure all needed jobs are running',
             'vacuum': 'vacuum the database',
-            'getWorkSeries': '&id= Get series from Librarything BookWork using BookID',
+            'getWorkSeries': '&id= Get series from Librarything BookWork using BookID or GoodReads using WorkID',
             'getSeriesMembers': '&id= Get list of series members from Librarything using SeriesID',
             'getSeriesAuthors': '&id= Get all authors from Librarything for a series and import them',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
@@ -129,7 +130,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'deleteEmptySeries': 'Delete any book series that have no members',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
-            'setAllBookSeries': '[&wait] Set the series details from book workpages',
+            'setAllBookSeries': '[&wait] Set the series details from librarything workpages',
             'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
@@ -433,9 +434,14 @@ class Api(object):
         self.data = self._dic_from_query(
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
 
-    def _getNoLang(self):
+    def _listNoLang(self):
         q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
         q += ' and BookLang="Unknown" or BookLang="" or BookLang is NULL'
+        self.data = self._dic_from_query(q)
+
+    def _listNoISBN(self):
+        q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
+        q += ' and BookISBN is NULL'
         self.data = self._dic_from_query(q)
 
     def _listIgnoredSeries(self):

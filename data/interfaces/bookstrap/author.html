@@ -26,7 +26,7 @@
                 <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=AudioBook" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> AudioBook Scan</a>
             %endif
           % endif
-            <a href="removeAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-remove"></i> Remove Author</a>
+            <button class="button btn btn-sm btn-primary" type="button" value="removeme" id="removeme"><i class="fa fa-remove"></i> Remove Author</button>
             <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
             %endif
             %if showseries >= 1:
@@ -200,6 +200,26 @@
   <script type="text/javascript">
     $(document).ready(function()
     {
+        $('#removeme').click(function () {
+            bootbox.confirm({
+                message: "Are you sure you want to permanently delete the author?",
+                buttons: {
+                    confirm: {
+                        label: 'Yes',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'No',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function (result) {
+                    if (result) { $.get("removeAuthor", {'AuthorID': ${author['AuthorID']} },
+                        function (data) { window.location = 'home' }); }
+                }
+            });
+        });
+
         $('#chooselanguage').change(function(){
             new_settings = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + $(this).val()
             if (typeof $("#chooselib").val() != 'undefined') {
@@ -317,6 +337,7 @@
             column.visible( ! column.visible() );
         } );
     });
+
     // Read a page's GET URL variables and return them as an associative array.
     function getUrlVars() {
         var vars = [], hash;

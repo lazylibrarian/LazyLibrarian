@@ -29,8 +29,9 @@ from lib.six.moves.urllib_parse import urlparse, urlunparse
 # This is just a simple script to send torrents to transmission. The
 # intention is to turn this into a class where we can check the state
 # of the download, set the download dir, etc.
-# TODO: Store the session id so we don't need to make 2 calls
-#       Store torrent id so we can check up on it
+#
+session_id = None
+host_url = None
 
 
 def addTorrent(link, directory=None):
@@ -155,10 +156,10 @@ def removeTorrent(torrentid, remove_data=False):
 
 
 def checkLink():
-
+    global session_id
     method = 'session-stats'
     arguments = {}
-
+    session_id = None
     response = torrentAction(method, arguments)  # type: dict
     if response:
         if response['result'] == 'success':
@@ -168,71 +169,74 @@ def checkLink():
 
 
 def torrentAction(method, arguments):
-
-    host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
-    port = check_int(lazylibrarian.CONFIG['TRANSMISSION_PORT'], 0)
-
-    if not host or not port:
-        logger.error('Invalid transmission host or port, check your config')
-        return False
+    global session_id, host_url
 
     username = lazylibrarian.CONFIG['TRANSMISSION_USER']
     password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
-    if not host.startswith("http://") and not host.startswith("https://"):
-        host = 'http://' + host
+    if host_url:
+        logger.debug("Using existing host %s" % host_url)
+    else:
+        host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
+        port = check_int(lazylibrarian.CONFIG['TRANSMISSION_PORT'], 0)
 
-    if host.endswith('/'):
-        host = host[:-1]
+        if not host or not port:
+            logger.error('Invalid transmission host or port, check your config')
+            return False
 
-    # Fix the URL. We assume that the user does not point to the RPC endpoint,
-    # so add it if it is missing.
-    parts = list(urlparse(host))
+        if not host.startswith("http://") and not host.startswith("https://"):
+            host = 'http://' + host
 
-    if parts[0] not in ("http", "https"):
-        parts[0] = "http"
+        if host.endswith('/'):
+            host = host[:-1]
 
-    if ':' not in parts[1]:
-        parts[1] += ":%s" % port
+        # Fix the URL. We assume that the user does not point to the RPC endpoint,
+        # so add it if it is missing.
+        parts = list(urlparse(host))
 
-    if not parts[2].endswith("/rpc"):
-        parts[2] += "/transmission/rpc"
+        if parts[0] not in ("http", "https"):
+            parts[0] = "http"
 
-    host = urlunparse(parts)
+        if ':' not in parts[1]:
+            parts[1] += ":%s" % port
 
-    # Retrieve session id
+        if not parts[2].endswith("/rpc"):
+            parts[2] += "/transmission/rpc"
+
+        host_url = urlunparse(parts)
+
     auth = (username, password) if username and password else None
     proxies = proxyList()
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
-    response = requests.get(host, auth=auth, proxies=proxies, timeout=timeout)
+    # Retrieve session id
+    if session_id:
+        logger.debug('Using existing session_id %s' % session_id)
+    else:
+        response = requests.get(host_url, auth=auth, proxies=proxies, timeout=timeout)
+        if response is None:
+            logger.error("Error getting Transmission session ID")
+            return
 
-    if response is None:
-        logger.error("Error getting Transmission session ID")
-        return
+        # Parse response
+        session_id = ''
+        if response.status_code == 401:
+            if auth:
+                logger.error("Username and/or password not accepted by Transmission")
+            else:
+                logger.error("Transmission authorization required")
+            return
+        elif response.status_code == 409:
+            session_id = response.headers['x-transmission-session-id']
 
-    # Parse response
-    session_id = ''
-    if response.status_code == 401:
-        if auth:
-            logger.error("Username and/or password not accepted by "
-                         "Transmission")
-        else:
-            logger.error("Transmission authorization required")
-        return
-    elif response.status_code == 409:
-        session_id = response.headers['x-transmission-session-id']
-
-    if not session_id:
-        logger.error("Expected a Session ID from Transmission, got %s" % response.status_code)
-        return
+        if not session_id:
+            logger.error("Expected a Session ID from Transmission, got %s" % response.status_code)
+            return
 
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
-    proxies = proxyList()
-    timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     try:
-        response = requests.post(host, data=json.dumps(data), headers=headers, proxies=proxies,
+        response = requests.post(host_url, data=json.dumps(data), headers=headers, proxies=proxies,
                                  auth=auth, timeout=timeout)
         response = response.json()
     except Exception as e:

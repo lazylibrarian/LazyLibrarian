@@ -74,14 +74,14 @@ def test_provider(name, host=None, api=None):
                         host = provider['HOST']
                     if 'goodreads' in host and 'list_rss' in host:
                         return GOODREADS(host, provider['NAME'], provider['DLPRIORITY'],
-                                         test=True), provider['DISPNAME']
+                                         provider['DISPNAME'], test=True), provider['DISPNAME']
                     elif 'goodreads' in host and '/list/show/' in host:
                         # goodreads listopia
                         return LISTOPIA(host, provider['NAME'], provider['DLPRIORITY'],
-                                        test=True), provider['DISPNAME']
+                                        provider['DISPNAME'], test=True), provider['DISPNAME']
                     else:
                         return RSS(host, provider['NAME'], provider['DLPRIORITY'],
-                                   test=True), provider['DISPNAME']
+                                   provider['DISPNAME'], test=True), provider['DISPNAME']
         except IndexError:
             pass
 
@@ -460,7 +460,7 @@ def IterateOverRSSSites():
             else:
                 providers += 1
                 logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
-                resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+                resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'], provider['DISPNAME'])
 
     return resultslist, providers
 
@@ -478,19 +478,21 @@ def IterateOverWishLists():
             else:
                 providers += 1
                 logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
-                resultslist += GOODREADS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+                resultslist += GOODREADS(provider['HOST'], provider['NAME'],
+                                         provider['DLPRIORITY'], provider['DISPNAME'])
         elif provider['ENABLED'] and 'goodreads' in provider['HOST'] and '/list/show/' in provider['HOST']:
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
             else:
                 providers += 1
                 logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
-                resultslist += LISTOPIA(provider['HOST'], provider['NAME'], provider['DLPRIORITY'])
+                resultslist += LISTOPIA(provider['HOST'], provider['NAME'],
+                                        provider['DLPRIORITY'], provider['DISPNAME'])
 
     return resultslist, providers
 
 
-def LISTOPIA(host=None, feednr=None, priority=0, test=False):
+def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
     """
     Goodreads Listopia query function, return all the results in a list
     """
@@ -502,6 +504,9 @@ def LISTOPIA(host=None, feednr=None, priority=0, test=False):
 
     page = 0
     next_page = True
+    provider = host.split('/list/show/')[1]
+    if not dispname:
+        dispname = provider
 
     while next_page:
         URL = host
@@ -529,13 +534,14 @@ def LISTOPIA(host=None, feednr=None, priority=0, test=False):
                     book_id = entry.split('data-resource-id="')[1].split('"')[0]
                     author_name = entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0]
                     results.append({
-                        'rss_prov': host.split('/list/show/')[1],
+                        'rss_prov': provider,
                         'rss_feed': feednr,
                         'rss_title': title,
                         'rss_author': author_name,
                         'rss_bookid': book_id,
                         'rss_isbn': '',
-                        'priority': priority
+                        'priority': priority,
+                        'dispname': dispname
                     })
                     next_page = True
                 except IndexError:
@@ -553,7 +559,7 @@ def LISTOPIA(host=None, feednr=None, priority=0, test=False):
     return results
 
 
-def GOODREADS(host=None, feednr=None, priority=0, test=False):
+def GOODREADS(host=None, feednr=None, priority=0, dispname=None, test=False):
     """
     Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
     but expects goodreads format (looks for goodreads category names)
@@ -580,6 +586,8 @@ def GOODREADS(host=None, feednr=None, priority=0, test=False):
     if data:
         logger.debug('Parsing results from %s' % URL)
         provider = data['feed']['link']
+        if not dispname:
+            dispname = provider
         logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
         for post in data.entries:
             title = ''
@@ -602,14 +610,15 @@ def GOODREADS(host=None, feednr=None, priority=0, test=False):
                     'rss_author': author_name,
                     'rss_bookid': book_id,
                     'rss_isbn': isbn,
-                    'priority': priority
+                    'priority': priority,
+                    'dispname': dispname
                 })
     else:
         logger.debug('No data returned from %s' % host)
     return results
 
 
-def RSS(host=None, feednr=None, priority=0, test=False):
+def RSS(host=None, feednr=None, priority=0, dispname=None, test=False):
     """
     Generic RSS query function, just return all the results from the RSS feed in a list
     """
@@ -635,6 +644,8 @@ def RSS(host=None, feednr=None, priority=0, test=False):
         # to debug because of api
         logger.debug('Parsing results from %s' % URL)
         provider = data['feed']['link']
+        if not dispname:
+            dispname = provider
         logger.debug("RSS %s returned %i result%s" % (provider, len(data.entries), plural(len(data.entries))))
         for post in data.entries:
             title = None
@@ -694,7 +705,8 @@ def RSS(host=None, feednr=None, priority=0, test=False):
                     'tor_date': tor_date,
                     'tor_feed': feednr,
                     'tor_type': tortype,
-                    'priority': priority
+                    'priority': priority,
+                    'dispname': dispname
                 })
     else:
         logger.debug('No data returned from %s' % host)
@@ -811,6 +823,7 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 for nzb in resultxml:
                     try:
                         thisnzb = ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY'])
+                        thisnzb['dispname'] = provider['DISPNAME']
                         if not maxage:
                             nzbcount += 1
                             results.append(thisnzb)

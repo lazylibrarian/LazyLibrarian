@@ -21,12 +21,12 @@ from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, form
 from lazylibrarian.importer import search_for, import_book, addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
 try:
-    import csv
+    from csv import writer, reader, QUOTE_MINIMAL
 except ImportError:
     if PY2:
-        import lib.csv as csv
+        from lib.csv import writer, reader, QUOTE_MINIMAL
     else:
-        import lib3.csv as csv
+        from lib3.csv import writer, reader, QUOTE_MINIMAL
 
 
 def export_CSV(search_dir=None, status="Wanted"):
@@ -64,8 +64,8 @@ def export_CSV(search_dir=None, status="Wanted"):
             else:
                 fmode = 'w'
             with open(csvFile, fmode) as csvfile:
-                csvwrite = csv.writer(csvfile, delimiter=',',
-                                      quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                csvwrite = writer(csvfile, delimiter=',',
+                                  quotechar='"', quoting=QUOTE_MINIMAL)
 
                 # write headers, change AuthorName BookName BookIsbn to match import csv names (Author, Title, ISBN10)
                 csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
@@ -157,9 +157,9 @@ def import_CSV(search_dir=None):
             return msg
         else:
             logger.debug('Reading file %s' % csvFile)
-            reader = csv.reader(open(csvFile, 'rU'))
-            for row in reader:
-                if reader.line_num == 1:
+            csvreader = reader(open(csvFile, 'rU'))
+            for row in csvreader:
+                if csvreader.line_num == 1:
                     # If we are on the first line, create the headers list from the first row
                     headers = row
                 else:

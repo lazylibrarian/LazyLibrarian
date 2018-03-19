@@ -226,9 +226,8 @@ def unpack_archive(pp_path, download_dir, title):
                         os.makedirs(targetdir)
                         setperm(targetdir)
                     except OSError as why:
-                        if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
-                            return ''
+                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                        return ''
                 if PY2:
                     fmode = 'wb'
                 else:
@@ -259,9 +258,8 @@ def unpack_archive(pp_path, download_dir, title):
                         os.makedirs(targetdir)
                         setperm(targetdir)
                     except OSError as why:
-                        if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
-                            return ''
+                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                        return ''
                 if PY2:
                     fmode = 'wb'
                 else:
@@ -292,9 +290,8 @@ def unpack_archive(pp_path, download_dir, title):
                         os.makedirs(targetdir)
                         setperm(targetdir)
                     except OSError as why:
-                        if not os.path.isdir(targetdir):
-                            logger.error('Failed to create dir [%s], %s' % (targetdir, why))
-                            return ''
+                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                        return ''
                 if PY2:
                     fmode = 'wb'
                 else:
@@ -472,9 +469,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                     os.makedirs(targetdir)
                                                     setperm(targetdir)
                                                 except OSError as why:
-                                                    if not os.path.isdir(targetdir):
-                                                        logger.error('Failed to create directory [%s], %s' %
-                                                                     (targetdir, why))
+                                                    logger.error('Failed to create directory [%s], %s' %
+                                                                 (targetdir, why))
                                             if os.path.isdir(targetdir):
                                                 cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
                                                 if cnt:
@@ -1241,11 +1237,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 os.remove(dest_path)
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
-        try:
-            os.makedirs(dest_path)
-            setperm(dest_path)
-        except OSError as why:
-            return False, 'Unable to create directory %s: %s' % (dest_path, why)
+        if not os.path.isdir(dest_path):
+            try:
+                os.makedirs(dest_path)
+                setperm(dest_path)
+            except OSError as why:
+                return False, 'Unable to create directory %s: %s' % (dest_path, why)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
@@ -1464,8 +1461,12 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     if 'Series_index' not in data:
         # no series details passed in data dictionary, look them up in db
         myDB = database.DBConnection()
-        cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
-        res = myDB.match(cmd, (bookid,))
+        if scheme == 'GOODREADS' and 'WorkID' in data and data['WorkID']:
+            cmd = 'SELECT SeriesID,SeriesNum from member WHERE workid=?'
+            res = myDB.match(cmd, (data['WorkID'],))
+        else:
+            cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
+            res = myDB.match(cmd, (bookid,))
         if res:
             seriesid = res['SeriesID']
             serieslist = getList(res['SeriesNum'])

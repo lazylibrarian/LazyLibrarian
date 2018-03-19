@@ -85,12 +85,18 @@ def searchItem(item=None, bookid=None, cat=None):
         size = ''
         date = ''
         mode = ''
+        if 'dispname' in item:
+            provider = item['dispname']
+        elif 'nzbprov' in item:
+            provider = item['nzbprov']
+        elif 'tor_prov' in item:
+            provider = item['tor_prov']
+        elif 'rss_prov' in item:
+            provider = item['rss_prov']
         if 'nzbtitle' in item:
             title = item['nzbtitle']
         if 'nzburl' in item:
             url = item['nzburl']
-        if 'nzbprov' in item:
-            provider = item['nzbprov']
         if 'nzbsize' in item:
             size = item['nzbsize']
         if 'nzbdate' in item:
@@ -101,8 +107,6 @@ def searchItem(item=None, bookid=None, cat=None):
             title = item['tor_title']
         if 'tor_url' in item:
             url = item['tor_url']
-        if 'tor_prov' in item:
-            provider = item['tor_prov']
         if 'tor_size' in item:
             size = item['tor_size']
         if 'tor_date' in item:
@@ -128,9 +132,6 @@ def searchItem(item=None, bookid=None, cat=None):
                           'url': quote_plus(url), 'mode': mode}
 
                 searchresults.append(result)
-
-                # from operator import itemgetter
-                # searchresults = sorted(searchresults, key=itemgetter('score'), reverse=True)
 
     logger.debug('Found %s %s results for %s' % (len(searchresults), cat, searchterm))
     return searchresults

@@ -90,20 +90,6 @@
   <script type="text/javascript">
     $(document).ready(function() {
 
-        $('#go').click(function () {
-                var action = $("#action").val();
-                if (action == "Delete") {
-                    if (confirm('Are you sure you want to permanently delete the selected books?')) {
-                        return
-                    } else {
-                        $("#action").val("Leave")
-                        return
-                    }
-                } else {
-                    return
-                }
-            });
-
         $('#chooselanguage').val(getUrlVars()['BookLang']);
 
         var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
@@ -183,7 +169,7 @@
             "sPaginationType": "full_numbers",
             "aaSorting": [[0, 'asc']],
             "bServerSide": true,
-            "sAjaxSource": 'getBooks?source=Audio&booklang=${booklang}',
+            "sAjaxSource": 'getBooks?source=Audio&library=AudioBook&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                 %if perm&lazylibrarian.perm_status:
