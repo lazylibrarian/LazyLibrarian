@@ -397,30 +397,6 @@ class GoodReads:
                                 isbnhead = bookisbn[0:3]
 
                         if not isbnhead:
-                            # try goodreads book page, sometimes author page has no isbn but book page does
-                            BOOKURL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(self.params)
-                            bookxml = None
-                            try:
-                                bookxml, in_cache = gr_xml_request(BOOKURL)
-                                if bookxml is None:
-                                    logger.debug("Error requesting book")
-                            except Exception as e:
-                                logger.error("%s finding book: %s" % (type(e).__name__, str(e)))
-
-                            if bookxml is not None:
-                                res = bookxml.find('./book/isbn13')
-                                if res is not None and res.text:
-                                    bookisbn = res.text
-                                    isbnhead = bookisbn[3:6]
-                                else:
-                                    res = bookxml.find('./book/isbn')
-                                    if res is not None and res.text:
-                                        bookisbn = res.text
-                                        isbnhead = bookisbn[0:3]
-                            if isbnhead:
-                                logger.debug("bookpage found %s for %s" % (bookisbn, bookid))
-
-                        if not isbnhead:
                             # try lookup by name
                             if bookname:
                                 res = isbn_from_words(unaccented(bookname) + ' ' + unaccented(authorNameResult))
