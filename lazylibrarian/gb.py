@@ -25,7 +25,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
     setSeries, setStatus
-from lazylibrarian.cache import get_json_request, cache_img
+from lazylibrarian.cache import gb_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
     getList, cleanName, check_int, makeUnicode
 from lazylibrarian.common import proxyList
@@ -113,7 +113,7 @@ class GoogleBooks:
                         URL = set_url + '&' + urlencode(self.params)
 
                         try:
-                            jsonresults, in_cache = get_json_request(URL)
+                            jsonresults, in_cache = gb_json_request(URL)
                             if jsonresults is None:
                                 number_results = 0
                             else:
@@ -339,7 +339,7 @@ class GoogleBooks:
                     URL = set_url + '&' + urlencode(self.params)
 
                     try:
-                        jsonresults, in_cache = get_json_request(URL, useCache=not refresh)
+                        jsonresults, in_cache = gb_json_request(URL, useCache=not refresh)
                         if jsonresults is None:
                             number_results = 0
                         else:
@@ -546,6 +546,10 @@ class GoogleBooks:
                         check_status = False
 
                         bookname = item['volumeInfo']['title']
+                        book_status = bookstatus  # new_book status, or new_author status
+                        audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
+                        added = today()
+                        locked = False
 
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
@@ -571,11 +575,6 @@ class GoogleBooks:
                                     locked = False
                                 elif locked.isdigit():
                                     locked = bool(int(locked))
-                            else:
-                                book_status = bookstatus  # new_book status, or new_author status
-                                audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
-                                added = today()
-                                locked = False
 
                         if not rejected and re.match('[^\w-]', bookname):  # remove books with bad characters in title
                             logger.debug("[%s] removed book for bad characters" % bookname)
@@ -661,18 +660,18 @@ class GoogleBooks:
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
-                                seriesdict = {}
-                                if lazylibrarian.CONFIG['ADD_SERIES']:  # prefer series info from librarything
-                                    seriesdict = getWorkSeries(bookid)
-                                    if seriesdict:
-                                        logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
+                                serieslist = []
+                                if lazylibrarian.CONFIG['ADD_SERIES']: 
+                                    serieslist = getWorkSeries(bookid)
+                                    if serieslist:
+                                        logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
                                         updated = True
                                     # librarything doesn't have series info. Any in the title?
                                     elif series:
-                                        seriesdict = {cleanName(unaccented(series)): seriesNum}
-                                    setSeries(seriesdict, bookid)
+                                        serieslist = [('', seriesNum, cleanName(unaccented(series)))]
+                                    setSeries(serieslist, bookid)
 
-                                new_status = setStatus(bookid, seriesdict, bookstatus)
+                                new_status = setStatus(bookid, serieslist, bookstatus)
 
                                 if not new_status == book_status:
                                     book_status = new_status
@@ -754,7 +753,7 @@ class GoogleBooks:
             logger.warn('No GoogleBooks API key, check config')
         URL = 'https://www.googleapis.com/books/v1/volumes/' + \
               str(bookid) + "?key=" + lazylibrarian.CONFIG['GB_API']
-        jsonresults, in_cache = get_json_request(URL)
+        jsonresults, in_cache = gb_json_request(URL)
 
         if jsonresults is None:
             logger.debug('No results found for %s' % bookid)
@@ -923,14 +922,13 @@ class GoogleBooks:
                     logger.debug('Failed to cache image for %s' % bookimg)
 
         if lazylibrarian.CONFIG['ADD_SERIES']:
-            # prefer series info from librarything
-            seriesdict = getWorkSeries(bookid)
-            if seriesdict:
-                logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
+            serieslist = getWorkSeries(bookid)
+            if serieslist:
+                logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
             else:
                 if series:
-                    seriesdict = {cleanName(unaccented(series)): seriesNum}
-            setSeries(seriesdict, bookid)
+                    serieslist = [('', seriesNum, cleanName(unaccented(series)))]
+            setSeries(serieslist, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

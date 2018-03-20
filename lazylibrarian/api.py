@@ -122,7 +122,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'checkRunningJobs': 'ensure all needed jobs are running',
             'vacuum': 'vacuum the database',
             'getWorkSeries': '&id= Get series from Librarything BookWork using BookID or GoodReads using WorkID',
-            'getSeriesMembers': '&id= Get list of series members from Librarything using SeriesID',
+            'getSeriesMembers': '&id= Get list of series members using SeriesID',
             'getSeriesAuthors': '&id= Get all authors from Librarything for a series and import them',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',

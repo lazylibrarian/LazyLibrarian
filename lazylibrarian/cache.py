@@ -112,12 +112,18 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
             return str(e), False
 
 
-def get_xml_request(my_url, useCache=True):
+def gr_xml_request(my_url, useCache=True):
+    # respect goodreads api limit
+    time_now = int(time.time())
+    if time_now <= lazylibrarian.LAST_GOODREADS:
+        time.sleep(1)
     result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="XML")
+    if not in_cache:
+        lazylibrarian.LAST_GOODREADS = time_now
     return result, in_cache
 
 
-def get_json_request(my_url, useCache=True):
+def gb_json_request(my_url, useCache=True):
     result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="JSON")
     return result, in_cache
 

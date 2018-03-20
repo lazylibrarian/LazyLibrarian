@@ -11,7 +11,6 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-import time
 import traceback
 import unicodedata
 try:
@@ -23,11 +22,12 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
     setSeries, setStatus
-from lazylibrarian.cache import get_xml_request, cache_img
+from lazylibrarian.cache import gr_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
     cleanName, is_valid_isbn, formatAuthorName, check_int, makeUnicode
 from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
+from lib.isbnlib import isbn_from_words
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote, quote_plus, urlencode
@@ -65,7 +65,7 @@ class GoodReads:
             resultcount = 0
             try:
                 try:
-                    rootxml, in_cache = get_xml_request(set_url)
+                    rootxml, in_cache = gr_xml_request(set_url)
                 except Exception as e:
                     logger.error("%s finding gr results: %s" % (type(e).__name__, str(e)))
                     return
@@ -114,6 +114,7 @@ class GoodReads:
                         bookgenre = ''
                         bookdesc = ''
                         bookisbn = ''
+                        workid = ''
 
                         try:
                             booklink = 'https://www.goodreads.com/book/show/' + author.find('./best_book/id').text
@@ -151,6 +152,7 @@ class GoodReads:
                         isbn_fuzz = 0
                         if is_valid_isbn(searchterm):
                             isbn_fuzz = 100
+                            bookisbn = searchterm
 
                         highest_fuzz = max((author_fuzz + book_fuzz) / 2, isbn_fuzz)
 
@@ -175,6 +177,7 @@ class GoodReads:
                             'bookpages': bookpages,
                             'bookgenre': bookgenre,
                             'bookdesc': bookdesc,
+                            'workid': workid,
                             'author_fuzz': author_fuzz,
                             'book_fuzz': book_fuzz,
                             'isbn_fuzz': isbn_fuzz,
@@ -196,7 +199,7 @@ class GoodReads:
                         URL = set_url + '&page=' + str(loopCount)
                         resultxml = None
                         try:
-                            rootxml, in_cache = get_xml_request(URL)
+                            rootxml, in_cache = gr_xml_request(URL)
                             if rootxml is None:
                                 logger.debug('Error requesting page %s of results' % loopCount)
                             else:
@@ -242,7 +245,7 @@ class GoodReads:
 
         authorlist = []
         try:
-            rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
+            rootxml, in_cache = gr_xml_request(URL, useCache=not refresh)
         except Exception as e:
             logger.error("%s finding authorid: %s, %s" % (type(e).__name__, URL, str(e)))
             return authorlist
@@ -269,9 +272,8 @@ class GoodReads:
 
         URL = 'https://www.goodreads.com/author/show/' + authorid + '.xml?' + urlencode(self.params)
         author_dict = {}
-
         try:
-            rootxml, in_cache = get_xml_request(URL)
+            rootxml, in_cache = gr_xml_request(URL)
         except Exception as e:
             logger.error("%s getting author info: %s" % (type(e).__name__, str(e)))
             return author_dict
@@ -325,7 +327,7 @@ class GoodReads:
             myDB.upsert("authors", newValueDict, controlValueDict)
 
             try:
-                rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
+                rootxml, in_cache = gr_xml_request(URL, useCache=not refresh)
             except Exception as e:
                 logger.error("%s fetching author books: %s" % (type(e).__name__, str(e)))
                 return
@@ -334,6 +336,7 @@ class GoodReads:
                 return
             if not in_cache:
                 api_hits += 1
+
             resultxml = rootxml.getiterator('book')
 
             valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
@@ -363,6 +366,8 @@ class GoodReads:
                     for book in resultxml:
                         total_count += 1
 
+                        bookname = book.find('title').text
+
                         if book.find('publication_year').text is None:
                             pubyear = "0000"
                         else:
@@ -377,29 +382,71 @@ class GoodReads:
 
                         bookLanguage = "Unknown"
                         find_field = "id"
-                        isbn = ""
+                        bookisbn = ""
                         isbnhead = ""
-                        if "All" not in valid_langs:  # do we care about language
-                            if book.find('isbn').text:
+                        res = book.find('isbn13')
+                        if res is not None and res.text:
+                            find_field = "isbn13"
+                            bookisbn = res.text
+                            isbnhead = bookisbn[3:6]
+                        else:
+                            res = book.find('isbn')
+                            if res is not None and res.text:
                                 find_field = "isbn"
-                                isbn = book.find('isbn').text
-                                isbnhead = isbn[0:3]
-                            else:
-                                if book.find('isbn13').text:
-                                    find_field = "isbn13"
-                                    isbn = book.find('isbn13').text
-                                    isbnhead = isbn[3:6]
+                                bookisbn = res.text
+                                isbnhead = bookisbn[0:3]
+
+                        if not isbnhead:
+                            # try goodreads book page, sometimes author page has no isbn but book page does
+                            BOOKURL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(self.params)
+                            bookxml = None
+                            try:
+                                bookxml, in_cache = gr_xml_request(BOOKURL)
+                                if bookxml is None:
+                                    logger.debug("Error requesting book")
+                            except Exception as e:
+                                logger.error("%s finding book: %s" % (type(e).__name__, str(e)))
+
+                            if bookxml is not None:
+                                res = bookxml.find('./book/isbn13')
+                                if res is not None and res.text:
+                                    bookisbn = res.text
+                                    isbnhead = bookisbn[3:6]
+                                else:
+                                    res = bookxml.find('./book/isbn')
+                                    if res is not None and res.text:
+                                        bookisbn = res.text
+                                        isbnhead = bookisbn[0:3]
+                            if isbnhead:
+                                logger.debug("bookpage found %s for %s" % (bookisbn, bookid))
+
+                        if not isbnhead:
+                            # try lookup by name
+                            if bookname:
+                                res = isbn_from_words(unaccented(bookname) + ' ' + unaccented(authorNameResult))
+                                if res:
+                                    logger.debug("isbnlib found %s for %s" % (res, bookid))
+                                    bookisbn = res
+                                    if len(res) == 13:
+                                        isbnhead = res[3:6]
+                                    else:
+                                        isbnhead = res[0:3]
+
+                        if not isbnhead:
+                            logger.warn("No isbn found for %s" % bookid)
+
+                        if "All" not in valid_langs:  # do we care about language
                             # Try to use shortcut of ISBN identifier codes described here...
                             # http://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
                             if isbnhead:
-                                if find_field == "isbn13" and isbn.startswith('979'):
+                                if find_field == "isbn13" and bookisbn.startswith('979'):
                                     for item in lazylibrarian.isbn_979_dict:
                                         if isbnhead.startswith(item):
                                             bookLanguage = lazylibrarian.isbn_979_dict[item]
                                             break
                                     if bookLanguage != "Unknown":
                                         logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
-                                elif (find_field == "isbn") or (find_field == "isbn13" and isbn.startswith('978')):
+                                elif (find_field == "isbn") or (find_field == "isbn13" and bookisbn.startswith('978')):
                                     for item in lazylibrarian.isbn_978_dict:
                                         if isbnhead.startswith(item):
                                             bookLanguage = lazylibrarian.isbn_978_dict[item]
@@ -419,7 +466,7 @@ class GoodReads:
                                     # no match in cache, try searching librarything for a language code using the isbn
                                     # if no language found, librarything return value is "invalid" or "unknown"
                                     # returns plain text, not xml
-                                    BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + isbn
+                                    BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
                                     proxies = proxyList()
                                     try:
                                         librarything_wait()
@@ -438,7 +485,7 @@ class GoodReads:
                                             logger.debug("LT language %s: %s" % (isbnhead, bookLanguage))
                                     except Exception as e:
                                         logger.error("%s finding LT language result for [%s], %s" %
-                                                     (type(e).__name__, isbn, str(e)))
+                                                     (type(e).__name__, bookisbn, str(e)))
 
                             if bookLanguage == "Unknown":
                                 # still  no earlier match, we'll have to search the goodreads api
@@ -449,19 +496,12 @@ class GoodReads:
                                                    '&' + urlencode(self.params)
                                         logger.debug("Book URL: " + BOOK_URL)
 
-                                        time_now = int(time.time())
-                                        if time_now <= lazylibrarian.LAST_GOODREADS:
-                                            time.sleep(1)
-
                                         bookLanguage = ""
                                         try:
-                                            BOOK_rootxml, in_cache = get_xml_request(BOOK_URL)
+                                            BOOK_rootxml, in_cache = gr_xml_request(BOOK_URL)
                                             if BOOK_rootxml is None:
                                                 logger.debug('Error requesting book language code')
                                             else:
-                                                if not in_cache:
-                                                    # only update last_goodreads if the result wasn't found in the cache
-                                                    lazylibrarian.LAST_GOODREADS = time_now
                                                 try:
                                                     bookLanguage = BOOK_rootxml.find('./book/language_code').text
                                                 except Exception as e:
@@ -474,17 +514,6 @@ class GoodReads:
                                             gr_lang_hits += 1
                                         if not bookLanguage:
                                             bookLanguage = "Unknown"
-                                            # At this point, give up?
-                                            # WhatWork on author/title doesn't give us a language.
-                                            # It might give us the "original language" of the book (but not always)
-                                            # and our copy might not be in the original language anyway
-                                            # eg "The Girl With the Dragon Tattoo" original language Swedish
-                                            # If we have an isbn, try WhatISBN to get alternatives
-                                            # in case any of them give us a language, but it seems if thinglang doesn't
-                                            # have a language for the first isbn code, it doesn't for any of the
-                                            # alternatives either
-                                            # Goodreads search results don't include the language. Although sometimes
-                                            # it's in the html page, it's not in the xml results
 
                                         if isbnhead != "":
                                             # if GR didn't give an isbn we can't cache it
@@ -513,14 +542,13 @@ class GoodReads:
                         rejected = False
                         check_status = False
 
-                        bookname = book.find('title').text
                         bookid = book.find('id').text
                         bookdesc = book.find('description').text
-                        bookisbn = book.find('isbn').text
                         bookpub = book.find('publisher').text
                         booklink = book.find('link').text
                         bookrate = float(book.find('average_rating').text)
                         bookpages = book.find('num_pages').text
+                        workid = book.find('work/id').text
                         booksub = ''
                         series = ''
                         seriesNum = ''
@@ -554,17 +582,18 @@ class GoodReads:
                                 rejected = True
 
                         if not rejected:
-                            anames = book.find('authors')
+                            #anames = book.find('authors')
+                            anames = book.getiterator('author')
                             amatch = False
                             alist = ''
                             for aname in anames:
                                 aid = aname.find('id').text
                                 anm = aname.find('name').text
+                                role = aname.find('role').text
                                 if alist:
                                     alist += ', '
                                 alist += anm
                                 if aid == authorid:
-                                    role = aname.find('role').text
                                     if role is None or 'author' in role.lower() \
                                             or 'pseudonym' in role.lower() or 'pen name' in role.lower():
                                         amatch = True
@@ -655,7 +684,8 @@ class GoodReads:
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
                                     "AudioStatus": audio_status,
-                                    "BookAdded": added
+                                    "BookAdded": added,
+                                    "WorkID": workid
                                 }
 
                                 resultsCount += 1
@@ -683,19 +713,18 @@ class GoodReads:
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
-                                seriesdict = {}
+                                serieslist = []
                                 if lazylibrarian.CONFIG['ADD_SERIES']:
-                                    # prefer series info from librarything
-                                    seriesdict = getWorkSeries(bookid)
-                                    if seriesdict:
-                                        logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
+                                    serieslist = getWorkSeries(workid)
+                                    if serieslist:
+                                        logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
                                         updated = True
                                     else:
                                         if series:
-                                            seriesdict = {cleanName(unaccented(series)): seriesNum}
-                                    setSeries(seriesdict, bookid)
+                                            serieslist = [('', seriesNum, cleanName(unaccented(series)))]
+                                    setSeries(serieslist, bookid)
 
-                                new_status = setStatus(bookid, seriesdict, bookstatus)
+                                new_status = setStatus(bookid, serieslist, bookstatus)
 
                                 if not new_status == book_status:
                                     book_status = new_status
@@ -727,7 +756,7 @@ class GoodReads:
                               urlencode(self.params) + '&page=' + str(loopCount)
                         resultxml = None
                         try:
-                            rootxml, in_cache = get_xml_request(URL, useCache=not refresh)
+                            rootxml, in_cache = gr_xml_request(URL, useCache=not refresh)
                             if rootxml is None:
                                 logger.debug('Error requesting next page of results')
                             else:
@@ -799,7 +828,7 @@ class GoodReads:
         URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(self.params)
 
         try:
-            rootxml, in_cache = get_xml_request(URL)
+            rootxml, in_cache = gr_xml_request(URL)
             if rootxml is None:
                 logger.debug("Error requesting book")
                 return
@@ -835,11 +864,14 @@ class GoodReads:
 
         authorname = rootxml.find('./book/authors/author/name').text
         bookdesc = rootxml.find('./book/description').text
-        bookisbn = rootxml.find('./book/isbn').text
+        bookisbn = rootxml.find('./book/isbn13').text
+        if not bookisbn:
+            bookisbn = rootxml.find('./book/isbn').text
         bookpub = rootxml.find('./book/publisher').text
         booklink = rootxml.find('./book/link').text
         bookrate = float(rootxml.find('./book/average_rating').text)
         bookpages = rootxml.find('.book/num_pages').text
+        workid = rootxml.find('.book/work/id').text
 
         GR = GoodReads(authorname)
         author = GR.find_author_id()
@@ -886,6 +918,12 @@ class GoodReads:
         else:
             series, seriesNum = bookSeries(bookname)
 
+        if not bookisbn:
+            res = isbn_from_words(bookname + ' ' + unaccented(authorname))
+            if res:
+                logger.debug("isbnlib found %s for %s" % (res, bookname))
+                bookisbn = res
+
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorID": AuthorID,
@@ -903,7 +941,8 @@ class GoodReads:
             "BookLang": bookLanguage,
             "Status": bookstatus,
             "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
-            "BookAdded": today()
+            "BookAdded": today(),
+            "WorkID": workid
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
@@ -928,14 +967,13 @@ class GoodReads:
                 logger.debug('Failed to cache image for %s' % bookimg)
 
         if lazylibrarian.CONFIG['ADD_SERIES']:
-            # prefer series info from librarything
-            seriesdict = getWorkSeries(bookid)
-            if seriesdict:
-                logger.debug('Updated series: %s [%s]' % (bookid, seriesdict))
+            serieslist = getWorkSeries(workid)
+            if serieslist:
+                logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
             else:
                 if series:
-                    seriesdict = {cleanName(unaccented(series)): seriesNum}
-            setSeries(seriesdict, bookid)
+                    serieslist = [('', seriesNum, cleanName(unaccented(series)))]
+            setSeries(serieslist, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

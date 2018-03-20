@@ -20,7 +20,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
-from lazylibrarian.cache import cache_img, get_xml_request
+from lazylibrarian.cache import cache_img, gr_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
     cleanName, replace_all, split_title, now, makeUnicode, makeBytestr
@@ -686,7 +686,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         set_url = base_url + searchterm + '&' + urlencode(params)
                                         # noinspection PyBroadException
                                         try:
-                                            rootxml, in_cache = get_xml_request(set_url)
+                                            rootxml, in_cache = gr_xml_request(set_url)
                                             if rootxml is None:
                                                 logger.warn("Error requesting GoodReads for %s" % searchname)
                                                 logger.debug(set_url)

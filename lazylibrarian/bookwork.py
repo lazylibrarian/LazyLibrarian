@@ -19,7 +19,7 @@ from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.cache import cache_img, fetchURL, get_xml_request
+from lazylibrarian.cache import cache_img, fetchURL, gr_xml_request
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
@@ -475,70 +475,70 @@ def getBookCovers():
 
 
 def setAllBookSeries():
-    """ Try to set series details for all books from workpages"""
+    """ Try to set series details for all books """
     myDB = database.DBConnection()
-    books = myDB.select('select BookID from books where Manual is not "1"')
+    books = myDB.select('select BookID,WorkID from books where Manual is not "1"')
     counter = 0
     if books:
         logger.info('Checking series for %s book%s' % (len(books), plural(len(books))))
         for book in books:
-            bookid = book['BookID']
-            seriesdict = getWorkSeries(bookid)
-            if seriesdict:
+            if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
+                workid = book['WorkID']
+            else:
+                workid = book['BookID']
+            serieslist = getWorkSeries(workid)
+            if serieslist:
                 counter += 1
-                setSeries(seriesdict, bookid)
+                setSeries(serieslist, book['BookID'])
     deleteEmptySeries()
     msg = 'Updated %s book%s' % (counter, plural(counter))
     logger.info('Series check complete: ' + msg)
     return msg
 
 
-def setSeries(seriesdict=None, bookid=None, seriesauthors=True, seriesdisplay=True):
+def setSeries(serieslist=None, bookid=None):
     """ set series details in series/member tables from the supplied dict
-        and a displayable summary in book table """
+        and a displayable summary in book table
+        serislist is a tuple (SeriesID, SeriesNum, SeriesName) """
     myDB = database.DBConnection()
     if bookid:
         # delete any old series-member entries
         myDB.action('DELETE from member WHERE BookID=?', (bookid,))
-        for item in seriesdict:
-            match = myDB.match('SELECT SeriesID from series where SeriesName=? COLLATE NOCASE', (item,))
+        for item in serieslist:
+            match = myDB.match('SELECT SeriesID from series where SeriesName=? COLLATE NOCASE', (item[2],))
             if not match:
                 # new series, need to set status and get SeriesID
-                myDB.action('INSERT into series (SeriesName, Status) VALUES (?, ?)', (item, "Active"))
-                match = myDB.match('SELECT SeriesID from series where SeriesName=?', (item,))
-                # don't ask librarything what other books are in the series - leave for user to query if series wanted
+                if item[0]:
+                    seriesid = item[0]
+                else:
+                    # no seriesid so generate it (row count + 1)
+                    cnt = myDB.match("select count('SeriesID') as counter from series")
+                    res = check_int(cnt['counter'], 0)
+                    seriesid = str(res + 1)
+                myDB.action('INSERT into series VALUES (?, ?, ?)', (seriesid, item[2], "Active"), suppress='UNIQUE')
+                # don't ask what other books are in the series - leave for user to query if series wanted
                 # _ = getSeriesMembers(match['SeriesID'])
-            book = myDB.match('SELECT AuthorID from books where BookID=?', (bookid,))
+            book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
             if match and book:
                 controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
-                newValueDict = {"SeriesNum": seriesdict[item]}
+                newValueDict = {"SeriesNum": item[1], "WorkID": book['WorkID']}
                 myDB.upsert("member", newValueDict, controlValueDict)
-                # database versions earlier than 17 don't have seriesauthors table
-                # but this function is used in dbupgrade v15
-                if seriesauthors:
-                    myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES (?, ?)',
-                                (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
+                myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES (?, ?)',
+                            (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
             else:
-                logger.debug('Unable to set series for book %s, %s' % (bookid, repr(seriesdict)))
+                logger.debug('Unable to set series for book %s, %s' % (bookid, item))
 
-        # database versions earlier than 19 don't have seriesdisplay
-        # but this function is used in dbupgrade v15
-        if seriesdisplay:
-            series = ''
-            for item in seriesdict:
-                newseries = "%s %s" % (item, seriesdict[item])
-                newseries.strip()
-                if series and newseries:
-                    series += '<br>'
-                series += newseries
-            myDB.action('UPDATE books SET SeriesDisplay=? WHERE BookID=?', (series, bookid))
-
-            # removed deleteEmptySeries as setSeries slows down drastically if run in a loop
-            # eg dbupgrade or setAllBookSeries. Better to tidy up all empties when loop finished
-            # deleteEmptySeries()
+        series = ''
+        for item in serieslist:
+            newseries = "%s %s" % (item[2], item[1])
+            newseries.strip()
+            if series and newseries:
+                series += '<br>'
+            series += newseries
+        myDB.action('UPDATE books SET SeriesDisplay=? WHERE BookID=?', (series, bookid))
 
 
-def setStatus(bookid=None, seriesdict=None, default=None):
+def setStatus(bookid=None, serieslist=None, default=None):
     """ Set the status of a book according to series/author/newbook/newauthor preferences
         return default if unchanged, default is passed in as newbook or newauthor status """
     myDB = database.DBConnection()
@@ -558,33 +558,24 @@ def setStatus(bookid=None, seriesdict=None, default=None):
     new_status = ''
     authorid = match['AuthorID']
     bookname = match['BookName']
-    # Is the book part of any series we want?
-    for item in seriesdict:
-        match = myDB.match('SELECT Status from series where SeriesName=? COLLATE NOCASE', (item,))
+    # Is the book part of any series we want or don't want?
+    for item in serieslist:
+        match = myDB.match('SELECT Status from series where SeriesName=? COLLATE NOCASE', (item[2],))
         if match['Status'] == 'Wanted':
             new_status = 'Wanted'
-            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
+            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item[2]))
+            break
+        if match['Status'] == 'Skipped':
+            new_status = 'Skipped'
+            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item[2]))
             break
 
     if not new_status:
-        # Is it part of any series we don't want?
-        for item in seriesdict:
-            match = myDB.match('SELECT Status from series where SeriesName=? COLLATE NOCASE', (item,))
-            if match['Status'] == 'Skipped':
-                new_status = 'Skipped'
-                logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item))
-                break
-
-    if not new_status:
-        # Author we don't want?
+        # Author we want or don't want?
         match = myDB.match('SELECT Status from authors where AuthorID=?', (authorid,))
         if match['Status'] in ['Paused', 'Ignored']:
             new_status = 'Skipped'
             logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
-
-    if not new_status:
-        # Author we do want?
-        match = myDB.match('SELECT Status from authors where AuthorID=?', (authorid,))
         if match['Status'] == 'Wanted':
             new_status = 'Wanted'
             logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
@@ -660,9 +651,7 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
 
     myDB = database.DBConnection()
     if bookID:
-        # need to specify authors.AuthorName here as function is called during dbupgrade v15 to v16
-        # while books.authorname column is still present
-        cmd = 'select BookName,authors.AuthorName,BookISBN from books,authors where bookID=?'
+        cmd = 'select BookName,AuthorName,BookISBN from books,authors where bookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
         cacheLocation = "WorkCache"
         item = myDB.match(cmd, (bookID,))
@@ -687,8 +676,6 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                 if cache_modified_time < time_now - expiry:
                     # Cache entry is too old, delete it
                     os.remove(workfile)
-
-                    # os.remove(workfile)  # ignore cache for testing
 
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
@@ -883,7 +870,7 @@ def getSeriesAuthors(seriesid):
             set_url = base_url + searchterm + '&' + urlencode(params)
             authorid = ''
             try:
-                rootxml, in_cache = get_xml_request(set_url)
+                rootxml, in_cache = gr_xml_request(set_url)
                 if rootxml is None:
                     logger.warn('Error getting XML for %s' % searchname)
                 else:
@@ -911,7 +898,7 @@ def getSeriesAuthors(seriesid):
                         searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
                     searchterm = quote_plus(searchname)
                     set_url = base_url + searchterm + '&' + urlencode(params)
-                    rootxml, in_cache = get_xml_request(set_url)
+                    rootxml, in_cache = gr_xml_request(set_url)
                     if rootxml is None:
                         logger.warn('Error getting XML for %s' % searchname)
                     else:
@@ -974,34 +961,63 @@ def getSeriesMembers(seriesID=None):
 
 
 def getWorkSeries(bookID=None):
-    """ Return the series names and numbers in series for the given bookid as a dictionary """
-    seriesdict = {}
+    """ Return the series names and numbers in series for the given id as a list of tuples
+        For goodreads the id is a WorkID, for librarything it's a BookID """
+    myDB = database.DBConnection()
+    serieslist = []
     if not bookID:
         logger.error("getWorkSeries - No bookID")
-        return seriesdict
+        return serieslist
 
-    work = getBookWork(bookID, "Series")
-    if work:
-        try:
-            serieslist = work.split('<h3><b>Series:')[1].split('</h3>')[0].split('<a href="/series/')
-            for item in serieslist[1:]:
+    if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
+        URL = "https://www.goodreads.com/work/"
+        seriesurl = URL + bookID + "/series?format=xml&key=" + lazylibrarian.CONFIG['GR_API']
+
+        rootxml, in_cache = gr_xml_request(seriesurl)
+        if rootxml is None:
+            logger.warn('Error getting XML for %s' % seriesurl)
+        else:
+            resultxml = rootxml.getiterator('series_work')
+            for item in resultxml:
                 try:
-                    series = item.split('">')[1].split('</a>')[0]
-                    if series and '(' in series:
-                        seriesnum = series.split('(')[1].split(')')[0].strip()
-                        series = series.split(' (')[0].strip()
-                    else:
-                        seriesnum = ''
-                        series = series.strip()
-                    series = cleanName(unaccented(series), '&/')
+                    seriesname = item.find('./series/title').text
+                    seriesname = seriesname.strip('\n').strip('\n').strip()
+                    seriesid = item.find('./series/id').text
+                    seriesnum = item.find('./user_position').text
+                except (KeyError, AttributeError):
+                    continue
+                if seriesname and seriesid:
+                    seriesname = cleanName(unaccented(seriesname), '&/')
                     seriesnum = cleanName(unaccented(seriesnum))
-                    seriesdict[series] = seriesnum
-                except IndexError:
-                    pass
-        except IndexError:
-            pass
+                    serieslist.append((seriesid, seriesnum, seriesname))
+                    match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
+                    if not match:
+                        myDB.action('INSERT INTO series VALUES (?, ?, ?)', (seriesid, seriesname, "Active"))
+                    elif match['SeriesID'] != seriesid:
+                        myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
+    else:
+        work = getBookWork(bookID, "Series")
+        if work:
+            try:
+                serieslist = work.split('<h3><b>Series:')[1].split('</h3>')[0].split('<a href="/series/')
+                for item in serieslist[1:]:
+                    try:
+                        series = item.split('">')[1].split('</a>')[0]
+                        if series and '(' in series:
+                            seriesnum = series.split('(')[1].split(')')[0].strip()
+                            series = series.split(' (')[0].strip()
+                        else:
+                            seriesnum = ''
+                            series = series.strip()
+                        seriesname = cleanName(unaccented(series), '&/')
+                        seriesnum = cleanName(unaccented(seriesnum))
+                        serieslist.append(('', seriesnum, seriesname))
+                    except IndexError:
+                        pass
+            except IndexError:
+                pass
 
-    return seriesdict
+    return serieslist
 
 
 def getBookCover(bookID=None, src=None):
@@ -1123,11 +1139,6 @@ def getBookCover(bookID=None, src=None):
                 # <meta property="og:image" content="https://i.gr-assets.com/images/S/photo.goodreads.com/books/
                 # 1388267702i/16304._UY475_SS475_.jpg"/>
                 # to get the cover
-
-                time_now = int(time.time())
-                if time_now <= lazylibrarian.LAST_GOODREADS:
-                    time.sleep(1)
-                    lazylibrarian.LAST_GOODREADS = time_now
                 result, success = fetchURL(booklink)
                 if success:
                     try:
@@ -1138,10 +1149,6 @@ def getBookCover(bookID=None, src=None):
                         except IndexError:
                             img = None
                     if img and img.startswith('http') and 'nocover' not in img and 'nophoto' not in img:
-                        time_now = int(time.time())
-                        if time_now <= lazylibrarian.LAST_GOODREADS:
-                            time.sleep(1)
-                            lazylibrarian.LAST_GOODREADS = time_now
                         if src == 'goodreads':
                             coverlink, success = cache_img("book", bookID + '_gr', img)
                         else:
