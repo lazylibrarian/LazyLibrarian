@@ -638,6 +638,11 @@ def librarything_wait():
     lazylibrarian.LAST_LIBRARYTHING = time_now
 
 
+# Feb 2018 librarything have disabled "whatwork"
+# might only be temporary, but for now disable looking for new workpages
+# and do not expire cached ones
+ALLOW_NEW = False
+
 def getBookWork(bookID=None, reason=None, seriesID=None):
     """ return the contents of the LibraryThing workpage for the given bookid, or seriespage if seriesID given
         preferably from the cache. If not already cached cache the results
@@ -675,7 +680,8 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
                 expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
                 if cache_modified_time < time_now - expiry:
                     # Cache entry is too old, delete it
-                    os.remove(workfile)
+                    if ALLOW_NEW:
+                        os.remove(workfile)
 
         if os.path.isfile(workfile):
             # use cached file if possible to speed up refreshactiveauthors and librarysync re-runs
@@ -698,6 +704,9 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
             return source
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
+            if not ALLOW_NEW:
+                logger.debug("New WhatWork is disabled")
+                return None
             if bookID:
                 title = safe_unicode(item['BookName'])
                 author = safe_unicode(item['AuthorName'])
