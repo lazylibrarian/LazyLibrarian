@@ -997,7 +997,7 @@ class WebInterface(object):
             lazylibrarian.TORZNAB_PROV[count]['MAGCAT'] = kwargs.get(
                 'torznab_%i_magcat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['AUDIOCAT'] = kwargs.get(
-                'torznab_%iaudiocat' % count, '')
+                'torznab_%i_audiocat' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['EXTENDED'] = kwargs.get(
                 'torznab_%i_extended' % count, '')
             lazylibrarian.TORZNAB_PROV[count]['UPDATED'] = kwargs.get(
