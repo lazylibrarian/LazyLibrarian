@@ -349,7 +349,7 @@ class GoodReads:
             updated_count = 0
             book_ignore_count = 0
             total_count = 0
-
+            loopCount = 0
             if resultxml is None:
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
@@ -384,6 +384,7 @@ class GoodReads:
                         find_field = "id"
                         bookisbn = ""
                         isbnhead = ""
+                        bookid = book.find('id').text
                         res = book.find('isbn13')
                         if res is not None and res.text:
                             find_field = "isbn13"
@@ -399,7 +400,11 @@ class GoodReads:
                         if not isbnhead:
                             # try lookup by name
                             if bookname:
-                                res = isbn_from_words(unaccented(bookname) + ' ' + unaccented(authorNameResult))
+                                try:
+                                    res = isbn_from_words(unaccented(bookname) + ' ' + unaccented(authorNameResult))
+                                except Exception as e:
+                                    res = None
+                                    logger.warn("Error from isbnlib: %s" % e)
                                 if res:
                                     logger.debug("isbnlib found %s for %s" % (res, bookid))
                                     bookisbn = res
@@ -518,7 +523,6 @@ class GoodReads:
                         rejected = False
                         check_status = False
 
-                        bookid = book.find('id').text
                         bookdesc = book.find('description').text
                         bookpub = book.find('publisher').text
                         booklink = book.find('link').text
@@ -558,7 +562,7 @@ class GoodReads:
                                 rejected = True
 
                         if not rejected:
-                            #anames = book.find('authors')
+                            # anames = book.find('authors')
                             anames = book.getiterator('author')
                             amatch = False
                             alist = ''
@@ -775,7 +779,8 @@ class GoodReads:
             # This is here because GoodReads sometimes has several entries with the same BookID!
             modified_count = added_count + updated_count
 
-            logger.debug("Found %s result%s" % (total_count, plural(total_count)))
+            logger.debug("Found %s result%s in %s page%s" % (total_count, plural(total_count),
+                         loopCount, plural(loopCount)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug(
                 "Removed %s incorrect/incomplete result%s" %
@@ -895,7 +900,11 @@ class GoodReads:
             series, seriesNum = bookSeries(bookname)
 
         if not bookisbn:
-            res = isbn_from_words(bookname + ' ' + unaccented(authorname))
+            try:
+                res = isbn_from_words(bookname + ' ' + unaccented(authorname))
+            except Exception as e:
+                res = None
+                logger.warn("Error from isbnlib: %s" % e)
             if res:
                 logger.debug("isbnlib found %s for %s" % (res, bookname))
                 bookisbn = res

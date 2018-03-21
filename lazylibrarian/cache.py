@@ -90,7 +90,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
     cachefile = os.path.join(lazylibrarian.CACHEDIR, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
-        logger.debug("cached image exists %s" % cachefile)
+        logger.debug("Cached %s image exists %s" % (img_type, cachefile))
         return link, True
 
     if img_url.startswith('http'):
@@ -148,15 +148,17 @@ def get_cached_request(url, useCache=True, cache="XML"):
         cache_modified_time = os.stat(hashfilename).st_mtime
         time_now = time.time()
         expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
-        if cache_modified_time < time_now - expiry:
+        if expiry and cache_modified_time < time_now - expiry:
             # Cache entry is too old, delete it
+            logger.debug("Expiring %s" % myhash)
             os.remove(hashfilename)
         else:
             valid_cache = True
 
     if valid_cache:
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-        logger.debug("CacheHandler: Returning CACHED response %s for %s" % (hashfilename, url))
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("CacheHandler: Returning CACHED response %s for %s" % (hashfilename, url))
         if cache == "JSON":
             try:
                 source = json.load(open(hashfilename))
@@ -179,7 +181,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
         result, success = fetchURL(url)
         if success:
-            logger.debug("CacheHandler: Storing %s for %s" % (cache, url))
+            logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
             if cache == "JSON":
                 try:
                     source = json.loads(result)

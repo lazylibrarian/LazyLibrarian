@@ -335,7 +335,7 @@ def dbupgrade(db_current_version):
                                     db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29
                                     ]
                 for index, upgrade_function in enumerate(upgradefunctions):
-                    if index + 2 >= db_version:
+                    if index + 2 > db_version:
                         upgrade_function(myDB, upgradelog)
 
                 # Now do any non-version-specific tidying
@@ -980,15 +980,30 @@ def db_v29(myDB, upgradelog):
         myDB.action('INSERT INTO series SELECT SeriesID,SeriesName,Status FROM temp_table')
         myDB.action('DROP TABLE temp_table')
     if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
-        authors = myDB.select('SELECT AuthorID,AuthorName from authors WHERE Status != "Ignored"')
+        authors = myDB.select('SELECT AuthorID,AuthorName,TotalBooks from authors WHERE Status != "Ignored"')
+        books = myDB.match('SELECT sum(totalbooks) as total from authors  WHERE Status != "Ignored"')
         tot = len(authors)
         if tot:
-            upgradelog.write("%s v29: Upgrading %s authors\n" % (time.ctime(), tot))
+            upgradelog.write("%s v29: Upgrading %s authors, %s books\n" % (time.ctime(), tot, books['total']))
+            eta = int(books['total']) + len(authors)
+            eta = eta * 1.5  # need 1 second per xml call for goodreads api if not cached
+            eta = int(eta / 60) + (eta % 60 > 0)
+            if eta < 100:
+                lazylibrarian.UPDATE_MSG = "Estimate %s minutes" % eta
+                upgradelog.write("%s v29: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+            else:
+                eta = int(books['total']) + len(authors)
+                eta = eta * 1.5
+                eta = int(eta / 3600) + (eta % 3600 > 0)
+                lazylibrarian.UPDATE_MSG = "Estimate %s hours" % eta
+                upgradelog.write("%s v29: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+            time.sleep(10)
             myDB.action('DELETE FROM seriesauthors')
             cnt = 0
             for author in authors:
                 cnt += 1
-                lazylibrarian.UPDATE_MSG = "Updating %s: %s of %s" % (author['AuthorName'], cnt, tot)
+                lazylibrarian.UPDATE_MSG = "Updating %s (%s books): %s of %s" % (author['AuthorName'],
+                                                                                 author['TotalBooks'], cnt, tot)
                 addAuthorToDB(authorname=None, refresh=True, authorid=author['AuthorID'], addbooks=True)
         members = myDB.select('SELECT BookID from member')
         tot = len(members)
@@ -997,7 +1012,7 @@ def db_v29(myDB, upgradelog):
             cnt = 0
             for member in members:
                 cnt += 1
-                lazylibrarian.UPDATE_MSG = "Updating %s of %s" % (cnt, tot)
+                lazylibrarian.UPDATE_MSG = "Updating series members %s of %s" % (cnt, tot)
                 res = myDB.match('SELECT WorkID from books WHERE BookID=?', (member['BookID'],))
                 if res:
                     myDB.action('UPDATE member SET WorkID=? WHERE BookID=?', (res['WorkID'], member['BookID']))

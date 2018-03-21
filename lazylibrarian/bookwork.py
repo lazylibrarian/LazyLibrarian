@@ -287,7 +287,7 @@ def bookRename(bookid):
 
     r = os.path.dirname(f)
     try:
-        calibreid = r.rsplit('(', 1)[1].split(')')[0]
+        calibreid = r.rsplit('(', 1)[1].split(b')')[0]
         if not calibreid.isdigit():
             calibreid = ''
     except IndexError:
@@ -561,24 +561,26 @@ def setStatus(bookid=None, serieslist=None, default=None):
     # Is the book part of any series we want or don't want?
     for item in serieslist:
         match = myDB.match('SELECT Status from series where SeriesName=? COLLATE NOCASE', (item[2],))
-        if match['Status'] == 'Wanted':
-            new_status = 'Wanted'
-            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item[2]))
-            break
-        if match['Status'] == 'Skipped':
-            new_status = 'Skipped'
-            logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item[2]))
-            break
+        if match:
+            if match['Status'] == 'Wanted':
+                new_status = 'Wanted'
+                logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item[2]))
+                break
+            if match['Status'] == 'Skipped':
+                new_status = 'Skipped'
+                logger.debug('Marking %s as %s, series %s' % (bookname, new_status, item[2]))
+                break
 
     if not new_status:
         # Author we want or don't want?
         match = myDB.match('SELECT Status from authors where AuthorID=?', (authorid,))
-        if match['Status'] in ['Paused', 'Ignored']:
-            new_status = 'Skipped'
-            logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
-        if match['Status'] == 'Wanted':
-            new_status = 'Wanted'
-            logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
+        if match:
+            if match['Status'] in ['Paused', 'Ignored']:
+                new_status = 'Skipped'
+                logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
+            if match['Status'] == 'Wanted':
+                new_status = 'Wanted'
+                logger.debug('Marking %s as %s, author %s' % (bookname, new_status, match['Status']))
 
     # If none of these, leave default "newbook" or "newauthor" status
     if new_status:
@@ -642,6 +644,7 @@ def librarything_wait():
 # might only be temporary, but for now disable looking for new workpages
 # and do not expire cached ones
 ALLOW_NEW = False
+
 
 def getBookWork(bookID=None, reason=None, seriesID=None):
     """ return the contents of the LibraryThing workpage for the given bookid, or seriespage if seriesID given
@@ -1008,8 +1011,8 @@ def getWorkSeries(bookID=None):
         work = getBookWork(bookID, "Series")
         if work:
             try:
-                serieslist = work.split('<h3><b>Series:')[1].split('</h3>')[0].split('<a href="/series/')
-                for item in serieslist[1:]:
+                slist = work.split('<h3><b>Series:')[1].split('</h3>')[0].split('<a href="/series/')
+                for item in slist[1:]:
                     try:
                         series = item.split('">')[1].split('</a>')[0]
                         if series and '(' in series:
@@ -1054,9 +1057,8 @@ def getBookCover(bookID=None, src=None):
         if not src or src == 'cache' or src == 'current':
             if os.path.isfile(coverfile):  # use cached image if there is one
                 lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-                logger.debug("getBookCover: Returning Cached response for %s" % coverfile)
                 coverlink = 'cache/book/' + bookID + '.jpg'
-                return coverlink, src
+                return coverlink, 'cache'
             elif src == 'cache':
                 return None, src
             else:
