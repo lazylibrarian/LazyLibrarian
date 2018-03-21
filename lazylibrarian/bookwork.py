@@ -1030,7 +1030,7 @@ def getWorkSeries(bookID=None):
 
 
 def getBookCover(bookID=None, src=None):
-    """ Return link to a local file containing a book cover image for a bookid.
+    """ Return link to a local file containing a book cover image for a bookid, and which source used.
         Try 1. Local file cached from goodreads/googlebooks when book was imported
             2. cover.jpg if we have the book
             3. LibraryThing whatwork
@@ -1041,7 +1041,7 @@ def getBookCover(bookID=None, src=None):
         Return None if no cover available. """
     if not bookID:
         logger.error("getBookCover- No bookID")
-        return None
+        return None, src
 
     if not src:
         src = ''
@@ -1050,15 +1050,15 @@ def getBookCover(bookID=None, src=None):
     try:
         cachedir = lazylibrarian.CACHEDIR
         coverfile = os.path.join(cachedir, "book", bookID + '.jpg')
-
+        print("coverfile = %s" % coverfile)
         if not src or src == 'cache' or src == 'current':
             if os.path.isfile(coverfile):  # use cached image if there is one
                 lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
                 logger.debug("getBookCover: Returning Cached response for %s" % coverfile)
                 coverlink = 'cache/book/' + bookID + '.jpg'
-                return coverlink
+                return coverlink, src
             elif src == 'cache':
-                return None
+                return None, src
             else:
                 lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
 
@@ -1070,6 +1070,7 @@ def getBookCover(bookID=None, src=None):
                 if bookfile:  # we may have a cover.jpg in the same folder
                     bookdir = os.path.dirname(bookfile)
                     coverimg = os.path.join(bookdir, "cover.jpg")
+                    print("coverimg = %s" % coverimg)
                     if os.path.isfile(coverimg):
                         if src == 'cover':
                             coverfile = os.path.join(cachedir, "book", bookID + '_cover.jpg')
@@ -1079,10 +1080,10 @@ def getBookCover(bookID=None, src=None):
                             coverlink = 'cache/book/' + bookID + '.jpg'
                             logger.debug("getBookCover: Caching book cover for %s" % coverfile)
                         shutil.copyfile(coverimg, coverfile)
-                        return coverlink
+                        return coverlink, 'cover'
             if src == 'cover':
                 logger.debug('getBookCover: No cover.jpg found for %s' % bookID)
-                return None
+                return None, src
 
         # see if librarything workpage has a cover
         if not src or src == 'librarything':
@@ -1097,7 +1098,7 @@ def getBookCover(bookID=None, src=None):
                             coverlink, success = cache_img("book", bookID, img)
                         if success:
                             logger.debug("getBookCover: Caching librarything cover for %s" % bookID)
-                            return coverlink
+                            return coverlink, 'librarything workCoverImage'
                         else:
                             logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
                     else:
@@ -1114,7 +1115,7 @@ def getBookCover(bookID=None, src=None):
                             coverlink, success = cache_img("book", bookID, img)
                         if success:
                             logger.debug("getBookCover: Caching librarything cover for %s" % bookID)
-                            return coverlink
+                            return coverlink, 'librarything image'
                         else:
                             logger.debug('getBookCover: Failed to cache image for %s [%s]' % (img, coverlink))
                     else:
@@ -1124,7 +1125,7 @@ def getBookCover(bookID=None, src=None):
             else:
                 logger.debug('getBookCover: No work page for %s' % bookID)
             if src == 'librarything':
-                return None
+                return None, src
 
         cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -1165,7 +1166,7 @@ def getBookCover(bookID=None, src=None):
                         if success:
                             logger.debug("getBookCover: Caching goodreads cover for %s %s" %
                                          (item['AuthorName'], item['BookName']))
-                            return coverlink
+                            return coverlink, 'goodreads'
                         else:
                             logger.debug("getBookCover: Error getting goodreads image for %s, [%s]" % (img, coverlink))
                     else:
@@ -1175,7 +1176,7 @@ def getBookCover(bookID=None, src=None):
             else:
                 logger.debug("getBookCover: Not a goodreads booklink for %s [%s]" % (bookID, booklink))
             if src == 'goodreads':
-                return None
+                return None, src
 
         if not src or src == 'google':
             # try a google image search...
@@ -1198,7 +1199,7 @@ def getBookCover(bookID=None, src=None):
                         if success:
                             logger.debug("getBookCover: Caching google cover for %s %s" %
                                          (item['AuthorName'], item['BookName']))
-                            return coverlink
+                            return coverlink, 'google'
                         else:
                             logger.debug("getBookCover: Error getting google image %s, [%s]" % (img, coverlink))
                     else:
@@ -1207,10 +1208,10 @@ def getBookCover(bookID=None, src=None):
                     logger.debug("getBookCover: Error getting google page for %s, [%s]" % (safeparams, result))
             else:
                 logger.debug("getBookCover: No parameters for google page search for %s" % bookID)
-        return None
+        return None, src
     except Exception:
         logger.error('Unhandled exception in getBookCover: %s' % traceback.format_exc())
-    return None
+    return None, src
 
 
 def getAuthorImage(authorid=None):

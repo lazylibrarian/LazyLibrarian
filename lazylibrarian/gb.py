@@ -641,10 +641,10 @@ class GoogleBooks:
                                 logger.debug("Book found: " + bookname + " " + bookdate)
                                 updated = False
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
-                                    # try to get a cover from librarything
-                                    workcover = getBookCover(bookid)
+                                    # try to get a cover from another source
+                                    workcover, source = getBookCover(bookid)
                                     if workcover:
-                                        logger.debug('Updated cover for %s to %s' % (bookname, workcover))
+                                        logger.debug('Updated cover for %s using %s' % (bookname, source))
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
@@ -904,10 +904,10 @@ class GoogleBooks:
         logger.info("%s by %s added to the books database" % (bookname, authorname))
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
-            # try to get a cover from librarything
-            workcover = getBookCover(bookid)
+            # try to get a cover from another source
+            workcover, source = getBookCover(bookid)
             if workcover:
-                logger.debug('Updated cover for %s to %s' % (bookname, workcover))
+                logger.debug('Updated cover for %s using %s' % (bookname, source))
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": workcover}
                 myDB.upsert("books", newValueDict, controlValueDict)

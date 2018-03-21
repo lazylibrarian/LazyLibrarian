@@ -84,12 +84,13 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
         or error message, False if failed to cache """
 
     if img_type not in ['book', 'author']:
-        logger.debug('Internal error in cache_img, img_type = [%s]' % img_type)
+        logger.error('Internal error in cache_img, img_type = [%s]' % img_type)
         img_type = 'book'
 
     cachefile = os.path.join(lazylibrarian.CACHEDIR, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
+        logger.debug("cached image exists %s" % cachefile)
         return link, True
 
     if img_url.startswith('http'):

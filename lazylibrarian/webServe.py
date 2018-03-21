@@ -1872,7 +1872,7 @@ class WebInterface(object):
         if bookdata:
             covers = []
             for source in ['current', 'cover', 'goodreads', 'librarything', 'google']:
-                cover = getBookCover(bookid, source)
+                cover, _ = getBookCover(bookid, source)
                 if cover:
                     covers.append([source, cover])
 
