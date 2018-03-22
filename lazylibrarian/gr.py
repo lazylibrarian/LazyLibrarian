@@ -573,7 +573,9 @@ class GoodReads:
                                 if alist:
                                     alist += ', '
                                 alist += anm
-                                if aid == authorid:
+                                if aid == authorid or anm == authorNameResult:
+                                    if aid != authorid:
+                                        logger.warn("Author %s has different authorid %s:%s" % (anm, aid, authorid))
                                     if role is None or 'author' in role.lower() \
                                             or 'pseudonym' in role.lower() or 'pen name' in role.lower():
                                         amatch = True
@@ -778,7 +780,7 @@ class GoodReads:
 
             # This is here because GoodReads sometimes has several entries with the same BookID!
             modified_count = added_count + updated_count
-
+            loopcount -= 1
             logger.debug("Found %s result%s in %s page%s" % (total_count, plural(total_count),
                          loopCount, plural(loopCount)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))

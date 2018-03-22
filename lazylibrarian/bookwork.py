@@ -1053,7 +1053,6 @@ def getBookCover(bookID=None, src=None):
     try:
         cachedir = lazylibrarian.CACHEDIR
         coverfile = os.path.join(cachedir, "book", bookID + '.jpg')
-        print("coverfile = %s" % coverfile)
         if not src or src == 'cache' or src == 'current':
             if os.path.isfile(coverfile):  # use cached image if there is one
                 lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
@@ -1072,7 +1071,6 @@ def getBookCover(bookID=None, src=None):
                 if bookfile:  # we may have a cover.jpg in the same folder
                     bookdir = os.path.dirname(bookfile)
                     coverimg = os.path.join(bookdir, "cover.jpg")
-                    print("coverimg = %s" % coverimg)
                     if os.path.isfile(coverimg):
                         if src == 'cover':
                             coverfile = os.path.join(cachedir, "book", bookID + '_cover.jpg')
@@ -1080,7 +1078,7 @@ def getBookCover(bookID=None, src=None):
                             logger.debug("getBookCover: Caching cover.jpg for %s" % bookID)
                         else:
                             coverlink = 'cache/book/' + bookID + '.jpg'
-                            logger.debug("getBookCover: Caching book cover for %s" % coverfile)
+                            logger.debug("getBookCover: Caching cover.jpg for %s" % coverfile)
                         shutil.copyfile(coverimg, coverfile)
                         return coverlink, 'cover'
             if src == 'cover':
