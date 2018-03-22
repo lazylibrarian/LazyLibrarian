@@ -43,6 +43,10 @@ def bookSeries(bookname):
     """
     series = ""
     seriesNum = ""
+    # These are words that don't indicate a following series name/number eg "FIRST 3 chapters"
+    non_series_words = ['series', 'unabridged', 'volume', 'phrase', 'from', 'chapters', 'season',
+                        'the first', 'includes', 'paperback', 'first', 'books', 'large print', 'of',
+                        'rrp', '2 in', '&', '3-', 'v.']
 
     result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
@@ -64,6 +68,10 @@ def bookSeries(bookname):
         series = series[:-6]
     if series and series.lower().endswith(' book'):
         series = series[:-5]
+
+    for word in non_series_words:
+        if series.lower().startswith(word):
+            return "", ""
 
     series = cleanName(unaccented(series))
     series = series.strip()
