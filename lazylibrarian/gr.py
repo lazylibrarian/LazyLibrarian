@@ -780,7 +780,7 @@ class GoodReads:
 
             # This is here because GoodReads sometimes has several entries with the same BookID!
             modified_count = added_count + updated_count
-            loopcount -= 1
+            loopCount -= 1
             logger.debug("Found %s result%s in %s page%s" % (total_count, plural(total_count),
                          loopCount, plural(loopCount)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
