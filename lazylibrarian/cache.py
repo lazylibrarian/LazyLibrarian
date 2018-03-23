@@ -143,12 +143,12 @@ def get_cached_request(url, useCache=True, cache="XML"):
     valid_cache = False
     source = None
     hashfilename = cacheLocation + os.sep + myhash + "." + cache.lower()
+    expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
 
     if useCache and os.path.isfile(hashfilename):
         cache_modified_time = os.stat(hashfilename).st_mtime
         time_now = time.time()
-        expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
-        if expiry and cache_modified_time < time_now - expiry:
+        if cache_modified_time < time_now - expiry:
             # Cache entry is too old, delete it
             logger.debug("Expiring %s" % myhash)
             os.remove(hashfilename)
@@ -185,6 +185,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
             if cache == "JSON":
                 try:
                     source = json.loads(result)
+                    if not expiry:
+                        return source, False
                 except Exception as e:
                     logger.error("%s decoding json from %s" % (type(e).__name__, url))
                     logger.debug("%s : %s" % (e, result))
@@ -194,6 +196,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 if result and result.startswith('<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
+                        if not expiry:
+                            return source, False
                     except ElementTree.ParseError:
                         logger.debug("Error parsing xml from %s" % url)
                         source = None
