@@ -39,11 +39,28 @@
   %if lazylibrarian.AUTHORS_UPDATE == True:
     <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Author Refresh in progress ...</p>
   %endif
-<div class="table-responsive">
-%if lazylibrarian.CONFIG['TOGGLES'] == True:
-Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Latest</a> - <a class="toggle-vis" data-column="3">Released</a> - <a class="toggle-vis" data-column="4">Downloaded</a> - <a class="toggle-vis" data-column="5">Status</a>
-<p>&nbsp;</p>
-%endif
+
+<form name="markAuthors" id="markAuthors" action="markAuthors" method="get" class="form-inline" onsubmit="return false;">
+  <div class="indented">
+    %if perm&lazylibrarian.perm_status:
+      <div class="form-group">
+        <label for="markAuthors" class="control-label">Mark selected as</label>
+        <select class="markAuthors form-control input-sm" id="action" name="action">
+          <option value="Active">Active</option>
+          <option value="Wanted">Wanted</option>
+          <option value="Ignored">Ignored</option>
+          <option value="Paused">Paused</option>
+          <option value="Remove">Remove</option>
+          <option value="Delete">Delete</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
+      %endif
+      %if lazylibrarian.CONFIG['TOGGLES'] == True:
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Latest</a> - <a class="toggle-vis" data-column="3">Released</a> - <a class="toggle-vis" data-column="4">Downloaded</a> - <a class="toggle-vis" data-column="5">Status</a>
+        <p>&nbsp;</p>
+      %endif
+  <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="author_table">
         <%
         if lazylibrarian.CONFIG['TOGGLES'] == True:
@@ -54,18 +71,20 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
             else:
                 hidden = 'hidden'
         %>
-<thead>
-  <tr>
-    <th class="authorimg no-sort col-xs-1 ${hidden}">Image</th>
-    <th class="authorname col-xs-3">Author</th>
-    <th class="bookname col-xs-4">Latest Book</th>
-    <th class="date col-xs-1 text-center">Released</th>
-    <th class="have col-xs-3 text-center">Downloaded</th>
-    <th class="status col-xs-1 text-center">Status</th>
-  </tr>
-</thead>
-</table>
-</div>
+      <thead>
+        <tr>
+          <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th class="authorimg no-sort col-xs-1 ${hidden}">Image</th>
+          <th class="authorname col-xs-3">Author</th>
+          <th class="bookname col-xs-4">Latest Book</th>
+          <th class="date col-xs-1 text-center">Released</th>
+          <th class="have col-xs-3 text-center">Downloaded</th>
+          <th class="status col-xs-1 text-center">Status</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+</form>
 </%def>
 <%def name="headIncludes()">
   %if lazylibrarian.AUTHORS_UPDATE == True:
@@ -88,24 +107,31 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
                 "order": [[ 1, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
-                     { targets: [0],
+                     { targets: [0], 'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + row[10] + '" class="checkbox" />';}
+                     },
+                     { targets: [1],
                          'visible': showimg,
                          'render': function(data, type, row) {
-                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm"></a>';} },
-                     { targets: [1], 'render': function(data, type, row) {
+                         return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
+                     { targets: [2], 'render': function(data, type, row) {
                      %if perm&lazylibrarian.perm_authorbooks:
-                        btn = '<a href="authorPage?AuthorID=' + row[10] + '">' + data + '</a>'
+                        btn = '<a href="authorPage?AuthorID=' + row[10] + '">' + row[1] + '</a>'
                      %else:
-                        btn = '<a>' + data + '</a>'
+                        btn = '<a>' + row[1] + '</a>'
                      %endif
                      return btn ;}
                      },
-                     { targets: [2], 'render': function(data, type, row) {
-                        if (data == null) {return ''};
-                         return '<a href="' + row[7] + '" target="_new">' + data + '</a>';} },
+                     { targets: [3], 'render': function(data, type, row) {
+                        if (row[2] == null) {return ''};
+                         return '<a href="' + row[7] + '" target="_new">' + row[2] + '</a>';} },
                      { targets: [4], 'render': function(data, type, row) {
+                         return row[3];} },
+                     { targets: [5], 'render': function(data, type, row) {
                          return row[11];} },
-                     { type: 'natural-nohtml', targets: 4 }],
+                     { targets: [6], 'render': function(data, type, row) {
+                         return row[5];} },
+                     { type: 'natural-nohtml', targets: 5 }],
                 "oLanguage": {
                     "sSearch": "Filter: ",
                     "sLengthMenu":"_MENU_ rows per page",
@@ -120,12 +146,12 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    $('td', nRow).eq(3).addClass('text-center');
                     $('td', nRow).eq(4).addClass('text-center');
                     $('td', nRow).eq(5).addClass('text-center');
+                    $('td', nRow).eq(6).addClass('text-center');
                     return nRow;
                 },
-                "aaSorting": [[1, 'asc']],
+                "aaSorting": [[2, 'asc']],
             });
         $('.dataTables_filter input').attr("placeholder", "Results filter");
         $('a.toggle-vis').click(function (e) {
@@ -134,5 +160,30 @@ Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" 
             column.visible( ! column.visible() );
         } );
     });
+
+    function validateForm() {
+        var x = document.forms["markAuthors"]["action"].value;
+        if (x == "Delete") {
+            bootbox.confirm({
+                message: "Are you sure you want to permanently delete the selected authors and their books?",
+                buttons: {
+                    confirm: {
+                        label: 'Yes',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'No',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function (result) {
+                    if (result) { document.getElementById("markAuthors").submit(); }
+                }
+            });
+            return false;
+        }
+        else { document.getElementById("markAuthors").submit(); }
+    }
+
   </script>
 </%def>

@@ -1059,6 +1059,44 @@ class WebInterface(object):
     # AUTHOR ############################################################
 
     @cherrypy.expose
+    def markAuthors(self, action=None, redirect=None, **args):
+        myDB = database.DBConnection()
+        if not redirect:
+            redirect = "home"
+        if action:
+            for authorid in args:
+                # ouch dirty workaround...
+                if authorid not in ['author_table_length', 'ignored']:
+                    check = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (authorid,))
+                    if not check:
+                        logger.warn('Unable to set Status to "%s" for "%s"' % (action, authorid))
+                    elif action in ["Active", "Wanted", "Paused"]:
+                        myDB.upsert("authors", {'Status': action}, {'AuthorID': authorid})
+                        logger.info('Status set to "%s" for "%s"' % (action, check['AuthorName']))
+                    elif action == "Delete":
+                        logger.info("Removing author and books: %s" % check['AuthorName'])
+                        books = myDB.select("SELECT BookFile from books WHERE AuthorID=? AND BookFile is not null",
+                                            (authorid,))
+                        for book in books:
+                            if os.path.exists(book['BookFile']):
+                                try:
+                                    rmtree(os.path.dirname(book['BookFile']), ignore_errors=True)
+                                except Exception as e:
+                                    logger.warn('rmtree failed on %s, %s %s' %
+                                                (book['BookFile'], type(e).__name__, str(e)))
+
+                        myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+                    elif action == "Remove":
+                        logger.info("Removing author: %s" % check['AuthorName'])
+                        myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+
+        raise cherrypy.HTTPRedirect(redirect)
+
+    @cherrypy.expose
     def authorPage(self, AuthorID, BookLang=None, library='eBook', Ignored=False):
         myDB = database.DBConnection()
         if Ignored:
