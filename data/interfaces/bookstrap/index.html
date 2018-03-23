@@ -163,9 +163,13 @@
 
     function validateForm() {
         var x = document.forms["markAuthors"]["action"].value;
-        if (x == "Delete") {
+        if (x == "Delete" || x == "Remove") {
+            if (x == "Delete") {
+                msg = "Are you sure you want to permanently delete the selected authors and their books?"};
+            if (x == "Remove") {
+                msg = "Are you sure you want to remove the selected authors?"};
             bootbox.confirm({
-                message: "Are you sure you want to permanently delete the selected authors and their books?",
+                message: msg,
                 buttons: {
                     confirm: {
                         label: 'Yes',
