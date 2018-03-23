@@ -421,7 +421,7 @@ def _add_torrent_file(result):
         # content is torrent file contents that needs to be encoded to base64
         post_data = json.dumps({"method": "core.add_torrent_file",
                                 "params": [result['name'] + '.torrent',
-                                b64encode(result['content'].encode('utf8')), {}],
+                                           b64encode(result['content'].encode('utf8')), {}],
                                 "id": 2})
         if PY2:
             post_data = post_data.encode(lazylibrarian.SYS_ENCODING)

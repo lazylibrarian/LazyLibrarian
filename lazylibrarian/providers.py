@@ -184,16 +184,17 @@ def get_capabilities(provider, force=False):
         # most providers will give you caps without an api key
         logger.debug('Requesting capabilities for %s' % URL)
         source_xml, success = fetchURL(URL)
+        data = None
         if not success:
             logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
         else:
             try:
                 data = ElementTree.fromstring(source_xml)
+                if data.tag == 'error':
+                    logger.debug("Unable to get capabilities: %s" % data.attrib)
+                    success = False
             except ElementTree.ParseError:
                 logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
-                success = False
-            if success and data.tag == 'error':
-                logger.debug("Unable to get capabilities: %s" % data.attrib)
                 success = False
         if not success:
             # If it failed, retry with api key
@@ -206,11 +207,11 @@ def get_capabilities(provider, force=False):
                 else:
                     try:
                         data = ElementTree.fromstring(source_xml)
+                        if data.tag == 'error':
+                            logger.debug("Unable to get capabilities: %s" % data.attrib)
+                            success = False
                     except ElementTree.ParseError:
                         logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
-                        success = False
-                    if success and data.tag == 'error':
-                        logger.debug("Unable to get capabilities: %s" % data.attrib)
                         success = False
             else:
                 logger.debug('Unable to retry capabilities, no apikey for %s' % URL)
@@ -233,7 +234,7 @@ def get_capabilities(provider, force=False):
                 provider['AUDIOSEARCH'] = ''
                 provider['UPDATED'] = today()
                 lazylibrarian.config_write(provider['NAME'])
-        else:
+        elif data:
             logger.debug("Parsing xml for capabilities of %s" % URL)
             #
             # book search isn't mentioned in the caps xml returned by

@@ -55,6 +55,9 @@ def syncCalibreList(col_read=None, col_toread=None, userid=None):
         Return message giving totals """
 
     myDB = database.DBConnection()
+    username = ''
+    readlist = []
+    toreadlist = []
     if not userid:
         cookie = cherrypy.request.cookie
         if cookie and 'll_uid' in list(cookie.keys()):
@@ -165,6 +168,8 @@ def syncCalibreList(col_read=None, col_toread=None, userid=None):
                     logger.error('Error finding authorid %s' % book['AuthorID'])
                 else:
                     match = False
+                    high = 0
+                    highname = ''
                     for item in calibre_list:
                         if item['authors'] == author['AuthorName'] and item['title'] == book['BookName']:
                             logger.debug("Exact match for %s [%s]" % (idlist[0], book['BookName']))
@@ -173,8 +178,6 @@ def syncCalibreList(col_read=None, col_toread=None, userid=None):
                             match = True
                             break
                     if not match:
-                        high = 0
-                        highname = ''
                         highid = ''
                         for item in calibre_list:
                             if item['authors'] == author['AuthorName']:
@@ -199,7 +202,9 @@ def syncCalibreList(col_read=None, col_toread=None, userid=None):
     logger.debug("BookID mapping complete, %s match %s, nomatch %s" % (username, len(map_ctol), nomatch))
 
     # now sync the lists
-    if userid:
+    if not userid:
+        msg = "No userid found"
+    else:
         last_read = []
         last_toread = []
         calibre_read = []
@@ -418,7 +423,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         params.extend(postlib)
     logger.debug(str(params))
     res = ''
-
+    err = ''
     try:
         p = Popen(params, stdout=PIPE, stderr=PIPE)
         res, err = p.communicate()

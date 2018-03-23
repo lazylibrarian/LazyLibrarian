@@ -393,6 +393,56 @@ class GoogleBooks:
                         except KeyError:
                             booklang = "Unknown"
 
+                        try:
+                            bookpub = item['volumeInfo']['publisher']
+                        except KeyError:
+                            bookpub = ""
+
+                        try:
+                            booksub = item['volumeInfo']['subtitle']
+                        except KeyError:
+                            booksub = ""
+
+                        try:
+                            bookdate = item['volumeInfo']['publishedDate']
+                        except KeyError:
+                            bookdate = '0000-00-00'
+
+                        try:
+                            bookimg = item['volumeInfo']['imageLinks']['thumbnail']
+                        except KeyError:
+                            bookimg = 'images/nocover.png'
+
+                        try:
+                            bookrate = item['volumeInfo']['averageRating']
+                        except KeyError:
+                            bookrate = 0
+
+                        try:
+                            bookpages = item['volumeInfo']['pageCount']
+                        except KeyError:
+                            bookpages = 0
+
+                        try:
+                            bookgenre = item['volumeInfo']['categories'][0]
+                        except KeyError:
+                            bookgenre = ""
+
+                        try:
+                            bookdesc = item['volumeInfo']['description']
+                        except KeyError:
+                            bookdesc = ""
+
+                        try:
+                            booklink = item['volumeInfo']['canonicalVolumeLink']
+                        except KeyError:
+                            booklink = ""
+
+                        try:
+                            bookname = item['volumeInfo']['title']
+                        except KeyError:
+                            bookname = ""
+
                         # do we care about language?
                         if "All" not in valid_langs:
                             if bookisbn != "":
@@ -458,31 +508,17 @@ class GoogleBooks:
                                         # We found a better language match
                                         if googlelang == "en" and booklang not in ["en-US", "en-GB", "eng"]:
                                             # these are all english, may need to expand this list
-                                            booknamealt = item['volumeInfo']['title']
                                             logger.debug("%s Google thinks [%s], we think [%s]" %
-                                                         (booknamealt, googlelang, booklang))
+                                                         (bookname, googlelang, booklang))
                                             gb_lang_change += 1
                                     else:  # No match anywhere, accept google language
                                         booklang = googlelang
 
                             # skip if language is in ignore list
                             if booklang not in valid_langs:
-                                booknamealt = item['volumeInfo']['title']
-                                logger.debug(
-                                    'Skipped [%s] with language %s' %
-                                    (booknamealt, booklang))
+                                logger.debug('Skipped [%s] with language %s' % (bookname, booklang))
                                 ignored += 1
                                 continue
-
-                        try:
-                            bookpub = item['volumeInfo']['publisher']
-                        except KeyError:
-                            bookpub = ""
-
-                        try:
-                            booksub = item['volumeInfo']['subtitle']
-                        except KeyError:
-                            booksub = ""
 
                         if not booksub:
                             series = ""
@@ -512,44 +548,13 @@ class GoogleBooks:
                                     series = words[0]
                                     seriesNum = words[1]
 
-                        try:
-                            bookdate = item['volumeInfo']['publishedDate']
-                        except KeyError:
-                            bookdate = '0000-00-00'
-
-                        try:
-                            bookimg = item['volumeInfo']['imageLinks']['thumbnail']
-                        except KeyError:
-                            bookimg = 'images/nocover.png'
-
-                        try:
-                            bookrate = item['volumeInfo']['averageRating']
-                        except KeyError:
-                            bookrate = 0
-
-                        try:
-                            bookpages = item['volumeInfo']['pageCount']
-                        except KeyError:
-                            bookpages = 0
-
-                        try:
-                            bookgenre = item['volumeInfo']['categories'][0]
-                        except KeyError:
-                            bookgenre = ""
-
-                        try:
-                            bookdesc = item['volumeInfo']['description']
-                        except KeyError:
-                            bookdesc = ""
-
                         rejected = False
                         check_status = False
-
-                        bookname = item['volumeInfo']['title']
                         book_status = bookstatus  # new_book status, or new_author status
                         audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
                         added = today()
                         locked = False
+                        existing_book = None
 
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
@@ -557,7 +562,6 @@ class GoogleBooks:
                             rejected = True
                         else:
                             bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
-                            booklink = item['volumeInfo']['canonicalVolumeLink']
                             bookrate = float(bookrate)
                             bookid = item['id']
 
@@ -661,7 +665,7 @@ class GoogleBooks:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
                                 serieslist = []
-                                if lazylibrarian.CONFIG['ADD_SERIES']: 
+                                if lazylibrarian.CONFIG['ADD_SERIES']:
                                     serieslist = getWorkSeries(bookid)
                                     if serieslist:
                                         logger.debug('Updated series: %s [%s]' % (bookid, serieslist))

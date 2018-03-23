@@ -80,6 +80,7 @@ def search_rss_book(books=None, library=None):
                 else:
                     item = {}
                     headers = []
+                    results = None
                     item['Title'] = book['rss_title']
                     if book['rss_bookid']:
                         item['BookID'] = book['rss_bookid']
@@ -103,7 +104,6 @@ def search_rss_book(books=None, library=None):
                             myDB.upsert("books", newValueDict, controlValueDict)
                             new_books += 1
                     else:  # not in database yet
-                        results = ''
                         if book['rss_isbn']:
                             results = search_for(book['rss_isbn'])
                         if results:

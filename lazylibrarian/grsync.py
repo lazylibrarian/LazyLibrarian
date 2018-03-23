@@ -77,7 +77,7 @@ class grauth:
             # print authorize_link
             return authorize_link
         else:
-            return("No oauth_token, got %s" % content)
+            return "No oauth_token, got %s" % content
 
     @staticmethod
     def goodreads_oauth2():

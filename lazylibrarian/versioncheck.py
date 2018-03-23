@@ -406,7 +406,7 @@ def update():
         if not output:
             logmsg('error', 'Couldn\'t download latest version')
             success = False
-        for line in output.split('\n'):
+        for line in output.split(b'\n'):
             if 'Already up-to-date.' in line:
                 logmsg('info', 'No update available: ' + str(output))
                 success = False

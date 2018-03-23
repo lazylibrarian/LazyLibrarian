@@ -200,6 +200,16 @@ def search_magazines(mags=None, reset=False):
                     nzbdate = nzbdate2format(nzbdate_temp)
                     nzbmode = nzb['nzbmode']
 
+                    # Need to make sure that substrings of magazine titles don't get found
+                    # (e.g. Maxim USA will find Maximum PC USA) so split into "words"
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
+                    nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
+                    if nzbtitle_formatted and nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
+                        nzbtitle_formatted = nzbtitle_formatted[1:-1]
+                    # remove extra spaces if they're in a row
+                    nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
+                    nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
+
                     results = myDB.match('SELECT * from magazines WHERE Title=?', (bookid,))
                     if not results:
                         logger.debug('Magazine [%s] does not match search term [%s].' % (nzbtitle, bookid))
@@ -218,16 +228,6 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
 
                         if not rejected:
-                            # Need to make sure that substrings of magazine titles don't get found
-                            # (e.g. Maxim USA will find Maximum PC USA) so split into "words"
-                            dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': ''}
-                            nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
-                            if nzbtitle_formatted and nzbtitle_formatted[0] == '[' and nzbtitle_formatted[-1] == ']':
-                                nzbtitle_formatted = nzbtitle_formatted[1:-1]
-                            # remove extra spaces if they're in a row
-                            nzbtitle_exploded_temp = " ".join(nzbtitle_formatted.split())
-                            nzbtitle_exploded = nzbtitle_exploded_temp.split(' ')
-
                             if ' ' in bookid:
                                 bookid_exploded = bookid.split(' ')
                             else:
@@ -296,8 +296,6 @@ def search_magazines(mags=None, reset=False):
                         if rejected:
                             rejects += 1
                         else:
-                            if lazylibrarian.LOGLEVEL > 2:
-                                logger.debug("regex %s [%s] %s" % (regex_pass, nzbtitle_formatted, issuedate))
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped"
                             insert_table = "pastissues"

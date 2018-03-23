@@ -630,7 +630,7 @@ def initialize():
             pass
 
         MONTHNAMES = build_monthtable()
-        BOOKSTRAP_THEMELIST = build_bookstrap_themes()
+        BOOKSTRAP_THEMELIST = build_bookstrap_themes(PROG_DIR)
 
         __INITIALIZED__ = True
         return True
@@ -1173,9 +1173,9 @@ def USE_DIRECT():
     return count
 
 
-def build_bookstrap_themes():
+def build_bookstrap_themes(prog_dir):
     themelist = []
-    if not os.path.isdir(os.path.join(PROG_DIR, 'data', 'interfaces', 'bookstrap')):
+    if not os.path.isdir(os.path.join(prog_dir, 'data', 'interfaces', 'bookstrap')):
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'

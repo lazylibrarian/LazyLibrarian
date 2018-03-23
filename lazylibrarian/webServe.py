@@ -2097,8 +2097,8 @@ class WebInterface(object):
                                             logger.info('eBook %s deleted from disc' % bookname)
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
-                                                if calibreid.endswith(')'):
-                                                    calibreid = calibreid.rsplit('(', 1)[1].split(')')[0]
+                                                if calibreid.endswith(b')'):
+                                                    calibreid = calibreid.rsplit(b'(', 1)[1].split(b')')[0]
                                                     if not calibreid or not calibreid.isdigit():
                                                         calibreid = None
                                                 else:
@@ -3116,6 +3116,8 @@ class WebInterface(object):
                 userid = cookie['ll_uid'].value
                 msg = syncCalibreList(userid=userid)
                 self.label_thread('WEBSERVER')
+            else:
+                msg = "No userid found"
         return msg
 
     @cherrypy.expose
