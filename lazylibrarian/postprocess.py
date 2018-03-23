@@ -23,6 +23,7 @@ import time
 import traceback
 from lib.six import PY2
 import lazylibrarian
+
 try:
     import zipfile
 except ImportError:
@@ -46,7 +47,6 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
-
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
@@ -360,40 +360,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                     # if torrent, see if we can get current status from the downloader as the name
                     # may have been changed once magnet resolved, or download started or completed
                     # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
-                    torrentname = ''
-                    try:
-                        logger.debug("%s was sent to %s" % (book['NZBtitle'], book['Source']))
-                        if book['Source'] == 'TRANSMISSION':
-                            torrentname = transmission.getTorrentFolder(book['DownloadID'])
-                        elif book['Source'] == 'UTORRENT':
-                            torrentname = utorrent.nameTorrent(book['DownloadID'])
-                        elif book['Source'] == 'RTORRENT':
-                            torrentname = rtorrent.getName(book['DownloadID'])
-                        elif book['Source'] == 'QBITTORRENT':
-                            torrentname = qbittorrent.getName(book['DownloadID'])
-                        elif book['Source'] == 'SYNOLOGY_TOR':
-                            torrentname = synology.getName(book['DownloadID'])
-                        elif book['Source'] == 'DELUGEWEBUI':
-                            torrentname = deluge.getTorrentFolder(book['DownloadID'])
-                        elif book['Source'] == 'DELUGERPC':
-                            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
-                                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
-                                                     lazylibrarian.CONFIG['DELUGE_USER'],
-                                                     lazylibrarian.CONFIG['DELUGE_PASS'])
-                            try:
-                                client.connect()
-                                result = client.call('core.get_torrent_status', book['DownloadID'], {})
-                                #    for item in result:
-                                #        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
-                                if 'name' in result:
-                                    torrentname = unaccented_str(result['name'])
-                            except Exception as e:
-                                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-                    except Exception as e:
-                        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
-                                     (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
-
                     matchtitle = unaccented_str(book['NZBtitle'])
+                    torrentname = getTorrentName(matchtitle, book['Source'], book['DownloadID'])
+
                     if torrentname and torrentname != matchtitle:
                         logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
                         # should we check against reject word list again as the name has changed?
@@ -456,8 +425,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                 aname = aname[:-1]
 
                                             if lazylibrarian.CONFIG['DESTINATION_COPY'] or \
-                                                (book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and
-                                                    lazylibrarian.CONFIG['KEEP_SEEDING']):
+                                                    (book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and
+                                                     lazylibrarian.CONFIG['KEEP_SEEDING']):
                                                 targetdir = os.path.join(download_dir, aname + '.unpack')
                                                 move = 'copy'
                                             else:
@@ -752,46 +721,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             logger.warn('Residual files remain in %s' % pp_path)
 
             if downloads:
-                # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
-                # do a fresh listdir in case we processed and deleted any earlier
-                # and don't process any we've already done as we might not want to delete originals
-                downloads = os.listdir(makeBytestr(download_dir))
-                downloads = [makeUnicode(item) for item in downloads]
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
-                for entry in downloads:
-                    if "LL.(" in entry:
-                        dname, extn = os.path.splitext(entry)
-                        if not extn or extn.strip('.') not in skipped_extensions:
-                            bookID = entry.split("LL.(")[1].split(")")[0]
-                            logger.debug("Book with id: %s found in download directory" % bookID)
-                            data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
-                            if data and data['BookFile'] and os.path.isfile(data['BookFile']):
-                                logger.debug('Skipping BookID %s, already exists' % bookID)
-                            else:
-                                pp_path = os.path.join(download_dir, entry)
-
-                                if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug("Checking type of %s" % pp_path)
-
-                                if os.path.isfile(pp_path):
-                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug("%s is a file" % pp_path)
-                                    pp_path = os.path.join(download_dir)
-
-                                if os.path.isdir(pp_path):
-                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug("%s is a dir" % pp_path)
-                                    if import_book(pp_path, bookID):
-                                        if int(lazylibrarian.LOGLEVEL) > 2:
-                                            logger.debug("Imported %s" % pp_path)
-                                        ppcount += 1
-                        else:
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("Skipping extn %s" % entry)
-                    else:
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("Skipping (not LL) %s" % entry)
+                ppcount += check_residual(download_dir)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
@@ -845,6 +775,88 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
     finally:
         threading.currentThread().name = threadname
+
+
+def check_residual(download_dir):
+    # Import any books in download that weren't marked as snatched, but have a LL.(bookid)
+    # don't process any we've already got as we might not want to delete originals
+    myDB = database.DBConnection()
+    skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
+    ppcount = 0
+    downloads = os.listdir(makeBytestr(download_dir))
+    downloads = [makeUnicode(item) for item in downloads]
+    if int(lazylibrarian.LOGLEVEL) > 2:
+        logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
+    for entry in downloads:
+        if "LL.(" in entry:
+            _, extn = os.path.splitext(entry)
+            if not extn or extn.strip('.') not in skipped_extensions:
+                bookID = entry.split("LL.(")[1].split(")")[0]
+                logger.debug("Book with id: %s found in download directory" % bookID)
+                data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
+                if data and data['BookFile'] and os.path.isfile(data['BookFile']):
+                    logger.debug('Skipping BookID %s, already exists' % bookID)
+                else:
+                    pp_path = os.path.join(download_dir, entry)
+
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("Checking type of %s" % pp_path)
+
+                    if os.path.isfile(pp_path):
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug("%s is a file" % pp_path)
+                        pp_path = os.path.join(download_dir)
+
+                    if os.path.isdir(pp_path):
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug("%s is a dir" % pp_path)
+                        if import_book(pp_path, bookID):
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("Imported %s" % pp_path)
+                            ppcount += 1
+            else:
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.debug("Skipping extn %s" % entry)
+        else:
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.debug("Skipping (not LL) %s" % entry)
+    return ppcount
+
+
+def getTorrentName(title, source, downloadid):
+    torrentname = None
+    try:
+        logger.debug("%s was sent to %s" % (title, source))
+        if source == 'TRANSMISSION':
+            torrentname = transmission.getTorrentFolder(downloadid)
+        elif source == 'UTORRENT':
+            torrentname = utorrent.nameTorrent(downloadid)
+        elif source == 'RTORRENT':
+            torrentname = rtorrent.getName(downloadid)
+        elif source == 'QBITTORRENT':
+            torrentname = qbittorrent.getName(downloadid)
+        elif source == 'SYNOLOGY_TOR':
+            torrentname = synology.getName(downloadid)
+        elif source == 'DELUGEWEBUI':
+            torrentname = deluge.getTorrentFolder(downloadid)
+        elif source == 'DELUGERPC':
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
+            try:
+                client.connect()
+                result = client.call('core.get_torrent_status', downloadid, {})
+                #    for item in result:
+                #        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
+                if 'name' in result:
+                    torrentname = unaccented_str(result['name'])
+            except Exception as e:
+                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+        return torrentname
+
+    except Exception as e:
+        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
+                     (source, downloadid, type(e).__name__, str(e)))
+        return None
 
 
 def delete_task(Source, DownloadID, remove_data):
@@ -944,12 +956,12 @@ def import_book(pp_path=None, bookID=None):
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
-                            '$Author', authorname).replace(
-                            '$Title', bookname).replace(
-                            '$Series', seriesInfo(bookID)).replace(
-                            '$SerName', seriesInfo(bookID, 'Name')).replace(
-                            '$SerNum', seriesInfo(bookID, 'Num')).replace(
-                            '$$', ' ')
+                '$Author', authorname).replace(
+                '$Title', bookname).replace(
+                '$Series', seriesInfo(bookID)).replace(
+                '$SerName', seriesInfo(bookID, 'Name')).replace(
+                '$SerNum', seriesInfo(bookID, 'Num')).replace(
+                '$$', ' ')
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
             dest_path = os.path.join(dest_dir, dest_path)
@@ -1315,7 +1327,7 @@ def processAutoAdd(src_path=None, booktype='book'):
 
     if not os.path.exists(autoadddir):
         logger.error('AutoAdd directory for %s [%s] is missing or not set - cannot perform autoadd' % (
-                      booktype, autoadddir))
+            booktype, autoadddir))
         return False
     # Now try and copy all the book files into a single dir.
     try:
