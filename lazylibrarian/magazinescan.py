@@ -102,7 +102,7 @@ def create_cover(issuefile=None, refresh=False):
             logger.error("Failed to read rar file %s, %s %s" % (issuefile, type(why).__name__, str(why)))
             data = ''
     if data:
-        img = ''
+        img = None
         try:
             for member in data.namelist():
                 memlow = member.lower()
