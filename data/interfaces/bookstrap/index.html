@@ -169,10 +169,11 @@
                 if (c == 1){ msg = "Are you sure you want to permanently delete the selected author and their books?"}
                 if (c > 1){ msg = "Are you sure you want to permanently delete the " + c +
                             " selected authors and their books?"}
+                };
             if (x == "Remove") {
                 if (c == 1){ msg = "Are you sure you want to remove the selected author?"}
                 if (c > 1){ msg = "Are you sure you want to remove the " + c + " selected authors?"}
-            };
+                };
             bootbox.confirm({
                 message: msg,
                 buttons: {
@@ -193,6 +194,7 @@
         }
         else { document.getElementById("markAuthors").submit(); }
     }
+
 
   </script>
 </%def>
