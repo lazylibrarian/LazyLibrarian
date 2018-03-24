@@ -1548,7 +1548,7 @@ class WebInterface(object):
 
                 if 'goodreads' in row[9]:
                     sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
-                elif 'google' in row[9]:
+                elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
                     sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
                 title = row[2]
                 if row[8]:  # is there a sub-title

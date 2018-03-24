@@ -1173,8 +1173,6 @@ def getBookCover(bookID=None, src=None):
                         logger.debug("getBookCover: No image found in goodreads page for %s" % bookID)
                 else:
                     logger.debug("getBookCover: Error getting page %s, [%s]" % (booklink, result))
-            else:
-                logger.debug("getBookCover: Not a goodreads booklink for %s [%s]" % (bookID, booklink))
             if src == 'goodreads':
                 return None, src
 

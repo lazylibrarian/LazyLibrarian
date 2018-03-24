@@ -696,14 +696,14 @@ class GoodReads:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
                                 serieslist = []
+                                if series:
+                                    serieslist = [('', seriesNum, cleanName(unaccented(series)))]
                                 if lazylibrarian.CONFIG['ADD_SERIES']:
-                                    serieslist = getWorkSeries(workid)
-                                    if serieslist:
+                                    newserieslist = getWorkSeries(workid)
+                                    if newserieslist:
+                                        serieslist = newserieslist
                                         logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
                                         updated = True
-                                if not serieslist:
-                                    if series:
-                                        serieslist = [('', seriesNum, cleanName(unaccented(series)))]
                                 setSeries(serieslist, bookid)
 
                                 new_status = setStatus(bookid, serieslist, bookstatus)
@@ -954,13 +954,13 @@ class GoodReads:
                 logger.debug('Failed to cache image for %s' % bookimg)
 
         serieslist = []
+        if series:
+            serieslist = [('', seriesNum, cleanName(unaccented(series)))]
         if lazylibrarian.CONFIG['ADD_SERIES']:
-            serieslist = getWorkSeries(workid)
-            if serieslist:
+            newserieslist = getWorkSeries(workid)
+            if newserieslist:
+                serieslist = newserieslist
                 logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-        if not serieslist:
-            if series:
-                serieslist = [('', seriesNum, cleanName(unaccented(series)))]
         setSeries(serieslist, bookid)
 
         worklink = getWorkPage(bookid)
