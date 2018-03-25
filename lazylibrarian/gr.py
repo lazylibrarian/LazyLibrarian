@@ -562,8 +562,10 @@ class GoodReads:
                                 rejected = True
 
                         if not rejected:
-                            # anames = book.find('authors')
-                            anames = book.getiterator('author')
+                            # seems the author/list page only contains one author per book
+                            # even if the book/show page has multiple?
+                            authors = book.find('authors')
+                            anames = authors.getiterator('author')
                             amatch = False
                             alist = ''
                             for aname in anames:

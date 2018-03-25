@@ -370,12 +370,11 @@ def bookRename(bookid):
 def setAllBookAuthors():
     myDB = database.DBConnection()
     myDB.action('drop table if exists bookauthors')
-    myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT, UNIQUE (AuthorID, BookID))')
+    myDB.action('create table bookauthors (AuthorID TEXT, BookID TEXT, Role TEXT, UNIQUE (AuthorID, BookID, Role))')
     books = myDB.select('SELECT AuthorID,BookID from books')
     for item in books:
-        myDB.action('insert into bookauthors (AuthorID, BookID) values (?, ?)',
-                    (item['AuthorID'], item['BookID']), suppress='UNIQUE')
-    # also need to drop authorid from books table once it all works properly
+        myDB.action('insert into bookauthors (AuthorID, BookID, Role) values (?, ?, ?)',
+                    (item['AuthorID'], item['BookID'], ''), suppress='UNIQUE')
     totalauthors = 0
     totalrefs = 0
     books = myDB.select('select bookid,bookname,authorid from books where workpage is not null and workpage != ""')
@@ -395,23 +394,34 @@ def setBookAuthors(book):
     try:
         authorlist = getBookAuthors(book['bookid'])
         for author in authorlist:
-            authtype = author['type']
-            if authtype in ['primary author', 'main author', 'secondary author']:
-                if author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
-                    name = formatAuthorName(author['name'])
-                    exists = myDB.match('select authorid from authors where authorname=?', (name,))
-                    if exists:
-                        authorid = exists['authorid']
-                    else:
-                        # try to add new author to database by name
-                        name, authorid, new = lazylibrarian.importer.addAuthorNameToDB(name, False, False)
-                        if new and authorid:
-                            newauthors += 1
-                    if authorid:
-                        # suppress duplicates in bookauthors
-                        myDB.action('INSERT into bookauthors (AuthorID, BookID) VALUES (?, ?)',
-                                    (authorid, book['bookid']), suppress='UNIQUE')
-                        newrefs += 1
+            role = ''
+            if 'id' in author:
+                # it's a goodreads data source
+                authorname = author['name']
+                exists = myDB.match('select authorid from authors where authorid=?', (author['id'],))
+                if 'role' in author:
+                    role = author['role']
+            else:
+                # it's a librarything data source
+                authorname = formatAuthorName(author['name'])
+                exists = myDB.match('select authorid from authors where authorname=?', (authorname,))
+                if 'type' in author:
+                    authtype = author['type']
+                    if authtype in ['primary author', 'main author', 'secondary author']:
+                        role = authtype
+                    elif author['role'] in ['Author', '&mdash;'] and author['work'] == 'all editions':
+                        role = 'Author'
+            if exists:
+                authorid = exists['authorid']
+            else:
+                # try to add new author to database by name
+                authorname, authorid, new = lazylibrarian.importer.addAuthorNameToDB(authorname, False, False)
+                if new and authorid:
+                    newauthors += 1
+            if authorid:
+                myDB.action('INSERT into bookauthors (AuthorID, BookID, Role) VALUES (?, ?, ?)',
+                            (authorid, book['bookid'], role), suppress='UNIQUE')
+                newrefs += 1
     except Exception as e:
         logger.error("Error parsing authorlist for %s: %s %s" % (book['bookname'], type(e).__name__, str(e)))
     return newauthors, newrefs
@@ -829,29 +839,62 @@ def getAllSeriesAuthors():
 
 
 def getBookAuthors(bookid):
-    """ Get a list of authors contributing to a book from the bookwork file """
-    data = getBookWork(bookid, "Authors")
-    if data:
-        try:
-            data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>', 1)[1]
-        except IndexError:
-            data = ''
-
+    """ Get a list of authors contributing to a book from the goodreads bookpage or the librarything bookwork file """
     authorlist = []
-    if data and 'Work?' in data:
+    if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
+        params = {"key": lazylibrarian.CONFIG['GR_API']}
+        URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(params)
         try:
-            rows = data.split('<tr')
-            for row in rows[2:]:
-                author = {}
-                col = row.split('<td>')
-                author['name'] = col[1].split('">')[1].split('<')[0]
-                author['role'] = col[2].split('<')[0]
-                author['type'] = col[3].split('<')[0]
-                author['work'] = col[4].split('<')[0]
-                author['status'] = col[5].split('<')[0]
+            rootxml, in_cache = gr_xml_request(URL)
+            if rootxml is None:
+                logger.debug("Error requesting book %s" % bookid)
+                return []
+        except Exception as e:
+            logger.error("%s finding book %s: %s" % (type(e).__name__, bookid, str(e)))
+            return []
+
+        book = rootxml.find('book')
+        authors = book.find('authors')
+        anames = authors.getiterator('author')
+        if anames is None:
+            logger.warn('No authors found for %s' % bookid)
+            return []
+        for aname in anames:
+            author = {}
+            if aname.find('id') is not None:
+                author['id'] = aname.find('id').text
+            if aname.find('name') is not None:
+                author['name'] = aname.find('name').text
+            if aname.find('role') is not None:
+                role = aname.find('role').text
+                if not role:
+                    role = ''
+                author['role'] = role
+            if author:
                 authorlist.append(author)
-        except IndexError:
-            logger.debug('Error parsing authorlist for %s' % bookid)
+    else:
+        data = getBookWork(bookid, "Authors")
+        if data:
+            try:
+                data = data.split('otherauthors_container')[1].split('</table>')[0].split('<table')[1].split('>', 1)[1]
+            except IndexError:
+                data = ''
+
+        authorlist = []
+        if data and 'Work?' in data:
+            try:
+                rows = data.split('<tr')
+                for row in rows[2:]:
+                    author = {}
+                    col = row.split('<td>')
+                    author['name'] = col[1].split('">')[1].split('<')[0]
+                    author['role'] = col[2].split('<')[0]
+                    author['type'] = col[3].split('<')[0]
+                    author['work'] = col[4].split('<')[0]
+                    author['status'] = col[5].split('<')[0]
+                    authorlist.append(author)
+            except IndexError:
+                logger.debug('Error parsing authorlist for %s' % bookid)
     return authorlist
 
 
