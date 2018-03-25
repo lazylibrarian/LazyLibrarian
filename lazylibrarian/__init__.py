@@ -420,6 +420,7 @@ CONFIG_DEFINITIONS = {
     'SLACK_NOTIFY_ONSNATCH': ('bool', 'Slack', 0),
     'SLACK_NOTIFY_ONDOWNLOAD': ('bool', 'Slack', 0),
     'SLACK_TOKEN': ('str', 'Slack', ''),
+    'SLACK_URL': ('str', 'Slack', "https://hooks.slack.com/services/"),
     'USE_CUSTOM': ('bool', 'Custom', 0),
     'CUSTOM_NOTIFY_ONSNATCH': ('bool', 'Custom', 0),
     'CUSTOM_NOTIFY_ONDOWNLOAD': ('bool', 'Custom', 0),

@@ -2257,7 +2257,11 @@
                         Notify on download</label>
                     </div>
                     <div class="form-group">
-                      <label for="slack_token">Slack Webhook Token(everything after https://hooks.slack.com/services/)</label>
+                      <label for="slack_url">Slack Webhook URL (usually https://hooks.slack.com/services/)</label>
+                      <input type="text" id="slack_url" name="slack_url" value="${lazylibrarian.CONFIG['SLACK_URL']}" class="form-control" placeholder="Slack Webhook URL">
+                    </div>
+                    <div class="form-group">
+                      <label for="slack_token">Slack Webhook Token (everything after https://hooks.slack.com/services/)</label>
                       <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" class="form-control" placeholder="Slack Webhook Token">
                     </div>
                     <div class="form-group">
@@ -3582,7 +3586,8 @@
 
         $('#testSlack').click(function () {
             var token = $.trim($("#slack_token").val());
-            $.get("testSlack", {'token': token},
+            var url = $.trim($("#slack_url").val());
+            $.get("testSlack", {'token': token, 'url': url},
                 function (data) { window.alert(data) });
         });
 

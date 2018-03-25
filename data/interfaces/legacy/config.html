@@ -1688,7 +1688,10 @@
                   <input type="checkbox" id="slack_notify_ondownload" name="slack_notify_ondownload" value="1" ${checked} />Notify on download
                 </div>
                 <div class="row">
-                  <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" size="26" placeholder="Slack Webhook Token(everything after https://hooks.slack.com/services/)">
+                  <input type="text" id="slack_url" name="slack_url" value="${lazylibrarian.CONFIG['SLACK_URL']}" size="26" placeholder="Slack Webhook URL (usually https://hooks.slack.com/services/)">
+                </div>
+                <div class="row">
+                  <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" size="26" placeholder="Slack Webhook Token (everything after https://hooks.slack.com/services/)">
                 </div>
                 <div class="row">
                   <input type="button" value="Test Slack" id="testSlack">
@@ -2645,7 +2648,8 @@
 
         $('#testSlack').click(function () {
             var token = $.trim($("#slack_token").val());
-            $.get("testSlack", {'token': token},
+            var url = $.trim($("#slack_url").val());
+            $.get("testSlack", {'token': token, 'url': url},
                 function (data) { alert(data); });
         });
 

@@ -3355,6 +3355,8 @@ class WebInterface(object):
         threading.currentThread().name = "WEBSERVER"
         if 'token' in kwargs:
             lazylibrarian.CONFIG['SLACK_TOKEN'] = kwargs['token']
+        if 'url' in kwargs:
+            lazylibrarian.CONFIG['SLACK_URL'] = kwargs['url']
 
         result = notifiers.slack_notifier.test_notify()
         if result != "ok":
