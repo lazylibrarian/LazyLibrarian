@@ -159,7 +159,7 @@ def getTorrentFolder(torrentid):
         _get_auth()
 
     try:
-        post_json = {"method": "web.get_torrent_status", "params": [torrentid, ["total_done"]],"id": 22}
+        post_json = {"method": "web.get_torrent_status", "params": [torrentid, ["total_done"]], "id": 22}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
@@ -184,7 +184,7 @@ def getTorrentFolder(torrentid):
                                     "tracker",
                                     "comment"
                                 ]
-                               ],
+                                ],
                      "id": 23}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
@@ -385,9 +385,9 @@ def _add_torrent_file(result):
     try:
         # content is torrent file contents that needs to be encoded to base64
         post_json = {"method": "core.add_torrent_file",
-                        "params": [result['name'] + '.torrent',
-                                    b64encode(result['content'].encode('utf8')), {}],
-                        "id": 2}
+                     "params": [result['name'] + '.torrent',
+                                b64encode(result['content'].encode('utf8')), {}],
+                     "id": 2}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
