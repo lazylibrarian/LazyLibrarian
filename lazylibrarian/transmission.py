@@ -10,8 +10,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import json
 import time
 
 try:
@@ -236,7 +234,7 @@ def torrentAction(method, arguments):
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
     try:
-        response = requests.post(host_url, data=json.dumps(data), headers=headers, proxies=proxies,
+        response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
                                  auth=auth, timeout=timeout)
         response = response.json()
     except Exception as e:
