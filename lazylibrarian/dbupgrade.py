@@ -966,6 +966,15 @@ def db_v28(myDB, upgradelog):
         myDB.action('ALTER TABLE users ADD COLUMN CalibreToRead TEXT')
     upgradelog.write("%s v28: complete\n" % time.ctime())
 
+def calc_eta(secs):
+    eta = int(secs / 60) + (secs % 60 > 0)
+    if eta < 2:
+        return("%s minute" % eta)
+    if eta < 120:
+        return("%s minutes" % eta)
+    else:
+        eta = int(eta / 3600) + (eta % 3600 > 0)
+        return("%s hours" % eta)
 
 def db_v29(myDB, upgradelog):
     if not has_column(myDB, "books", "WorkID"):
@@ -985,26 +994,21 @@ def db_v29(myDB, upgradelog):
         tot = len(authors)
         if tot:
             upgradelog.write("%s v29: Upgrading %s authors, %s books\n" % (time.ctime(), tot, books['total']))
-            eta = int(books['total']) + len(authors)
-            eta = eta * 1.5  # need 1 second per xml call for goodreads api if not cached
-            eta = int(eta / 60) + (eta % 60 > 0)
-            if eta < 100:
-                lazylibrarian.UPDATE_MSG = "Estimate %s minutes" % eta
-                upgradelog.write("%s v29: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-            else:
-                eta = int(books['total']) + len(authors)
-                eta = eta * 1.5
-                eta = int(eta / 3600) + (eta % 3600 > 0)
-                lazylibrarian.UPDATE_MSG = "Estimate %s hours" % eta
-                upgradelog.write("%s v29: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-            time.sleep(10)
+            remaining_books = int(books['total'])
+            remaining_authors = len(authors)
             myDB.action('DELETE FROM seriesauthors')
             cnt = 0
             for author in authors:
                 cnt += 1
-                lazylibrarian.UPDATE_MSG = "Updating %s (%s books): %s of %s" % (author['AuthorName'],
-                                                                                 author['TotalBooks'], cnt, tot)
+                secs = remaining_books + remaining_authors
+                secs = secs * 1.5
+                lazylibrarian.UPDATE_MSG = "Updating %s (%s books): eta %s" % (author['AuthorName'],
+                                            author['TotalBooks'], calc_eta(secs))
                 addAuthorToDB(authorname=None, refresh=True, authorid=author['AuthorID'], addbooks=True)
+                res = myDB.match("SELECT totalbooks from authors where authorid=?", (author['AuthorID'],))
+                remaining_books -= res['totalbooks']
+                remaining_authors -= 1
+
         members = myDB.select('SELECT BookID from member')
         tot = len(members)
         if tot:
