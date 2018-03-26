@@ -516,7 +516,9 @@ def setSeries(serieslist=None, bookid=None):
         myDB.action('DELETE from member WHERE BookID=?', (bookid,))
         for item in serieslist:
             match = myDB.match('SELECT SeriesID from series where SeriesName=? COLLATE NOCASE', (item[2],))
-            if not match:
+            if match:
+                seriesid = match['SeriesID']
+            else:
                 # new series, need to set status and get SeriesID
                 if item[0]:
                     seriesid = item[0]
@@ -529,12 +531,12 @@ def setSeries(serieslist=None, bookid=None):
                 # don't ask what other books are in the series - leave for user to query if series wanted
                 # _ = getSeriesMembers(match['SeriesID'])
             book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
-            if match and book:
-                controlValueDict = {"BookID": bookid, "SeriesID": match['SeriesID']}
+            if seriesid and book:
+                controlValueDict = {"BookID": bookid, "SeriesID": seriesid}
                 newValueDict = {"SeriesNum": item[1], "WorkID": book['WorkID']}
                 myDB.upsert("member", newValueDict, controlValueDict)
                 myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES (?, ?)',
-                            (match['SeriesID'], book['AuthorID']), suppress='UNIQUE')
+                            (seriesid, book['AuthorID']), suppress='UNIQUE')
             else:
                 logger.debug('Unable to set series for book %s, %s' % (bookid, item))
 

@@ -1922,7 +1922,6 @@ class WebInterface(object):
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
                    manual='0', authorname='', cover='', newid='', **kwargs):
-
         myDB = database.DBConnection()
         if bookid:
             cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,books.Manual,AuthorName,books.AuthorID '
@@ -1935,7 +1934,7 @@ class WebInterface(object):
                     bookgenre = ''
                 manual = bool(check_int(manual, 0))
 
-                if not (bookid == newid):
+                if newid and not (bookid == newid):
                     cmd = "SELECT BookName,Authorname from books,authors "
                     cmd += "WHERE books.AuthorID = authors.AuthorID and BookID=?"
                     match = myDB.match(cmd, (newid,))
@@ -1989,37 +1988,40 @@ class WebInterface(object):
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                cmd = 'SELECT SeriesName, SeriesNum from member,series '
+                cmd = 'SELECT SeriesName, SeriesNum, series.SeriesID from member,series '
                 cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
                 old_series = myDB.select(cmd, (bookid,))
-                old_dict = {}
-                new_dict = {}
+                old_list = []
+                new_list = []
                 dict_counter = 0
                 while "series[%s][name]" % dict_counter in kwargs:
                     s_name = kwargs["series[%s][name]" % dict_counter]
                     s_name = cleanName(unaccented(s_name), '&/')
-                    new_dict[s_name] = kwargs["series[%s][number]" % dict_counter]
+                    s_num = kwargs["series[%s][number]" % dict_counter]
+                    match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (s_name,))
+                    if match:
+                        new_list.append([match['SeriesID'], s_num, s_name])
+                    else:
+                        new_list.append(['', s_num, s_name])
                     dict_counter += 1
                 if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
                     if kwargs['series[new][name]']:
                         s_name = kwargs["series[new][name]"]
                         s_name = cleanName(unaccented(s_name), '&/')
-                        new_dict[s_name] = kwargs['series[new][number]']
+                        s_num = kwargs['series[new][number]']
+                        new_list.append(['', s_num, s_name])
                 for item in old_series:
-                    old_dict[cleanName(unaccented(item['SeriesName']), '&/')] = item['SeriesNum']
+                    old_list.append([item['SeriesID'], item['SeriesNum'], item['SeriesName']])
 
                 series_changed = False
-                for item in old_dict:
-                    if item not in new_dict:
+                for item in old_list:
+                    if item[1:2] not in [i[1:2] for i in new_list]:
                         series_changed = True
-                for item in new_dict:
-                    if item not in old_dict:
+                for item in new_list:
+                    if item[1:2] not in [i[1:2] for i in old_list]:
                         series_changed = True
-                    else:
-                        if new_dict[item] != old_dict[item]:
-                            series_changed = True
                 if series_changed:
-                    setSeries(new_dict, bookid)
+                    setSeries(new_list, bookid)
                     deleteEmptySeries()
                     edited += "Series "
 
