@@ -219,7 +219,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                     myDB.action('DELETE from authors WHERE AuthorName=?', (authorname,))
                 return
         if not match:
-            logger.error("AddAuthorToDB: No matching result for authorname or authorid")
+            logger.error("No matching result for authorname or authorid")
             return
 
         # if author is set to manual, should we allow replacing 'nophoto' ?
