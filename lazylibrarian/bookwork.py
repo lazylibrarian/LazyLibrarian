@@ -914,68 +914,81 @@ def getSeriesAuthors(seriesid):
             # order = member[0]
             bookname = member[1]
             authorname = member[2]
+            # workid = member[3]
+            authorid = member[4]
 
-            base_url = 'https://www.goodreads.com/search.xml?q='
-            params = {"key": lazylibrarian.CONFIG['GR_API']}
-            searchname = bookname + ' ' + authorname
-            searchname = cleanName(unaccented(searchname))
-            if PY2:
-                searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
-            searchterm = quote_plus(searchname)
-            set_url = base_url + searchterm + '&' + urlencode(params)
-            authorid = ''
-            try:
-                rootxml, in_cache = gr_xml_request(set_url)
-                if rootxml is None:
-                    logger.warn('Error getting XML for %s' % searchname)
-                else:
-                    resultxml = rootxml.getiterator('work')
-                    for item in resultxml:
-                        try:
-                            booktitle = item.find('./best_book/title').text
-                        except (KeyError, AttributeError):
-                            booktitle = ""
-                        book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
-                        if book_fuzz >= 98:
-                            try:
-                                author = item.find('./best_book/author/name').text
-                            except (KeyError, AttributeError):
-                                author = ""
-                            try:
-                                authorid = item.find('./best_book/author/id').text
-                            except (KeyError, AttributeError):
-                                authorid = ""
-                            logger.debug("Author Search found %s %s, authorid %s" % (author, booktitle, authorid))
-                            break
-                if not authorid:  # try again with title only
-                    searchname = cleanName(unaccented(bookname))
-                    if PY2:
-                        searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
-                    searchterm = quote_plus(searchname)
-                    set_url = base_url + searchterm + '&' + urlencode(params)
+            if not authorid:
+                # goodreads gives us all the info we need, librarything/google doesn't
+                base_url = 'https://www.goodreads.com/search.xml?q='
+                params = {"key": lazylibrarian.CONFIG['GR_API']}
+                searchname = bookname + ' ' + authorname
+                searchname = cleanName(unaccented(searchname))
+                if PY2:
+                    searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+                searchterm = quote_plus(searchname)
+                set_url = base_url + searchterm + '&' + urlencode(params)
+                try:
                     rootxml, in_cache = gr_xml_request(set_url)
                     if rootxml is None:
                         logger.warn('Error getting XML for %s' % searchname)
                     else:
                         resultxml = rootxml.getiterator('work')
                         for item in resultxml:
-                            booktitle = item.find('./best_book/title').text
+                            try:
+                                booktitle = item.find('./best_book/title').text
+                            except (KeyError, AttributeError):
+                                booktitle = ""
                             book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
                             if book_fuzz >= 98:
                                 try:
                                     author = item.find('./best_book/author/name').text
                                 except (KeyError, AttributeError):
                                     author = ""
+                                # try:
+                                #     workid = item.find('./work/id').text
+                                # except (KeyError, AttributeError):
+                                #     workid = ""
                                 try:
                                     authorid = item.find('./best_book/author/id').text
                                 except (KeyError, AttributeError):
                                     authorid = ""
-                                logger.debug("Title Search found %s %s, authorid %s" % (author, booktitle, authorid))
+                                logger.debug("Author Search found %s %s, authorid %s" %
+                                             (author, booktitle, authorid))
                                 break
-                if not authorid:
-                    logger.warn("GoodReads doesn't know about %s %s" % (authorname, bookname))
-            except Exception as e:
-                logger.error("Error finding goodreads results: %s %s" % (type(e).__name__, str(e)))
+                    if not authorid:  # try again with title only
+                        searchname = cleanName(unaccented(bookname))
+                        if PY2:
+                            searchname = searchname.encode(lazylibrarian.SYS_ENCODING)
+                        searchterm = quote_plus(searchname)
+                        set_url = base_url + searchterm + '&' + urlencode(params)
+                        rootxml, in_cache = gr_xml_request(set_url)
+                        if rootxml is None:
+                            logger.warn('Error getting XML for %s' % searchname)
+                        else:
+                            resultxml = rootxml.getiterator('work')
+                            for item in resultxml:
+                                booktitle = item.find('./best_book/title').text
+                                book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
+                                if book_fuzz >= 98:
+                                    try:
+                                        author = item.find('./best_book/author/name').text
+                                    except (KeyError, AttributeError):
+                                        author = ""
+                                    # try:
+                                    #     workid = item.find('./work/id').text
+                                    # except (KeyError, AttributeError):
+                                    #     workid = ""
+                                    try:
+                                        authorid = item.find('./best_book/author/id').text
+                                    except (KeyError, AttributeError):
+                                        authorid = ""
+                                    logger.debug("Title Search found %s %s, authorid %s" %
+                                                 (author, booktitle, authorid))
+                                    break
+                    if not authorid:
+                        logger.warn("GoodReads doesn't know about %s %s" % (authorname, bookname))
+                except Exception as e:
+                    logger.error("Error finding goodreads results: %s %s" % (type(e).__name__, str(e)))
 
             if authorid:
                 lazylibrarian.importer.addAuthorToDB(refresh=False, authorid=authorid)
@@ -988,30 +1001,64 @@ def getSeriesAuthors(seriesid):
 
 
 def getSeriesMembers(seriesID=None):
-    """ Ask librarything for order, bookname, authorname for all books in a series
+    """ Ask librarything or goodreads for details on all books in a series
+        order, bookname, authorname, workid, authorid
+        (workid and authorid are goodreads only)
         Return as a list of lists """
     results = []
-    data = getBookWork(None, "SeriesPage", seriesID)
-    if data:
+    if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
+        params = {"format": "xml", "key": lazylibrarian.CONFIG['GR_API']}
+        URL = 'https://www.goodreads.com/series/' + seriesID + '?' + urlencode(params)
         try:
-            table = data.split('class="worksinseries"')[1].split('</table>')[0]
-            rows = table.split('<tr')
-            for row in rows:
-                if 'href=' in row:
-                    booklink = row.split('href="')[1]
-                    bookname = booklink.split('">')[1].split('<')[0]
-                    # booklink = booklink.split('"')[0]
-                    try:
-                        authorlink = row.split('href="')[2]
-                        authorname = authorlink.split('">')[1].split('<')[0]
-                        # authorlink = authorlink.split('"')[0]
-                        order = row.split('class="order">')[1].split('<')[0]
-                        results.append([order, bookname, authorname])
-                    except IndexError:
-                        logger.debug('Incomplete data in series table for series %s' % seriesID)
-        except IndexError:
-            if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
-                logger.debug('Error in series table for series %s' % seriesID)
+            rootxml, in_cache = gr_xml_request(URL)
+            if rootxml is None:
+                logger.debug("Error requesting series %s" % seriesID)
+                return []
+        except Exception as e:
+            logger.error("%s finding series %s: %s" % (type(e).__name__, seriesID, str(e)))
+            return []
+
+        works = rootxml.find('series/series_works')
+        books = works.getiterator('series_work')
+        if books is None:
+            logger.warn('No books found for %s' % seriesID)
+            return []
+        for book in books:
+            mydict = {}
+            for mykey, location in [('order', 'user_position'),
+                                    ('bookname', 'work/best_book/title'),
+                                    ('authorname', 'work/best_book/author/name'),
+                                    ('workid', 'work/id'),
+                                    ('authorid', 'work/best_book/author/id')
+                                    ]:
+                if book.find(location) is not None:
+                    mydict[mykey] = book.find(location).text
+                else:
+                    mydict[mykey] = ""
+            results.append([mydict['order'], mydict['bookname'], mydict['authorname'],
+                            mydict['workid'], mydict['authorid']])
+    else:
+        data = getBookWork(None, "SeriesPage", seriesID)
+        if data:
+            try:
+                table = data.split('class="worksinseries"')[1].split('</table>')[0]
+                rows = table.split('<tr')
+                for row in rows:
+                    if 'href=' in row:
+                        booklink = row.split('href="')[1]
+                        bookname = booklink.split('">')[1].split('<')[0]
+                        # booklink = booklink.split('"')[0]
+                        try:
+                            authorlink = row.split('href="')[2]
+                            authorname = authorlink.split('">')[1].split('<')[0]
+                            # authorlink = authorlink.split('"')[0]
+                            order = row.split('class="order">')[1].split('<')[0]
+                            results.append([order, bookname, authorname, '', ''])
+                        except IndexError:
+                            logger.debug('Incomplete data in series table for series %s' % seriesID)
+            except IndexError:
+                if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
+                    logger.debug('Error in series table for series %s' % seriesID)
     return results
 
 
