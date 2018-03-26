@@ -57,7 +57,7 @@
       <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
       %endif
       %if lazylibrarian.CONFIG['TOGGLES'] == True:
-        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="0">Image</a> - <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Latest</a> - <a class="toggle-vis" data-column="3">Released</a> - <a class="toggle-vis" data-column="4">Downloaded</a> - <a class="toggle-vis" data-column="5">Status</a>
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Image</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Latest</a> - <a class="toggle-vis" data-column="4">Released</a> - <a class="toggle-vis" data-column="5">Downloaded</a> - <a class="toggle-vis" data-column="6">Status</a>
         <p>&nbsp;</p>
       %endif
   <div class="table-responsive">
@@ -74,12 +74,12 @@
       <thead>
         <tr>
           <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-          <th class="authorimg no-sort col-xs-1 ${hidden}">Image</th>
-          <th class="authorname col-xs-3">Author</th>
-          <th class="bookname col-xs-4">Latest Book</th>
-          <th class="date col-xs-1 text-center">Released</th>
-          <th class="have col-xs-3 text-center">Downloaded</th>
-          <th class="status col-xs-1 text-center">Status</th>
+          <th class="authorimg no-sort ${hidden}">Image</th>
+          <th class="authorname">Author</th>
+          <th class="bookname">Latest Book</th>
+          <th class="date text-center">Released</th>
+          <th class="have text-center">Downloaded</th>
+          <th class="status text-center">Status</th>
         </tr>
       </thead>
     </table>
@@ -104,7 +104,7 @@
                 "responsive": true,
                 "bAutoWidth": false,
                 "stateSave": true,
-                "order": [[ 1, 'asc']],
+                "order": [[ 2, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
                      { targets: [0], 'render': function(data, type, row) {
@@ -146,6 +146,7 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(0).addClass('text-center');
                     $('td', nRow).eq(4).addClass('text-center');
                     $('td', nRow).eq(5).addClass('text-center');
                     $('td', nRow).eq(6).addClass('text-center');
