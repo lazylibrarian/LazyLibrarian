@@ -237,7 +237,8 @@ class WebInterface(object):
                 filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
             else:
                 filtered = rows
-            sortcolumn = int(iSortCol_0)
+            sortcolumn = int(iSortCol_0) - 1
+
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
