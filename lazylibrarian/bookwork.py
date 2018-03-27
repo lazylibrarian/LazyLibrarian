@@ -12,6 +12,7 @@
 
 
 import os
+import re
 import shutil
 import time
 import traceback
@@ -24,7 +25,7 @@ from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented,
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
 # noinspection PyUnresolvedReferences
-from lib.six.moves.urllib_parse import quote_plus, urlencode
+from lib.six.moves.urllib_parse import quote_plus, quote, urlencode
 try:
     from lib.tinytag import TinyTag
 except ImportError:
@@ -1349,3 +1350,35 @@ def getAuthorImage(authorid=None):
     else:
         logger.debug("No author found for %s" % authorid)
     return None
+
+def isbn_from_words(words):
+    """Use Google to get an ISBN from words from title and author's name."""
+    baseurl = "http://www.google.com/search?q=ISBN+"
+    if not PY2:
+        search_url = baseurl + quote(words.replace(' ', '+'))
+    else:
+        search_url = baseurl + words.replace(' ', '+')
+
+    headers={'User-Agent': 'w3m/0.5.3',
+            'Content-Type': 'text/plain; charset="UTF-8"',
+            'Content-Transfer-Encoding': 'Quoted-Printable',
+            }
+    content, success = fetchURL(search_url, headers=headers)
+    RE_ISBN13 = re.compile(r'97[89]{1}(?:-?\d){10,16}|97[89]{1}[- 0-9]{10,16}')
+    RE_ISBN10 = re.compile(r'ISBN\x20(?=.{13}$)\d{1,5}([- ])\d{1,7}'
+                       r'\1\d{1,6}\1(\d|X)$|[- 0-9X]{10,16}')
+
+    # take the first answer that's a plain isbn, no spaces, dashes etc.
+    res = RE_ISBN13.findall(content)
+    for item in res:
+        if len(item) == 13:
+            return item
+    
+    res = RE_ISBN10.findall(content)
+    for item in res:
+        if len(item) == 10:
+            return item
+    
+    logger.debug('No ISBN found for %s', words)
+    return None
+    
