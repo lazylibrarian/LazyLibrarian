@@ -973,7 +973,7 @@ def calc_eta(secs):
     if eta < 120:
         return("%s minutes" % eta)
     else:
-        eta = int(eta / 3600) + (eta % 3600 > 0)
+        eta = int(secs / 3600) + (secs % 3600 > 0)
         return("%s hours" % eta)
 
 def db_v29(myDB, upgradelog):
@@ -1005,8 +1005,7 @@ def db_v29(myDB, upgradelog):
                 lazylibrarian.UPDATE_MSG = "Updating %s (%s books): eta %s" % (author['AuthorName'],
                                             author['TotalBooks'], calc_eta(secs))
                 addAuthorToDB(authorname=None, refresh=True, authorid=author['AuthorID'], addbooks=True)
-                res = myDB.match("SELECT totalbooks from authors where authorid=?", (author['AuthorID'],))
-                remaining_books -= res['totalbooks']
+                remaining_books -= author['TotalBooks']
                 remaining_authors -= 1
 
         members = myDB.select('SELECT BookID from member')
