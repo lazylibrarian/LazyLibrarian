@@ -13,7 +13,11 @@
   </div>
 </%def>
 <%def name="body()">
-<h1>${title}</h1>
+<h1>${title}
+    <div class="pull-right table_wrapper_button">
+      <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+    </div>
+</h1>
   <!-- ensure the browser sends form-submission data in the UTF-8 encoding,
        even if the user fiddles with the page encoding -->
   <form accept-charset="UTF-8" action="configUpdate" method="post">
@@ -2643,9 +2647,6 @@
     <!-- tabs content -->
     </div>
     <!-- tabs -->
-    <div class="table_wrapper_button">
-      <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-    </div>
     <p>&nbsp;</p>
     <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  :     Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}  :  Updated: ${config['updated']}<br>
     Current Version: ${lazylibrarian.CONFIG['CURRENT_VERSION']}  : Latest  Version:    ${lazylibrarian.CONFIG['LATEST_VERSION']}</p>
