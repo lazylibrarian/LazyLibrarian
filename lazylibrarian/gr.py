@@ -699,7 +699,7 @@ class GoodReads:
 
                                 serieslist = []
                                 if series:
-                                    serieslist = [('', seriesNum, cleanName(unaccented(series)))]
+                                    serieslist = [('', seriesNum, cleanName(unaccented(series), '&/'))]
                                 if lazylibrarian.CONFIG['ADD_SERIES']:
                                     newserieslist = getWorkSeries(workid)
                                     if newserieslist:
@@ -957,7 +957,7 @@ class GoodReads:
 
         serieslist = []
         if series:
-            serieslist = [('', seriesNum, cleanName(unaccented(series)))]
+            serieslist = [('', seriesNum, cleanName(unaccented(series), '&/'))]
         if lazylibrarian.CONFIG['ADD_SERIES']:
             newserieslist = getWorkSeries(workid)
             if newserieslist:
