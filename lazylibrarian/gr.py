@@ -21,13 +21,12 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
-    setSeries, setStatus
+    setSeries, setStatus, isbn_from_words
 from lazylibrarian.cache import gr_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
     cleanName, is_valid_isbn, formatAuthorName, check_int, makeUnicode
 from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
-from lib.isbnlib import isbn_from_words
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote, quote_plus, urlencode
