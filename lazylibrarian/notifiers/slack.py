@@ -36,7 +36,7 @@ class SlackNotifier:
 
         url = lazylibrarian.CONFIG['SLACK_URL']
         if not url.startswith("http"):
-            url = 'http://' + url
+            url = 'https://' + url
         if not url.endswith("/"):
             url = url + '/'
 
