@@ -282,7 +282,7 @@ def search_magazines(mags=None, reset=False):
                                     break
 
                         if not rejected:
-                            regex_pass, issuedate = get_issue_date(nzbtitle_exploded)
+                            regex_pass, issuedate, year = get_issue_date(nzbtitle_exploded)
                             if regex_pass:
                                 logger.debug('Issue %s (regex %s) for %s ' %
                                              (issuedate, regex_pass, nzbtitle_formatted))
@@ -334,13 +334,24 @@ def search_magazines(mags=None, reset=False):
                                 comp_date = datecompare(issuedate, control_date)
                             else:
                                 # invalid comparison of date and issue number
+                                retry_ok = False
                                 if re.match('\d+-\d\d-\d\d', str(control_date)):
-                                    logger.debug('Magazine %s failed: Expecting a date' % nzbtitle_formatted)
+                                    if regex_pass > 3 and year:
+                                        # we think it was an issue number, but could be a date
+                                        year = check_int(year, 0)
+                                        issuenum = check_int(issuedate, 0)
+                                        if year and issuenum >= 1 and issuenum <= 12:
+                                            issuedate = "%04d-%02d-01" % (year, issuenum)
+                                            comp_date = datecompare(issuedate, control_date)
+                                            retry_ok = True
+                                    if not retry_ok:
+                                        logger.debug('Magazine %s failed: Expecting a date' % nzbtitle_formatted)
                                 else:
                                     logger.debug('Magazine %s failed: Expecting issue number' % nzbtitle_formatted)
-                                bad_date += 1
-                                issuedate = "1970-01-01"  # this is our fake date for ones we can't decipher
-                                comp_date = 0
+                                if not retry_ok:
+                                    bad_date += 1
+                                    issuedate = "1970-01-01"  # this is our fake date for ones we can't decipher
+                                    comp_date = 0
 
                             if comp_date > 0:
                                 # keep track of what we're going to download so we don't download dupes
@@ -444,6 +455,7 @@ def search_magazines(mags=None, reset=False):
 def get_issue_date(nzbtitle_exploded):
     regex_pass = 0
     issuedate = ''
+    year = 0
     # Magazine names have many different styles of date
     # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
     # MonthName DD YYYY or MonthName DD, YYYY
@@ -528,6 +540,7 @@ def get_issue_date(nzbtitle_exploded):
                                 issuedate = '0'  # it's old
                             regex_pass = 4  # Issue/No/Nr/Vol nn, YYYY
                         else:
+                            year = 0
                             regex_pass = 5  # Issue/No/Nr/Vol nn
                         break
             pos += 1
@@ -569,8 +582,9 @@ def get_issue_date(nzbtitle_exploded):
             issue = nzbtitle_exploded[pos]
             if issue.isdigit() and len(issue) > 2 and issue[0] == '0':
                 issuedate = issue
+                year = 0
                 regex_pass = 8
                 break
             pos += 1
 
-    return regex_pass, issuedate
+    return regex_pass, issuedate, year
