@@ -111,12 +111,19 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
 
 def getTorrentFiles(torrentid):  # uses transmission id
     method = 'torrent-get'
-    arguments = {'fields': ['files']}
+    arguments = {'fields': ['id', 'percentdone', 'files']}
     retries = 3
     while retries:
         response = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
-            return response['arguments']['torrents'][0]['files']
+            tor = 0
+            while tor < len(response['arguments']['torrents']):
+                percentdone = response['arguments']['torrents'][tor]['files']
+                if percentdone:
+                    torid = response['arguments']['torrents'][tor]['id']
+                    if str(torid) == str(torrentid):
+                        return response['arguments']['torrents'][tor]['files']
+                tor += 1
         else:
             logger.debug('getTorrentFiles: No response from transmission')
             return ''
@@ -235,7 +242,6 @@ def torrentAction(method, arguments):
             return
 
         # Parse response
-        session_id = ''
         if response.status_code == 401:
             if auth:
                 logger.error("Username and/or password not accepted by Transmission")
@@ -255,7 +261,17 @@ def torrentAction(method, arguments):
     try:
         response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
                                  auth=auth, timeout=timeout)
-        response = response.json()
+        if response.status_code == 409:
+            session_id = response.headers['x-transmission-session-id']
+            logger.debug("Retrying with new session_id %s" % session_id)        
+            headers = {'x-transmission-session-id': session_id}
+            response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
+                                     auth=auth, timeout=timeout)
+        if not response.status_code.startswith('2'):
+            logger.error("Expected a response from Transmission, got %s" % response.status_code)
+            return
+        return response.json()
+
     except Exception as e:
         logger.error('Transmission %s: %s' % (type(e).__name__, str(e)))
         response = ''
