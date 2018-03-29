@@ -2198,7 +2198,7 @@ class WebInterface(object):
         elif redirect == "members":
             raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
         else:
-            raise cherrypy.HTTPRedirect("manage")
+            raise cherrypy.HTTPRedirect("manage?library=%s" % library)
 
     # WALL #########################################################
 
