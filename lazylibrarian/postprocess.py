@@ -463,6 +463,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                 for book in snatched:
                     book_type = bookType(book)
+                    matchtitle = unaccented_str(book['NZBtitle'])
                     matches = []
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
                     for fname in downloads:
@@ -585,14 +586,17 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             logger.debug('Skipping %s' % fname)
 
                     match = 0
+                    pp_path = ''
+                    book = {}
                     if matches:
                         highest = max(matches, key=lambda x: x[0])
                         match = highest[0]
                         pp_path = highest[1]
-                        book = highest[2]
+                        book = highest[2]  # type: dict
                     if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                         mostrecentissue = ''
-                        logger.debug('Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
+                        logger.debug('Found match (%s%%): %s for %s %s' % (
+                                     match, pp_path, book_type, book['NZBtitle']))
 
                         cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
                         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -683,6 +687,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                         if bookname:  # it's ebook or audiobook
                             processExtras(dest_file, global_name, book['BookID'], book_type)
+                            iss_id = 0
                         else:  # update mags
                             if mostrecentissue:
                                 if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
@@ -803,8 +808,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
-            if downloads:
-                ppcount += check_residual(download_dir)
+                if downloads:
+                    ppcount += check_residual(download_dir)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
@@ -908,12 +913,12 @@ def getTorrentName(title, source, downloadid):
         if source == 'TRANSMISSION':
             torrentname = transmission.getTorrentFolder(downloadid)
         elif source == 'QBITTORRENT':
-            torrentname = qbittorrent.getfiles(downloadid)
-        #elif source == 'UTORRENT':
+            torrentname = qbittorrent.getName(downloadid)
+        # elif source == 'UTORRENT':
         #    torrentname = utorrent.nameTorrent(downloadid)
-        #elif source == 'RTORRENT':
+        # elif source == 'RTORRENT':
         #    torrentname = rtorrent.getName(downloadid)
-        #elif source == 'SYNOLOGY_TOR':
+        # elif source == 'SYNOLOGY_TOR':
         #    torrentname = synology.getName(downloadid)
         elif source == 'DELUGEWEBUI':
             torrentname = deluge.getTorrentFolder(downloadid)
@@ -936,6 +941,7 @@ def getTorrentName(title, source, downloadid):
                      (source, downloadid, type(e).__name__, str(e)))
         return None
 
+
 def getTorrentFiles(title, source, downloadid):
     torrentfiles = None
     try:
@@ -946,8 +952,8 @@ def getTorrentFiles(title, source, downloadid):
         #     torrentname = utorrent.nameTorrent(downloadid)
         # elif source == 'RTORRENT':
         #     torrentname = rtorrent.getName(downloadid)
-        # elif source == 'QBITTORRENT':
-        #     torrentname = qbittorrent.getName(downloadid)
+        elif source == 'QBITTORRENT':
+            torrentfiles = qbittorrent.getFiles(downloadid)
         # elif source == 'SYNOLOGY_TOR':
         #     torrentname = synology.getName(downloadid)
         if source == 'DELUGEWEBUI':
