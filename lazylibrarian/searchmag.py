@@ -281,7 +281,9 @@ def search_magazines(mags=None, reset=False):
                                     logger.debug("Rejecting %s, contains %s" % (nzbtitle_formatted, word))
                                     break
 
-                        if not rejected:
+                        if rejected:
+                            rejects += 1
+                        else:
                             regex_pass, issuedate, year = get_issue_date(nzbtitle_exploded)
                             if regex_pass:
                                 logger.debug('Issue %s (regex %s) for %s ' %
@@ -293,9 +295,6 @@ def search_magazines(mags=None, reset=False):
                                 # so user can manually select them, incl those with issue numbers
                                 issuedate = "1970-01-01"  # provide a fake date for bad-date issues
 
-                        if rejected:
-                            rejects += 1
-                        else:
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped"
                             insert_table = "pastissues"
@@ -334,24 +333,22 @@ def search_magazines(mags=None, reset=False):
                                 comp_date = datecompare(issuedate, control_date)
                             else:
                                 # invalid comparison of date and issue number
-                                retry_ok = False
+                                comp_date = 0
                                 if re.match('\d+-\d\d-\d\d', str(control_date)):
                                     if regex_pass > 3 and year:
                                         # we think it was an issue number, but could be a date
                                         year = check_int(year, 0)
                                         issuenum = check_int(issuedate, 0)
-                                        if year and issuenum >= 1 and issuenum <= 12:
+                                        if year and 1 <= issuenum <= 12:
                                             issuedate = "%04d-%02d-01" % (year, issuenum)
                                             comp_date = datecompare(issuedate, control_date)
-                                            retry_ok = True
-                                    if not retry_ok:
+                                    if not comp_date:
                                         logger.debug('Magazine %s failed: Expecting a date' % nzbtitle_formatted)
                                 else:
                                     logger.debug('Magazine %s failed: Expecting issue number' % nzbtitle_formatted)
-                                if not retry_ok:
+                                if not comp_date:
                                     bad_date += 1
                                     issuedate = "1970-01-01"  # this is our fake date for ones we can't decipher
-                                    comp_date = 0
 
                             if comp_date > 0:
                                 # keep track of what we're going to download so we don't download dupes
