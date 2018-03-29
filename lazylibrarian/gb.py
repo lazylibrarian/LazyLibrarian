@@ -158,12 +158,12 @@ class GoogleBooks:
                                     booklang = book['lang']
                                     if booklang not in valid_langs:
                                         logger.debug(
-                                            'Skipped %s with language %s' % (bookname, booklang))
+                                            'Skipped %s with language %s' % (book['name'], booklang))
                                         ignored += 1
                                         continue
                                 except KeyError:
                                     ignored += 1
-                                    logger.debug('Skipped %s where no language is found' % bookname)
+                                    logger.debug('Skipped %s where no language is found' % book['name'])
                                     continue
 
                             if authorname:
@@ -403,14 +403,13 @@ class GoogleBooks:
                         locked = False
                         existing_book = None
                         bookname = book['name']
+                        bookid = item['id']
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
                             removedResults += 1
                             rejected = True
                         else:
                             bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
-                            bookid = item['id']
-
                             # GoodReads sometimes has multiple bookids for the same book (same author/title, different
                             # editions) and sometimes uses the same bookid if the book is the same but the title is
                             # slightly different. Not sure if googlebooks does too, but we only want one...

@@ -413,6 +413,7 @@ def magazineScan(title=None):
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                         magissuedate = None
                         magazineadded = None
+                        maglastacquired = None
                     else:
                         maglastacquired = mag_entry['LastAcquired']
                         magissuedate = mag_entry['IssueDate']
