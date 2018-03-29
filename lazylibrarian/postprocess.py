@@ -394,7 +394,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 torrentfiles = getTorrentFiles(matchtitle, book['Source'], book['DownloadID'])
                 # Downloaders return varying amounts of info using varying names
                 rejected = False
-                if torrentfiles:
+                if not torrentfiles:
+                    logger.debug("No torrent files returned by %s" % book['Source'])
+                else:
                     for entry in torrentfiles:
                         fname = ''
                         fsize = 0
@@ -406,6 +408,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             fsize = entry['length']
                         if 'name' in entry:  # transmission, qbittorrent
                             fname = entry['name']
+                        logger.debug("Checking %s: %s" % (fname, fsize))
                         extn = os.path.splitext(fname)[1].lstrip('.').lower()
                         if extn and extn in banned_extensions:
                             logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
@@ -587,7 +590,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                     match = 0
                     pp_path = ''
-                    book = {}
                     if matches:
                         highest = max(matches, key=lambda x: x[0])
                         match = highest[0]
@@ -956,7 +958,7 @@ def getTorrentFiles(title, source, downloadid):
             torrentfiles = qbittorrent.getFiles(downloadid)
         # elif source == 'SYNOLOGY_TOR':
         #     torrentname = synology.getName(downloadid)
-        if source == 'DELUGEWEBUI':
+        elif source == 'DELUGEWEBUI':
             torrentfiles = deluge.getTorrentFiles(downloadid)
         elif source == 'DELUGERPC':
             client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
