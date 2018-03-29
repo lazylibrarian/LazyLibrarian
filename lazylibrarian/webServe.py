@@ -209,8 +209,7 @@ class WebInterface(object):
                     percent = 0
                 if percent > 100:
                     percent = 100
-                if percent <= 100:
-                    css = 'success'
+                css = 'success'
                 if percent <= 75:
                     css = 'info'
                 if percent <= 50:
@@ -799,7 +798,7 @@ class WebInterface(object):
     @cherrypy.expose
     def config(self):
         self.label_thread('CONFIG')
-        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'interfaces')
+        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.path.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']

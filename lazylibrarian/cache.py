@@ -142,7 +142,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
     myhash = md5_utf8(url)
     valid_cache = False
     source = None
-    hashfilename = cacheLocation + os.sep + myhash + "." + cache.lower()
+    hashfilename = cacheLocation + os.path.sep + myhash + "." + cache.lower()
     expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
 
     if useCache and os.path.isfile(hashfilename):

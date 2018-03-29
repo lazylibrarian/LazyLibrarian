@@ -817,7 +817,7 @@ def cleanCache():
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
-                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                    imgid = cached_file.split('.')[0].rsplit(os.path.sep)[-1]
                 except IndexError:
                     logger.error('Clean Cache: Error splitting %s' % cached_file)
                     continue
@@ -835,7 +835,7 @@ def cleanCache():
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
-                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                    imgid = cached_file.split('.')[0].rsplit(os.path.sep)[-1]
                 except IndexError:
                     logger.error('Clean Cache: Error splitting %s' % cached_file)
                     continue

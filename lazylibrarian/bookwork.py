@@ -1365,6 +1365,7 @@ def isbn_from_words(words):
                'Content-Transfer-Encoding': 'Quoted-Printable',
                }
     content, success = fetchURL(search_url, headers=headers)
+    # noinspection Annotator
     RE_ISBN13 = re.compile(r'97[89]{1}(?:-?\d){10,16}|97[89]{1}[- 0-9]{10,16}')
     RE_ISBN10 = re.compile(r'ISBN\x20(?=.{13}$)\d{1,5}([- ])\d{1,7}'
                            r'\1\d{1,6}\1(\d|X)$|[- 0-9X]{10,16}')
