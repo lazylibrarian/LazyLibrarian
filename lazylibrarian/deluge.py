@@ -155,6 +155,15 @@ def addTorrent(link, data=None):
 
 def getTorrentFolder(torrentid):
     logger.debug('Deluge: Get torrent folder name')
+    return getTorrentStatus(torrentid, "name")
+
+
+def getTorrentFiles(torrentid):
+    logger.debug('Deluge: Get torrent files')
+    return getTorrentStatus(torrentid, "files")
+
+
+def getTorrentStatus(torrentid, data):
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -176,13 +185,14 @@ def getTorrentFolder(torrentid):
         post_json = {"method": "web.get_torrent_status",
                      "params": [torrentid,
                                 [
-                                    "name",
-                                    "save_path",
-                                    "total_size",
-                                    "num_files",
-                                    "message",
-                                    "tracker",
-                                    "comment"
+                                    data
+                                    # "save_path",
+                                    # "total_size",
+                                    # "num_files",
+                                    # "files",
+                                    # "message",
+                                    # "tracker",
+                                    # "comment"
                                 ]
                                 ],
                      "id": 23}
@@ -190,11 +200,11 @@ def getTorrentFolder(torrentid):
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
 
-        name = response.json()['result']['name']
+        res = response.json()['result'][data]
 
-        return name
+        return res
     except Exception as err:
-        logger.debug('Deluge %s: Could not get torrent folder name: %s' % (type(err).__name__, str(err)))
+        logger.debug('Deluge %s: Could not get torrent folder %s: %s' % (data, type(err).__name__, str(err)))
 
 
 def removeTorrent(torrentid, remove_data=False):

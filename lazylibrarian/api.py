@@ -521,7 +521,7 @@ class Api(object):
         # remove extra spaces if they're in a row
         name_formatted = " ".join(name_formatted.split())
         name_exploded = name_formatted.split(' ')
-        regex_pass, issuedate = get_issue_date(name_exploded)
+        regex_pass, issuedate, _ = get_issue_date(name_exploded)
         if regex_pass:
             if int(regex_pass) > 3:  # it's an issue number
                 if issuedate.isdigit():

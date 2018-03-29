@@ -109,6 +109,25 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
     return ''
 
 
+def getTorrentFiles(torrentid):  # uses transmission id
+    method = 'torrent-get'
+    arguments = {'fields': ['files']}
+    retries = 3
+    while retries:
+        response = torrentAction(method, arguments)  # type: dict
+        if response and len(response['arguments']['torrents']):
+            return response['arguments']['torrents'][0]['files']
+        else:
+            logger.debug('getTorrentFiles: No response from transmission')
+            return ''
+
+        retries -= 1
+        if retries:
+            time.sleep(5)
+
+    return ''
+
+
 def setSeedRatio(torrentid, ratio):
     method = 'torrent-set'
     if ratio != 0:
