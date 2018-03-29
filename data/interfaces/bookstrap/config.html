@@ -13,14 +13,14 @@
   </div>
 </%def>
 <%def name="body()">
+  <!-- ensure the browser sends form-submission data in the UTF-8 encoding,
+       even if the user fiddles with the page encoding -->
+  <form accept-charset="UTF-8" action="configUpdate" method="post">
 <h1>${title}
     <div class="pull-right table_wrapper_button">
       <input type="submit" value="Save changes" id="add" class="btn btn-primary">
     </div>
 </h1>
-  <!-- ensure the browser sends form-submission data in the UTF-8 encoding,
-       even if the user fiddles with the page encoding -->
-  <form accept-charset="UTF-8" action="configUpdate" method="post">
     <div role="tab-table" class="hidden">
       <!-- if the browser is IE and the user switched the page encoding, force utf8 by adding
       a hidden input to the form with a value such as &#x2713; which can only be from the Unicode charset-->
