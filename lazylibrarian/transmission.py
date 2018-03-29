@@ -109,21 +109,14 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
     return ''
 
 
-def getTorrentFiles(torrentid):  # uses transmission id
+def getTorrentFiles(torrentid):  # uses hashid
     method = 'torrent-get'
-    arguments = {'fields': ['id', 'percentdone', 'files']}
+    arguments = {'ids': [torrentid], 'fields': ['id', 'files']}
     retries = 3
     while retries:
         response = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
-            tor = 0
-            while tor < len(response['arguments']['torrents']):
-                percentdone = response['arguments']['torrents'][tor]['files']
-                if percentdone:
-                    torid = response['arguments']['torrents'][tor]['id']
-                    if str(torid) == str(torrentid):
-                        return response['arguments']['torrents'][tor]['files']
-                tor += 1
+            return response['arguments']['torrents'][0]['files']
         else:
             logger.debug('getTorrentFiles: No response from transmission')
             return ''
@@ -263,11 +256,11 @@ def torrentAction(method, arguments):
                                  auth=auth, timeout=timeout)
         if response.status_code == 409:
             session_id = response.headers['x-transmission-session-id']
-            logger.debug("Retrying with new session_id %s" % session_id)        
+            logger.debug("Retrying with new session_id %s" % session_id)
             headers = {'x-transmission-session-id': session_id}
             response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
                                      auth=auth, timeout=timeout)
-        if not response.status_code.startswith('2'):
+        if not str(response.status_code).startswith('2'):
             logger.error("Expected a response from Transmission, got %s" % response.status_code)
             return
         return response.json()
