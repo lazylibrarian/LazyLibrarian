@@ -115,8 +115,9 @@ def getTorrentFiles(torrentid):  # uses hashid
     retries = 3
     while retries:
         response = torrentAction(method, arguments)  # type: dict
-        if response and len(response['arguments']['torrents']):
-            return response['arguments']['torrents'][0]['files']
+        if response:
+            if len(response['arguments']['torrents'][0]['files']):
+                return response['arguments']['torrents'][0]['files']
         else:
             logger.debug('getTorrentFiles: No response from transmission')
             return ''

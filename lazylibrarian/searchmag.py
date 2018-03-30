@@ -296,7 +296,7 @@ def search_magazines(mags=None, reset=False):
                             # wanted issues go into wanted table marked "Wanted"
                             #  the rest into pastissues table marked "Skipped" or "Have"
                             insert_table = "pastissues"
-
+                            comp_date = 0
                             control_date = results['IssueDate']
                             if control_date is None:  # we haven't got any copies of this magazine yet
                                 # get a rough time just over MAX_AGE days ago to compare to, in format yyyy-mm-dd
@@ -399,7 +399,7 @@ def search_magazines(mags=None, reset=False):
                                 if insert_table == 'pastissues':
                                     # try to mark ones we've already got
                                     match = myDB.match("SELECT * from issues WHERE Title=? AND IssueDate=?",
-                                                        (bookid, issuedate))
+                                                       (bookid, issuedate))
                                     if match:
                                         insert_status = "Have"
                                     else:

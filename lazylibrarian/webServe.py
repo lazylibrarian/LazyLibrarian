@@ -2015,10 +2015,10 @@ class WebInterface(object):
 
                 series_changed = False
                 for item in old_list:
-                    if item[1:2] not in [i[1:2] for i in new_list]:
+                    if item[1:] not in [i[1:] for i in new_list]:
                         series_changed = True
                 for item in new_list:
-                    if item[1:2] not in [i[1:2] for i in old_list]:
+                    if item[1:] not in [i[1:] for i in old_list]:
                         series_changed = True
                 if series_changed:
                     setSeries(new_list, bookid)
