@@ -1399,7 +1399,7 @@ def shutdown(restart=False, update=False):
         try:
             if versioncheck.update():
                 logmsg('info', 'Lazylibrarian version updated')
-                config_write('Git')
+                config_write()
         except Exception as e:
             logmsg('warn', 'LazyLibrarian failed to update: %s %s. Restarting.' % (type(e).__name__, str(e)))
 
