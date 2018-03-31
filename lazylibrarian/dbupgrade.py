@@ -967,25 +967,24 @@ def db_v28(myDB, upgradelog):
     upgradelog.write("%s v28: complete\n" % time.ctime())
 
 
-def calc_eta(start_time, start_count, remaining):
-    now = time.time()
-    percent_done = (start_count - remaining) * 100 / remaining
+def calc_eta(start_time, start_count, done):
+    percent_done = done * 100 / start_count
     if not percent_done:
-        secs_left = remaining * 1.5
+        secs_left = start_count * 1.5
     else:
-        time_elapsed = now - start_time
+        time_elapsed = time.time() - start_time
         secs_per_percent = time_elapsed / percent_done
         percent_left = 100 - percent_done
         secs_left = percent_left * secs_per_percent
 
     eta = int(secs_left / 60) + (secs_left % 60 > 0)
     if eta < 2:
-        return "%s minute" % eta
+        return "Completed %s%% eta %s minute" % (int(percent_done), eta)
     if eta < 120:
-        return "%s minutes" % eta
+        return "Completed %s%% eta %s minutes" % (int(percent_done), eta)
     else:
         eta = int(secs_left / 3600) + (secs_left % 3600 > 0)
-        return "%s hours" % eta
+        return "Completed %s%% eta %s hours" % (int(percent_done), eta)
 
 
 def db_v29(myDB, upgradelog):
@@ -1006,21 +1005,20 @@ def db_v29(myDB, upgradelog):
         tot = len(authors)
         if tot:
             upgradelog.write("%s v29: Upgrading %s authors, %s books\n" % (time.ctime(), tot, books['total']))
-            start_count = int(books['total']) + len(authors)
+            start_count = int(books['total']) + tot
             start_time = time.time()
-            remaining = start_count
+            entries_done = 0
             myDB.action('DELETE FROM seriesauthors')
             cnt = 0
             for author in authors:
                 cnt += 1
-                lazylibrarian.UPDATE_MSG = "Updating %s (%s books): eta %s" % (author['AuthorName'],
-                                                                               author['TotalBooks'],
-                                                                               calc_eta(start_time,
-                                                                                        start_count,
-                                                                                        remaining))
+                expected_books = author['TotalBooks']
+                lazylibrarian.UPDATE_MSG = "Updating %s (%s books): %s" % (author['AuthorName'], expected_books,
+                                                                           calc_eta(start_time, start_count,
+                                                                                    entries_done))
                 addAuthorToDB(authorname=None, refresh=True, authorid=author['AuthorID'], addbooks=True)
-                remaining -= author['TotalBooks']
-                remaining -= 1   # one less author
+                entries_done += expected_books  # may have extra books now, don't overcount
+                entries_done += 1   # one less author
 
         members = myDB.select('SELECT BookID from member')
         tot = len(members)
