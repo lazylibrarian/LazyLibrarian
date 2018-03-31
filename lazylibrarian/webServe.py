@@ -2137,8 +2137,9 @@ class WebInterface(object):
                                             logger.info('eBook %s deleted from disc' % bookname)
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
-                                                if calibreid.endswith(b')'):
-                                                    calibreid = calibreid.rsplit(b'(', 1)[1].split(b')')[0]
+                                                if calibreid.endswith(')'):
+                                                    # noinspection PyTypeChecker
+                                                    calibreid = calibreid.rsplit('(', 1)[1].split(')')[0]
                                                     if not calibreid or not calibreid.isdigit():
                                                         calibreid = None
                                                 else:
