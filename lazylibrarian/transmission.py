@@ -264,7 +264,11 @@ def torrentAction(method, arguments):
         if not str(response.status_code).startswith('2'):
             logger.error("Expected a response from Transmission, got %s" % response.status_code)
             return
-        return response.json()
+        try:
+            return response.json()
+        except ValueError:
+            logger.error("Expected json, Transmission returned %s" % response.text)
+            return
 
     except Exception as e:
         logger.error('Transmission %s: %s' % (type(e).__name__, str(e)))
