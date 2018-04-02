@@ -1720,6 +1720,18 @@
                   </div>
                   <div class="checkbox">
                     <%
+                        if lazylibrarian.CONFIG['MAG_RENAME'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="mag_rename" class="control-label">
+                      <input type="checkbox" id="mag_rename" name="mag_rename" value="1" ${checked} />
+                      Rename existing magazines on libraryscan</label>
+                    <span class="help-block">This renames existing files to match Magazine Filename Pattern</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
                         if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
                             checked = 'checked="checked"'
                         else:

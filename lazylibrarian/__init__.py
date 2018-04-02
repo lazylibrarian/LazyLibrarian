@@ -155,7 +155,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
-                     'BANNED_EXT']
+                     'BANNED_EXT', 'MAG_RENAME']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -222,6 +222,7 @@ CONFIG_DEFINITIONS = {
     'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_RENAME': ('bool', 'General', 0),
+    'MAG_RENAME': ('bool', 'General', 0),
     'IMP_MAGOPF': ('bool', 'General', 1),
     'IMP_CONVERT': ('str', 'General', ''),
     'GIT_PROGRAM': ('str', 'General', ''),

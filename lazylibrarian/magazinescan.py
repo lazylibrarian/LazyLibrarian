@@ -31,7 +31,7 @@ except ImportError:
 
 from lazylibrarian import database, logger
 from lazylibrarian.common import setperm
-from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr, replace_all
 
 
 def create_covers(refresh=False):
@@ -348,8 +348,7 @@ def magazineScan(title=None):
         match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
         title_pattern = re.compile(match, re.VERBOSE)
-        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
-            "\\$\\T\\i\\t\\l\\e", "") + '\.[' + booktypes + ']'
+        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
         date_pattern = re.compile(match, re.VERBOSE)
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
@@ -361,6 +360,7 @@ def magazineScan(title=None):
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
                     issuedate = ''
+                    title = ''
                     # noinspection PyBroadException
                     try:
                         match = title_pattern.match(fname)
@@ -381,16 +381,42 @@ def magazineScan(title=None):
                                 title = os.path.basename(rootdir)
                             else:
                                 logger.debug("Pattern match failed for [%s]" % fname)
-                                continue
                         except Exception as e:
-                            logger.warn("Invalid name format for [%s] %s %s" % (fname, type(e).__name__, str(e)))
-                            continue
+                            match = False
 
-                    logger.debug("Found %s Issue %s" % (title, fname))
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
+                    exploded = replace_all(fname, dic).strip()
+                    # remove extra spaces if they're in a row
+                    exploded = " ".join(exploded.split())
+                    exploded = exploded.split(' ')
+                    regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
+                    if not match and not regex_pass:
+                        logger.warn("Invalid name format for [%s] %s %s" % (fname, type(e).__name__, str(e)))
+                        continue
 
+                    if not title:
+                        title = os.path.basename(rootdir)
+                    if regex_pass:
+                        extn = os.path.splitext(fname)[1]
+                        newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
+                                                                                 '$Title', title).replace(
+                                                                                 '$IssueDate', issuedate)
+                        newfname = newfname + extn
+
+                    logger.debug("Found %s Issue %s" % (title, issuedate))
                     issuefile = os.path.join(rootdir, fname)  # full path to issue.pdf
                     mtime = os.path.getmtime(issuefile)
                     iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+                    if newfname != fname:
+                        logger.debug("Rename %s -> %s" % (fname, newfname))
+                        newissuefile = os.path.join(rootdir, newfname)
+                        shutil.move(issuefile, newissuefile)
+                        if os.path.exists(issuefile.replace(extn, '.jpg')):
+                            shutil.move(issuefile.replace(extn, '.jpg'), newissuefile.replace(extn, '.jpg'))
+                        if os.path.exists(issuefile.replace(extn, '.opf')):
+                            shutil.move(issuefile.replace(extn, '.opf'), newissuefile.replace(extn, '.opf'))
+                        issuefile = newissuefile
 
                     controlValueDict = {"Title": title}
 
@@ -425,9 +451,9 @@ def magazineScan(title=None):
                     # is this issue already in the database?
                     controlValueDict = {"Title": title, "IssueDate": issuedate}
                     issue_id = create_id("%s %s" % (title, issuedate))
-                    iss_entry = myDB.match('SELECT Title from issues WHERE Title=? and IssueDate=?',
+                    iss_entry = myDB.match('SELECT Title,IssueFile from issues WHERE Title=? and IssueDate=?',
                                            (title, issuedate))
-                    if not iss_entry:
+                    if not iss_entry or iss_entry['IssueFile'] != issuefile:
                         newValueDict = {
                             "IssueAcquired": iss_acquired,
                             "IssueID": issue_id,
