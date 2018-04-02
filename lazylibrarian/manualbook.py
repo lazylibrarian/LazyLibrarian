@@ -129,7 +129,7 @@ def searchItem(item=None, bookid=None, cat=None):
             score -= abs(words)
             if score >= 40:  # ignore wildly wrong results?
                 result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
-                          'url': quote_plus(url), 'mode': mode}
+                          'url': quote_plus(url.encode('utf-8')), 'mode': mode}
 
                 searchresults.append(result)
 
