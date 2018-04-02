@@ -395,8 +395,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # Downloaders return varying amounts of info using varying names
                 rejected = False
                 if not torrentfiles:
-                    logger.debug("No torrent files returned by %s" % book['Source'])
+                    logger.debug("No torrent files returned by %s for %s" % (book['Source'], matchtitle))
                 else:
+                    logger.debug("Checking files in %s" % matchtitle)
                     for entry in torrentfiles:
                         fname = ''
                         fsize = 0
@@ -408,7 +409,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             fsize = entry['length']
                         if 'name' in entry:  # transmission, qbittorrent
                             fname = entry['name']
-                        logger.debug("Checking %s: %s" % (fname, fsize))
                         extn = os.path.splitext(fname)[1].lstrip('.').lower()
                         if extn and extn in banned_extensions:
                             logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
@@ -423,7 +423,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
                                 elif 'K' in str(fsize):
                                     fsize = int(float(fsize.split('K')[0].strip() * 1024))
-                                fsize = check_int(fsize, 0) / 1048576  # in Mb
+                                fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
                             except ValueError:
                                 fsize = 0
                             if fsize:
@@ -435,6 +435,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
                                     rejected = True
                                     break
+                        if not rejected:
+                            logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
 
                 if rejected:
                     # change status to "Failed", and ask downloader to delete task and files
@@ -911,7 +913,7 @@ def check_residual(download_dir):
 def getTorrentName(title, source, downloadid):
     torrentname = None
     try:
-        logger.debug("%s was sent to %s" % (title, source))
+        logger.debug("getTorrentName: %s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
             torrentname = transmission.getTorrentFolder(downloadid)
         elif source == 'QBITTORRENT':
@@ -947,7 +949,7 @@ def getTorrentName(title, source, downloadid):
 def getTorrentFiles(title, source, downloadid):
     torrentfiles = None
     try:
-        logger.debug("%s was sent to %s" % (title, source))
+        logger.debug("getTorrentFiles: %s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
             torrentfiles = transmission.getTorrentFiles(downloadid)
         # elif source == 'UTORRENT':
