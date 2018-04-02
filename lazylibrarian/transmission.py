@@ -265,17 +265,12 @@ def torrentAction(method, arguments):
             logger.error("Expected a response from Transmission, got %s" % response.status_code)
             return
         try:
-            return response.json()
+            res = response.json()
         except ValueError:
             logger.error("Expected json, Transmission returned %s" % response.text)
-            return
+            res = ''
+        return res
 
     except Exception as e:
         logger.error('Transmission %s: %s' % (type(e).__name__, str(e)))
-        response = ''
-
-    if not response:
-        logger.error("Error sending torrent to Transmission")
         return
-
-    return response
