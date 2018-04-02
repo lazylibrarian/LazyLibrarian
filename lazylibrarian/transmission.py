@@ -32,9 +32,12 @@ session_id = None
 host_url = None
 
 
-def addTorrent(link, directory=None):
+def addTorrent(link, directory=None, metainfo=None):
     method = 'torrent-add'
-    arguments = {'filename': link}
+    if metainfo:
+        arguments = {'metainfo': metainfo}
+    else:
+        arguments = {'filename': link}
     if not directory:
         directory = lazylibrarian.CONFIG['TRANSMISSION_DIR']
     if directory:
