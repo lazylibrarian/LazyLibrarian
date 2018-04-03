@@ -369,46 +369,51 @@ def magazineScan(title=None):
                             title = match.group("title")
                             match = True
                         else:
-                            match = False
+                            logger.debug("Title pattern match failed for [%s]" % fname)
                     except Exception:
                         match = False
 
                     if not match:
+                        # noinspection PyBroadException
                         try:
                             match = date_pattern.match(fname)
                             if match:
                                 issuedate = match.group("issuedate")
                                 title = os.path.basename(rootdir)
+                                match = True
                             else:
-                                logger.debug("Pattern match failed for [%s]" % fname)
-                        except Exception as e:
+                                logger.debug("Date pattern match failed for [%s]" % fname)
+                        except Exception:
                             match = False
 
-                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
-                    exploded = replace_all(fname, dic).strip()
-                    # remove extra spaces if they're in a row
-                    exploded = " ".join(exploded.split())
-                    exploded = exploded.split(' ')
-                    regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
-                    if not match and not regex_pass:
-                        logger.warn("Invalid name format for [%s] %s %s" % (fname, type(e).__name__, str(e)))
+                    if not match:
+                        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
+                        exploded = replace_all(fname, dic).strip()
+                        # remove extra spaces if they're in a row
+                        exploded = " ".join(exploded.split())
+                        exploded = exploded.split(' ')
+                        regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
+                        title = os.path.basename(rootdir)
+                        if regex_pass:
+                            match = True
+                        else:
+                            logger.debug("Issue Date failed for [%s]" % fname)
+
+                    if not match:
+                        logger.warn("Invalid name format for [%s]" % fname)
                         continue
 
-                    if not title:
-                        title = os.path.basename(rootdir)
-                    if regex_pass:
-                        extn = os.path.splitext(fname)[1]
-                        newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
-                                                                                 '$Title', title).replace(
-                                                                                 '$IssueDate', issuedate)
-                        newfname = newfname + extn
+                    extn = os.path.splitext(fname)[1]
+                    newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$Title', title).replace(
+                                                                             '$IssueDate', issuedate)
+                    newfname = newfname + extn
 
                     logger.debug("Found %s Issue %s" % (title, issuedate))
                     issuefile = os.path.join(rootdir, fname)  # full path to issue.pdf
                     mtime = os.path.getmtime(issuefile)
                     iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                    if newfname != fname:
+                    if newfname and newfname != fname:
                         logger.debug("Rename %s -> %s" % (fname, newfname))
                         newissuefile = os.path.join(rootdir, newfname)
                         shutil.move(issuefile, newissuefile)
@@ -449,21 +454,26 @@ def magazineScan(title=None):
                     issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
 
                     # is this issue already in the database?
-                    controlValueDict = {"Title": title, "IssueDate": issuedate}
                     issue_id = create_id("%s %s" % (title, issuedate))
                     iss_entry = myDB.match('SELECT Title,IssueFile from issues WHERE Title=? and IssueDate=?',
                                            (title, issuedate))
+                    new_opf = False
                     if not iss_entry or iss_entry['IssueFile'] != issuefile:
+                        new_opf = True  # new entry or name changed
+                        if not iss_entry:
+                            logger.debug("Adding issue %s %s" % (title, issuedate))
+                        else:
+                            logger.debug("Updating issue %s %s" % (title, issuedate))
+                        controlValueDict = {"Title": title, "IssueDate": issuedate}
                         newValueDict = {
                             "IssueAcquired": iss_acquired,
                             "IssueID": issue_id,
                             "IssueFile": issuefile
                         }
                         myDB.upsert("Issues", newValueDict, controlValueDict)
-                        logger.debug("Adding issue %s %s" % (title, issuedate))
 
                     create_cover(issuefile)
-                    lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id)
+                    lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id, overwrite=new_opf)
 
                     # see if this issues date values are useful
                     controlValueDict = {"Title": title}

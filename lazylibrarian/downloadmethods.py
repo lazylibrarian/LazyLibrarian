@@ -288,7 +288,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         if torrent.startswith('magnet'):
             status = qbittorrent.addTorrent(torrent, hashid)
         elif torrent:
-            downloadID = qbittorrent.addFile(b64encode(torrent))
+            status = qbittorrent.addFile(b64encode(torrent))
         else:
             status = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
         if status:
@@ -346,7 +346,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 elif torrent.startswith('magnet'):
                     downloadID = client.call('core.add_torrent_magnet', torrent, args)
                 elif torrent:
-                    downloadID = client.call('core.add_torrent_file', tor_name, b64encode(torrent), args)
+                    downloadID = client.call('core.add_torrent_file', tor_title, b64encode(torrent), args)
                 else:
                     downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:

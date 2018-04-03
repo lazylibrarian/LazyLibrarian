@@ -1539,7 +1539,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
         return
 
 
-def processMAGOPF(issuefile, title, issue, issueID):
+def processMAGOPF(issuefile, title, issue, issueID, overwrite=False):
     """ Needs calibre to be configured to read metadata from file contents, not filename """
     if not lazylibrarian.CONFIG['IMP_MAGOPF']:
         return
@@ -1573,7 +1573,7 @@ def processMAGOPF(issuefile, title, issue, issueID):
         'Series_index': issue
     }  # type: dict
     # noinspection PyTypeChecker
-    _ = processOPF(dest_path, data, global_name, overwrite=True)
+    _ = processOPF(dest_path, data, global_name, overwrite=overwrite)
 
 
 def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):

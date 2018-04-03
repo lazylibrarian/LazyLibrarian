@@ -333,7 +333,7 @@ def get_capabilities(provider, force=False):
                         if magsubs:
                             provider['MAGCAT'] = magsubs
             logger.info("Categories: Books %s : Mags %s : Audio %s : BookSearch '%s'" %
-                         (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT'], provider['BOOKSEARCH']))
+                        (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT'], provider['BOOKSEARCH']))
             provider['UPDATED'] = today()
             lazylibrarian.config_write(provider['NAME'])
     return provider
