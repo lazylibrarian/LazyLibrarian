@@ -291,7 +291,7 @@ class WebInterface(object):
         if cookie and 'll_uid' in list(cookie.keys()):
             userid = cookie['ll_uid'].value
             myDB = database.DBConnection()
-            user = myDB.match('SELECT UserName,Name,Email,Password from users where UserID=?', (userid,))
+            user = myDB.match('SELECT UserName,Name,Email,Password,BookType from users where UserID=?', (userid,))
             if user:
                 if kwargs['username'] and user['UserName'] != kwargs['username']:
                     # if username changed, must not have same username as another user
@@ -309,6 +309,10 @@ class WebInterface(object):
                 if kwargs['email'] and user['Email'] != kwargs['email']:
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
+
+                if kwargs['booktype'] and user['BookType'] != kwargs['booktype']:
+                    changes += ' BookType'
+                    myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
 
                 if kwargs['password']:
                     pwd = md5_utf8(kwargs['password'])
@@ -417,7 +421,8 @@ class WebInterface(object):
         self.label_thread('USERADMIN')
         myDB = database.DBConnection()
         title = "Manage User Accounts"
-        users = myDB.select('SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead from users')
+        cmd = 'SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead, BookType from users'
+        users = myDB.select(cmd)
         return serve_template(templatename="users.html", title=title, users=users)
 
     @cherrypy.expose
@@ -447,9 +452,13 @@ class WebInterface(object):
         myDB = database.DBConnection()
         match = myDB.match('SELECT * from users where UserName=?', (kwargs['user'],))
         if match:
-            return simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
-                                    'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead']})
-        return simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': ''})
+            res = simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
+                                    'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead'],
+                                    'booktype': match['BookType']})
+        else:
+            res = simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': '',
+                                    'booktype': ''})
+        return res
 
     @cherrypy.expose
     def admin_users(self, **kwargs):
@@ -520,8 +529,10 @@ class WebInterface(object):
                     return "Username already exists"
 
             changes = ''
-            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead from users where UserName=?'
+            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead,BookType'
+            cmd += ' from users where UserName=?'
             details = myDB.match(cmd, (user,))
+
             if details:
                 userid = details['UserID']
                 if kwargs['username'] and kwargs['username'] != user:
@@ -551,7 +562,11 @@ class WebInterface(object):
                 if kwargs['caltoread'] and details['CalibreToRead'] != kwargs['caltoread']:
                     changes += ' CalibreToRead'
                     myDB.action('UPDATE users SET CalibreToRead=? WHERE UserID=?', (kwargs['caltoread'], userid))
-
+                
+                if kwargs['booktype'] and details['BookType'] != kwargs['booktype']:
+                    changes += ' BookType'
+                    myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
+                
                 if changes:
                     return 'Updated user details:%s' % changes
             return "No changes made"
@@ -1737,13 +1752,17 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
+            preftype = ''
         else:
             perm = 0
+            preftype = ''
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in list(cookie.keys()):
-                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+                res = myDB.match('SELECT UserName,Perms,BookType from users where UserID=?', 
+                                 (cookie['ll_uid'].value,))
                 if res:
                     perm = check_int(res['Perms'], 0)
+                    preftype = res['BookType']
 
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -1763,6 +1782,16 @@ class WebInterface(object):
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]
                     if bookfile and os.path.isfile(bookfile):
+                        basename, extn = os.path.splitext(bookfile)
+                        types = []
+                        for item in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
+                            target = basename + '.' + item
+                            if os.path.isfile(target):
+                                types.append(item)
+
+                        if preftype and preftype in types:
+                            bookfile = basename + '.' + preftype
+                            
                         logger.debug('Opening %s %s' % (library, bookfile))
                         return serve_file(bookfile, self.mimetype(bookfile), "attachment")
 

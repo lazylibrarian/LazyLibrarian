@@ -75,8 +75,9 @@ def upgrade_needed():
     # 27 add indexes for book/author/wanted status
     # 28 add CalibreRead and CalibreToRead columns to user table
     # 29 add goodreads workid to books table
+    # 30 add BookType to users table
 
-    db_current_version = 29
+    db_current_version = 30
 
     if db_version < db_current_version:
         return db_current_version
@@ -162,7 +163,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
                                 Password TEXT, Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, \
-                                CalibreRead TEXT, CalibreToRead TEXT)')
+                                CalibreRead TEXT, CalibreToRead TEXT), BookType TEXT')
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Perms) VALUES (?, ?, ?, ?, ?)'
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin', md5_utf8('admin'), 65535))
                     logger.debug('Added admin user')
@@ -332,8 +333,8 @@ def dbupgrade(db_current_version):
 
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
-                                    db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29
-                                    ]
+                                    db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29,
+                                    db_v30]
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index + 2 > db_version:
                         upgrade_function(myDB, upgradelog)
@@ -1032,3 +1033,11 @@ def db_v29(myDB, upgradelog):
                 if res:
                     myDB.action('UPDATE member SET WorkID=? WHERE BookID=?', (res['WorkID'], member['BookID']))
     upgradelog.write("%s v29: complete\n" % time.ctime())
+
+
+def db_v30(myDB, upgradelog):
+    if not has_column(myDB, "users", "BookType"):
+        lazylibrarian.UPDATE_MSG = 'Adding BookType to Users table'
+        upgradelog.write("%s v30: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE users ADD COLUMN BookType TEXT')
+    upgradelog.write("%s v30: complete\n" % time.ctime())
