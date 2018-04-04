@@ -565,6 +565,7 @@ def logHeader():
     header = "Startup cmd: %s\n" % str(popen_list)
     header += 'Interface: %s\n' % lazylibrarian.CONFIG['HTTP_LOOK']
     header += 'Loglevel: %s\n' % lazylibrarian.LOGLEVEL
+    header += 'Sys_Encoding: %s\n' % lazylibrarian.SYS_ENCODING
     for item in lazylibrarian.CONFIG_GIT:
         header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
