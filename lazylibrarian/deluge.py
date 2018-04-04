@@ -20,7 +20,6 @@
 
 from __future__ import unicode_literals
 
-import json
 import os
 import re
 import time
@@ -36,7 +35,6 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
 from lazylibrarian.common import setperm
-from lib.six import PY2
 
 delugeweb_auth = {}
 delugeweb_url = ''
@@ -157,57 +155,56 @@ def addTorrent(link, data=None):
 
 def getTorrentFolder(torrentid):
     logger.debug('Deluge: Get torrent folder name')
+    return getTorrentStatus(torrentid, "name")
+
+
+def getTorrentFiles(torrentid):
+    logger.debug('Deluge: Get torrent files')
+    return getTorrentStatus(torrentid, "files")
+
+
+def getTorrentStatus(torrentid, data):
     if not any(delugeweb_auth):
         _get_auth()
 
     try:
-        post_data = json.dumps({"method": "web.get_torrent_status",
-                                "params": [
-                                    torrentid,
-                                    ["total_done"]
-                                ],
-                                "id": 22})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_json = {"method": "web.get_torrent_status", "params": [torrentid, ["total_done"]], "id": 22}
 
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
-        total_done = json.loads(response.text)['result']['total_done']
+        total_done = response.json()['result']['total_done']
 
         tries = 0
         while total_done == 0 and tries < 10:
             tries += 1
             time.sleep(5)
-            response = requests.post(delugeweb_url, data=post_data,
+            response = requests.post(delugeweb_url, json=post_json,
                                      verify=deluge_verify_cert, cookies=delugeweb_auth, headers=headers)
-            total_done = json.loads(response.text)['result']['total_done']
+            total_done = response.json()['result']['total_done']
 
-        post_data = json.dumps({"method": "web.get_torrent_status",
-                                "params": [
-                                    torrentid,
-                                    [
-                                        "name",
-                                        "save_path",
-                                        "total_size",
-                                        "num_files",
-                                        "message",
-                                        "tracker",
-                                        "comment"
-                                    ]
+        post_json = {"method": "web.get_torrent_status",
+                     "params": [torrentid,
+                                [
+                                    data
+                                    # "save_path",
+                                    # "total_size",
+                                    # "num_files",
+                                    # "files",
+                                    # "message",
+                                    # "tracker",
+                                    # "comment"
+                                ]
                                 ],
-                                "id": 23})
+                     "id": 23}
 
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
 
-        # save_path = json.loads(response.text)['result']['save_path']
-        name = json.loads(response.text)['result']['name']
+        res = response.json()['result'][data]
 
-        return name
+        return res
     except Exception as err:
-        logger.debug('Deluge %s: Could not get torrent folder name: %s' % (type(err).__name__, str(err)))
+        logger.debug('Deluge %s: Could not get torrent folder %s: %s' % (data, type(err).__name__, str(err)))
 
 
 def removeTorrent(torrentid, remove_data=False):
@@ -215,12 +212,11 @@ def removeTorrent(torrentid, remove_data=False):
         _get_auth()
 
     logger.debug('Deluge: Removing torrent %s' % str(torrentid))
-    post_data = json.dumps({"method": "core.remove_torrent", "params": [torrentid, remove_data], "id": 25})
-    if PY2:
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-    response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+    post_json = {"method": "core.remove_torrent", "params": [torrentid, remove_data], "id": 25}
+
+    response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                              verify=deluge_verify_cert, headers=headers)
-    result = json.loads(response.text)['result']
+    result = response.json()['result']
 
     return result
 
@@ -257,18 +253,15 @@ def _get_auth():
     delugeweb_host = "%s:%s" % (delugeweb_host, delugeweb_port)
     delugeweb_url = delugeweb_host + '/json'
 
-    post_data = json.dumps({"method": "auth.login",
-                            "params": [delugeweb_password],
-                            "id": 1})
-    if PY2:
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+    post_json = {"method": "auth.login", "params": [delugeweb_password], "id": 1}
+
     try:
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth, timeout=timeout,
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth, timeout=timeout,
                                  verify=deluge_verify_cert, headers=headers)
     except requests.ConnectionError:
         try:
             logger.debug('Deluge: Connection failed, let\'s try HTTPS just in case')
-            response = requests.post(delugeweb_url.replace('http:', 'https:'), data=post_data, timeout=timeout,
+            response = requests.post(delugeweb_url.replace('http:', 'https:'), json=post_json, timeout=timeout,
                                      cookies=delugeweb_auth, verify=deluge_verify_cert, headers=headers)
             # If the previous line didn't fail, change delugeweb_url for the rest of this session
             logger.error('Deluge: Switching to HTTPS, certificate won\'t be verified NO CERTIFICATE WAS CONFIGURED')
@@ -286,77 +279,65 @@ def _get_auth():
             logger.error('; '.join(formatted_lines))
         return None
 
-    auth = json.loads(response.text)["result"]
-    auth_error = json.loads(response.text)["error"]
+    auth = response.json()["result"]
+    auth_error = response.json()["error"]
     logger.debug('Deluge: Authentication result: %s, Error: %s' % (auth, auth_error))
     delugeweb_auth = response.cookies
     logger.debug('Deluge: Authentication cookies: %s' % str(delugeweb_auth.get_dict()))
-    post_data = json.dumps({"method": "web.connected",
-                            "params": [],
-                            "id": 10})
-    if PY2:
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+    post_json = {"method": "web.connected", "params": [], "id": 10}
+
     try:
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
     except Exception as err:
         logger.debug('Deluge %s: web.connected returned %s' % (type(err).__name__, str(err)))
         delugeweb_auth = {}
         return None
 
-    connected = json.loads(response.text)['result']
-    connected_error = json.loads(response.text)['error']
+    connected = response.json()['result']
+    connected_error = response.json()['error']
     logger.debug('Deluge: Connection result: %s, Error: %s' % (connected, connected_error))
 
     if not connected:
-        post_data = json.dumps({"method": "web.get_hosts",
-                                "params": [],
-                                "id": 11})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_json = {"method": "web.get_hosts", "params": [], "id": 11}
+
         try:
-            response = requests.post(delugeweb_url, data=post_data, verify=deluge_verify_cert,
+            response = requests.post(delugeweb_url, json=post_json, verify=deluge_verify_cert,
                                      cookies=delugeweb_auth, headers=headers)
         except Exception as err:
             logger.debug('Deluge %s: web.get_hosts returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
             return None
 
-        delugeweb_hosts = json.loads(response.text)['result']
+        delugeweb_hosts = response.json()['result']
+
         # Check if delugeweb_hosts is None before checking its length
         if not delugeweb_hosts or len(delugeweb_hosts) == 0:
             logger.error('Deluge: WebUI does not contain daemons')
             delugeweb_auth = {}
             return None
 
-        post_data = json.dumps({"method": "web.connect",
-                                "params": [delugeweb_hosts[0][0]],
-                                "id": 11})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
+        post_json = {"method": "web.connect", "params": [delugeweb_hosts[0][0]], "id": 11}
+
         try:
-            _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+            _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                               verify=deluge_verify_cert, headers=headers)
         except Exception as err:
             logger.debug('Deluge %s: web.connect returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
             return None
 
-        post_data = json.dumps({"method": "web.connected",
-                                "params": [],
-                                "id": 10})
+        post_json = {"method": "web.connected", "params": [], "id": 10}
 
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
         try:
-            response = requests.post(delugeweb_url, data=post_data, verify=deluge_verify_cert,
+            response = requests.post(delugeweb_url, json=post_json, verify=deluge_verify_cert,
                                      cookies=delugeweb_auth, headers=headers)
         except Exception as err:
             logger.debug('Deluge %s: web.connected returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
             return None
 
-        connected = json.loads(response.text)['result']
+        connected = response.json()['result']
 
         if not connected:
             logger.error('Deluge: WebUI could not connect to daemon')
@@ -371,19 +352,16 @@ def _add_torrent_magnet(result):
     if not any(delugeweb_auth):
         _get_auth()
     try:
-        post_data = json.dumps({"method": "core.add_torrent_magnet",
-                                "params": [result['url'], {}],
-                                "id": 2})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": "core.add_torrent_magnet", "params": [result['url'], {}], "id": 2}
+
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
-        result['hash'] = json.loads(response.text)['result']
-        msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
+        result['hash'] = response.json()['result']
+        msg = 'Deluge: Response was %s' % result['hash']
         logger.debug(msg)
         if 'was None' in msg:
             logger.error('Deluge: Adding magnet failed: Is the WebUI running?')
-        return json.loads(response.text)['result']
+        return response.json()['result']
     except Exception as err:
         logger.error('Deluge %s: Adding magnet failed: %s' % (type(err).__name__, str(err)))
 
@@ -394,20 +372,17 @@ def _add_torrent_url(result):
         _get_auth()
 
     try:
-        post_data = json.dumps({"method": "core.add_torrent_url",
-                                "params": [result['url'], {}],
-                                "id": 32})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": "core.add_torrent_url", "params": [result['url'], {}], "id": 32}
+
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
 
-        result['hash'] = json.loads(response.text)['result']
-        msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
+        result['hash'] = response.json()['result']
+        msg = 'Deluge: Response was %s' % result['hash']
         logger.debug(msg)
         if 'was None' in msg:
             logger.error('Deluge: Adding torrent URL failed: Is the WebUI running?')
-        return json.loads(response.text)['result']
+        return response.json()['result']
     except Exception as err:
         logger.error('Deluge %s: Adding torrent URL failed: %s' % (type(err).__name__, str(err)))
         return False
@@ -419,40 +394,19 @@ def _add_torrent_file(result):
         _get_auth()
     try:
         # content is torrent file contents that needs to be encoded to base64
-        post_data = json.dumps({"method": "core.add_torrent_file",
-                                "params": [result['name'] + '.torrent',
+        post_json = {"method": "core.add_torrent_file",
+                     "params": [result['name'] + '.torrent',
                                 b64encode(result['content'].encode('utf8')), {}],
-                                "id": 2})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+                     "id": 2}
+
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
-        result['hash'] = json.loads(response.text)['result']
-        msg = 'Deluge: Response was %s' % str(json.loads(response.text)['result'])
+        result['hash'] = response.json()['result']
+        msg = 'Deluge: Response was %s' % result['hash']
         logger.debug(msg)
         if 'was None' in msg:
             logger.error('Deluge: Adding torrent file failed: Is the WebUI running?')
-        return json.loads(response.text)['result']
-    except UnicodeDecodeError:
-        try:
-            # content is torrent file contents that needs to be encoded to base64
-            # this time let's try leaving the encoding as is
-            logger.debug('Deluge: There was a decoding issue, let\'s try again')
-            post_data = json.dumps({"method": "core.add_torrent_file",
-                                    "params": [result['name'].decode('utf8') + '.torrent',
-                                               b64encode(result['content']), {}],
-                                    "id": 22})
-            response = requests.post(delugeweb_url, data=post_data.encode('utf-8'), cookies=delugeweb_auth,
-                                     verify=deluge_verify_cert, headers=headers)
-            result['hash'] = json.loads(response.text)['result']
-            logger.debug('Deluge: Response was %s' % str(json.loads(response.text)))
-            return json.loads(response.text)['result']
-        except Exception as e:
-            logger.error('Deluge: Adding torrent file failed after decode: %s' % str(e))
-            if lazylibrarian.LOGLEVEL > 2:
-                formatted_lines = traceback.format_exc().splitlines()
-                logger.error('; '.join(formatted_lines))
-            return False
+        return response.json()['result']
     except Exception as err:
         logger.error('Deluge %s: Adding torrent file failed: %s' % (type(err).__name__, str(err)))
         if lazylibrarian.LOGLEVEL > 2:
@@ -473,25 +427,19 @@ def setTorrentLabel(result):
         label = label.replace(' ', '_')
     if label:
         # check if label already exists and create it if not
-        post_data = json.dumps({"method": 'label.get_labels',
-                                "params": [],
-                                "id": 3})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": 'label.get_labels', "params": [], "id": 3}
+
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
-        labels = json.loads(response.text)['result']
+        labels = response.json()['result']
 
         if labels:
             if label not in labels:
                 try:
                     logger.debug('Deluge: %s label doesn\'t exist in Deluge, let\'s add it' % label)
-                    post_data = json.dumps({"method": 'label.add',
-                                            "params": [label],
-                                            "id": 4})
-                    if PY2:
-                        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-                    _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+                    post_json = {"method": 'label.add', "params": [label], "id": 4}
+
+                    _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                       verify=deluge_verify_cert, headers=headers)
                     logger.debug('Deluge: %s label added to Deluge' % label)
                 except Exception as err:
@@ -501,15 +449,12 @@ def setTorrentLabel(result):
                         logger.error('; '.join(formatted_lines))
 
             # add label to torrent
-            post_data = json.dumps({"method": 'label.set_torrent',
-                                    "params": [result['hash'], label],
-                                    "id": 5})
-            if PY2:
-                post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-            response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+            post_json = {"method": 'label.set_torrent', "params": [result['hash'], label], "id": 5}
+
+            response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                      verify=deluge_verify_cert, headers=headers)
             logger.debug('Deluge: %s label added to torrent' % label)
-            return not json.loads(response.text)['error']
+            return not response.json()['error']
         else:
             logger.debug('Deluge: Label plugin not detected')
             return False
@@ -528,22 +473,16 @@ def setSeedRatio(result):
         ratio = result['ratio']
 
     if ratio:
-        post_data = json.dumps({"method": "core.set_torrent_stop_at_ratio",
-                                "params": [result['hash'], True],
-                                "id": 5})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": "core.set_torrent_stop_at_ratio", "params": [result['hash'], True], "id": 5}
+
+        _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                           verify=deluge_verify_cert, headers=headers)
-        post_data = json.dumps({"method": "core.set_torrent_stop_ratio",
-                                "params": [result['hash'], float(ratio)],
-                                "id": 6})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": "core.set_torrent_stop_ratio", "params": [result['hash'], float(ratio)], "id": 6}
+
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
 
-        return not json.loads(response.text)['error']
+        return not response.json()['error']
 
     return True
 
@@ -556,12 +495,9 @@ def setTorrentPath(result):
     dl_dir = lazylibrarian.CONFIG['DELUGE_DIR']
 
     if dl_dir:
-        post_data = json.dumps({"method": "core.set_torrent_move_completed",
-                                "params": [result['hash'], True],
-                                "id": 7})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        _ = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": "core.set_torrent_move_completed", "params": [result['hash'], True], "id": 7}
+
+        _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                           verify=deluge_verify_cert, headers=headers)
 
         if not os.path.isdir(dl_dir):
@@ -572,15 +508,12 @@ def setTorrentPath(result):
             except OSError as e:
                 logger.debug("Error creating directory %s, %s" % (dl_dir, e))
 
-        post_data = json.dumps({"method": "core.set_torrent_move_completed_path",
-                                "params": [result['hash'], dl_dir],
-                                "id": 8})
-        if PY2:
-            post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-        response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+        post_json = {"method": "core.set_torrent_move_completed_path", "params": [result['hash'], dl_dir], "id": 8}
+
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
 
-        return not json.loads(response.text)['error']
+        return not response.json()['error']
 
     return True
 
@@ -590,15 +523,12 @@ def setTorrentPause(result):
     if not any(delugeweb_auth):
         _get_auth()
 
-    post_data = json.dumps({"method": "core.pause_torrent",
-                            "params": [[result['hash']]],
-                            "id": 9})
-    if PY2:
-        post_data = post_data.encode(lazylibrarian.SYS_ENCODING)
-    response = requests.post(delugeweb_url, data=post_data, cookies=delugeweb_auth,
+    post_json = {"method": "core.pause_torrent", "params": [[result['hash']]], "id": 9}
+
+    response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                              verify=deluge_verify_cert, headers=headers)
 
-    return not json.loads(response.text)['error']
+    return not response.json()['error']
 
 
 def checkLink():

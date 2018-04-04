@@ -25,7 +25,7 @@ Created on Apr 19, 2012
     check if libtorrent available (it's architecture specific)
 """
 
-import os.path as pt
+import os
 import shutil
 import tempfile
 from time import sleep
@@ -48,9 +48,9 @@ def magnet2torrent(magnet, output_name=None):
             return False
 
     if output_name and \
-            not pt.isdir(output_name) and \
-            not pt.isdir(pt.dirname(pt.abspath(output_name))):
-        logger.debug("Invalid output folder: " + pt.dirname(pt.abspath(output_name)))
+            not os.path.isdir(output_name) and \
+            not os.path.isdir(os.path.dirname(os.path.abspath(output_name))):
+        logger.debug("Invalid output folder: " + os.path.dirname(os.path.abspath(output_name)))
         return False
 
     tempdir = tempfile.mkdtemp()
@@ -93,13 +93,13 @@ def magnet2torrent(magnet, output_name=None):
     torcontent = lt.bencode(torfile.generate())
     ses.remove_torrent(handle)
 
-    output = pt.abspath(torinfo.name() + ".torrent")
+    output = os.path.abspath(torinfo.name() + ".torrent")
     if output_name:
-        if pt.isdir(output_name):
-            output = pt.abspath(pt.join(
+        if os.path.isdir(output_name):
+            output = os.path.abspath(os.path.join(
                 output_name, torinfo.name() + ".torrent"))
-        elif pt.isdir(pt.dirname(pt.abspath(output_name))):
-            output = pt.abspath(output_name)
+        elif os.path.isdir(os.path.dirname(os.path.abspath(output_name))):
+            output = os.path.abspath(output_name)
 
     logger.debug("Saving torrent file here : " + output + " ...")
     with open(output, 'wb') as f:

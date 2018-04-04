@@ -204,9 +204,12 @@
 
     function validateForm() {
         var x = document.forms["markBooks"]["action"].value;
-        if (x == "Delete") {
+        var c = (document.querySelectorAll('input[type="checkbox"]:checked').length);
+        if (c > 0 && x == "Delete") {
+            if (c == 1) {msg = "Are you sure you want to permanently delete the selected audiobook?"}
+            if (c > 1) {msg = "Are you sure you want to permanently delete the " + c + " selected audiobooks?"}
             bootbox.confirm({
-                message: "Are you sure you want to permanently delete the selected audiobooks?",
+                message: msg,
                 buttons: {
                     confirm: {
                         label: 'Yes',

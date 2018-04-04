@@ -10,8 +10,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import json
 import time
 
 try:
@@ -34,9 +32,12 @@ session_id = None
 host_url = None
 
 
-def addTorrent(link, directory=None):
+def addTorrent(link, directory=None, metainfo=None):
     method = 'torrent-add'
-    arguments = {'filename': link}
+    if metainfo:
+        arguments = {'metainfo': metainfo}
+    else:
+        arguments = {'filename': link}
     if not directory:
         directory = lazylibrarian.CONFIG['TRANSMISSION_DIR']
     if directory:
@@ -102,6 +103,26 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
                 tor += 1
         else:
             logger.debug('getTorrentFolder: No response from transmission')
+            return ''
+
+        retries -= 1
+        if retries:
+            time.sleep(5)
+
+    return ''
+
+
+def getTorrentFiles(torrentid):  # uses hashid
+    method = 'torrent-get'
+    arguments = {'ids': [torrentid], 'fields': ['id', 'files']}
+    retries = 3
+    while retries:
+        response = torrentAction(method, arguments)  # type: dict
+        if response:
+            if len(response['arguments']['torrents'][0]['files']):
+                return response['arguments']['torrents'][0]['files']
+        else:
+            logger.debug('getTorrentFiles: No response from transmission')
             return ''
 
         retries -= 1
@@ -218,7 +239,6 @@ def torrentAction(method, arguments):
             return
 
         # Parse response
-        session_id = ''
         if response.status_code == 401:
             if auth:
                 logger.error("Username and/or password not accepted by Transmission")
@@ -236,15 +256,24 @@ def torrentAction(method, arguments):
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
     try:
-        response = requests.post(host_url, data=json.dumps(data), headers=headers, proxies=proxies,
+        response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
                                  auth=auth, timeout=timeout)
-        response = response.json()
+        if response.status_code == 409:
+            session_id = response.headers['x-transmission-session-id']
+            logger.debug("Retrying with new session_id %s" % session_id)
+            headers = {'x-transmission-session-id': session_id}
+            response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
+                                     auth=auth, timeout=timeout)
+        if not str(response.status_code).startswith('2'):
+            logger.error("Expected a response from Transmission, got %s" % response.status_code)
+            return
+        try:
+            res = response.json()
+        except ValueError:
+            logger.error("Expected json, Transmission returned %s" % response.text)
+            res = ''
+        return res
+
     except Exception as e:
         logger.error('Transmission %s: %s' % (type(e).__name__, str(e)))
-        response = ''
-
-    if not response:
-        logger.error("Error sending torrent to Transmission")
         return
-
-    return response

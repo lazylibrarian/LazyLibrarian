@@ -23,6 +23,7 @@ import time
 import traceback
 from lib.six import PY2
 import lazylibrarian
+
 try:
     import zipfile
 except ImportError:
@@ -38,7 +39,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
-    replace_all, getList, surnameFirst, makeUnicode, makeBytestr
+    replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -46,7 +47,6 @@ from lazylibrarian.magazinescan import create_id, create_cover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
-
 
 # Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
 # as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
@@ -311,6 +311,16 @@ def cron_processDir():
         processDir()
 
 
+def bookType(book):
+    book_type = book['AuxInfo']
+    if book_type != 'AudioBook' and book_type != 'eBook':
+        if book_type is None or book_type == '':
+            book_type = 'eBook'
+        else:
+            book_type = 'Magazine'
+    return book_type
+
+
 def processDir(reset=False, startdir=None, ignoreclient=False):
     count = 0
     for threadname in [n.name for n in [t for t in threading.enumerate()]]:
@@ -330,6 +340,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         ppcount = 0
         myDB = database.DBConnection()
         skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
+        banned_extensions = getList(lazylibrarian.CONFIG['BANNED_EXT'])
         if startdir:
             templist = [startdir]
         else:
@@ -342,76 +353,123 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 dirlist.append(item)
             else:
                 logger.debug("[%s] is not a directory" % item)
-        for download_dir in dirlist:
-            try:
-                downloads = os.listdir(makeBytestr(download_dir))
-                downloads = [makeUnicode(item) for item in downloads]
-            except OSError as why:
-                logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
-                threading.currentThread().name = "WEBSERVER"
-                return
 
-            snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-            logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
-            logger.debug('Found %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
+        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+        logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
+        if len(snatched):
+            for book in snatched:
+                # if torrent, see if we can get current status from the downloader as the name
+                # may have been changed once magnet resolved, or download started or completed
+                # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
+                matchtitle = unaccented_str(book['NZBtitle'])
+                torrentname = getTorrentName(matchtitle, book['Source'], book['DownloadID'])
 
-            if len(snatched) and len(downloads):
-                for book in snatched:
-                    # if torrent, see if we can get current status from the downloader as the name
-                    # may have been changed once magnet resolved, or download started or completed
-                    # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
-                    torrentname = ''
-                    try:
-                        logger.debug("%s was sent to %s" % (book['NZBtitle'], book['Source']))
-                        if book['Source'] == 'TRANSMISSION':
-                            torrentname = transmission.getTorrentFolder(book['DownloadID'])
-                        elif book['Source'] == 'UTORRENT':
-                            torrentname = utorrent.nameTorrent(book['DownloadID'])
-                        elif book['Source'] == 'RTORRENT':
-                            torrentname = rtorrent.getName(book['DownloadID'])
-                        elif book['Source'] == 'QBITTORRENT':
-                            torrentname = qbittorrent.getName(book['DownloadID'])
-                        elif book['Source'] == 'SYNOLOGY_TOR':
-                            torrentname = synology.getName(book['DownloadID'])
-                        elif book['Source'] == 'DELUGEWEBUI':
-                            torrentname = deluge.getTorrentFolder(book['DownloadID'])
-                        elif book['Source'] == 'DELUGERPC':
-                            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'],
-                                                     int(lazylibrarian.CONFIG['DELUGE_PORT']),
-                                                     lazylibrarian.CONFIG['DELUGE_USER'],
-                                                     lazylibrarian.CONFIG['DELUGE_PASS'])
+                if torrentname and torrentname != matchtitle:
+                    logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
+                    # should we check against reject word list again as the name has changed?
+                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
+                    matchtitle = torrentname
+
+                book_type = bookType(book)
+                if book_type == 'eBook':
+                    maxsize = lazylibrarian.CONFIG['REJECT_MAXSIZE']
+                    minsize = lazylibrarian.CONFIG['REJECT_MINSIZE']
+                    filetypes = lazylibrarian.CONFIG['EBOOK_TYPE']
+                elif book_type == 'AudioBook':
+                    maxsize = lazylibrarian.CONFIG['REJECT_MAXAUDIO']
+                    # minsize = lazylibrarian.CONFIG['REJECT_MINAUDIO']
+                    minsize = 0  # individual audiobook chapters can be quite small
+                    filetypes = lazylibrarian.CONFIG['AUDIOBOOK_TYPE']
+                elif book_type == 'Magazine':
+                    maxsize = lazylibrarian.CONFIG['REJECT_MAGSIZE']
+                    minsize = lazylibrarian.CONFIG['REJECT_MAGMIN']
+                    filetypes = lazylibrarian.CONFIG['MAG_TYPE']
+                else:  # shouldn't happen
+                    maxsize = 0
+                    minsize = 0
+                    filetypes = ''
+
+                # here we could also check percentage downloaded or eta or status?
+                # If downloader says it hasn't completed, no need to look for it.
+                torrentfiles = getTorrentFiles(matchtitle, book['Source'], book['DownloadID'])
+                # Downloaders return varying amounts of info using varying names
+                rejected = False
+                if not torrentfiles:
+                    logger.debug("No torrent files returned by %s for %s" % (book['Source'], matchtitle))
+                else:
+                    logger.debug("Checking files in %s" % matchtitle)
+                    for entry in torrentfiles:
+                        fname = ''
+                        fsize = 0
+                        if 'path' in entry:  # deluge
+                            fname = entry['path']
+                        if 'size' in entry:  # deluge, qbittorrent
+                            fsize = entry['size']
+                        if 'length' in entry:  # transmission
+                            fsize = entry['length']
+                        if 'name' in entry:  # transmission, qbittorrent
+                            fname = entry['name']
+                        extn = os.path.splitext(fname)[1].lstrip('.').lower()
+                        if extn and extn in banned_extensions:
+                            logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
+                            rejected = True
+                            break
+                        # only check size on right types of file
+                        # eg dont reject cos jpg is smaller than min file size
+                        # need to check if we have a size in K M or just a number. If K or M could be a float.
+                        if fsize and extn in filetypes:
                             try:
-                                client.connect()
-                                result = client.call('core.get_torrent_status', book['DownloadID'], {})
-                                #    for item in result:
-                                #        logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
-                                if 'name' in result:
-                                    torrentname = unaccented_str(result['name'])
-                            except Exception as e:
-                                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-                    except Exception as e:
-                        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
-                                     (book['Source'], book['DownloadID'], type(e).__name__, str(e)))
+                                if 'M' in str(fsize):
+                                    fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
+                                elif 'K' in str(fsize):
+                                    fsize = int(float(fsize.split('K')[0].strip() * 1024))
+                                fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
+                            except ValueError:
+                                fsize = 0
+                            if fsize:
+                                if maxsize and fsize > maxsize:
+                                    logger.warn("%s is too large (%sMb). Deleting torrent" % (fname, fsize))
+                                    rejected = True
+                                    break
+                                if minsize and fsize < minsize:
+                                    logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
+                                    rejected = True
+                                    break
+                        if not rejected:
+                            logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
 
+                if rejected:
+                    # change status to "Failed", and ask downloader to delete task and files
+                    # Only reset book status to wanted if still snatched in case another download task succeeded
+                    if book['BookID'] != 'unknown':
+                        cmd = ''
+                        if book_type == 'eBook':
+                            cmd = 'UPDATE books SET status="Wanted" WHERE status="Snatched" and BookID=?'
+                        elif book_type == 'AudioBook':
+                            cmd = 'UPDATE books SET audiostatus="Wanted" WHERE audiostatus="Snatched" and BookID=?'
+                        if cmd:
+                            myDB.action(cmd, (book['BookID'],))
+                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
+                        delete_task(book['Source'], book['DownloadID'], True)
+
+        # now see if any are left...
+        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+        if len(snatched):
+            for download_dir in dirlist:
+                try:
+                    downloads = os.listdir(makeBytestr(download_dir))
+                    downloads = [makeUnicode(item) for item in downloads]
+                except OSError as why:
+                    logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
+                    threading.currentThread().name = "WEBSERVER"
+                    return
+
+                logger.debug('Found %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
+
+                for book in snatched:
+                    book_type = bookType(book)
                     matchtitle = unaccented_str(book['NZBtitle'])
-                    if torrentname and torrentname != matchtitle:
-                        logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
-                        # should we check against reject word list again as the name has changed?
-                        myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
-                        matchtitle = torrentname
-
-                    # here we could also check percentage downloaded or eta or status, or download directory?
-                    # If downloader says it hasn't completed, no need to look for it.
-
                     matches = []
-
-                    book_type = book['AuxInfo']
-                    if book_type != 'AudioBook' and book_type != 'eBook':
-                        if book_type is None or book_type == '':
-                            book_type = 'eBook'
-                        else:
-                            book_type = 'Magazine'
-
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
                     for fname in downloads:
                         # skip if failed before or incomplete torrents, or incomplete btsync etc
@@ -456,8 +514,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                 aname = aname[:-1]
 
                                             if lazylibrarian.CONFIG['DESTINATION_COPY'] or \
-                                                (book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and
-                                                    lazylibrarian.CONFIG['KEEP_SEEDING']):
+                                                    (book['NZBmode'] in ['torrent', 'magnet', 'torznab'] and
+                                                     lazylibrarian.CONFIG['KEEP_SEEDING']):
                                                 targetdir = os.path.join(download_dir, aname + '.unpack')
                                                 move = 'copy'
                                             else:
@@ -533,14 +591,16 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             logger.debug('Skipping %s' % fname)
 
                     match = 0
+                    pp_path = ''
                     if matches:
                         highest = max(matches, key=lambda x: x[0])
                         match = highest[0]
                         pp_path = highest[1]
-                        book = highest[2]
+                        book = highest[2]  # type: dict
                     if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                         mostrecentissue = ''
-                        logger.debug('Found match (%s%%): %s for %s %s' % (match, pp_path, book_type, book['NZBtitle']))
+                        logger.debug('Found match (%s%%): %s for %s %s' % (
+                                     match, pp_path, book_type, book['NZBtitle']))
 
                         cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
                         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -631,6 +691,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                         if bookname:  # it's ebook or audiobook
                             processExtras(dest_file, global_name, book['BookID'], book_type)
+                            iss_id = 0
                         else:  # update mags
                             if mostrecentissue:
                                 if mostrecentissue.isdigit() and str(book['AuxInfo']).isdigit():
@@ -751,47 +812,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
-            if downloads:
-                # Check for any books in download that weren't marked as snatched, but have a LL.(bookid)
-                # do a fresh listdir in case we processed and deleted any earlier
-                # and don't process any we've already done as we might not want to delete originals
-                downloads = os.listdir(makeBytestr(download_dir))
-                downloads = [makeUnicode(item) for item in downloads]
-                if int(lazylibrarian.LOGLEVEL) > 2:
-                    logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
-                for entry in downloads:
-                    if "LL.(" in entry:
-                        dname, extn = os.path.splitext(entry)
-                        if not extn or extn.strip('.') not in skipped_extensions:
-                            bookID = entry.split("LL.(")[1].split(")")[0]
-                            logger.debug("Book with id: %s found in download directory" % bookID)
-                            data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
-                            if data and data['BookFile'] and os.path.isfile(data['BookFile']):
-                                logger.debug('Skipping BookID %s, already exists' % bookID)
-                            else:
-                                pp_path = os.path.join(download_dir, entry)
-
-                                if int(lazylibrarian.LOGLEVEL) > 2:
-                                    logger.debug("Checking type of %s" % pp_path)
-
-                                if os.path.isfile(pp_path):
-                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug("%s is a file" % pp_path)
-                                    pp_path = os.path.join(download_dir)
-
-                                if os.path.isdir(pp_path):
-                                    if int(lazylibrarian.LOGLEVEL) > 2:
-                                        logger.debug("%s is a dir" % pp_path)
-                                    if import_book(pp_path, bookID):
-                                        if int(lazylibrarian.LOGLEVEL) > 2:
-                                            logger.debug("Imported %s" % pp_path)
-                                        ppcount += 1
-                        else:
-                            if int(lazylibrarian.LOGLEVEL) > 2:
-                                logger.debug("Skipping extn %s" % entry)
-                    else:
-                        if int(lazylibrarian.LOGLEVEL) > 2:
-                            logger.debug("Skipping (not LL) %s" % entry)
+                if downloads:
+                    ppcount += check_residual(download_dir)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
@@ -799,12 +821,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched):
             for book in snatched:
-                book_type = book['AuxInfo']
-                if book_type != 'AudioBook' and book_type != 'eBook':
-                    if book_type is None or book_type == '':
-                        book_type = 'eBook'
-                    else:
-                        book_type = 'Magazine'
+                book_type = bookType(book)
                 # FUTURE: we could check percentage downloaded or eta?
                 # if percentage is increasing, it's just slow
                 try:
@@ -847,6 +864,122 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         threading.currentThread().name = threadname
 
 
+def check_residual(download_dir):
+    # Import any books in download that weren't marked as snatched, but have a LL.(bookid)
+    # don't process any we've already got as we might not want to delete originals
+    myDB = database.DBConnection()
+    skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
+    ppcount = 0
+    downloads = os.listdir(makeBytestr(download_dir))
+    downloads = [makeUnicode(item) for item in downloads]
+    if int(lazylibrarian.LOGLEVEL) > 2:
+        logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
+    for entry in downloads:
+        if "LL.(" in entry:
+            _, extn = os.path.splitext(entry)
+            if not extn or extn.strip('.') not in skipped_extensions:
+                bookID = entry.split("LL.(")[1].split(")")[0]
+                logger.debug("Book with id: %s found in download directory" % bookID)
+                data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
+                if data and data['BookFile'] and os.path.isfile(data['BookFile']):
+                    logger.debug('Skipping BookID %s, already exists' % bookID)
+                else:
+                    pp_path = os.path.join(download_dir, entry)
+
+                    if int(lazylibrarian.LOGLEVEL) > 2:
+                        logger.debug("Checking type of %s" % pp_path)
+
+                    if os.path.isfile(pp_path):
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug("%s is a file" % pp_path)
+                        pp_path = os.path.join(download_dir)
+
+                    if os.path.isdir(pp_path):
+                        if int(lazylibrarian.LOGLEVEL) > 2:
+                            logger.debug("%s is a dir" % pp_path)
+                        if import_book(pp_path, bookID):
+                            if int(lazylibrarian.LOGLEVEL) > 2:
+                                logger.debug("Imported %s" % pp_path)
+                            ppcount += 1
+            else:
+                if int(lazylibrarian.LOGLEVEL) > 2:
+                    logger.debug("Skipping extn %s" % entry)
+        else:
+            if int(lazylibrarian.LOGLEVEL) > 2:
+                logger.debug("Skipping (not LL) %s" % entry)
+    return ppcount
+
+
+def getTorrentName(title, source, downloadid):
+    torrentname = None
+    try:
+        logger.debug("getTorrentName: %s was sent to %s" % (title, source))
+        if source == 'TRANSMISSION':
+            torrentname = transmission.getTorrentFolder(downloadid)
+        elif source == 'QBITTORRENT':
+            torrentname = qbittorrent.getName(downloadid)
+        # elif source == 'UTORRENT':
+        #    torrentname = utorrent.nameTorrent(downloadid)
+        # elif source == 'RTORRENT':
+        #    torrentname = rtorrent.getName(downloadid)
+        # elif source == 'SYNOLOGY_TOR':
+        #    torrentname = synology.getName(downloadid)
+        elif source == 'DELUGEWEBUI':
+            torrentname = deluge.getTorrentFolder(downloadid)
+        elif source == 'DELUGERPC':
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
+            try:
+                client.connect()
+                result = client.call('core.get_torrent_status', downloadid, {})
+                # for item in result:
+                #     logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
+                if 'name' in result:
+                    torrentname = unaccented_str(result['name'])
+            except Exception as e:
+                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+        return torrentname
+
+    except Exception as e:
+        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
+                     (source, downloadid, type(e).__name__, str(e)))
+        return None
+
+
+def getTorrentFiles(title, source, downloadid):
+    torrentfiles = None
+    try:
+        logger.debug("getTorrentFiles: %s was sent to %s" % (title, source))
+        if source == 'TRANSMISSION':
+            torrentfiles = transmission.getTorrentFiles(downloadid)
+        # elif source == 'UTORRENT':
+        #     torrentname = utorrent.nameTorrent(downloadid)
+        # elif source == 'RTORRENT':
+        #     torrentname = rtorrent.getName(downloadid)
+        elif source == 'QBITTORRENT':
+            torrentfiles = qbittorrent.getFiles(downloadid)
+        # elif source == 'SYNOLOGY_TOR':
+        #     torrentname = synology.getName(downloadid)
+        elif source == 'DELUGEWEBUI':
+            torrentfiles = deluge.getTorrentFiles(downloadid)
+        elif source == 'DELUGERPC':
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
+            try:
+                client.connect()
+                result = client.call('core.get_torrent_status', downloadid, {})
+                if 'files' in result:
+                    torrentfiles = result['files']
+            except Exception as e:
+                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+        return torrentfiles
+
+    except Exception as e:
+        logger.error("Failed to get torrent files from %s for %s: %s %s" %
+                     (source, downloadid, type(e).__name__, str(e)))
+        return None
+
+
 def delete_task(Source, DownloadID, remove_data):
     try:
         if Source == "BLACKHOLE":
@@ -878,7 +1011,6 @@ def delete_task(Source, DownloadID, remove_data):
                 client.call('core.remove_torrent', DownloadID, remove_data)
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-                return False
         elif Source == 'DIRECT':
             return True
         else:
@@ -944,12 +1076,12 @@ def import_book(pp_path=None, bookID=None):
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
-                            '$Author', authorname).replace(
-                            '$Title', bookname).replace(
-                            '$Series', seriesInfo(bookID)).replace(
-                            '$SerName', seriesInfo(bookID, 'Name')).replace(
-                            '$SerNum', seriesInfo(bookID, 'Num')).replace(
-                            '$$', ' ')
+                '$Author', authorname).replace(
+                '$Title', bookname).replace(
+                '$Series', seriesInfo(bookID)).replace(
+                '$SerName', seriesInfo(bookID, 'Name')).replace(
+                '$SerNum', seriesInfo(bookID, 'Num')).replace(
+                '$$', ' ')
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
             dest_path = os.path.join(dest_dir, dest_path)
@@ -1315,7 +1447,7 @@ def processAutoAdd(src_path=None, booktype='book'):
 
     if not os.path.exists(autoadddir):
         logger.error('AutoAdd directory for %s [%s] is missing or not set - cannot perform autoadd' % (
-                      booktype, autoadddir))
+            booktype, autoadddir))
         return False
     # Now try and copy all the book files into a single dir.
     try:
@@ -1407,7 +1539,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
         return
 
 
-def processMAGOPF(issuefile, title, issue, issueID):
+def processMAGOPF(issuefile, title, issue, issueID, overwrite=False):
     """ Needs calibre to be configured to read metadata from file contents, not filename """
     if not lazylibrarian.CONFIG['IMP_MAGOPF']:
         return
@@ -1441,7 +1573,7 @@ def processMAGOPF(issuefile, title, issue, issueID):
         'Series_index': issue
     }  # type: dict
     # noinspection PyTypeChecker
-    _ = processOPF(dest_path, data, global_name, overwrite=True)
+    _ = processOPF(dest_path, data, global_name, overwrite=overwrite)
 
 
 def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):

@@ -124,6 +124,7 @@ def GEN(book=None, prov=None, test=False):
             logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             try:
                 soup = BeautifulSoup(result, 'html5lib')
+                rows = []
                 try:
                     table = soup.find_all('table')[2]  # un-named table
                     if table:

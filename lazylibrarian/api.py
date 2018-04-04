@@ -122,15 +122,15 @@ cmd_dict = {'help': 'list available commands. ' +
             'checkRunningJobs': 'ensure all needed jobs are running',
             'vacuum': 'vacuum the database',
             'getWorkSeries': '&id= Get series from Librarything BookWork using BookID or GoodReads using WorkID',
-            'getSeriesMembers': '&id= Get list of series members from Librarything using SeriesID',
-            'getSeriesAuthors': '&id= Get all authors from Librarything for a series and import them',
+            'getSeriesMembers': '&id= Get list of series members using SeriesID',
+            'getSeriesAuthors': '&id= Get all authors for a series and import them',
             'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
             'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
             'getBookAuthors': '&id= Get list of authors associated with this book',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'deleteEmptySeries': 'Delete any book series that have no members',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
-            'setAllBookSeries': '[&wait] Set the series details from librarything workpages',
+            'setAllBookSeries': '[&wait] Set the series details from goodreads or librarything workpages',
             'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
@@ -521,7 +521,7 @@ class Api(object):
         # remove extra spaces if they're in a row
         name_formatted = " ".join(name_formatted.split())
         name_exploded = name_formatted.split(' ')
-        regex_pass, issuedate = get_issue_date(name_exploded)
+        regex_pass, issuedate, _ = get_issue_date(name_exploded)
         if regex_pass:
             if int(regex_pass) > 3:  # it's an issue number
                 if issuedate.isdigit():
@@ -1235,7 +1235,7 @@ class Api(object):
         dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
         if dbentry:
             myDB.action('UPDATE %ss SET %sImg="%s" WHERE %sID=%s' %
-                        (table, table, 'cache' + os.sep + itemid + '.jpg', table, itemid))
+                        (table, table, 'cache' + os.path.sep + itemid + '.jpg', table, itemid))
         else:
             self.data = "%sID %s not found" % (table, itemid)
 

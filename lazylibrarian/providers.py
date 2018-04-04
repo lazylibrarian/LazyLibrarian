@@ -85,21 +85,29 @@ def test_provider(name, host=None, api=None):
         except IndexError:
             pass
 
-    # for torznab/newznab try book search if enabled, fall back to general search
+    # for torznab/newznab get capabilities first, unless locked,
+    # then try book search if enabled, fall back to general search
     book.update({'authorName': 'Agatha Christie', 'bookName': 'Poirot', 'bookSub': ''})
     if name.startswith('torznab_'):
         try:
             prov = name.split('_')[1]
             for provider in lazylibrarian.TORZNAB_PROV:
                 if provider['NAME'] == 'Torznab%s' % prov:
+                    if provider['MANUAL']:
+                        logger.debug("Capabilities are set to manual for %s" % provider['NAME'])
+                    else:
+                        provider = get_capabilities(provider, force=True)
                     if host:
                         provider['HOST'] = host
                     if api:
                         provider['API'] = api
-                    success, errorMsg = NewzNabPlus(book, provider, 'book', 'torznab', True)
-                    if not success:
-                        if cancelSearchType('book', errorMsg, provider):
-                            success, _ = NewzNabPlus(book, provider, 'general', 'torznab', True)
+                    if provider['BOOKSEARCH']:
+                        success, errorMsg = NewzNabPlus(book, provider, 'book', 'torznab', True)
+                        if not success:
+                            if cancelSearchType('book', errorMsg, provider):
+                                success, _ = NewzNabPlus(book, provider, 'general', 'torznab', True)
+                    else:
+                        success, _ = NewzNabPlus(book, provider, 'general', 'torznab', True)
                     return success, provider['DISPNAME']
         except IndexError:
             pass
@@ -108,14 +116,21 @@ def test_provider(name, host=None, api=None):
             prov = name.split('_')[1]
             for provider in lazylibrarian.NEWZNAB_PROV:
                 if provider['NAME'] == 'Newznab%s' % prov:
+                    if provider['MANUAL']:
+                        logger.debug("Capabilities are set to manual for %s" % provider['NAME'])
+                    else:
+                        provider = get_capabilities(provider, force=True)
                     if host:
                         provider['HOST'] = host
                     if api:
                         provider['API'] = api
-                    success, errorMsg = NewzNabPlus(book, provider, 'book', 'newznab', True)
-                    if not success:
-                        if cancelSearchType('book', errorMsg, provider):
-                            success, _ = NewzNabPlus(book, provider, 'general', 'newznab', True)
+                    if provider['BOOKSEARCH']:
+                        success, errorMsg = NewzNabPlus(book, provider, 'book', 'newznab', True)
+                        if not success:
+                            if cancelSearchType('book', errorMsg, provider):
+                                success, _ = NewzNabPlus(book, provider, 'general', 'newznab', True)
+                    else:
+                        success, _ = NewzNabPlus(book, provider, 'general', 'newznab', True)
                     return success, provider['DISPNAME']
         except IndexError:
             pass
@@ -184,16 +199,17 @@ def get_capabilities(provider, force=False):
         # most providers will give you caps without an api key
         logger.debug('Requesting capabilities for %s' % URL)
         source_xml, success = fetchURL(URL)
+        data = None
         if not success:
             logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
         else:
             try:
                 data = ElementTree.fromstring(source_xml)
+                if data.tag == 'error':
+                    logger.debug("Unable to get capabilities: %s" % data.attrib)
+                    success = False
             except ElementTree.ParseError:
                 logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
-                success = False
-            if success and data.tag == 'error':
-                logger.debug("Unable to get capabilities: %s" % data.attrib)
                 success = False
         if not success:
             # If it failed, retry with api key
@@ -206,11 +222,11 @@ def get_capabilities(provider, force=False):
                 else:
                     try:
                         data = ElementTree.fromstring(source_xml)
+                        if data.tag == 'error':
+                            logger.debug("Unable to get capabilities: %s" % data.attrib)
+                            success = False
                     except ElementTree.ParseError:
                         logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
-                        success = False
-                    if success and data.tag == 'error':
-                        logger.debug("Unable to get capabilities: %s" % data.attrib)
                         success = False
             else:
                 logger.debug('Unable to retry capabilities, no apikey for %s' % URL)
@@ -233,7 +249,7 @@ def get_capabilities(provider, force=False):
                 provider['AUDIOSEARCH'] = ''
                 provider['UPDATED'] = today()
                 lazylibrarian.config_write(provider['NAME'])
-        else:
+        elif data is not None:
             logger.debug("Parsing xml for capabilities of %s" % URL)
             #
             # book search isn't mentioned in the caps xml returned by
@@ -316,8 +332,8 @@ def get_capabilities(provider, force=False):
                             provider['BOOKCAT'] = ebooksubs
                         if magsubs:
                             provider['MAGCAT'] = magsubs
-            logger.debug("Categories: Books %s : Mags %s : Audio %s" %
-                         (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT']))
+            logger.info("Categories: Books %s : Mags %s : Audio %s : BookSearch '%s'" %
+                        (provider['BOOKCAT'], provider['MAGCAT'], provider['AUDIOCAT'], provider['BOOKSEARCH']))
             provider['UPDATED'] = today()
             lazylibrarian.config_write(provider['NAME'])
     return provider
@@ -718,10 +734,11 @@ def cancelSearchType(searchType, errorMsg, provider):
         depending on which searchType. If it does, disable that searchtype for the relevant provider
         return True if cancelled
     """
-    errorlist = ['no such function', 'unknown parameter', 'unknown function',
+    errorlist = ['no such function', 'unknown parameter', 'unknown function', 'bad_gateway',
                  'bad request', 'bad_request', 'incorrect parameter', 'does not support']
 
     errormsg = errorMsg.lower()
+
     if (provider['BOOKSEARCH'] and searchType in ["book", "shortbook"]) or \
             (provider['AUDIOSEARCH'] and searchType in ["audio", "shortaudio"]):
         match = False
@@ -729,6 +746,7 @@ def cancelSearchType(searchType, errorMsg, provider):
             if item in errormsg:
                 match = True
                 break
+
         if match:
             if searchType in ["book", "shortbook"]:
                 msg = 'BOOKSEARCH'

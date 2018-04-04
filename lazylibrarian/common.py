@@ -704,17 +704,17 @@ def cleanCache():
 
     myDB = database.DBConnection()
     result = []
+    expiry = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
     cache = os.path.join(lazylibrarian.CACHEDIR, "JSONCache")
     cleaned = 0
     kept = 0
-    if os.path.isdir(cache):
+    if expiry and os.path.isdir(cache):
         for cached_file in os.listdir(makeBytestr(cache)):
             cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
-            if cache_modified_time < time_now - (
-                                lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
+            if cache_modified_time < time_now - (expiry * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -727,14 +727,13 @@ def cleanCache():
     cache = os.path.join(lazylibrarian.CACHEDIR, "XMLCache")
     cleaned = 0
     kept = 0
-    if os.path.isdir(cache):
+    if expiry and os.path.isdir(cache):
         for cached_file in os.listdir(makeBytestr(cache)):
             cached_file = makeUnicode(cached_file)
             target = os.path.join(cache, cached_file)
             cache_modified_time = os.stat(target).st_mtime
             time_now = time.time()
-            if cache_modified_time < time_now - (
-                                lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60):  # expire after this many seconds
+            if cache_modified_time < time_now - (expiry * 24 * 60 * 60):  # expire after this many seconds
                 # Cache is old, delete entry
                 os.remove(target)
                 cleaned += 1
@@ -818,7 +817,7 @@ def cleanCache():
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
-                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                    imgid = cached_file.split('.')[0].rsplit(os.path.sep)[-1]
                 except IndexError:
                     logger.error('Clean Cache: Error splitting %s' % cached_file)
                     continue
@@ -836,7 +835,7 @@ def cleanCache():
             target = os.path.join(cachedir, cached_file)
             if os.path.isfile(target):
                 try:
-                    imgid = cached_file.split('.')[0].rsplit(os.sep)[-1]
+                    imgid = cached_file.split('.')[0].rsplit(os.path.sep)[-1]
                 except IndexError:
                     logger.error('Clean Cache: Error splitting %s' % cached_file)
                     continue

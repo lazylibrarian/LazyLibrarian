@@ -43,6 +43,10 @@ def bookSeries(bookname):
     """
     series = ""
     seriesNum = ""
+    # These are words that don't indicate a following series name/number eg "FIRST 3 chapters"
+    non_series_words = ['series', 'unabridged', 'volume', 'phrase', 'from', 'chapters', 'season',
+                        'the first', 'includes', 'paperback', 'first', 'books', 'large print', 'of',
+                        'rrp', '2 in', '&', 'v.']
 
     result = re.search(r"\(([\S\s]+[^)]),? #?(\d+\.?-?\d*[;,])", bookname)
     if result:
@@ -64,6 +68,14 @@ def bookSeries(bookname):
         series = series[:-6]
     if series and series.lower().endswith(' book'):
         series = series[:-5]
+    if series and series.lower().endswith(' part'):
+        series = series[:-5]
+    if series and series.lower().endswith(' -'):
+        series = series[:-2]
+
+    for word in non_series_words:
+        if series.lower().startswith(word):
+            return "", ""
 
     series = cleanName(unaccented(series))
     series = series.strip()
@@ -315,12 +327,12 @@ def safe_unicode(obj, *args):
     if not PY2:
         return str(obj, *args)
     try:
-        # noinspection PyCompatibility
+        # noinspection PyCompatibility,PyUnresolvedReferences
         return unicode(obj, *args)
     except UnicodeDecodeError:
         # obj is byte string
         ascii_text = str(obj).encode('string_escape')
-        # noinspection PyCompatibility
+        # noinspection PyCompatibility,PyUnresolvedReferences
         return unicode(ascii_text)
 
 

@@ -80,6 +80,7 @@ def search_rss_book(books=None, library=None):
                 else:
                     item = {}
                     headers = []
+                    results = None
                     item['Title'] = book['rss_title']
                     if book['rss_bookid']:
                         item['BookID'] = book['rss_bookid']
@@ -103,7 +104,6 @@ def search_rss_book(books=None, library=None):
                             myDB.upsert("books", newValueDict, controlValueDict)
                             new_books += 1
                     else:  # not in database yet
-                        results = ''
                         if book['rss_isbn']:
                             results = search_for(book['rss_isbn'])
                         if results:
@@ -127,16 +127,17 @@ def search_rss_book(books=None, library=None):
                                 new_books += 1
                                 bookmatch = True
 
-                    if not bookmatch:
-                        msg = "Skipping book %s by %s" % (item['Title'], book['rss_author'])
-                        if not results:
-                            msg += ', No results returned'
-                            logger.warn(msg)
-                        else:
-                            msg += ', No match found'
-                            logger.warn(msg)
-                            msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
-                                                                        result['authorname'], result['bookname'])
+                        if not bookmatch:
+                            msg = "Skipping book %s by %s" % (item['Title'], book['rss_author'])
+                            if not results:
+                                msg += ', No results returned'
+                                logger.warn(msg)
+                            else:
+                                msg += ', No match found'
+                                logger.warn(msg)
+                                result = results[0]  # type: dict
+                                msg = "Closest match (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
+                                                                            result['authorname'], result['bookname'])
                             logger.warn(msg)
         if new_books:
             logger.info("Wishlist marked %s book%s as Wanted" % (new_books, plural(new_books)))

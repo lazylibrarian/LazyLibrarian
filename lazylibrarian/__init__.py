@@ -154,7 +154,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
-                     'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR']
+                     'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
+                     'BANNED_EXT', 'MAG_RENAME']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -205,6 +206,7 @@ CONFIG_DEFINITIONS = {
     'PROXY_LOCAL': ('str', 'General', ''),
     'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
     'SKIPPED_EXT': ('str', 'General', 'fail, part, bts, !ut, torrent, magnet, nzb, unpack'),
+    'BANNED_EXT': ('str', 'General', 'avi, mp4, mov, iso, m4v'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
@@ -220,6 +222,7 @@ CONFIG_DEFINITIONS = {
     'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_RENAME': ('bool', 'General', 0),
+    'MAG_RENAME': ('bool', 'General', 0),
     'IMP_MAGOPF': ('bool', 'General', 1),
     'IMP_CONVERT': ('str', 'General', ''),
     'GIT_PROGRAM': ('str', 'General', ''),
@@ -420,6 +423,7 @@ CONFIG_DEFINITIONS = {
     'SLACK_NOTIFY_ONSNATCH': ('bool', 'Slack', 0),
     'SLACK_NOTIFY_ONDOWNLOAD': ('bool', 'Slack', 0),
     'SLACK_TOKEN': ('str', 'Slack', ''),
+    'SLACK_URL': ('str', 'Slack', "https://hooks.slack.com/services/"),
     'USE_CUSTOM': ('bool', 'Custom', 0),
     'CUSTOM_NOTIFY_ONSNATCH': ('bool', 'Custom', 0),
     'CUSTOM_NOTIFY_ONDOWNLOAD': ('bool', 'Custom', 0),
@@ -630,7 +634,7 @@ def initialize():
             pass
 
         MONTHNAMES = build_monthtable()
-        BOOKSTRAP_THEMELIST = build_bookstrap_themes()
+        BOOKSTRAP_THEMELIST = build_bookstrap_themes(PROG_DIR)
 
         __INITIALIZED__ = True
         return True
@@ -790,6 +794,7 @@ def config_read(reloaded=False):
     CONFIG['REJECT_MAGS'] = CONFIG['REJECT_MAGS'].lower()
     CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
     CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
+    CONFIG['BANNED_EXT'] = CONFIG['BANNED_EXT'].lower()
     if CONFIG['HTTP_LOOK'] == 'default':
         logger.warn('default interface is deprecated, new features are in bookstrap')
         CONFIG['HTTP_LOOK'] = 'legacy'
@@ -869,7 +874,8 @@ def config_write(part=None):
             value = CONFIG[key]
             if key == 'LOGLEVEL':
                 LOGLEVEL = check_int(value, 1)
-            elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE', 'AUDIOBOOK_TYPE']:
+            elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE',
+                         'BANNED_EXT', 'AUDIOBOOK_TYPE']:
                 value = value.lower()
         else:
             # keep the old value
@@ -1173,9 +1179,9 @@ def USE_DIRECT():
     return count
 
 
-def build_bookstrap_themes():
+def build_bookstrap_themes(prog_dir):
     themelist = []
-    if not os.path.isdir(os.path.join(PROG_DIR, 'data', 'interfaces', 'bookstrap')):
+    if not os.path.isdir(os.path.join(prog_dir, 'data', 'interfaces', 'bookstrap')):
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
@@ -1397,6 +1403,7 @@ def shutdown(restart=False, update=False):
         try:
             if versioncheck.update():
                 logmsg('info', 'Lazylibrarian version updated')
+                CONFIG['GIT_UPDATED'] = str(int(time.time()))
                 config_write('Git')
         except Exception as e:
             logmsg('warn', 'LazyLibrarian failed to update: %s %s. Restarting.' % (type(e).__name__, str(e)))

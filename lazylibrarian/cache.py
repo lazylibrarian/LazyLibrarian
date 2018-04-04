@@ -84,12 +84,13 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
         or error message, False if failed to cache """
 
     if img_type not in ['book', 'author']:
-        logger.debug('Internal error in cache_img, img_type = [%s]' % img_type)
+        logger.error('Internal error in cache_img, img_type = [%s]' % img_type)
         img_type = 'book'
 
     cachefile = os.path.join(lazylibrarian.CACHEDIR, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
+        logger.debug("Cached %s image exists %s" % (img_type, cachefile))
         return link, True
 
     if img_url.startswith('http'):
@@ -112,12 +113,18 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
             return str(e), False
 
 
-def get_xml_request(my_url, useCache=True):
+def gr_xml_request(my_url, useCache=True):
+    # respect goodreads api limit
+    time_now = int(time.time())
+    if time_now <= lazylibrarian.LAST_GOODREADS:
+        time.sleep(1)
     result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="XML")
+    if not in_cache:
+        lazylibrarian.LAST_GOODREADS = time_now
     return result, in_cache
 
 
-def get_json_request(my_url, useCache=True):
+def gb_json_request(my_url, useCache=True):
     result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="JSON")
     return result, in_cache
 
@@ -135,21 +142,23 @@ def get_cached_request(url, useCache=True, cache="XML"):
     myhash = md5_utf8(url)
     valid_cache = False
     source = None
-    hashfilename = cacheLocation + os.sep + myhash + "." + cache.lower()
+    hashfilename = cacheLocation + os.path.sep + myhash + "." + cache.lower()
+    expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
 
     if useCache and os.path.isfile(hashfilename):
         cache_modified_time = os.stat(hashfilename).st_mtime
         time_now = time.time()
-        expiry = lazylibrarian.CONFIG['CACHE_AGE'] * 24 * 60 * 60  # expire cache after this many seconds
         if cache_modified_time < time_now - expiry:
             # Cache entry is too old, delete it
+            logger.debug("Expiring %s" % myhash)
             os.remove(hashfilename)
         else:
             valid_cache = True
 
     if valid_cache:
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-        logger.debug("CacheHandler: Returning CACHED response %s for %s" % (hashfilename, url))
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("CacheHandler: Returning CACHED response %s for %s" % (hashfilename, url))
         if cache == "JSON":
             try:
                 source = json.load(open(hashfilename))
@@ -172,10 +181,12 @@ def get_cached_request(url, useCache=True, cache="XML"):
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
         result, success = fetchURL(url)
         if success:
-            logger.debug("CacheHandler: Storing %s for %s" % (cache, url))
+            logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
             if cache == "JSON":
                 try:
                     source = json.loads(result)
+                    if not expiry:
+                        return source, False
                 except Exception as e:
                     logger.error("%s decoding json from %s" % (type(e).__name__, url))
                     logger.debug("%s : %s" % (e, result))
@@ -185,6 +196,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 if result and result.startswith('<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
+                        if not expiry:
+                            return source, False
                     except ElementTree.ParseError:
                         logger.debug("Error parsing xml from %s" % url)
                         source = None

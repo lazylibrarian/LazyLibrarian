@@ -346,7 +346,7 @@ def WWT(book=None, test=False):
         if result:
             logger.debug('Parsing results from <a href="%s">%s</a>' % (searchURL, provider))
             soup = BeautifulSoup(result, 'html5lib')
-
+            rows = []
             try:
                 tables = soup.find_all('table')  # un-named table
                 table = tables[2]

@@ -21,9 +21,9 @@ import traceback
 
 import lazylibrarian
 from lazylibrarian import logger, database, magazinescan, bookwork
-from lazylibrarian.bookwork import getWorkSeries, setSeries
 from lazylibrarian.common import restartJobs, pwd_generator
-from lazylibrarian.formatter import plural, bookSeries, cleanName, unaccented, makeUnicode, makeBytestr, md5_utf8
+from lazylibrarian.formatter import plural, bookSeries, makeUnicode, makeBytestr, md5_utf8
+from lazylibrarian.importer import addAuthorToDB
 
 
 def upgrade_needed():
@@ -74,8 +74,10 @@ def upgrade_needed():
     # 26 add Sync table
     # 27 add indexes for book/author/wanted status
     # 28 add CalibreRead and CalibreToRead columns to user table
+    # 29 add goodreads workid to books table
+    # 30 add BookType to users table
 
-    db_current_version = 28
+    db_current_version = 30
 
     if db_version < db_current_version:
         return db_current_version
@@ -138,7 +140,7 @@ def dbupgrade(db_current_version):
                 BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
                 BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
                 Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, AudioLibrary TEXT, \
-                AudioStatus TEXT)')
+                AudioStatus TEXT, WorkID TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, \
                 NZBdate TEXT, NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, \
                 DownloadID TEXT)')
@@ -152,15 +154,16 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, \
                 GR_lang_hits int, LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, \
                 uncached int, duplicates int)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS series (SeriesID INTEGER PRIMARY KEY, SeriesName TEXT, \
+                    myDB.action('CREATE TABLE IF NOT EXISTS series (SeriesID INTEGER UNIQUE, SeriesName TEXT, \
                 Status TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
+                    myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, \
+                                 SeriesNum TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, \
                 UNIQUE (SeriesID,AuthorID))')
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
                                 Password TEXT, Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, \
-                                CalibreRead TEXT, CalibreToRead TEXT)')
+                                CalibreRead TEXT, CalibreToRead TEXT), BookType TEXT')
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Perms) VALUES (?, ?, ?, ?, ?)'
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin', md5_utf8('admin'), 65535))
                     logger.debug('Added admin user')
@@ -330,10 +333,10 @@ def dbupgrade(db_current_version):
 
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
-                                    db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28
-                                    ]
+                                    db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29,
+                                    db_v30]
                 for index, upgrade_function in enumerate(upgradefunctions):
-                    if index + 2 <= db_current_version:
+                    if index + 2 > db_version:
                         upgrade_function(myDB, upgradelog)
 
                 # Now do any non-version-specific tidying
@@ -723,26 +726,6 @@ def db_v15(myDB, upgradelog):
                         AuthorID TEXT, Status TEXT)')
     myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, SeriesNum TEXT)')
     if has_column(myDB, "books", "SeriesNum"):
-        lazylibrarian.UPDATE_MSG = 'Populating series and member tables'
-        upgradelog.write("%s v15: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-        books = myDB.select('SELECT BookID, Series, SeriesNum from books')
-        if books:
-            tot = len(books)
-            logger.debug("Updating book series for %s book%s" % (tot, plural(tot)))
-            cnt = 0
-            for book in books:
-                cnt += 1
-                lazylibrarian.UPDATE_MSG = "Updating book series: %s of %s" % (cnt, tot)
-                seriesdict = getWorkSeries(book['BookID'])
-                if not seriesdict:  # no workpage series, use the current values if present
-                    if book['Series'] and book['SeriesNum']:
-                        seriesdict = {cleanName(unaccented(book['Series'])): book['SeriesNum']}
-                setSeries(seriesdict, book['BookID'], seriesauthors=False, seriesdisplay=False)
-            # deleteEmptySeries  # shouldn't be any on first run?
-            lazylibrarian.UPDATE_MSG = "Book series update complete"
-            upgradelog.write("%s v15: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-            logger.debug(lazylibrarian.UPDATE_MSG)
-
         lazylibrarian.UPDATE_MSG = 'Removing seriesnum from books table'
         myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, AuthorName TEXT, \
                     AuthorLink TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, \
@@ -983,3 +966,78 @@ def db_v28(myDB, upgradelog):
         myDB.action('ALTER TABLE users ADD COLUMN CalibreRead TEXT')
         myDB.action('ALTER TABLE users ADD COLUMN CalibreToRead TEXT')
     upgradelog.write("%s v28: complete\n" % time.ctime())
+
+
+def calc_eta(start_time, start_count, done):
+    percent_done = done * 100 / start_count
+    if not percent_done:
+        secs_left = start_count * 1.5
+    else:
+        time_elapsed = time.time() - start_time
+        secs_per_percent = time_elapsed / percent_done
+        percent_left = 100 - percent_done
+        secs_left = percent_left * secs_per_percent
+
+    eta = int(secs_left / 60) + (secs_left % 60 > 0)
+    if eta < 2:
+        return "Completed %s%% eta %s minute" % (int(percent_done), eta)
+    if eta < 120:
+        return "Completed %s%% eta %s minutes" % (int(percent_done), eta)
+    else:
+        eta = int(secs_left / 3600) + (secs_left % 3600 > 0)
+        return "Completed %s%% eta %s hours" % (int(percent_done), eta)
+
+
+def db_v29(myDB, upgradelog):
+    if not has_column(myDB, "books", "WorkID"):
+        lazylibrarian.UPDATE_MSG = 'Adding WorkID to member and books tables'
+        upgradelog.write("%s v29: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE books ADD COLUMN WorkID TEXT')
+    if not has_column(myDB, "member", "WorkID"):
+        myDB.action('ALTER TABLE member ADD COLUMN WorkID TEXT')
+        myDB.action('DROP TABLE IF EXISTS temp_table')
+        myDB.action('ALTER TABLE series RENAME TO temp_table')
+        myDB.action('CREATE TABLE series (SeriesID INTEGER UNIQUE, SeriesName TEXT, Status TEXT)')
+        myDB.action('INSERT INTO series SELECT SeriesID,SeriesName,Status FROM temp_table')
+        myDB.action('DROP TABLE temp_table')
+    if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
+        authors = myDB.select('SELECT AuthorID,AuthorName,TotalBooks from authors WHERE Status != "Ignored"')
+        books = myDB.match('SELECT sum(totalbooks) as total from authors  WHERE Status != "Ignored"')
+        tot = len(authors)
+        if tot:
+            upgradelog.write("%s v29: Upgrading %s authors, %s books\n" % (time.ctime(), tot, books['total']))
+            start_count = int(books['total']) + tot
+            start_time = time.time()
+            entries_done = 0
+            myDB.action('DELETE FROM seriesauthors')
+            cnt = 0
+            for author in authors:
+                cnt += 1
+                expected_books = author['TotalBooks']
+                lazylibrarian.UPDATE_MSG = "Updating %s (%s books): %s" % (author['AuthorName'], expected_books,
+                                                                           calc_eta(start_time, start_count,
+                                                                                    entries_done))
+                addAuthorToDB(authorname=None, refresh=True, authorid=author['AuthorID'], addbooks=True)
+                entries_done += expected_books  # may have extra books now, don't overcount
+                entries_done += 1   # one less author
+
+        members = myDB.select('SELECT BookID from member')
+        tot = len(members)
+        if tot:
+            upgradelog.write("%s v29: Upgrading %s series members\n" % (time.ctime(), tot))
+            cnt = 0
+            for member in members:
+                cnt += 1
+                lazylibrarian.UPDATE_MSG = "Updating series members %s of %s" % (cnt, tot)
+                res = myDB.match('SELECT WorkID from books WHERE BookID=?', (member['BookID'],))
+                if res:
+                    myDB.action('UPDATE member SET WorkID=? WHERE BookID=?', (res['WorkID'], member['BookID']))
+    upgradelog.write("%s v29: complete\n" % time.ctime())
+
+
+def db_v30(myDB, upgradelog):
+    if not has_column(myDB, "users", "BookType"):
+        lazylibrarian.UPDATE_MSG = 'Adding BookType to Users table'
+        upgradelog.write("%s v30: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE users ADD COLUMN BookType TEXT')
+    upgradelog.write("%s v30: complete\n" % time.ctime())

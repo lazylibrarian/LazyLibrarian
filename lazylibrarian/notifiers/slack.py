@@ -34,7 +34,12 @@ class SlackNotifier:
         if not lazylibrarian.CONFIG['USE_SLACK'] and not force:
             return False
 
-        url = "https://hooks.slack.com/services/"
+        url = lazylibrarian.CONFIG['SLACK_URL']
+        if not url.startswith("http"):
+            url = 'https://' + url
+        if not url.endswith("/"):
+            url = url + '/'
+
         if slack_token is None:
             slack_token = lazylibrarian.CONFIG['SLACK_TOKEN']
         if method is None:

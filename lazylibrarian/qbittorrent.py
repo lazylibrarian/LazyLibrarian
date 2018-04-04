@@ -292,6 +292,24 @@ def getName(hashid):
     return ''
 
 
+def getFiles(hashid):
+    logger.debug('getFiles(%s)' % hashid)
+    qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return ''
+    RETRIES = 5
+
+    while RETRIES:
+        # noinspection PyProtectedMember
+        files = qbclient.getfiles(hashid)
+        if files:
+            return files
+        time.sleep(2)
+        RETRIES -= 1
+    return ''
+
+
 def getFolder(hashid):
     logger.debug('getFolder(%s)' % hashid)
     qbclient = qbittorrentclient()

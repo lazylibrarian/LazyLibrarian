@@ -114,9 +114,12 @@
 
     function validateForm() {
         var x = document.forms["markIssues"]["action"].value;
-        if (x == "Delete") {
+        var c = (document.querySelectorAll('input[type="checkbox"]:checked').length);
+        if (c > 0 && x == "Delete") {
+            if (c == 1) {msg = "Are you sure you want to permanently delete the selected issue?"}
+            if (c > 1) {msg = "Are you sure you want to permanently delete the " + c + " selected issues?"}
             bootbox.confirm({
-                message: "Are you sure you want to permanently delete the selected issues?",
+                message: msg,
                 buttons: {
                     confirm: {
                         label: 'Yes',

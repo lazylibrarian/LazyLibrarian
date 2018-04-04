@@ -209,8 +209,7 @@ class WebInterface(object):
                     percent = 0
                 if percent > 100:
                     percent = 100
-                if percent <= 100:
-                    css = 'success'
+                css = 'success'
                 if percent <= 75:
                     css = 'info'
                 if percent <= 50:
@@ -237,7 +236,8 @@ class WebInterface(object):
                 filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
             else:
                 filtered = rows
-            sortcolumn = int(iSortCol_0)
+            sortcolumn = int(iSortCol_0) - 1
+
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
@@ -291,7 +291,7 @@ class WebInterface(object):
         if cookie and 'll_uid' in list(cookie.keys()):
             userid = cookie['ll_uid'].value
             myDB = database.DBConnection()
-            user = myDB.match('SELECT UserName,Name,Email,Password from users where UserID=?', (userid,))
+            user = myDB.match('SELECT UserName,Name,Email,Password,BookType from users where UserID=?', (userid,))
             if user:
                 if kwargs['username'] and user['UserName'] != kwargs['username']:
                     # if username changed, must not have same username as another user
@@ -306,9 +306,13 @@ class WebInterface(object):
                     changes += ' name'
                     myDB.action('UPDATE users SET Name=? WHERE UserID=?', (kwargs['fullname'], userid))
 
-                if kwargs['email'] and user['Email'] != kwargs['email']:
+                if user['Email'] != kwargs['email']:
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
+
+                if user['BookType'] != kwargs['booktype']:
+                    changes += ' BookType'
+                    myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
 
                 if kwargs['password']:
                     pwd = md5_utf8(kwargs['password'])
@@ -417,7 +421,8 @@ class WebInterface(object):
         self.label_thread('USERADMIN')
         myDB = database.DBConnection()
         title = "Manage User Accounts"
-        users = myDB.select('SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead from users')
+        cmd = 'SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead, BookType from users'
+        users = myDB.select(cmd)
         return serve_template(templatename="users.html", title=title, users=users)
 
     @cherrypy.expose
@@ -447,9 +452,13 @@ class WebInterface(object):
         myDB = database.DBConnection()
         match = myDB.match('SELECT * from users where UserName=?', (kwargs['user'],))
         if match:
-            return simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
-                                    'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead']})
-        return simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': ''})
+            res = simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
+                                    'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead'],
+                                    'booktype': match['BookType']})
+        else:
+            res = simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': '',
+                                    'booktype': ''})
+        return res
 
     @cherrypy.expose
     def admin_users(self, **kwargs):
@@ -520,8 +529,10 @@ class WebInterface(object):
                     return "Username already exists"
 
             changes = ''
-            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead from users where UserName=?'
+            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead,BookType'
+            cmd += ' from users where UserName=?'
             details = myDB.match(cmd, (user,))
+
             if details:
                 userid = details['UserID']
                 if kwargs['username'] and kwargs['username'] != user:
@@ -532,9 +543,10 @@ class WebInterface(object):
                     changes += ' name'
                     myDB.action('UPDATE users SET Name=? WHERE UserID=?', (kwargs['fullname'], userid))
 
-                if kwargs['email'] and details['Email'] != kwargs['email']:
-                    if not isValidEmail(kwargs['email']):
-                        return "Invalid email given"
+                if details['Email'] != kwargs['email']:
+                    if kwargs['email']:
+                        if not isValidEmail(kwargs['email']):
+                            return "Invalid email given"
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
@@ -544,13 +556,17 @@ class WebInterface(object):
                         changes += ' password'
                         myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
 
-                if kwargs['calread'] and details['CalibreRead'] != kwargs['calread']:
+                if details['CalibreRead'] != kwargs['calread']:
                     changes += ' CalibreRead'
                     myDB.action('UPDATE users SET CalibreRead=? WHERE UserID=?', (kwargs['calread'], userid))
 
-                if kwargs['caltoread'] and details['CalibreToRead'] != kwargs['caltoread']:
+                if details['CalibreToRead'] != kwargs['caltoread']:
                     changes += ' CalibreToRead'
                     myDB.action('UPDATE users SET CalibreToRead=? WHERE UserID=?', (kwargs['caltoread'], userid))
+
+                if details['BookType'] != kwargs['booktype']:
+                    changes += ' BookType'
+                    myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
 
                 if changes:
                     return 'Updated user details:%s' % changes
@@ -798,7 +814,7 @@ class WebInterface(object):
     @cherrypy.expose
     def config(self):
         self.label_thread('CONFIG')
-        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.sep + 'interfaces')
+        http_look_dir = os.path.join(lazylibrarian.PROG_DIR, 'data' + os.path.sep + 'interfaces')
         http_look_list = [name for name in os.listdir(http_look_dir)
                           if os.path.isdir(os.path.join(http_look_dir, name))]
         status_list = ['Skipped', 'Wanted', 'Have', 'Ignored']
@@ -1057,6 +1073,44 @@ class WebInterface(object):
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
+
+    @cherrypy.expose
+    def markAuthors(self, action=None, redirect=None, **args):
+        myDB = database.DBConnection()
+        if not redirect:
+            redirect = "home"
+        if action:
+            for authorid in args:
+                # ouch dirty workaround...
+                if authorid not in ['author_table_length', 'ignored']:
+                    check = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (authorid,))
+                    if not check:
+                        logger.warn('Unable to set Status to "%s" for "%s"' % (action, authorid))
+                    elif action in ["Active", "Wanted", "Paused"]:
+                        myDB.upsert("authors", {'Status': action}, {'AuthorID': authorid})
+                        logger.info('Status set to "%s" for "%s"' % (action, check['AuthorName']))
+                    elif action == "Delete":
+                        logger.info("Removing author and books: %s" % check['AuthorName'])
+                        books = myDB.select("SELECT BookFile from books WHERE AuthorID=? AND BookFile is not null",
+                                            (authorid,))
+                        for book in books:
+                            if os.path.exists(book['BookFile']):
+                                try:
+                                    rmtree(os.path.dirname(book['BookFile']), ignore_errors=True)
+                                except Exception as e:
+                                    logger.warn('rmtree failed on %s, %s %s' %
+                                                (book['BookFile'], type(e).__name__, str(e)))
+
+                        myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+                    elif action == "Remove":
+                        logger.info("Removing author: %s" % check['AuthorName'])
+                        myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
+                        myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+
+        raise cherrypy.HTTPRedirect(redirect)
 
     @cherrypy.expose
     def authorPage(self, AuthorID, BookLang=None, library='eBook', Ignored=False):
@@ -1510,7 +1564,7 @@ class WebInterface(object):
 
                 if 'goodreads' in row[9]:
                     sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
-                elif 'google' in row[9]:
+                elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
                     sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
                 title = row[2]
                 if row[8]:  # is there a sub-title
@@ -1693,19 +1747,26 @@ class WebInterface(object):
                               title=title, message=msg, timer=timer)
 
     @cherrypy.expose
-    def openBook(self, bookid=None, library=None, redirect=None):
+    def openBook(self, bookid=None, library=None, redirect=None, booktype=None):
         self.label_thread('OPEN_BOOK')
         # we need to check the user priveleges and see if they can download the book
         myDB = database.DBConnection()
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             perm = lazylibrarian.perm_admin
+            preftype = ''
         else:
             perm = 0
+            preftype = ''
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in list(cookie.keys()):
-                res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
+                res = myDB.match('SELECT UserName,Perms,BookType from users where UserID=?',
+                                 (cookie['ll_uid'].value,))
                 if res:
                     perm = check_int(res['Perms'], 0)
+                    preftype = res['BookType']
+
+        if booktype is not None:
+            preftype = booktype
 
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -1725,6 +1786,38 @@ class WebInterface(object):
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]
                     if bookfile and os.path.isfile(bookfile):
+                        basename, extn = os.path.splitext(bookfile)
+                        types = []
+                        for item in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
+                            target = basename + '.' + item
+                            if os.path.isfile(target):
+                                types.append(item)
+
+                        if preftype:
+                            if preftype in types:
+                                bookfile = basename + '.' + preftype
+                            else:
+                                msg = "%s<br> Not available as %s, only " % (bookName, preftype)
+                                typestr = ''
+                                for item in types:
+                                    if typestr:
+                                        typestr += ' '
+                                    typestr += item
+                                msg += typestr
+                                return serve_template(templatename="choosetype.html", prefix="",
+                                                      title="Not Available", message=msg,
+                                                      types=typestr, bookid=bookid)
+                        elif len(types) > 1:
+                            msg = "Please select format to download"
+                            typestr = ''
+                            for item in types:
+                                if typestr:
+                                    typestr += ' '
+                                typestr += item
+                            return serve_template(templatename="choosetype.html", prefix="",
+                                                  title="Choose Type", message=msg,
+                                                  types=typestr, bookid=bookid)
+
                         logger.debug('Opening %s %s' % (library, bookfile))
                         return serve_file(bookfile, self.mimetype(bookfile), "attachment")
 
@@ -1872,7 +1965,7 @@ class WebInterface(object):
         if bookdata:
             covers = []
             for source in ['current', 'cover', 'goodreads', 'librarything', 'google']:
-                cover = getBookCover(bookid, source)
+                cover, _ = getBookCover(bookid, source)
                 if cover:
                     covers.append([source, cover])
 
@@ -1884,7 +1977,6 @@ class WebInterface(object):
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
                    manual='0', authorname='', cover='', newid='', **kwargs):
-
         myDB = database.DBConnection()
         if bookid:
             cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,books.Manual,AuthorName,books.AuthorID '
@@ -1897,7 +1989,7 @@ class WebInterface(object):
                     bookgenre = ''
                 manual = bool(check_int(manual, 0))
 
-                if not (bookid == newid):
+                if newid and not (bookid == newid):
                     cmd = "SELECT BookName,Authorname from books,authors "
                     cmd += "WHERE books.AuthorID = authors.AuthorID and BookID=?"
                     match = myDB.match(cmd, (newid,))
@@ -1951,37 +2043,40 @@ class WebInterface(object):
                     }
                     myDB.upsert("books", newValueDict, controlValueDict)
 
-                cmd = 'SELECT SeriesName, SeriesNum from member,series '
+                cmd = 'SELECT SeriesName, SeriesNum, series.SeriesID from member,series '
                 cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
                 old_series = myDB.select(cmd, (bookid,))
-                old_dict = {}
-                new_dict = {}
+                old_list = []
+                new_list = []
                 dict_counter = 0
                 while "series[%s][name]" % dict_counter in kwargs:
                     s_name = kwargs["series[%s][name]" % dict_counter]
                     s_name = cleanName(unaccented(s_name), '&/')
-                    new_dict[s_name] = kwargs["series[%s][number]" % dict_counter]
+                    s_num = kwargs["series[%s][number]" % dict_counter]
+                    match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (s_name,))
+                    if match:
+                        new_list.append([match['SeriesID'], s_num, s_name])
+                    else:
+                        new_list.append(['', s_num, s_name])
                     dict_counter += 1
                 if 'series[new][name]' in kwargs and 'series[new][number]' in kwargs:
                     if kwargs['series[new][name]']:
                         s_name = kwargs["series[new][name]"]
                         s_name = cleanName(unaccented(s_name), '&/')
-                        new_dict[s_name] = kwargs['series[new][number]']
+                        s_num = kwargs['series[new][number]']
+                        new_list.append(['', s_num, s_name])
                 for item in old_series:
-                    old_dict[cleanName(unaccented(item['SeriesName']), '&/')] = item['SeriesNum']
+                    old_list.append([item['SeriesID'], item['SeriesNum'], item['SeriesName']])
 
                 series_changed = False
-                for item in old_dict:
-                    if item not in new_dict:
+                for item in old_list:
+                    if item[1:] not in [i[1:] for i in new_list]:
                         series_changed = True
-                for item in new_dict:
-                    if item not in old_dict:
+                for item in new_list:
+                    if item[1:] not in [i[1:] for i in old_list]:
                         series_changed = True
-                    else:
-                        if new_dict[item] != old_dict[item]:
-                            series_changed = True
                 if series_changed:
-                    setSeries(new_dict, bookid)
+                    setSeries(new_list, bookid)
                     deleteEmptySeries()
                     edited += "Series "
 
@@ -2098,6 +2193,7 @@ class WebInterface(object):
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
                                                 if calibreid.endswith(')'):
+                                                    # noinspection PyTypeChecker
                                                     calibreid = calibreid.rsplit('(', 1)[1].split(')')[0]
                                                     if not calibreid or not calibreid.isdigit():
                                                         calibreid = None
@@ -2157,7 +2253,7 @@ class WebInterface(object):
         elif redirect == "members":
             raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
         else:
-            raise cherrypy.HTTPRedirect("manage")
+            raise cherrypy.HTTPRedirect("manage?library=%s" % library)
 
     # WALL #########################################################
 
@@ -3116,6 +3212,8 @@ class WebInterface(object):
                 userid = cookie['ll_uid'].value
                 msg = syncCalibreList(userid=userid)
                 self.label_thread('WEBSERVER')
+            else:
+                msg = "No userid found"
         return msg
 
     @cherrypy.expose
@@ -3315,6 +3413,8 @@ class WebInterface(object):
         threading.currentThread().name = "WEBSERVER"
         if 'token' in kwargs:
             lazylibrarian.CONFIG['SLACK_TOKEN'] = kwargs['token']
+        if 'url' in kwargs:
+            lazylibrarian.CONFIG['SLACK_URL'] = kwargs['url']
 
         result = notifiers.slack_notifier.test_notify()
         if result != "ok":

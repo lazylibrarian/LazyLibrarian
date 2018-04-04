@@ -13,10 +13,14 @@
   </div>
 </%def>
 <%def name="body()">
-<h1>${title}</h1>
   <!-- ensure the browser sends form-submission data in the UTF-8 encoding,
        even if the user fiddles with the page encoding -->
   <form accept-charset="UTF-8" action="configUpdate" method="post">
+<h1>${title}
+    <div class="pull-right table_wrapper_button">
+      <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+    </div>
+</h1>
     <div role="tab-table" class="hidden">
       <!-- if the browser is IE and the user switched the page encoding, force utf8 by adding
       a hidden input to the form with a value such as &#x2713; which can only be from the Unicode charset-->
@@ -1716,6 +1720,18 @@
                   </div>
                   <div class="checkbox">
                     <%
+                        if lazylibrarian.CONFIG['MAG_RENAME'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="mag_rename" class="control-label">
+                      <input type="checkbox" id="mag_rename" name="mag_rename" value="1" ${checked} />
+                      Rename existing magazines on libraryscan</label>
+                    <span class="help-block">This renames existing files to match Magazine Filename Pattern</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
                         if lazylibrarian.CONFIG['ADD_AUTHOR'] == True:
                             checked = 'checked="checked"'
                         else:
@@ -2257,7 +2273,11 @@
                         Notify on download</label>
                     </div>
                     <div class="form-group">
-                      <label for="slack_token">Slack Webhook Token(everything after https://hooks.slack.com/services/)</label>
+                      <label for="slack_url">Slack Webhook URL (usually https://hooks.slack.com/services/)</label>
+                      <input type="text" id="slack_url" name="slack_url" value="${lazylibrarian.CONFIG['SLACK_URL']}" class="form-control" placeholder="Slack Webhook URL">
+                    </div>
+                    <div class="form-group">
+                      <label for="slack_token">Slack Webhook Token (everything after https://hooks.slack.com/services/)</label>
                       <input type="text" id="slack_token" name="slack_token" value="${lazylibrarian.CONFIG['SLACK_TOKEN']}" class="form-control" placeholder="Slack Webhook Token">
                     </div>
                     <div class="form-group">
@@ -2565,6 +2585,16 @@
                   </span>
                 </div>
                 </div>
+                <div class="col-md-6">
+                <legend>Extension Reject List (all types)</legend>
+                <div class="form-group">
+                  <input type="text" id="banned_ext" name="banned_ext" value="${lazylibrarian.CONFIG['BANNED_EXT']}" class="form-control" placeholder="Reject extensions list">
+                  <span class="help-block">Comma separated list of extensions to reject:<br/>
+                    Results with any of these extensions in the contents will be rejected<br/>
+                    (only transmission/deluge/qbittorrent)<br/>
+                  </span>
+                </div>
+                </div>
                 <div class="col-md-12">
                 <legend>Book Size Limits</legend>
                 </div>
@@ -2639,9 +2669,6 @@
     <!-- tabs content -->
     </div>
     <!-- tabs -->
-    <div class="table_wrapper_button">
-      <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-    </div>
     <p>&nbsp;</p>
     <p style="text-align:center;color:grey">Repo: https://github.com/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}  :     Branch: ${lazylibrarian.CONFIG['GIT_BRANCH']}  :  Updated: ${config['updated']}<br>
     Current Version: ${lazylibrarian.CONFIG['CURRENT_VERSION']}  : Latest  Version:    ${lazylibrarian.CONFIG['LATEST_VERSION']}</p>
@@ -3582,7 +3609,8 @@
 
         $('#testSlack').click(function () {
             var token = $.trim($("#slack_token").val());
-            $.get("testSlack", {'token': token},
+            var url = $.trim($("#slack_url").val());
+            $.get("testSlack", {'token': token, 'url': url},
                 function (data) { window.alert(data) });
         });
 
