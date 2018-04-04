@@ -1,0 +1,55 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<div>
+    <input type="hidden" name="title" id="title" value="${title}">
+    <input type="hidden" name="prefix" id="prefix" value="${prefix}">
+    <input type="hidden" name="message" id="message" value="${message}">
+    <input type="hidden" name="bookid" id="bookid" value="${bookid}">
+    <input type="hidden" name="types" id="types" value="${types}">
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+    $(document).ready(function()
+    {
+        var title = $('#title').val();
+        var prefix = $('#prefix').val();
+        var message = $('#message').val();
+        var bookid = $('#bookid').val();
+        var types = $('#types').val();
+        var buttons = {
+                    bt0: {
+                        label: "Close",
+                        className: 'btn-primary',
+                        callback: function(result){ window.history.back() }
+                    },
+                }
+
+        var array = types.split(' ');
+        var item;
+        for (item of array) {
+                buttons[item] = {
+                    label: item,
+                    className: 'btn-info',
+                    callback: function(result){ window.location = 'openBook?bookid=' + bookid +
+                                        '&library=eBook&booktype=' + item }
+                    };
+        };
+
+        bootbox.dialog({
+            title: title,
+            message: '<pre>'+prefix+' '+message+'</pre>',
+            buttons: buttons
+        });
+    });
+
+    </script>
+</%def>

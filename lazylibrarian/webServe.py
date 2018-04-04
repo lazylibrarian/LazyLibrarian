@@ -306,11 +306,11 @@ class WebInterface(object):
                     changes += ' name'
                     myDB.action('UPDATE users SET Name=? WHERE UserID=?', (kwargs['fullname'], userid))
 
-                if kwargs['email'] and user['Email'] != kwargs['email']:
+                if user['Email'] != kwargs['email']:
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
-                if kwargs['booktype'] and user['BookType'] != kwargs['booktype']:
+                if user['BookType'] != kwargs['booktype']:
                     changes += ' BookType'
                     myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
 
@@ -543,9 +543,10 @@ class WebInterface(object):
                     changes += ' name'
                     myDB.action('UPDATE users SET Name=? WHERE UserID=?', (kwargs['fullname'], userid))
 
-                if kwargs['email'] and details['Email'] != kwargs['email']:
-                    if not isValidEmail(kwargs['email']):
-                        return "Invalid email given"
+                if details['Email'] != kwargs['email']:
+                    if kwargs['email']:
+                        if not isValidEmail(kwargs['email']):
+                            return "Invalid email given"
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
@@ -555,18 +556,18 @@ class WebInterface(object):
                         changes += ' password'
                         myDB.action('UPDATE users SET password=? WHERE UserID=?', (pwd, userid))
 
-                if kwargs['calread'] and details['CalibreRead'] != kwargs['calread']:
+                if details['CalibreRead'] != kwargs['calread']:
                     changes += ' CalibreRead'
                     myDB.action('UPDATE users SET CalibreRead=? WHERE UserID=?', (kwargs['calread'], userid))
 
-                if kwargs['caltoread'] and details['CalibreToRead'] != kwargs['caltoread']:
+                if details['CalibreToRead'] != kwargs['caltoread']:
                     changes += ' CalibreToRead'
                     myDB.action('UPDATE users SET CalibreToRead=? WHERE UserID=?', (kwargs['caltoread'], userid))
-                
-                if kwargs['booktype'] and details['BookType'] != kwargs['booktype']:
+
+                if details['BookType'] != kwargs['booktype']:
                     changes += ' BookType'
                     myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
-                
+
                 if changes:
                     return 'Updated user details:%s' % changes
             return "No changes made"
@@ -1746,7 +1747,7 @@ class WebInterface(object):
                               title=title, message=msg, timer=timer)
 
     @cherrypy.expose
-    def openBook(self, bookid=None, library=None, redirect=None):
+    def openBook(self, bookid=None, library=None, redirect=None, booktype=None):
         self.label_thread('OPEN_BOOK')
         # we need to check the user priveleges and see if they can download the book
         myDB = database.DBConnection()
@@ -1758,11 +1759,14 @@ class WebInterface(object):
             preftype = ''
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in list(cookie.keys()):
-                res = myDB.match('SELECT UserName,Perms,BookType from users where UserID=?', 
+                res = myDB.match('SELECT UserName,Perms,BookType from users where UserID=?',
                                  (cookie['ll_uid'].value,))
                 if res:
                     perm = check_int(res['Perms'], 0)
                     preftype = res['BookType']
+
+        if booktype is not None:
+            preftype = booktype
 
         cmd = 'SELECT BookFile,AudioFile,AuthorName,BookName from books,authors WHERE BookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -1789,9 +1793,31 @@ class WebInterface(object):
                             if os.path.isfile(target):
                                 types.append(item)
 
-                        if preftype and preftype in types:
-                            bookfile = basename + '.' + preftype
-                            
+                        if preftype:
+                            if preftype in types:
+                                bookfile = basename + '.' + preftype
+                            else:
+                                msg = "%s<br> Not available as %s, only " % (bookName, preftype)
+                                typestr = ''
+                                for item in types:
+                                    if typestr:
+                                        typestr += ' '
+                                    typestr += item
+                                msg += typestr
+                                return serve_template(templatename="choosetype.html", prefix="",
+                                                      title="Not Available", message=msg,
+                                                      types=typestr, bookid=bookid)
+                        elif len(types) > 1:
+                            msg = "Please select format to download"
+                            typestr = ''
+                            for item in types:
+                                if typestr:
+                                    typestr += ' '
+                                typestr += item
+                            return serve_template(templatename="choosetype.html", prefix="",
+                                                  title="Choose Type", message=msg,
+                                                  types=typestr, bookid=bookid)
+
                         logger.debug('Opening %s %s' % (library, bookfile))
                         return serve_file(bookfile, self.mimetype(bookfile), "attachment")
 
