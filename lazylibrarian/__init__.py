@@ -147,7 +147,8 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT']
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
+                 'SYS_ENCODING']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -161,6 +162,7 @@ CONFIG_DEFINITIONS = {
     'USER_ACCOUNTS': ('bool', 'General', 0),
     'SINGLE_USER': ('bool', 'General', 0),
     'ADMIN_EMAIL': ('str', 'General', ''),
+    'SYS_ENCODING': ('str', 'General', ''),
     'LOGDIR': ('str', 'General', ''),
     'LOGLIMIT': ('int', 'General', 500),
     'LOGFILES': ('int', 'General', 10),
@@ -573,6 +575,10 @@ def initialize():
             logger.info("Screen Log set to WARN/ERROR")
 
         config_read()
+
+        # override detected encoding if required
+        if CONFIG['SYS_ENCODING']:
+            SYS_ENCODING = CONFIG['SYS_ENCODING']
 
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
