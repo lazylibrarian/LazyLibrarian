@@ -208,7 +208,7 @@ def get_capabilities(provider, force=False):
                 if data.tag == 'error':
                     logger.debug("Unable to get capabilities: %s" % data.attrib)
                     success = False
-            except ElementTree.ParseError:
+            except (ElementTree.ParseError, UnicodeEncodeError):
                 logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
                 success = False
         if not success:
@@ -225,7 +225,7 @@ def get_capabilities(provider, force=False):
                         if data.tag == 'error':
                             logger.debug("Unable to get capabilities: %s" % data.attrib)
                             success = False
-                    except ElementTree.ParseError:
+                    except (ElementTree.ParseError, UnicodeEncodeError):
                         logger.debug("Error parsing xml from %s, %s" % (URL, source_xml))
                         success = False
             else:
