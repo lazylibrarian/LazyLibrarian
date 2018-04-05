@@ -657,12 +657,14 @@ def librarything_wait():
 # might only be temporary, but for now disable looking for new workpages
 # and do not expire cached ones
 ALLOW_NEW = False
+LAST_NEW = 0
 
 
 def getBookWork(bookID=None, reason=None, seriesID=None):
     """ return the contents of the LibraryThing workpage for the given bookid, or seriespage if seriesID given
         preferably from the cache. If not already cached cache the results
         Return None if no workpage/seriespage available """
+    global ALLOW_NEW, LAST_NEW
     if not bookID and not seriesID:
         logger.error("getBookWork - No bookID or seriesID")
         return None
@@ -721,7 +723,11 @@ def getBookWork(bookID=None, reason=None, seriesID=None):
         else:
             lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
             if not ALLOW_NEW:
-                logger.debug("New WhatWork is disabled")
+                # don't nag. Show message no more than every 12 hrs
+                timenow = int(time.time())
+                if check_int(LAST_NEW, 0) + 43200 < timenow:
+                    logger.warn("New WhatWork is disabled")
+                    LAST_NEW = timenow
                 return None
             if bookID:
                 title = safe_unicode(item['BookName'])
@@ -1383,4 +1389,3 @@ def isbn_from_words(words):
 
     logger.debug('No ISBN found for %s' % words)
     return None
-
