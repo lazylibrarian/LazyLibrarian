@@ -171,7 +171,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
             if result and result.startswith('<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
-                except ElementTree.ParseError:
+                except (ElementTree.ParseError, UnicodeEncodeError):
+                    logger.debug("Error parsing xml from %s" % hashfilename)
                     source = None
             if source is None:
                 logger.debug("Error reading xml from %s" % hashfilename)
@@ -198,7 +199,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                         source = ElementTree.fromstring(result)
                         if not expiry:
                             return source, False
-                    except ElementTree.ParseError:
+                    except (ElementTree.ParseError, UnicodeEncodeError):
                         logger.debug("Error parsing xml from %s" % url)
                         source = None
                 if source is not None:
