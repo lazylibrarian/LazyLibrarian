@@ -6,11 +6,6 @@
 </%def>
 <%def name="body()">
 <div>
-    <input type="hidden" name="title" id="title" value="${title}">
-    <input type="hidden" name="prefix" id="prefix" value="${prefix}">
-    <input type="hidden" name="message" id="message" value="${message}">
-    <input type="hidden" name="bookid" id="bookid" value="${bookid}">
-    <input type="hidden" name="types" id="types" value="${types}">
 </div>
 </%def>
 
@@ -20,11 +15,10 @@
     <script type="text/javascript">
     $(document).ready(function()
     {
-        var title = $('#title').val();
-        var prefix = $('#prefix').val();
-        var message = $('#message').val();
-        var bookid = $('#bookid').val();
-        var types = $('#types').val();
+        var title = '${title}';
+        var pop_message = '${pop_message}';
+        var bookid = '${bookid}';
+        var pop_types = '${pop_types}';
         var buttons = {
                     bt0: {
                         label: "Close",
@@ -33,7 +27,7 @@
                     },
                 }
 
-        var array = types.split(' ');
+        var array = pop_types.split(' ');
         var item;
         for (item of array) {
                 buttons[item] = {
@@ -46,7 +40,7 @@
 
         bootbox.dialog({
             title: title,
-            message: '<pre>'+prefix+' '+message+'</pre>',
+            message: '<pre>'+pop_message+'</pre>',
             buttons: buttons
         });
     });

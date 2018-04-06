@@ -1805,8 +1805,8 @@ class WebInterface(object):
                                     typestr += item
                                 msg += typestr
                                 return serve_template(templatename="choosetype.html", prefix="",
-                                                      title="Not Available", message=msg,
-                                                      types=typestr, bookid=bookid)
+                                                      title="Not Available", pop_message=msg,
+                                                      pop_types=typestr, bookid=bookid)
                         elif len(types) > 1:
                             msg = "Please select format to download"
                             typestr = ''
@@ -1815,8 +1815,8 @@ class WebInterface(object):
                                     typestr += ' '
                                 typestr += item
                             return serve_template(templatename="choosetype.html", prefix="",
-                                                  title="Choose Type", message=msg,
-                                                  types=typestr, bookid=bookid)
+                                                  title="Choose Type", pop_message=msg,
+                                                  pop_types=typestr, bookid=bookid)
 
                         logger.debug('Opening %s %s' % (library, bookfile))
                         return serve_file(bookfile, self.mimetype(bookfile), "attachment")
