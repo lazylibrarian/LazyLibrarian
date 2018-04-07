@@ -23,6 +23,7 @@ import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.common import gr_api_sleep
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl
@@ -157,10 +158,7 @@ class grauth:
                 headers = {'Content-Type': 'application/x-www-form-urlencoded'}
                 request_url = shelf_template.substitute(base='https://www.goodreads.com', user_id=user_id,
                                                         page=current_page, key=lazylibrarian.CONFIG['GR_API'])
-                time_now = int(time.time())
-                if time_now <= lazylibrarian.LAST_GOODREADS:
-                    time.sleep(1)
-                    lazylibrarian.LAST_GOODREADS = time_now
+                gr_api_sleep()
                 try:
                     response, content = client.request(request_url, 'GET', body, headers)
                 except Exception as e:
@@ -205,10 +203,7 @@ class grauth:
 
         # follow https://www.goodreads.com/author_followings?id=AUTHOR_ID&format=xml
         # unfollow https://www.goodreads.com/author_followings/AUTHOR_FOLLOWING_ID?format=xml
-        time_now = int(time.time())
-        if time_now <= lazylibrarian.LAST_GOODREADS:
-            time.sleep(1)
-            lazylibrarian.LAST_GOODREADS = time_now
+        gr_api_sleep()
 
         if follow:
             body = urlencode({'id': authorid, 'format': 'xml'})
@@ -254,10 +249,8 @@ class grauth:
         # could also pass [featured] [exclusive_flag] [sortable_flag] all default to False
         body = urlencode({'user_shelf[name]': shelf.lower()})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        time_now = int(time.time())
-        if time_now <= lazylibrarian.LAST_GOODREADS:
-            time.sleep(1)
-            lazylibrarian.LAST_GOODREADS = time_now
+        gr_api_sleep()
+        
         try:
             response, content = client.request('%s/user_shelves.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
@@ -328,10 +321,8 @@ class grauth:
     @staticmethod
     def getUserId():
         global client, user_id
-        time_now = int(time.time())
-        if time_now <= lazylibrarian.LAST_GOODREADS:
-            time.sleep(1)
-            lazylibrarian.LAST_GOODREADS = time_now
+        gr_api_sleep()
+        
         try:
             response, content = client.request('%s/api/auth_user' % 'https://www.goodreads.com', 'GET')
         except Exception as e:
@@ -359,10 +350,7 @@ class grauth:
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         request_url = owned_template.substitute(base='https://www.goodreads.com', user_id=user_id, page=page,
                                                 key=lazylibrarian.CONFIG['GR_API'], shelf_name=shelf_name)
-        time_now = int(time.time())
-        if time_now <= lazylibrarian.LAST_GOODREADS:
-            time.sleep(1)
-            lazylibrarian.LAST_GOODREADS = time_now
+        gr_api_sleep()
         try:
             response, content = client.request(request_url, 'GET', body, headers)
         except Exception as e:
@@ -390,10 +378,7 @@ class grauth:
         else:
             body = urlencode({'name': shelf_name, 'book_id': book_id})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        time_now = int(time.time())
-        if time_now <= lazylibrarian.LAST_GOODREADS:
-            time.sleep(1)
-            lazylibrarian.LAST_GOODREADS = time_now
+        gr_api_sleep()
         try:
             response, content = client.request('%s/shelf/add_to_shelf.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)

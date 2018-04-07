@@ -310,7 +310,9 @@ def bookRename(bookid):
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
-
+    # TODO
+    # check types of r and dest_path are the same, if not try makeUnicode
+    # if shutil.move fails and dest_path has accents, try again with unaccented(dest_path)
     if r != dest_path:
         try:
             shutil.move(r, dest_path)
@@ -647,11 +649,15 @@ def setWorkPages():
 
 def librarything_wait():
     """ Wait for a second between librarything api calls """
-    time_now = int(time.time())
-    if time_now <= lazylibrarian.LAST_LIBRARYTHING:  # called within the last second?
-        time.sleep(1)  # sleep 1 second to respect librarything api terms
+    time_now = time.time()
+    delay = time_now - lazylibrarian.LAST_LIBRARYTHING
+    if delay < 1.0:
+        sleep_time = 1.0 - delay
+        logger.debug("LibraryThing sleep %.3f" % sleep_time)
+        time.sleep(sleep_time)
+        lazylibrarian.LT_SLEEP += sleep_time
     lazylibrarian.LAST_LIBRARYTHING = time_now
-
+    
 
 # Feb 2018 librarything have disabled "whatwork"
 # might only be temporary, but for now disable looking for new workpages

@@ -55,6 +55,17 @@ NOTIFY_DOWNLOAD = 2
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
 
+def gr_api_sleep():
+    time_now = time.time()
+    delay = time_now - lazylibrarian.LAST_GOODREADS
+    if delay < 1.0:
+        sleep_time = 1.0 - delay
+        logger.debug("GoodReads sleep %.3f" % sleep_time)
+        time.sleep(sleep_time)
+        lazylibrarian.GR_SLEEP += sleep_time
+    lazylibrarian.LAST_GOODREADS = time_now
+
+
 def proxyList():
     proxies = None
     if lazylibrarian.CONFIG['PROXY_HOST']:
@@ -460,9 +471,10 @@ def checkRunningJobs():
 
 
 def showJobs():
-    result = ["Cache %i hit%s, %i miss" % (check_int(lazylibrarian.CACHE_HIT, 0),
+    result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),
                                            plural(check_int(lazylibrarian.CACHE_HIT, 0)),
                                            check_int(lazylibrarian.CACHE_MISS, 0))]
+    result.append ("Sleep %.2f goodreads, %.2f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP))
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")

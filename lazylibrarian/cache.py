@@ -23,7 +23,7 @@ from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.common import USER_AGENT, proxyList, gr_api_sleep
 from lazylibrarian.formatter import check_int, md5_utf8
 
 
@@ -115,12 +115,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
 
 def gr_xml_request(my_url, useCache=True):
     # respect goodreads api limit
-    time_now = int(time.time())
-    if time_now <= lazylibrarian.LAST_GOODREADS:
-        time.sleep(1)
     result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="XML")
-    if not in_cache:
-        lazylibrarian.LAST_GOODREADS = time_now
     return result, in_cache
 
 
@@ -180,7 +175,10 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 return None, False
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
+        if cache == 'XML':
+            gr_api_sleep()
         result, success = fetchURL(url)
+
         if success:
             logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
             if cache == "JSON":

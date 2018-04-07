@@ -1018,7 +1018,7 @@ def db_v29(myDB, upgradelog):
                                                                            calc_eta(start_time, start_count,
                                                                                     entries_done))
                 addAuthorToDB(authorname=None, refresh=True, authorid=author['AuthorID'], addbooks=True)
-                entries_done += expected_books  # may have extra books now, don't overcount
+                entries_done += int(expected_books)  # may have extra books now, don't overcount
                 entries_done += 1   # one less author
 
         members = myDB.select('SELECT BookID from member')
