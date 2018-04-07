@@ -1525,7 +1525,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
         logger.debug('Cover %s already exists' % jpgfile)
         return
 
-    link, success = cache_img('book', bookid, bookimg, False)
+    link, success, _ = cache_img('book', bookid, bookimg, False)
     if not success:
         logger.error('Error caching cover from %s, %s' % (bookimg, link))
         return

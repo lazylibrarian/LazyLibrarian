@@ -6,9 +6,6 @@
 </%def>
 <%def name="body()">
 <div>
-    <input type="hidden" name="title" id="title" value="${title}">
-    <input type="hidden" name="prefix" id="prefix" value="${prefix}">
-    <input type="hidden" name="message" id="message" value="${message}">
 </div>
 </%def>
 
@@ -18,9 +15,9 @@
     <script type="text/javascript">
     $(document).ready(function()
     {
-        var title = $('#title').val();
-        var prefix = $('#prefix').val();
-        var message = $('#message').val();
+        var title = '${title}';
+        var prefix = '${prefix}';
+        var message = '${message}';
         bootbox.dialog({
             title: title,
             message: '<pre>'+prefix+' '+message+'</pre>',

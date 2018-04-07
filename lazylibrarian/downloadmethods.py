@@ -287,8 +287,6 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         Source = "QBITTORRENT"
         if torrent.startswith('magnet'):
             status = qbittorrent.addTorrent(torrent, hashid)
-        elif torrent:
-            status = qbittorrent.addFile(b64encode(torrent))
         else:
             status = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
         if status:

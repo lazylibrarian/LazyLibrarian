@@ -77,6 +77,8 @@ CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
+GR_SLEEP = 0
+LT_SLEEP = 0
 MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
@@ -530,7 +532,7 @@ def initialize():
         UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
         SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
         AUTHORUPDATE_MSG, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE, \
-        GROUP_CONCAT
+        GROUP_CONCAT, GR_SLEEP, LT_SLEEP
 
     with INIT_LOCK:
 
@@ -598,9 +600,12 @@ def initialize():
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
+        # keep track of how long we slept
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
+        GR_SLEEP = 0
+        LT_SLEEP = 0
 
         # Initialize the database
         try:

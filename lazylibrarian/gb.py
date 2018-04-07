@@ -500,7 +500,7 @@ class GoogleBooks:
                                         updated = True
 
                                 elif book['img'] and book['img'].startswith('http'):
-                                    link, success = cache_img("book", bookid, book['img'], refresh=refresh)
+                                    link, success, _ = cache_img("book", bookid, book['img'], refresh=refresh)
                                     if success:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
@@ -694,7 +694,7 @@ class GoogleBooks:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
             elif book['img'] and book['img'].startswith('http'):
-                link, success = cache_img("book", bookid, book['img'])
+                link, success, _ = cache_img("book", bookid, book['img'])
                 if success:
                     controlValueDict = {"BookID": bookid}
                     newValueDict = {"BookImg": link}

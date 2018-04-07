@@ -23,7 +23,7 @@ from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.common import USER_AGENT, proxyList, gr_api_sleep
 from lazylibrarian.formatter import check_int, md5_utf8
 
 
@@ -80,8 +80,8 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
 
 def cache_img(img_type, img_ID, img_url, refresh=False):
     """ Cache the image from the given filename or URL in the local images cache
-        linked to the id, return the link to the cached file, True
-        or error message, False if failed to cache """
+        linked to the id, return the link to the cached file, success, was_in_cache
+        or error message, False, False if failed to cache """
 
     if img_type not in ['book', 'author']:
         logger.error('Internal error in cache_img, img_type = [%s]' % img_type)
@@ -91,7 +91,7 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
         logger.debug("Cached %s image exists %s" % (img_type, cachefile))
-        return link, True
+        return link, True, True
 
     if img_url.startswith('http'):
         result, success = fetchURL(img_url, raw=True)
@@ -99,28 +99,23 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
             try:
                 with open(cachefile, 'wb') as img:
                     img.write(result)
-                return link, True
+                return link, True, False
             except Exception as e:
                 logger.error("%s writing image to %s, %s" % (type(e).__name__, cachefile, str(e)))
-                return str(e), False
-        return result, False
+                return str(e), False, False
+        return result, False, False
     else:
         try:
             shutil.copyfile(img_url, cachefile)
-            return link, True
+            return link, True, True
         except Exception as e:
             logger.error("%s copying image to %s, %s" % (type(e).__name__, cachefile, str(e)))
-            return str(e), False
+            return str(e), False, False
 
 
 def gr_xml_request(my_url, useCache=True):
     # respect goodreads api limit
-    time_now = int(time.time())
-    if time_now <= lazylibrarian.LAST_GOODREADS:
-        time.sleep(1)
     result, in_cache = get_cached_request(url=my_url, useCache=useCache, cache="XML")
-    if not in_cache:
-        lazylibrarian.LAST_GOODREADS = time_now
     return result, in_cache
 
 
@@ -180,7 +175,10 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 return None, False
     else:
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
+        if cache == 'XML':
+            gr_api_sleep()
         result, success = fetchURL(url)
+
         if success:
             logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
             if cache == "JSON":
