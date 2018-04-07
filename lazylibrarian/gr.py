@@ -13,6 +13,7 @@
 import re
 import traceback
 import unicodedata
+import time
 try:
     import requests
 except ImportError:
@@ -349,6 +350,10 @@ class GoodReads:
             book_ignore_count = 0
             total_count = 0
             loopCount = 0
+            cover_count = 0
+            isbn_count = 0
+            cover_time = 0
+            isbn_time = 0
             if resultxml is None:
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
             else:
@@ -400,12 +405,15 @@ class GoodReads:
                             # try lookup by name
                             if bookname:
                                 try:
+                                    isbn_count += 1
+                                    start = time.time()
                                     res = isbn_from_words(unaccented(bookname) + ' ' + unaccented(authorNameResult))
+                                    isbn_time += (time.time() - start)
                                 except Exception as e:
                                     res = None
-                                    logger.warn("Error from isbnlib: %s" % e)
+                                    logger.warn("Error from isbn: %s" % e)
                                 if res:
-                                    logger.debug("isbnlib found %s for %s" % (res, bookid))
+                                    logger.debug("isbn found %s for %s" % (res, bookid))
                                     bookisbn = res
                                     if len(res) == 13:
                                         isbnhead = res[3:6]
@@ -445,7 +453,7 @@ class GoodReads:
                                 else:
                                     # no match in cache, try searching librarything for a language code using the isbn
                                     # if no language found, librarything return value is "invalid" or "unknown"
-                                    # returns plain text, not xml
+                                    # returns plain text, not xml, or html page if error
                                     BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
                                     proxies = proxyList()
                                     try:
@@ -454,7 +462,11 @@ class GoodReads:
                                         r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
                                         resp = r.text
                                         lt_lang_hits += 1
-                                        logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
+                                        if resp.startswith('<!DOCTYPE HTML'):
+                                            logger.debug("LibraryThing returned html (error or maintenance page?)")
+                                            resp = "Unknown"
+                                        else:
+                                            logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbnhead))
 
                                         if 'invalid' in resp or 'Unknown' in resp:
                                             bookLanguage = "Unknown"
@@ -678,7 +690,11 @@ class GoodReads:
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from another source
+                                    start = time.time()
                                     workcover, source = getBookCover(bookid)
+                                    if source != 'cache':
+                                        cover_count += 1
+                                        cover_time += (time.time() - start)
                                     if workcover:
                                         logger.debug('Updated cover for %s using %s' % (bookname, source))
                                         controlValueDict = {"BookID": bookid}
@@ -687,7 +703,11 @@ class GoodReads:
                                         updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
-                                    link, success = cache_img("book", bookid, bookimg, refresh=refresh)
+                                    start = time.time()
+                                    link, success, was_already_cached = cache_img("book", bookid, bookimg)
+                                    if not was_already_cached:
+                                        cover_count += 1
+                                        cover_time += (time.time() - start)
                                     if success:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
@@ -791,6 +811,10 @@ class GoodReads:
             logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
             logger.debug("Imported/Updated %s book%s" % (modified_count, plural(modified_count)))
+            if cover_count:
+                logger.debug("Fetched %s cover%s in %.2f sec" % (cover_count, plural(cover_count), cover_time))
+            if isbn_count:
+                logger.debug("Fetched %s ISBN in %.2f sec" % (isbn_count, isbn_time))
 
             myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
@@ -907,9 +931,9 @@ class GoodReads:
                 res = isbn_from_words(bookname + ' ' + unaccented(authorname))
             except Exception as e:
                 res = None
-                logger.warn("Error from isbnlib: %s" % e)
+                logger.warn("Error from isbn: %s" % e)
             if res:
-                logger.debug("isbnlib found %s for %s" % (res, bookname))
+                logger.debug("isbn found %s for %s" % (res, bookname))
                 bookisbn = res
 
         controlValueDict = {"BookID": bookid}
@@ -946,7 +970,7 @@ class GoodReads:
                 myDB.upsert("books", newValueDict, controlValueDict)
 
         elif bookimg and bookimg.startswith('http'):
-            link, success = cache_img("book", bookid, bookimg)
+            link, success, _ = cache_img("book", bookid, bookimg)
             if success:
                 controlValueDict = {"BookID": bookid}
                 newValueDict = {"BookImg": link}

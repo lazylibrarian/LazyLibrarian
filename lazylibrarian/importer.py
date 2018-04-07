@@ -234,7 +234,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
 
         # allow caching
         if authorimg and authorimg.startswith('http'):
-            newimg, success = cache_img("author", authorid, authorimg, refresh=refresh)
+            newimg, success, _ = cache_img("author", authorid, authorimg, refresh=refresh)
             if success:
                 authorimg = newimg
                 new_img = True

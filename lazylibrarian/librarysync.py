@@ -916,7 +916,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     bookid = item['bookid']
                     bookimg = item['bookimg']
                     # bookname = item['bookname']
-                    newimg, success = cache_img("book", bookid, bookimg)
+                    newimg, success, _ = cache_img("book", bookid, bookimg)
                     if success:
                         myDB.action('update books set BookImg=? where BookID=?', (newimg, bookid))
 
@@ -927,7 +927,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     authorid = item['authorid']
                     authorimg = item['authorimg']
                     # authorname = item['authorname']
-                    newimg, success = cache_img("author", authorid, authorimg)
+                    newimg, success, _ = cache_img("author", authorid, authorimg)
                     if success:
                         myDB.action('update authors set AuthorImg=? where AuthorID=?', (newimg, authorid))
 

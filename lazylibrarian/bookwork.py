@@ -1198,9 +1198,9 @@ def getBookCover(bookID=None, src=None):
                     img = work.split('workCoverImage')[1].split('="')[1].split('"')[0]
                     if img and img.startswith('http'):
                         if src == 'librarything':
-                            coverlink, success = cache_img("book", bookID + '_lt', img)
+                            coverlink, success, _ = cache_img("book", bookID + '_lt', img)
                         else:
-                            coverlink, success = cache_img("book", bookID, img)
+                            coverlink, success, _ = cache_img("book", bookID, img)
                         if success:
                             logger.debug("getBookCover: Caching librarything cover for %s" % bookID)
                             return coverlink, 'librarything workCoverImage'
@@ -1215,9 +1215,9 @@ def getBookCover(bookID=None, src=None):
                     img = work.split('og:image')[1].split('="')[1].split('"')[0]
                     if img and img.startswith('http'):
                         if src == 'librarything':
-                            coverlink, success = cache_img("book", bookID + '_lt', img)
+                            coverlink, success, _ = cache_img("book", bookID + '_lt', img)
                         else:
-                            coverlink, success = cache_img("book", bookID, img)
+                            coverlink, success, _ = cache_img("book", bookID, img)
                         if success:
                             logger.debug("getBookCover: Caching librarything cover for %s" % bookID)
                             return coverlink, 'librarything image'
@@ -1265,9 +1265,9 @@ def getBookCover(bookID=None, src=None):
                             img = None
                     if img and img.startswith('http') and 'nocover' not in img and 'nophoto' not in img:
                         if src == 'goodreads':
-                            coverlink, success = cache_img("book", bookID + '_gr', img)
+                            coverlink, success, _ = cache_img("book", bookID + '_gr', img)
                         else:
-                            coverlink, success = cache_img("book", bookID, img)
+                            coverlink, success, _ = cache_img("book", bookID, img)
                         if success:
                             logger.debug("getBookCover: Caching goodreads cover for %s %s" %
                                          (item['AuthorName'], item['BookName']))
@@ -1296,9 +1296,9 @@ def getBookCover(bookID=None, src=None):
                         img = None
                     if img and img.startswith('http'):
                         if src == 'google':
-                            coverlink, success = cache_img("book", bookID + '_gb', img)
+                            coverlink, success, _ = cache_img("book", bookID + '_gb', img)
                         else:
-                            coverlink, success = cache_img("book", bookID, img)
+                            coverlink, success, _ = cache_img("book", bookID, img)
                         if success:
                             logger.debug("getBookCover: Caching google cover for %s %s" %
                                          (item['AuthorName'], item['BookName']))
@@ -1349,9 +1349,12 @@ def getAuthorImage(authorid=None):
             except IndexError:
                 img = None
             if img and img.startswith('http'):
-                coverlink, success = cache_img("author", authorid, img)
+                coverlink, success, was_in_cache = cache_img("author", authorid, img)
                 if success:
-                    logger.debug("Cached google image for %s" % authorname)
+                    if was_in_cache:
+                        logger.debug("Returning cached google image for %s" % authorname)
+                    else:
+                        logger.debug("Cached google image for %s" % authorname)
                     return coverlink
                 else:
                     logger.debug("Error getting google image %s, [%s]" % (img, coverlink))

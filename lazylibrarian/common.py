@@ -24,6 +24,7 @@ import threading
 import time
 import traceback
 from lib.six import PY2
+
 try:
     import zipfile
 except ImportError:
@@ -35,6 +36,7 @@ except ImportError:
 import re
 import ssl
 import sqlite3
+
 try:
     import requests
 except ImportError:
@@ -472,9 +474,9 @@ def checkRunningJobs():
 
 def showJobs():
     result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),
-                                           plural(check_int(lazylibrarian.CACHE_HIT, 0)),
-                                           check_int(lazylibrarian.CACHE_MISS, 0))]
-    result.append ("Sleep %.2f goodreads, %.2f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP))
+                                             plural(check_int(lazylibrarian.CACHE_HIT, 0)),
+                                             check_int(lazylibrarian.CACHE_MISS, 0)),
+              "Sleep %.2f goodreads, %.2f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
@@ -637,7 +639,7 @@ def saveLog():
     basename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'lazylibrarian.log')
     outfile = os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'debug')
     passchars = string.ascii_letters + string.digits + ':_/'  # used by slack, telegram and googlebooks
-    redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ',  'keys -> ',
+    redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ', 'keys -> ',
                   'apitoken -> ', 'username -> ', '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': ",
                   "'--password', u'", "'--password', '", "api:", "keys:", "token:", "secret="]
     with open(outfile + '.tmp', 'w') as out:
