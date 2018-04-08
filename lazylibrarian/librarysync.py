@@ -485,7 +485,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         metafile = ''
                         try:
                             metafile = opf_file(rootdir)
-                            res = get_book_info(metafile)
+                            if metafile:
+                                res = get_book_info(metafile)
                         except Exception as e:
                             logger.error('get_book_info failed for %s, %s %s' % (metafile, type(e).__name__, str(e)))
 
@@ -569,7 +570,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
                         if match:
                             # flag that we found a book in this subdirectory
-                            processed_subdirectories.append(subdirectory)
+                            if subdirectory:
+                                processed_subdirectories.append(subdirectory)
 
                             # If we have a valid looking isbn, and language != "Unknown", add it to cache
                             if language != "Unknown" and is_valid_isbn(isbn):
@@ -763,7 +765,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 if os.path.exists(preferred_type):
                                                     book_filename = preferred_type
                                                     logger.debug("Librarysync link to preferred type %s: %s" %
-                                                                 (book_type, preferred_type))
+                                                                 (book_type, book_filename))
                                                     break
 
                                             myDB.action('UPDATE books set BookFile=? where BookID=?',
