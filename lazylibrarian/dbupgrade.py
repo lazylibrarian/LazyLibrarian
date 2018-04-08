@@ -163,7 +163,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
                                 Password TEXT, Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, \
-                                CalibreRead TEXT, CalibreToRead TEXT), BookType TEXT')
+                                CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT')
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Perms) VALUES (?, ?, ?, ?, ?)'
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin', md5_utf8('admin'), 65535))
                     logger.debug('Added admin user')
