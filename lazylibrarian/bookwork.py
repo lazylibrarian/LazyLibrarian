@@ -310,13 +310,19 @@ def bookRename(bookid):
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
-    # TODO
-    # check types of r and dest_path are the same, if not try makeUnicode
-    # if shutil.move fails and dest_path has accents, try again with unaccented(dest_path)
+
     if r != dest_path:
         try:
             shutil.move(r, dest_path)
             r = dest_path
+        except UnicodeEncodeError:  # maybe target filesystem can't handle accents?
+            dest_path = unaccented(dest_path)
+            try:
+                shutil.move(r, dest_path)
+                r = dest_path
+            except Exception as why:
+                if not os.path.isdir(dest_path):
+                    logger.error('Unable to create directory %s: %s' % (dest_path, why))
         except Exception as why:
             if not os.path.isdir(dest_path):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
@@ -657,7 +663,7 @@ def librarything_wait():
         time.sleep(sleep_time)
         lazylibrarian.LT_SLEEP += sleep_time
     lazylibrarian.LAST_LIBRARYTHING = time_now
-    
+
 
 # Feb 2018 librarything have disabled "whatwork"
 # might only be temporary, but for now disable looking for new workpages
