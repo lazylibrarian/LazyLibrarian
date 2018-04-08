@@ -257,7 +257,28 @@ def any_file(search_dir=None, extn=None):
 
 
 def opf_file(search_dir=None):
-    return any_file(search_dir, '.opf')
+    if search_dir is None:
+        return ""
+    cnt = 0
+    res = ''
+    meta = ''
+    if os.path.isdir(search_dir):
+        for fname in os.listdir(makeBytestr(search_dir)):
+            fname = makeUnicode(fname)
+            if fname.endswith('.opf'):
+                if fname == 'metadata.opf':
+                    meta = os.path.join(search_dir, fname)
+                else:
+                    res = os.path.join(search_dir, fname)
+                cnt += 1
+        if cnt > 2 or cnt == 2 and not meta:
+            logger.debug("Found %d conflicting opf in %s" % (cnt, search_dir))
+            res = ''
+        elif res:  # prefer bookname.opf over metadata.opf
+            return res
+        elif meta:
+            return meta
+    return res
 
 
 def bts_file(search_dir=None):

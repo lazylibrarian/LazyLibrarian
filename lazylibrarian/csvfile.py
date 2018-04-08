@@ -67,7 +67,7 @@ def export_CSV(search_dir=None, status="Wanted"):
                 csvwrite = writer(csvfile, delimiter=',',
                                   quotechar='"', quoting=QUOTE_MINIMAL)
 
-                # write headers, change AuthorName BookName BookIsbn to match import csv names (Author, Title, ISBN10)
+                # write headers, change AuthorName BookName BookIsbn to match import csv names
                 csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
 
                 for resulted in find_status:
