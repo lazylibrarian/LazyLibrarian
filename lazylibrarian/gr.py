@@ -309,12 +309,13 @@ class GoodReads:
             }
         return author_dict
 
-    def get_bookdict(self, book):
+    @staticmethod
+    def get_bookdict(book):
         """ Return all the book info we need as a dictionary or default value if no key """
         mydict = {}
         for val, idx, default in [
-                ('title', 'title', ''),
-                ('bookid', 'id', ''),
+                ('name', 'title', ''),
+                ('id', 'id', ''),
                 ('desc', 'description', ''),
                 ('pub', 'publisher', ''),
                 ('link', 'link', ''),
@@ -409,25 +410,22 @@ class GoodReads:
                         find_field = "id"
                         bookisbn = ""
                         isbnhead = ""
-                        bookimg = ''
 
                         bookdict = self.get_bookdict(book)
 
-                        bookname = bookdict['title']
-                        bookid = bookdict['bookid']
+                        bookname = bookdict['name']
+                        bookid = bookdict['id']
                         bookdesc = bookdict['desc']
                         bookpub = bookdict['pub']
                         booklink = bookdict['link']
                         bookrate = bookdict['rate']
                         bookpages = bookdict['pages']
-                        pubyear = bookdict['date']
-                        workid = bookdict['workid']
+                        bookdate = bookdict['date']
                         bookimg = bookdict['img']
+                        workid = bookdict['workid']
                         isbn13 = bookdict['isbn13']
                         isbn10 = bookdict['isbn10']
-                        if str(pubyear) == 'None':
-                            print(bookdict)
-                            exit(0)
+
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' %
                                          (bookid, authorNameResult))
@@ -441,8 +439,8 @@ class GoodReads:
 
                         if not rejected:
                             if lazylibrarian.CONFIG['NO_FUTURE']:
-                                if pubyear > today()[:4]:
-                                    logger.debug('Rejecting %s, future publication date %s' % (bookname, pubyear))
+                                if bookdate > today()[:4]:
+                                    logger.debug('Rejecting %s, future publication date %s' % (bookname, bookdate))
                                     removedResults += 1
                                     rejected = True
 
@@ -550,6 +548,7 @@ class GoodReads:
                                             logger.debug("Book URL: " + BOOK_URL)
 
                                             bookLanguage = ""
+                                            start = time.time()
                                             try:
                                                 BOOK_rootxml, in_cache = gr_xml_request(BOOK_URL)
                                                 if BOOK_rootxml is None:
@@ -564,6 +563,8 @@ class GoodReads:
                                                 logger.error("%s getting book xml: %s" % (type(e).__name__, str(e)))
 
                                             if not in_cache:
+                                                isbn_time += (time.time() - start)
+                                                isbn_count += 1
                                                 gr_lang_hits += 1
                                             if not bookLanguage:
                                                 bookLanguage = "Unknown"
@@ -706,7 +707,7 @@ class GoodReads:
                                     "BookLink": booklink,
                                     "BookRate": bookrate,
                                     "BookPages": bookpages,
-                                    "BookDate": pubyear,
+                                    "BookDate": bookdate,
                                     "BookLang": bookLanguage,
                                     "Status": book_status,
                                     "AudioStatus": audio_status,
@@ -717,7 +718,7 @@ class GoodReads:
                                 resultsCount += 1
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                                logger.debug("Book found: %s %s" % (bookname, pubyear))
+                                logger.debug("Book found: %s %s" % (bookname, bookdate))
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from another source
