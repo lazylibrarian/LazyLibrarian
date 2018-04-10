@@ -34,7 +34,7 @@ from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
     aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
-from lazylibrarian.csvfile import import_CSV, export_CSV
+from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
     safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8
@@ -810,6 +810,22 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("series")
 
     # CONFIG ############################################################
+
+    @cherrypy.expose
+    def saveSettings(self):
+        savedir = lazylibrarian.DATADIR
+        users = dump_table('users', savedir)
+        mags = dump_table('magazines', savedir)
+        msg = "%d user%s, %d magazine%s exported" % (users, plural(users), mags, plural(mags))
+        return msg
+
+    @cherrypy.expose
+    def loadSettings(self):
+        savedir = lazylibrarian.DATADIR
+        users = restore_table('users', savedir)
+        mags = restore_table('magazines', savedir)
+        msg = "%d user%s %d magazine%s imported" % (users, plural(users), mags, plural(mags))
+        return msg
 
     @cherrypy.expose
     def config(self):

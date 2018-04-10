@@ -1182,7 +1182,7 @@ def getBookCover(bookID=None, src=None):
                         else:
                             coverlink = 'cache/book/' + bookID + '.jpg'
                             logger.debug("getBookCover: Caching cover.jpg for %s" % coverfile)
-                        coverfile = safe_copy(coverimg, coverfile)
+                        _ = safe_copy(coverimg, coverfile)
                         return coverlink, 'cover'
             if src == 'cover':
                 logger.debug('getBookCover: No cover.jpg found for %s' % bookID)

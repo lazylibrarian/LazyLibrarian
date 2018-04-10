@@ -1283,9 +1283,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
                     # calibre does not like quotes in author names
                     if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                        dstfile = safe_copy(srcfile, dstfile)
+                        _ = safe_copy(srcfile, dstfile)
                     else:
-                        dstfile = safe_move(srcfile, dstfile)
+                        _ = safe_move(srcfile, dstfile)
 
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid

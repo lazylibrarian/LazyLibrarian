@@ -347,7 +347,8 @@ def magazineScan(title=None):
         match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
         title_pattern = re.compile(match, re.VERBOSE)
-        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
+        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
+            "\\$\\T\\i\\t\\l\\e", "") + '\.[' + booktypes + ']'
         date_pattern = re.compile(match, re.VERBOSE)
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
