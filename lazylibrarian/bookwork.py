@@ -13,7 +13,6 @@
 
 import os
 import re
-import shutil
 import time
 import traceback
 from lib.six import PY2
@@ -21,6 +20,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.cache import cache_img, fetchURL, gr_xml_request
+from lazylibrarian.common import safe_move, safe_copy
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     is_valid_booktype, check_int, getList, replace_all, makeUnicode, makeBytestr
 from lib.fuzzywuzzy import fuzz
@@ -192,7 +192,7 @@ def audioRename(bookid):
     dest_path = os.path.join(dest_dir, dest_path)
     if r != dest_path:
         try:
-            shutil.move(r, dest_path)
+            dest_path = safe_move(r, dest_path)
             r = dest_path
         except Exception as why:
             if not os.path.isdir(dest_path):
@@ -215,7 +215,7 @@ def audioRename(bookid):
         o = os.path.join(r, part[3])
         if o != n:
             try:
-                shutil.move(o, n)
+                n = safe_move(o, n)
                 if check_int(part[0], 0) == 1:
                     book_filename = n  # return part 1 of set
                 logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
@@ -313,16 +313,8 @@ def bookRename(bookid):
 
     if r != dest_path:
         try:
-            shutil.move(r, dest_path)
+            dest_path = safe_move(r, dest_path)
             r = dest_path
-        except UnicodeEncodeError:  # maybe target filesystem can't handle accents?
-            dest_path = unaccented(dest_path)
-            try:
-                shutil.move(r, dest_path)
-                r = dest_path
-            except Exception as why:
-                if not os.path.isdir(dest_path):
-                    logger.error('Unable to create directory %s: %s' % (dest_path, why))
         except Exception as why:
             if not os.path.isdir(dest_path):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
@@ -366,7 +358,7 @@ def bookRename(bookid):
                 ofname = os.path.join(r, fname)
                 nfname = os.path.join(r, new_basename + extn)
                 try:
-                    shutil.move(ofname, nfname)
+                    nfname = safe_move(ofname, nfname)
                     logger.debug("bookRename %s to %s" % (ofname, nfname))
                     if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
                         f = nfname
@@ -1190,7 +1182,7 @@ def getBookCover(bookID=None, src=None):
                         else:
                             coverlink = 'cache/book/' + bookID + '.jpg'
                             logger.debug("getBookCover: Caching cover.jpg for %s" % coverfile)
-                        shutil.copyfile(coverimg, coverfile)
+                        _ = safe_copy(coverimg, coverfile)
                         return coverlink, 'cover'
             if src == 'cover':
                 logger.debug('getBookCover: No cover.jpg found for %s' % bookID)

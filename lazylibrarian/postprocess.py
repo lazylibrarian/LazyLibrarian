@@ -37,7 +37,8 @@ from lazylibrarian import database, logger, utorrent, transmission, qbittorrent,
 from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
-from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file
+from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
+    safe_copy, safe_move
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int
 from lazylibrarian.gr import GoodReads
@@ -175,14 +176,16 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
                     or is_valid_booktype(ourfile, booktype="mag") \
                     or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
                 try:
+                    srcfile = os.path.join(sourcedir, ourfile)
+                    dstfile = os.path.join(targetdir, ourfile)
                     if lazylibrarian.CONFIG['DESTINATION_COPY'] or move == 'copy':
-                        shutil.copyfile(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
-                        setperm(os.path.join(targetdir, ourfile))
+                        dstfile = safe_copy(srcfile, dstfile)
+                        setperm(dstfile)
                         logger.debug("copy_into_subdir %s" % ourfile)
                         cnt += 1
                     else:
-                        shutil.move(os.path.join(sourcedir, ourfile), os.path.join(targetdir, ourfile))
-                        setperm(os.path.join(targetdir, ourfile))
+                        dstfile = safe_move(srcfile, dstfile)
+                        setperm(dstfile)
                         logger.debug("move_into_subdir %s" % ourfile)
                         cnt += 1
                 except Exception as why:
@@ -805,7 +808,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 logger.warn("Unable to remove %s, %s %s" %
                                             (pp_path + '.fail', type(why).__name__, str(why)))
                         try:
-                            shutil.move(pp_path, pp_path + '.fail')
+                            _ = safe_move(pp_path, pp_path + '.fail')
                             logger.warn('Residual files remain in %s.fail' % pp_path)
                         except Exception as why:
                             logger.error("Unable to rename %s, %s %s" %
@@ -1148,7 +1151,7 @@ def import_book(pp_path=None, bookID=None):
                     except Exception as why:
                         logger.warn("Unable to remove %s, %s %s" % (pp_path + '.fail', type(why).__name__, str(why)))
                 try:
-                    shutil.move(pp_path, pp_path + '.fail')
+                    _ = safe_move(pp_path, pp_path + '.fail')
                     logger.warn('Residual files remain in %s.fail' % pp_path)
                 except Exception as e:
                     logger.error("[importBook] Unable to rename %s, %s %s" % (pp_path, type(e).__name__, str(e)))
@@ -1276,13 +1279,13 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
                 else:
                     filename, extn = os.path.splitext(fname)
+                    srcfile = os.path.join(pp_path, filename + extn)
+                    dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
                     # calibre does not like quotes in author names
                     if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                        shutil.copyfile(os.path.join(pp_path, filename + extn), os.path.join(
-                            pp_path, global_name.replace('"', '_') + extn))
+                        _ = safe_copy(srcfile, dstfile)
                     else:
-                        shutil.move(os.path.join(pp_path, filename + extn), os.path.join(
-                            pp_path, global_name.replace('"', '_') + extn))
+                        _ = safe_move(srcfile, dstfile)
 
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
@@ -1397,10 +1400,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     try:
                         if lazylibrarian.CONFIG['DESTINATION_COPY']:
                             typ = 'copy'
-                            shutil.copyfile(srcfile, destfile)
+                            destfile = safe_copy(srcfile, destfile)
                         else:
                             typ = 'move'
-                            shutil.move(srcfile, destfile)
+                            destfile = safe_move(srcfile, destfile)
                         setperm(destfile)
                         if is_valid_booktype(destfile, booktype=booktype):
                             newbookfile = destfile
@@ -1487,10 +1490,10 @@ def processAutoAdd(src_path=None, booktype='book'):
                 try:
                     if lazylibrarian.CONFIG['DESTINATION_COPY']:
                         logger.debug('AutoAdd Copying file [%s] from [%s] to [%s]' % (name, srcname, dstname))
-                        shutil.copyfile(srcname, dstname)
+                        dstname = safe_copy(srcname, dstname)
                     else:
                         logger.debug('AutoAdd Moving file [%s] from [%s] to [%s]' % (name, srcname, dstname))
-                        shutil.move(srcname, dstname)
+                        dstname = safe_move(srcname, dstname)
                     copied = True
                 except Exception as why:
                     logger.error('AutoAdd - Failed to copy/move file [%s] %s [%s] ' %
@@ -1533,7 +1536,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     cachefile = os.path.join(lazylibrarian.CACHEDIR, 'book', bookid + '.jpg')
     coverfile = os.path.join(dest_path, global_name + '.jpg')
     try:
-        shutil.copyfile(cachefile, coverfile)
+        coverfile = safe_copy(cachefile, coverfile)
     except Exception as e:
         logger.error("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
         return

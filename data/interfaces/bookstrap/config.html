@@ -346,6 +346,8 @@
                     <fieldset>
                       <div class="form-group">
                         <input type="button" value="System info" id="sysinfo" class="btn btn-default" />
+                        <input type="button" value="Save Settings" id="savesettings" class="btn btn-default" />
+                        <input type="button" value="Load Settings" id="loadsettings" class="btn btn-default" />
                       </div>
                     </fieldset>
                   </fieldset>
@@ -3521,6 +3523,38 @@
             $.get("logHeader", {},
                 function (data) { window.alert(data) });
         });
+
+
+        $('#savesettings').on('click', function(e) {
+            $.get('saveSettings', function(data) {
+                bootbox.dialog({
+                    title: 'Save Settings',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
+        $('#loadsettings').on('click', function(e) {
+            $.get('loadSettings', function(data) {
+                bootbox.dialog({
+                    title: 'Load Settings',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
 
         $('#testgrauth').click(function () {
             var gr_api = $.trim($("#gr_api").val());

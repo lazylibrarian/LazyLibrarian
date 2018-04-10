@@ -45,7 +45,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, \
-    getList, makeUnicode, makeBytestr
+    getList, makeUnicode, makeBytestr, unaccented
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -55,6 +55,38 @@ NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
+
+
+def safe_move(src, dst):
+    """ Move src to dst, retry without accents if unicode error as some
+        file systems can't handle accents. Return dst if success """
+    try:
+        shutil.move(src, dst)
+    except UnicodeEncodeError:
+        dst = unaccented(dst)
+        try:
+            shutil.move(src, dst)
+        except Exception:
+            raise
+    except Exception:
+        raise
+    return dst
+
+
+def safe_copy(src, dst):
+    """ Copy src to dst, retry without accents if unicode error as some
+        file systems can't handle accents. Return dst if success as may have changed """
+    try:
+        shutil.copyfile(src, dst)
+    except UnicodeEncodeError:
+        dst = unaccented(dst)
+        try:
+            shutil.copyfile(src, dst)
+        except Exception:
+            raise
+    except Exception:
+        raise
+    return dst
 
 
 def gr_api_sleep():

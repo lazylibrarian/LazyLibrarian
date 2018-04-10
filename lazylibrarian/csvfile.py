@@ -29,6 +29,130 @@ except ImportError:
         from lib3.csv import writer, reader, QUOTE_MINIMAL
 
 
+def dump_table(table, savedir=None, status=None):
+    myDB = database.DBConnection()
+    # noinspection PyBroadException
+    try:
+        columns = myDB.select('PRAGMA table_info(%s)' % table)
+        if not columns:  # no such table
+            logger.warn("No such table [%s]" % table)
+            return 0
+
+        if not os.path.isdir(savedir):
+            savedir = lazylibrarian.DATADIR
+
+        headers = ''
+        for item in columns:
+            if headers:
+                headers += ','
+            headers += item[1]
+        if status:
+            cmd = 'SELECT %s from %s WHERE status="%s"' % (headers, table, status)
+        else:
+            cmd = 'SELECT %s from %s' % (headers, table)
+        data = myDB.select(cmd)
+        count = 0
+        if data is not None:
+            label = table
+            if status:
+                label += '_%s' % status
+            csvFile = os.path.join(savedir, "%s.csv" % label)
+
+            if PY2:
+                fmode = 'wb'
+            else:
+                fmode = 'w'
+            with open(csvFile, fmode) as csvfile:
+                csvwrite = writer(csvfile, delimiter=',', quotechar='"', quoting=QUOTE_MINIMAL)
+                headers = headers.split(',')
+                csvwrite.writerow(headers)
+                for item in data:
+                    if PY2:
+                        csvwrite.writerow([str(s).encode(lazylibrarian.SYS_ENCODING) if s else '' for s in item])
+                    else:
+                        csvwrite.writerow([str(s) if s else '' for s in item])
+                    count += 1
+            msg = "Exported %s item%s to %s" % (count, plural(count), csvFile)
+            logger.info(msg)
+        return count
+
+    except Exception:
+        msg = 'Unhandled exception in dump_table: %s' % traceback.format_exc()
+        logger.error(msg)
+        return 0
+
+
+def restore_table(table, savedir=None, status=None):
+    myDB = database.DBConnection()
+    # noinspection PyBroadException
+    try:
+        columns = myDB.select('PRAGMA table_info(%s)' % table)
+        if not columns:  # no such table
+            logger.warn("No such table [%s]" % table)
+            return 0
+
+        if not os.path.isdir(savedir):
+            savedir = lazylibrarian.DATADIR
+
+        headers = ''
+        content = {}
+
+        label = table
+        if status:
+            label += '_%s' % status
+        csvFile = os.path.join(savedir, "%s.csv" % label)
+
+        logger.debug('Reading file %s' % csvFile)
+        csvreader = reader(open(csvFile, 'rU'))
+        count = 0
+        for row in csvreader:
+            if csvreader.line_num == 1:
+                headers = row
+            else:
+                content[row[0]] = dict(list(zip(headers, row)))
+
+        logger.debug("Found %s item%s in csv file" % (
+                     len(list(content.keys())), plural(len(list(content.keys())))))
+
+        if table == 'magazines':
+            for item in list(content.keys()):
+                controlValueDict = {"Title": makeUnicode(content[item]['Title'])}
+                newValueDict = {"Regex": makeUnicode(content[item]['Regex']),
+                                "Reject": makeUnicode(content[item]['Reject']),
+                                "Status": content[item]['Status'],
+                                "MagazineAdded": content[item]['MagazineAdded'],
+                                "IssueStatus": content[item]['IssueStatus']}
+                myDB.upsert("magazines", newValueDict, controlValueDict)
+                count += 1
+
+        elif table == 'users':
+            for item in list(content.keys()):
+                controlValueDict = {"UserID": content[item]['UserID']}
+                newValueDict = {"UserName": content[item]['UserName'],
+                                "Password": content[item]['Password'],
+                                "Email": content[item]['Email'],
+                                "Name": content[item]['Name'],
+                                "Perms": content[item]['Perms'],
+                                "HaveRead": content[item]['HaveRead'],
+                                "ToRead": content[item]['ToRead'],
+                                "CalibreRead": content[item]['CalibreRead'],
+                                "CalibreToRead": content[item]['CalibreToRead'],
+                                "BookType": content[item]['BookType']
+                                }
+                myDB.upsert("users", newValueDict, controlValueDict)
+                count += 1
+        else:
+            logger.error("Invalid table [%s]" % table)
+        msg = "Imported %s item%s from %s" % (count, plural(count), csvFile)
+        logger.info(msg)
+        return count
+
+    except Exception:
+        msg = 'Unhandled exception in restore_table: %s' % traceback.format_exc()
+        logger.error(msg)
+        return 0
+
+
 def export_CSV(search_dir=None, status="Wanted"):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
     # noinspection PyBroadException

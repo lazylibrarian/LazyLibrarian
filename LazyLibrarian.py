@@ -157,6 +157,28 @@ def main():
     # There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
 
+    # Try to start the server.
+    if options.port:
+        lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)
+        logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
+                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
+    else:
+        lazylibrarian.CONFIG['HTTP_PORT'] = int(lazylibrarian.CONFIG['HTTP_PORT'])
+        logger.info('Starting LazyLibrarian on port: %s, webroot "%s"' %
+                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
+
+    webStart.initialize({
+        'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
+        'http_host': lazylibrarian.CONFIG['HTTP_HOST'],
+        'http_root': lazylibrarian.CONFIG['HTTP_ROOT'],
+        'http_user': lazylibrarian.CONFIG['HTTP_USER'],
+        'http_pass': lazylibrarian.CONFIG['HTTP_PASS'],
+        'http_proxy': lazylibrarian.CONFIG['HTTP_PROXY'],
+        'https_enabled': lazylibrarian.CONFIG['HTTPS_ENABLED'],
+        'https_cert': lazylibrarian.CONFIG['HTTPS_CERT'],
+        'https_key': lazylibrarian.CONFIG['HTTPS_KEY'],
+    })
+
     # Set the install type (win,git,source) &
     # check the version when the application starts
     versioncheck.checkForUpdates()
@@ -191,15 +213,6 @@ def main():
         else:
             logger.debug('Not updating, LazyLibrarian has local changes')
 
-    if options.port:
-        lazylibrarian.CONFIG['HTTP_PORT'] = int(options.port)
-        logger.info('Starting LazyLibrarian on forced port: %s, webroot "%s"' %
-                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
-    else:
-        lazylibrarian.CONFIG['HTTP_PORT'] = int(lazylibrarian.CONFIG['HTTP_PORT'])
-        logger.info('Starting LazyLibrarian on port: %s, webroot "%s"' %
-                    (lazylibrarian.CONFIG['HTTP_PORT'], lazylibrarian.CONFIG['HTTP_ROOT']))
-
     if lazylibrarian.DAEMON:
         lazylibrarian.daemonize()
 
@@ -207,24 +220,10 @@ def main():
     if curr_ver:
         lazylibrarian.UPDATE_MSG = 'Updating database to version %s' % curr_ver
 
-    # Try to start the server.
-    webStart.initialize({
-        'http_port': lazylibrarian.CONFIG['HTTP_PORT'],
-        'http_host': lazylibrarian.CONFIG['HTTP_HOST'],
-        'http_root': lazylibrarian.CONFIG['HTTP_ROOT'],
-        'http_user': lazylibrarian.CONFIG['HTTP_USER'],
-        'http_pass': lazylibrarian.CONFIG['HTTP_PASS'],
-        'http_proxy': lazylibrarian.CONFIG['HTTP_PROXY'],
-        'https_enabled': lazylibrarian.CONFIG['HTTPS_ENABLED'],
-        'https_cert': lazylibrarian.CONFIG['HTTPS_CERT'],
-        'https_key': lazylibrarian.CONFIG['HTTPS_KEY'],
-    })
-
     if lazylibrarian.CONFIG['LAUNCH_BROWSER'] and not options.nolaunch:
         lazylibrarian.launch_browser(lazylibrarian.CONFIG['HTTP_HOST'],
                                      lazylibrarian.CONFIG['HTTP_PORT'],
                                      lazylibrarian.CONFIG['HTTP_ROOT'])
-
     if curr_ver:
         threading.Thread(target=dbupgrade.dbupgrade, name="DB_UPGRADE", args=[curr_ver]).start()
 

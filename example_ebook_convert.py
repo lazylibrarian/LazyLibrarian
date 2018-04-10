@@ -33,8 +33,10 @@ except Exception as err:
 # This example just uses "Event" "BookFile"  and "BookName"
 
 msg = ''
-# if it was a "download" event (not just "snatched")
-if 'Event' in mydict and mydict['Event'] == 'Added to Library':
+if 'Event' in mydict and mydict['Event'] == 'Test':
+    print("Test passed")
+    exit(0)
+elif 'Event' in mydict and mydict['Event'] == 'Added to Library':
     # if it was a book (not a magazine) and there is a filename
     if 'BookFile' in mydict and mydict['BookFile']:
         basename, extn = os.path.splitext(mydict['BookFile'])

@@ -548,7 +548,7 @@ class GoodReads:
                                             logger.debug("Book URL: " + BOOK_URL)
 
                                             bookLanguage = ""
-                                            start = time.time()
+                                            
                                             try:
                                                 BOOK_rootxml, in_cache = gr_xml_request(BOOK_URL)
                                                 if BOOK_rootxml is None:
@@ -563,8 +563,6 @@ class GoodReads:
                                                 logger.error("%s getting book xml: %s" % (type(e).__name__, str(e)))
 
                                             if not in_cache:
-                                                isbn_time += (time.time() - start)
-                                                isbn_count += 1
                                                 gr_lang_hits += 1
                                             if not bookLanguage:
                                                 bookLanguage = "Unknown"

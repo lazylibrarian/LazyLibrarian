@@ -14,7 +14,6 @@ import datetime
 import os
 import platform
 import re
-import shutil
 import subprocess
 import traceback
 from hashlib import sha1
@@ -30,7 +29,7 @@ except ImportError:
         import lib3.zipfile as zipfile
 
 from lazylibrarian import database, logger
-from lazylibrarian.common import setperm
+from lazylibrarian.common import setperm, safe_move, safe_copy
 from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr, replace_all
 
 
@@ -261,7 +260,7 @@ def create_cover(issuefile=None, refresh=False):
 
     # if not recognised extension or cover creation failed
     try:
-        shutil.copyfile(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.jpg'), coverfile)
+        coverfile = safe_copy(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.jpg'), coverfile)
         setperm(coverfile)
     except Exception as why:
         logger.error("Failed to copy nocover file, %s %s" % (type(why).__name__, str(why)))
@@ -348,7 +347,8 @@ def magazineScan(title=None):
         match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
             "\\$\\T\\i\\t\\l\\e", "(?P<title>.*?)") + '\.[' + booktypes + ']'
         title_pattern = re.compile(match, re.VERBOSE)
-        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)") + '\.[' + booktypes + ']'
+        match = matchString.replace("\\$\\I\\s\\s\\u\\e\\D\\a\\t\\e", "(?P<issuedate>.*?)").replace(
+            "\\$\\T\\i\\t\\l\\e", "") + '\.[' + booktypes + ']'
         date_pattern = re.compile(match, re.VERBOSE)
 
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
@@ -416,11 +416,11 @@ def magazineScan(title=None):
                     if newfname and newfname != fname:
                         logger.debug("Rename %s -> %s" % (fname, newfname))
                         newissuefile = os.path.join(rootdir, newfname)
-                        shutil.move(issuefile, newissuefile)
+                        newissuefile = safe_move(issuefile, newissuefile)
                         if os.path.exists(issuefile.replace(extn, '.jpg')):
-                            shutil.move(issuefile.replace(extn, '.jpg'), newissuefile.replace(extn, '.jpg'))
+                            safe_move(issuefile.replace(extn, '.jpg'), newissuefile.replace(extn, '.jpg'))
                         if os.path.exists(issuefile.replace(extn, '.opf')):
-                            shutil.move(issuefile.replace(extn, '.opf'), newissuefile.replace(extn, '.opf'))
+                            safe_move(issuefile.replace(extn, '.opf'), newissuefile.replace(extn, '.opf'))
                         issuefile = newissuefile
 
                     controlValueDict = {"Title": title}
