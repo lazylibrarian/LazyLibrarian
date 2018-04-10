@@ -1014,6 +1014,8 @@ def db_v29(myDB, upgradelog):
             for author in authors:
                 cnt += 1
                 expected_books = author['TotalBooks']
+                if not expected_books:
+                    expected_books = '0'
                 lazylibrarian.UPDATE_MSG = "Updating %s (%s books): %s" % (author['AuthorName'], expected_books,
                                                                            calc_eta(start_time, start_count,
                                                                                     entries_done))
