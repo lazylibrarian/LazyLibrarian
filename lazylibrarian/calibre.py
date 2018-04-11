@@ -432,11 +432,10 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         err = makeUnicode(err)
         if rc:
             if 'Errno 111' in err:
-                logger.debug("calibredb returned %s: Connection refused" % rc)
+                logger.warn("calibredb returned %s: Connection refused" % rc)
             elif cmd == 'list_categories' and len(res):
                 rc = 0  # false error return of 1 on v2.xx calibredb
-        else:
-            logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
+        logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
     except Exception as e:
         logger.error("calibredb exception: %s %s" % (type(e).__name__, str(e)))
         rc = 1
