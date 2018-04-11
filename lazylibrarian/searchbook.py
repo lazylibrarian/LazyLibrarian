@@ -99,9 +99,23 @@ def search_book(books=None, library=None):
 
         for searchbook in searchbooks:
             # searchterm is only used for display purposes
-            searchterm = searchbook['AuthorName'] + ' ' + searchbook['BookName']
+            searchterm = ''
+            if searchbook['AuthorName']:
+                searchterm = searchbook['AuthorName']
+            else:
+                logger.warn("No AuthorName for %s" % searchbook['BookID'])
+
+            if searchbook['BookName']:
+                if len(searchterm):
+                    searchterm += ' '
+                searchterm += searchbook['BookName']
+            else:
+                logger.warn("No BookName for %s" % searchbook['BookID'])
+
             if searchbook['BookSub']:
-                searchterm = searchterm + ': ' + searchbook['BookSub']
+                if len(searchterm):
+                    searchterm += ': '
+                searchterm += searchbook['BookSub']
 
             if library is None or library == 'eBook':
                 if searchbook['Status'] == "Wanted":  # not just audiobook wanted
