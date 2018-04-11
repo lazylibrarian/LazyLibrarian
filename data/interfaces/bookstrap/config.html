@@ -346,8 +346,6 @@
                     <fieldset>
                       <div class="form-group">
                         <input type="button" value="System info" id="sysinfo" class="btn btn-default" />
-                        <input type="button" value="Save Settings" id="savesettings" class="btn btn-default" />
-                        <input type="button" value="Load Settings" id="loadsettings" class="btn btn-default" />
                       </div>
                     </fieldset>
                   </fieldset>
@@ -2664,6 +2662,10 @@
                 <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
                 </div>
                 %endfor
+                <div class="form-group">
+                <input type="button" value="Export Filters" id="savefilters" class="btn btn-default" />
+                <input type="button" value="Import Filters" id="loadfilters" class="btn btn-default" />
+                </div>
             </div>
             <br>
           </div>
@@ -3525,10 +3527,10 @@
         });
 
 
-        $('#savesettings').on('click', function(e) {
-            $.get('saveSettings', function(data) {
+        $('#savefilters').on('click', function(e) {
+            $.get('saveFilters', function(data) {
                 bootbox.dialog({
-                    title: 'Save Settings',
+                    title: 'Export Filters',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
                         primary: {
@@ -3540,10 +3542,10 @@
             });
         });
 
-        $('#loadsettings').on('click', function(e) {
-            $.get('loadSettings', function(data) {
+        $('#loadfilters').on('click', function(e) {
+            $.get('loadFilters', function(data) {
                 bootbox.dialog({
-                    title: 'Load Settings',
+                    title: 'Import Filters',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
                         primary: {

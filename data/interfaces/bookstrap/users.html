@@ -19,6 +19,11 @@
                 %endfor
                 </select>
             </div>
+                <label for="saveusers" class="control-label">Import/Export: </label>
+                <div class="form-group">
+                <input type="button" value="Export Users" id="saveusers" class="btn btn-default" />
+                <input type="button" value="Import Users" id="loadusers" class="btn btn-default" />
+                </div>
         <div class="row">
           <div class="col-md-12">
               <div class="form-group col-md-12">
@@ -110,6 +115,36 @@
             $("#caltoread").val(obj['caltoread']);
             $("#booktype").val(obj['booktype']);
             $("#password").val("");
+            });
+        });
+
+        $('#saveusers').on('click', function(e) {
+            $.get('saveUsers', function(data) {
+                bootbox.dialog({
+                    title: 'Export Users',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
+        $('#loadusers').on('click', function(e) {
+            $.get('loadUsers', function(data) {
+                bootbox.dialog({
+                    title: 'Import Users',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
             });
         });
 
