@@ -455,20 +455,20 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
 
-        # now see if any are left...
-        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
-        if len(snatched):
-            for download_dir in dirlist:
-                try:
-                    downloads = os.listdir(makeBytestr(download_dir))
-                    downloads = [makeUnicode(item) for item in downloads]
-                except OSError as why:
-                    logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
-                    threading.currentThread().name = "WEBSERVER"
-                    return
+        for download_dir in dirlist:
+            try:
+                downloads = os.listdir(makeBytestr(download_dir))
+                downloads = [makeUnicode(item) for item in downloads]
+            except OSError as why:
+                logger.error('Could not access directory [%s] %s' % (download_dir, why.strerror))
+                threading.currentThread().name = "WEBSERVER"
+                return
 
-                logger.debug('Found %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
+            logger.debug('Found %s file%s in %s' % (len(downloads), plural(len(downloads)), download_dir))
 
+            # any books left to look for...
+            snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+            if len(snatched):
                 for book in snatched:
                     book_type = bookType(book)
                     matchtitle = unaccented_str(book['NZBtitle'])
@@ -815,8 +815,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
-                if downloads:
-                    ppcount += check_residual(download_dir)
+            if downloads:
+                ppcount += check_residual(download_dir)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 

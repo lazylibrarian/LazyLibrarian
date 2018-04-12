@@ -98,8 +98,6 @@ def main():
     if options.daemon:
         if 'windows' not in platform.system().lower():
             lazylibrarian.DAEMON = True
-            # lazylibrarian.LOGLEVEL = 0
-            lazylibrarian.daemonize()
         else:
             print("Daemonize not supported under Windows, starting normally")
 

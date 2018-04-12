@@ -812,19 +812,35 @@ class WebInterface(object):
     # CONFIG ############################################################
 
     @cherrypy.expose
-    def saveSettings(self):
+    def saveFilters(self):
+        self.label_thread('WEBSERVER')
         savedir = lazylibrarian.DATADIR
-        users = dump_table('users', savedir)
         mags = dump_table('magazines', savedir)
-        msg = "%d user%s, %d magazine%s exported" % (users, plural(users), mags, plural(mags))
+        msg = "%d magazine%s exported" % (mags, plural(mags))
         return msg
 
     @cherrypy.expose
-    def loadSettings(self):
+    def saveUsers(self):
+        self.label_thread('WEBSERVER')
+        savedir = lazylibrarian.DATADIR
+        users = dump_table('users', savedir)
+        msg = "%d user%s exported" % (users, plural(users))
+        return msg
+
+    @cherrypy.expose
+    def loadFilters(self):
+        self.label_thread('WEBSERVER')
+        savedir = lazylibrarian.DATADIR
+        mags = restore_table('magazines', savedir)
+        msg = "%d magazine%s imported" % (mags, plural(mags))
+        return msg
+
+    @cherrypy.expose
+    def loadUsers(self):
+        self.label_thread('WEBSERVER')
         savedir = lazylibrarian.DATADIR
         users = restore_table('users', savedir)
-        mags = restore_table('magazines', savedir)
-        msg = "%d user%s %d magazine%s imported" % (users, plural(users), mags, plural(mags))
+        msg = "%d user%s imported" % (users, plural(users))
         return msg
 
     @cherrypy.expose

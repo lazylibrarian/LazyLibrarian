@@ -29,7 +29,7 @@ from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, g
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
-from lazylibrarian.csvfile import import_CSV, export_CSV
+from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table
 from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr, replace_all
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
@@ -50,6 +50,7 @@ cmd_dict = {'help': 'list available commands. ' +
                     'otherwise they return OK straight away and run in the background',
             'showMonths': 'List installed monthnames',
             'dumpMonths': 'Save installed monthnames to file',
+            'saveTable': '&table= Save a database table to a file',
             'getIndex': 'list all authors',
             'getAuthor': '&id= get author by AuthorID and list their books',
             'getAuthorImage': '&id= get an image for this author',
@@ -300,6 +301,16 @@ class Api(object):
             self.data = 'Missing parameter: id'
             return
         self.data = audioRename(kwargs['id'])
+
+    def _saveTable(self, **kwargs):
+        if 'table' not in kwargs:
+            self.data = 'Missing parameter: table'
+            return
+        valid = ['users', 'magazines']
+        if kwargs['table'] not in valid:
+            self.data = 'Invalid table. Only %s' % str(valid)
+            return
+        self.data = "Saved %s" % dump_table(kwargs['table'], lazylibrarian.DATADIR)
 
     def _writeAllOPF(self, **kwargs):
         myDB = database.DBConnection()
