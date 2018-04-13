@@ -16,6 +16,7 @@
 import datetime
 import os
 import sys
+import stat
 import platform
 import string
 import random
@@ -268,11 +269,16 @@ def setperm(file_or_dir):
         return False
     try:
         os.chmod(file_or_dir, perm)
-        return True
     except Exception as e:
         if int(lazylibrarian.LOGLEVEL) > 2:
             logger.debug("Failed to set permission %s for %s: %s %s" % (value, file_or_dir, type(e).__name__, str(e)))
         return False
+
+    st = os.stat(file_or_dir)
+    oct_perm = oct(st.st_mode)
+    if int(lazylibrarian.LOGLEVEL) > 2:
+        logger.debug("Set permission (%s) for %s: %s" % (value, file_or_dir, oct_perm))
+    return True
 
 
 def any_file(search_dir=None, extn=None):
