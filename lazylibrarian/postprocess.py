@@ -399,6 +399,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 rejected = False
                 if not torrentfiles:
                     logger.debug("No torrent files returned by %s for %s" % (book['Source'], matchtitle))
+                elif torrentfiles == 'Unavailable':
+                    logger.debug("No contents info available from %s" % book['Source'])
                 else:
                     logger.debug("Checking files in %s" % matchtitle)
                     for entry in torrentfiles:
@@ -474,6 +476,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                     matchtitle = unaccented_str(book['NZBtitle'])
                     matches = []
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
+
                     for fname in downloads:
                         # skip if failed before or incomplete torrents, or incomplete btsync etc
                         if int(lazylibrarian.LOGLEVEL) > 2:
@@ -595,13 +598,14 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                     match = 0
                     pp_path = ''
+                    dest_path = ''
+                    mostrecentissue = ''
                     if matches:
                         highest = max(matches, key=lambda x: x[0])
                         match = highest[0]
                         pp_path = highest[1]
                         book = highest[2]  # type: dict
                     if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
-                        mostrecentissue = ''
                         logger.debug('Found match (%s%%): %s for %s %s' % (
                                      match, pp_path, book_type, book['NZBtitle']))
 
@@ -672,7 +676,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 controlValueDict = {"BookID": book['BookID'], "Status": "Snatched"}
                                 newValueDict = {"Status": "Failed", "NZBDate": now()}
                                 myDB.upsert("wanted", newValueDict, controlValueDict)
-                                continue
                     else:
                         logger.debug("Snatched %s %s is not in download directory" %
                                      (book['NZBmode'], book['NZBtitle']))
@@ -681,6 +684,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             if int(lazylibrarian.LOGLEVEL) > 2:
                                 for match in matches:
                                     logger.debug('Match: %s%%  %s' % (match[0], match[1]))
+
+                    if not dest_path:
                         continue
 
                     success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
@@ -952,7 +957,6 @@ def getTorrentName(title, source, downloadid):
 def getTorrentFiles(title, source, downloadid):
     torrentfiles = None
     try:
-        logger.debug("getTorrentFiles: %s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
             torrentfiles = transmission.getTorrentFiles(downloadid)
         # elif source == 'UTORRENT':
@@ -975,6 +979,8 @@ def getTorrentFiles(title, source, downloadid):
                     torrentfiles = result['files']
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+        else:
+            torrentfiles = 'Unavailable'
         return torrentfiles
 
     except Exception as e:
