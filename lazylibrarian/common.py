@@ -16,7 +16,6 @@
 import datetime
 import os
 import sys
-import stat
 import platform
 import string
 import random

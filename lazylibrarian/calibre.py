@@ -434,7 +434,7 @@ def calibredb(cmd=None, prelib=None, postlib=None):
             if 'Errno 111' in err:
                 logger.warn("calibredb returned Errno 111: Connection refused")
             elif 'Errno 13' in err:
-                logger.warn("calibredb returned Errno 13: Permission denied" )
+                logger.warn("calibredb returned Errno 13: Permission denied")
             elif cmd == 'list_categories' and len(res):
                 rc = 0  # false error return of 1 on v2.xx calibredb
         logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))

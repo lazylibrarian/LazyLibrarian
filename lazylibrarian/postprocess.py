@@ -394,55 +394,53 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                 # here we could also check percentage downloaded or eta or status?
                 # If downloader says it hasn't completed, no need to look for it.
-                torrentfiles = getTorrentFiles(matchtitle, book['Source'], book['DownloadID'])
-                # Downloaders return varying amounts of info using varying names
                 rejected = False
-                if not torrentfiles:
-                    logger.debug("No torrent files returned by %s for %s" % (book['Source'], matchtitle))
-                elif torrentfiles == 'Unavailable':
-                    logger.debug("No contents info available from %s" % book['Source'])
-                else:
-                    logger.debug("Checking files in %s" % matchtitle)
-                    for entry in torrentfiles:
-                        fname = ''
-                        fsize = 0
-                        if 'path' in entry:  # deluge
-                            fname = entry['path']
-                        if 'size' in entry:  # deluge, qbittorrent
-                            fsize = entry['size']
-                        if 'length' in entry:  # transmission
-                            fsize = entry['length']
-                        if 'name' in entry:  # transmission, qbittorrent
-                            fname = entry['name']
-                        extn = os.path.splitext(fname)[1].lstrip('.').lower()
-                        if extn and extn in banned_extensions:
-                            logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
-                            rejected = True
-                            break
-                        # only check size on right types of file
-                        # eg dont reject cos jpg is smaller than min file size
-                        # need to check if we have a size in K M or just a number. If K or M could be a float.
-                        if fsize and extn in filetypes:
-                            try:
-                                if 'M' in str(fsize):
-                                    fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
-                                elif 'K' in str(fsize):
-                                    fsize = int(float(fsize.split('K')[0].strip() * 1024))
-                                fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
-                            except ValueError:
-                                fsize = 0
-                            if fsize:
-                                if maxsize and fsize > maxsize:
-                                    logger.warn("%s is too large (%sMb). Deleting torrent" % (fname, fsize))
-                                    rejected = True
-                                    break
-                                if minsize and fsize < minsize:
-                                    logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
-                                    rejected = True
-                                    break
-                        if not rejected:
-                            logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
-
+                if book['Source'] in ['TRANSMISSION', 'QBITTORRENT', 'DELUGEWEBUI', 'DELUGERPC']:
+                    torrentfiles = getTorrentFiles(book['Source'], book['DownloadID'])
+                    # Downloaders return varying amounts of info using varying names
+                    if not torrentfiles:  # empty
+                        logger.debug("No files returned by %s for %s" % (book['Source'], matchtitle))
+                    else:
+                        logger.debug("Checking files in %s" % matchtitle)
+                        for entry in torrentfiles:
+                            fname = ''
+                            fsize = 0
+                            if 'path' in entry:  # deluge
+                                fname = entry['path']
+                            if 'size' in entry:  # deluge, qbittorrent
+                                fsize = entry['size']
+                            if 'length' in entry:  # transmission
+                                fsize = entry['length']
+                            if 'name' in entry:  # transmission, qbittorrent
+                                fname = entry['name']
+                            extn = os.path.splitext(fname)[1].lstrip('.').lower()
+                            if extn and extn in banned_extensions:
+                                logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
+                                rejected = True
+                                break
+                            # only check size on right types of file
+                            # eg dont reject cos jpg is smaller than min file size
+                            # need to check if we have a size in K M or just a number. If K or M could be a float.
+                            if fsize and extn in filetypes:
+                                try:
+                                    if 'M' in str(fsize):
+                                        fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
+                                    elif 'K' in str(fsize):
+                                        fsize = int(float(fsize.split('K')[0].strip() * 1024))
+                                    fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
+                                except ValueError:
+                                    fsize = 0
+                                if fsize:
+                                    if maxsize and fsize > maxsize:
+                                        logger.warn("%s is too large (%sMb). Deleting torrent" % (fname, fsize))
+                                        rejected = True
+                                        break
+                                    if minsize and fsize < minsize:
+                                        logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
+                                        rejected = True
+                                        break
+                            if not rejected:
+                                logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
                 if rejected:
                     # change status to "Failed", and ask downloader to delete task and files
                     # Only reset book status to wanted if still snatched in case another download task succeeded
@@ -599,6 +597,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                     match = 0
                     pp_path = ''
                     dest_path = ''
+                    authorname = ''
+                    bookname = ''
+                    global_name = ''
                     mostrecentissue = ''
                     if matches:
                         highest = max(matches, key=lambda x: x[0])
@@ -666,8 +667,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                                 if PY2:
                                     dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
-                                authorname = None
-                                bookname = None
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
                                     '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
                                 global_name = unaccented(global_name)
@@ -954,7 +953,7 @@ def getTorrentName(title, source, downloadid):
         return None
 
 
-def getTorrentFiles(title, source, downloadid):
+def getTorrentFiles(source, downloadid):
     torrentfiles = None
     try:
         if source == 'TRANSMISSION':
@@ -979,8 +978,6 @@ def getTorrentFiles(title, source, downloadid):
                     torrentfiles = result['files']
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-        else:
-            torrentfiles = 'Unavailable'
         return torrentfiles
 
     except Exception as e:
