@@ -2973,7 +2973,7 @@ class WebInterface(object):
     @cherrypy.expose
     def shutdown(self):
         self.label_thread('SHUTDOWN')
-        lazylibrarian.config_write()
+        # lazylibrarian.config_write()
         lazylibrarian.SIGNAL = 'shutdown'
         message = 'closing ...'
         return serve_template(templatename="shutdown.html", prefix='LazyLibrarian is ', title="Close library",

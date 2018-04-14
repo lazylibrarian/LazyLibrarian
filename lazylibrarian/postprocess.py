@@ -1394,11 +1394,11 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         if not os.path.isdir(dest_path):
             try:
                 os.makedirs(dest_path)
-                setperm(dest_path)
             except OSError as why:
                 return False, 'Unable to create directory %s: %s' % (dest_path, why)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
+        setperm(dest_path)
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
         for fname in os.listdir(makeBytestr(pp_path)):
             fname = makeUnicode(fname)
@@ -1545,6 +1545,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     jpgfile = jpg_file(dest_path)
     if jpgfile:
         logger.debug('Cover %s already exists' % jpgfile)
+        setperm(jpgfile)
         return
 
     link, success, _ = cache_img('book', bookid, bookimg, False)
@@ -1556,6 +1557,7 @@ def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
     coverfile = os.path.join(dest_path, global_name + '.jpg')
     try:
         coverfile = safe_copy(cachefile, coverfile)
+        setperm(coverfile)
     except Exception as e:
         logger.error("Error copying image to %s, %s %s" % (coverfile, type(e).__name__, str(e)))
         return
@@ -1602,6 +1604,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     opfpath = os.path.join(dest_path, global_name + '.opf')
     if not overwrite and os.path.exists(opfpath):
         logger.debug('%s already exists. Did not create one.' % opfpath)
+        setperm(opfpath)
         return opfpath, False
 
     bookid = data['BookID']
@@ -1695,4 +1698,5 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     with open(opfpath, fmode) as opf:
         opf.write(opfinfo)
     logger.debug('Saved metadata to: ' + opfpath)
+    setperm(opfpath)
     return opfpath, True
