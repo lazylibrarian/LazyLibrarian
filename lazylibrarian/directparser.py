@@ -125,6 +125,7 @@ def GEN(book=None, prov=None, test=False):
             try:
                 soup = BeautifulSoup(result, 'html5lib')
                 rows = []
+
                 try:
                     table = soup.find_all('table')[2]  # un-named table
                     if table:
@@ -142,6 +143,7 @@ def GEN(book=None, prov=None, test=False):
                     extn = ''
                     link = ''
                     td = row.find_all('td')
+
                     if 'index.php' in search and len(td) > 3:
                         try:
                             author = formatAuthorName(td[0].text)
@@ -161,8 +163,12 @@ def GEN(book=None, prov=None, test=False):
                             title = td[2].text
                             size = td[7].text.upper()
                             extn = td[8].text
+                            link = ''
                             newsoup = BeautifulSoup(str(td[2]), 'html5lib')
-                            link = newsoup.get('href')
+                            for res in newsoup.find_all('a'):
+                                output = res.get('href')
+                                if 'md5' in output:
+                                    link = output
                         except IndexError as e:
                             logger.debug('Error parsing libgen search.php results; %s' % str(e))
 
@@ -190,13 +196,16 @@ def GEN(book=None, prov=None, test=False):
                         if extn:
                             title = title + '.' + extn
 
-                        if not link.startswith('http'):
+                        if link.startswith('http'):
+                            url = redirect_url(host, link)
+                        else:
+                            if "/index.php?" in link:
+                                link = 'md5' + link.split('md5')[1]
+
                             if "/ads.php?" in link:
-                                url = url_fix(host + link)
+                                url = url_fix(host + "/" + link)
                             else:
                                 url = url_fix(host + "/ads.php?" + link)
-                        else:
-                            url = redirect_url(host, link)
 
                         bookresult, success = fetchURL(url)
                         if not success:
