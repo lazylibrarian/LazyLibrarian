@@ -402,20 +402,23 @@ def update():
         _, _ = runGit('stash clear')
         output, err = runGit('pull origin ' + branch)
 
-        success = True
         if not output:
             logmsg('error', 'Couldn\'t download latest version')
-            success = False
+            return False
+
         for line in output.split('\n'):
             if 'Already up-to-date.' in line:
                 logmsg('info', 'No update available: ' + str(output))
-                success = False
+                return False
             elif 'Aborting' in line or 'local changes' in line:
                 logmsg('error', 'Unable to update: ' + str(output))
-                success = False
-        if success:
-            lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
-            return True
+                return False
+
+        # Update version.txt and timestamp
+        updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
+        lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
+        return True
+
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (
             lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
@@ -478,10 +481,11 @@ def update():
                     os.remove(new_path)
                 os.renames(old_path, new_path)
 
-        # Update version.txt and timestamo
+        # Update version.txt and timestamp
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
         lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
         return True
+
     else:
         logmsg('error', "Cannot perform update - Install Type not set")
         return False

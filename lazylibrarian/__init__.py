@@ -148,7 +148,7 @@ isbn_978_dict = {
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
-CONFIG_NONWEB = ['LOGFILES', 'LOGSIZE', 'NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
+CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
                  'SYS_ENCODING']
 # default interface does not know about these items, so leave them unchanged
@@ -158,7 +158,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
-                     'BANNED_EXT', 'MAG_RENAME']
+                     'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),

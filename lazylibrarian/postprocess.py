@@ -90,7 +90,23 @@ def processAlternate(source_dir=None):
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
         new_book = book_file(source_dir, booktype='ebook')
-        if new_book:
+        # Check for more than one book in the folder. Note we can't rely on basename
+        # being the same, so just check for more than one bookfile of the same type
+        filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+        reject = ''
+        flist = os.listdir(makeBytestr(source_dir))
+        flist = [makeUnicode(item) for item in flist]
+        for item in filetypes:
+            counter = 0
+            for fname in flist:
+                if fname.endswith(item):
+                    counter += 1
+                    if counter > 1:
+                        reject = item
+                        break
+        if reject:
+            logger.debug("Not processing %s, found multiple %s" % (source_dir, reject))
+        elif new_book:
             metadata = {}
             # see if there is a metadata file in this folder with the info we need
             # try book_name.opf first, or fall back to any filename.opf
@@ -394,53 +410,53 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                 # here we could also check percentage downloaded or eta or status?
                 # If downloader says it hasn't completed, no need to look for it.
-                torrentfiles = getTorrentFiles(matchtitle, book['Source'], book['DownloadID'])
-                # Downloaders return varying amounts of info using varying names
                 rejected = False
-                if not torrentfiles:
-                    logger.debug("No torrent files returned by %s for %s" % (book['Source'], matchtitle))
-                else:
-                    logger.debug("Checking files in %s" % matchtitle)
-                    for entry in torrentfiles:
-                        fname = ''
-                        fsize = 0
-                        if 'path' in entry:  # deluge
-                            fname = entry['path']
-                        if 'size' in entry:  # deluge, qbittorrent
-                            fsize = entry['size']
-                        if 'length' in entry:  # transmission
-                            fsize = entry['length']
-                        if 'name' in entry:  # transmission, qbittorrent
-                            fname = entry['name']
-                        extn = os.path.splitext(fname)[1].lstrip('.').lower()
-                        if extn and extn in banned_extensions:
-                            logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
-                            rejected = True
-                            break
-                        # only check size on right types of file
-                        # eg dont reject cos jpg is smaller than min file size
-                        # need to check if we have a size in K M or just a number. If K or M could be a float.
-                        if fsize and extn in filetypes:
-                            try:
-                                if 'M' in str(fsize):
-                                    fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
-                                elif 'K' in str(fsize):
-                                    fsize = int(float(fsize.split('K')[0].strip() * 1024))
-                                fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
-                            except ValueError:
-                                fsize = 0
-                            if fsize:
-                                if maxsize and fsize > maxsize:
-                                    logger.warn("%s is too large (%sMb). Deleting torrent" % (fname, fsize))
-                                    rejected = True
-                                    break
-                                if minsize and fsize < minsize:
-                                    logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
-                                    rejected = True
-                                    break
-                        if not rejected:
-                            logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
-
+                if book['Source'] in ['TRANSMISSION', 'QBITTORRENT', 'DELUGEWEBUI', 'DELUGERPC']:
+                    torrentfiles = getTorrentFiles(book['Source'], book['DownloadID'])
+                    # Downloaders return varying amounts of info using varying names
+                    if not torrentfiles:  # empty
+                        logger.debug("No files returned by %s for %s" % (book['Source'], matchtitle))
+                    else:
+                        logger.debug("Checking files in %s" % matchtitle)
+                        for entry in torrentfiles:
+                            fname = ''
+                            fsize = 0
+                            if 'path' in entry:  # deluge
+                                fname = entry['path']
+                            if 'size' in entry:  # deluge, qbittorrent
+                                fsize = entry['size']
+                            if 'length' in entry:  # transmission
+                                fsize = entry['length']
+                            if 'name' in entry:  # transmission, qbittorrent
+                                fname = entry['name']
+                            extn = os.path.splitext(fname)[1].lstrip('.').lower()
+                            if extn and extn in banned_extensions:
+                                logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
+                                rejected = True
+                                break
+                            # only check size on right types of file
+                            # eg dont reject cos jpg is smaller than min file size
+                            # need to check if we have a size in K M or just a number. If K or M could be a float.
+                            if fsize and extn in filetypes:
+                                try:
+                                    if 'M' in str(fsize):
+                                        fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
+                                    elif 'K' in str(fsize):
+                                        fsize = int(float(fsize.split('K')[0].strip() * 1024))
+                                    fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
+                                except ValueError:
+                                    fsize = 0
+                                if fsize:
+                                    if maxsize and fsize > maxsize:
+                                        logger.warn("%s is too large (%sMb). Deleting torrent" % (fname, fsize))
+                                        rejected = True
+                                        break
+                                    if minsize and fsize < minsize:
+                                        logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
+                                        rejected = True
+                                        break
+                            if not rejected:
+                                logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
                 if rejected:
                     # change status to "Failed", and ask downloader to delete task and files
                     # Only reset book status to wanted if still snatched in case another download task succeeded
@@ -474,6 +490,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                     matchtitle = unaccented_str(book['NZBtitle'])
                     matches = []
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
+
                     for fname in downloads:
                         # skip if failed before or incomplete torrents, or incomplete btsync etc
                         if int(lazylibrarian.LOGLEVEL) > 2:
@@ -595,13 +612,17 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                     match = 0
                     pp_path = ''
+                    dest_path = ''
+                    authorname = ''
+                    bookname = ''
+                    global_name = ''
+                    mostrecentissue = ''
                     if matches:
                         highest = max(matches, key=lambda x: x[0])
                         match = highest[0]
                         pp_path = highest[1]
                         book = highest[2]  # type: dict
                     if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
-                        mostrecentissue = ''
                         logger.debug('Found match (%s%%): %s for %s %s' % (
                                      match, pp_path, book_type, book['NZBtitle']))
 
@@ -662,8 +683,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                                 if PY2:
                                     dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
-                                authorname = None
-                                bookname = None
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
                                     '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
                                 global_name = unaccented(global_name)
@@ -672,7 +691,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 controlValueDict = {"BookID": book['BookID'], "Status": "Snatched"}
                                 newValueDict = {"Status": "Failed", "NZBDate": now()}
                                 myDB.upsert("wanted", newValueDict, controlValueDict)
-                                continue
                     else:
                         logger.debug("Snatched %s %s is not in download directory" %
                                      (book['NZBmode'], book['NZBtitle']))
@@ -681,6 +699,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             if int(lazylibrarian.LOGLEVEL) > 2:
                                 for match in matches:
                                     logger.debug('Match: %s%%  %s' % (match[0], match[1]))
+
+                    if not dest_path:
                         continue
 
                     success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
@@ -949,10 +969,9 @@ def getTorrentName(title, source, downloadid):
         return None
 
 
-def getTorrentFiles(title, source, downloadid):
+def getTorrentFiles(source, downloadid):
     torrentfiles = None
     try:
-        logger.debug("getTorrentFiles: %s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
             torrentfiles = transmission.getTorrentFiles(downloadid)
         # elif source == 'UTORRENT':

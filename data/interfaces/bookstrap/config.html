@@ -98,9 +98,19 @@
                       <span class="help-block">Size of on-screen log, smaller is faster and uses less memory</span>
                     </div>
                     <div class="form-group">
+                      <label for="logfiles" class="control-label">Log Files:</label>
+                      <input type="text" id="logfiles" name="logfiles" value="${lazylibrarian.CONFIG['LOGFILES']}" class="form-control"             placeholder="Log Files">
+                      <span class="help-block">Number of logfiles to rotate</span>
+                    </div>
+                    <div class="form-group">
+                      <label for="logsize" class="control-label">Log Size:</label>
+                      <input type="text" id="logsize" name="logsize" value="${lazylibrarian.CONFIG['LOGSIZE']}" class="form-control"             placeholder="Log Size">
+                      <span class="help-block">Maximum size of each logfile</span>
+                    </div>
+                    <div class="form-group">
                       <label for="loglevel">Log Level:</label>
                       <input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="Log      Level">
-                      <span class="help-block">0=Errors/Warnings, 1=Normal, 2=Debug</span>
+                      <span class="help-block">0=Errors/Warnings, 1=Normal, 2=Debug, >2 Reserved</span>
                     </div>
                     <div class="form-group">
                       <label for="displaylength">Table Display Length:</label>
@@ -3522,11 +3532,20 @@
                 }
         });
 
-        $('#sysinfo').click(function () {
-            $.get("logHeader", {},
-                function (data) { window.alert(data) });
+        $('#sysinfo').on('click', function(e) {
+            $.get('logHeader', function(data) {
+                bootbox.dialog({
+                    title: 'System Info',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
         });
-
 
         $('#savefilters').on('click', function(e) {
             $.get('saveFilters', function(data) {
@@ -3565,7 +3584,18 @@
             var oauth_token = $.trim($("#gr_oauth_token").val());
             var oauth_secret = $.trim($("#gr_oauth_secret").val());
             $.get("testGRAuth", {'gr_api': gr_api, 'gr_secret': gr_secret, 'oauth_token': oauth_token, 'oauth_secret': oauth_secret},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'GoodReads Auth',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#grauthStep1').click(function () {
@@ -3573,13 +3603,42 @@
             var gr_secret = $.trim($("#gr_secret").val());
             $.get("grauthStep1", {'gr_api': gr_api, 'gr_secret': gr_secret},
                 function (data) {
-                if ( data.substr(0, 4) == 'http') { window.alert("When you click [OK] a new page will open to authorise lazylibrarian. Follow the prompts, then go back to LazyLibrarian and request oAuth2\nIf the page does not open, visit this link...\n" + data); window.open(data); }
-                else { window.alert(data) } })
+                if ( data.substr(0, 4) == 'http') { bootbox.dialog({
+                        title: 'GoodReads Auth',
+                        message: '<pre>When you click [OK] a new page will open to authorise lazylibrarian. Follow the prompts, then go back to LazyLibrarian and request oAuth2\nIf the page does not open, visit this link...\n'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });  window.open(data);
+                }
+                else { bootbox.dialog({
+                        title: 'GoodReads Response',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    }); } })
         });
 
         $('#grauthStep2').click(function () {
             $.get("grauthStep2", {},
-                function (data) { window.alert(data); window.location.reload(false); })
+                function (data) { bootbox.dialog({
+                        title: 'GoodReads Confirm',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                })
         });
 
 
@@ -3598,21 +3657,54 @@
 
         $('#testTwitter').click(function () {
             $.get("testTwitter", {},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Twitter Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testBoxcar').click(function () {
             var token = $.trim($("#boxcar_token").val());
             $.get("testBoxcar", {'token': token},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Boxcar Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testPushbullet').click(function () {
             var token = $.trim($("#pushbullet_token").val());
             var device = $.trim($("#pushbullet_deviceid").val());
             $.get("testPushbullet", {'token': token, 'device': device},
-                function (data) { window.alert(data) });
-        });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Pushbullet Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+            });
 
         $('#testPushover').click(function () {
             var token = $.trim($("#pushover_apitoken").val());
@@ -3620,41 +3712,107 @@
             var priority = $.trim($("#pushover_priority").val());
             var device = $.trim($("#pushover_device").val());
             $.get("testPushover", {'apitoken': token, 'keys': keys, 'priority': priority, 'device': device},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Pushover Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testProwl').click(function () {
             var apikey = $.trim($("#prowl_apikey").val());
             var priority = $.trim($("#prowl_priority").val());
             $.get("testProwl", {'apikey': apikey, 'priority': priority},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Prowl Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testTelegram').click(function () {
             var token = $.trim($("#telegram_token").val());
             var userid = $.trim($("#telegram_userid").val());
             $.get("testTelegram", {'token': token, 'userid': userid},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Telegram Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testNMA').click(function () {
             var apikey = $.trim($("#nma_apikey").val());
             var priority = $.trim($("#nma_priority").val());
             $.get("testNMA", {'apikey': apikey, 'priority': priority},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'NMA Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testSlack').click(function () {
             var token = $.trim($("#slack_token").val());
             var url = $.trim($("#slack_url").val());
             $.get("testSlack", {'token': token, 'url': url},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Slack Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testCustom').click(function () {
             var script = $.trim($("#custom_script").val());
             $.get("testCustom", {'script': script},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Custom Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testEmail').click(function () {
@@ -3668,7 +3826,18 @@
             var password = $.trim($("#email_smtp_password").val());
             var port = $.trim($("#email_smtp_port").val());
             $.get("testEmail", {'tls': tls, 'ssl': ssl, 'emailfrom': emailfrom, 'emailto': emailto, 'server': server, 'user': user, 'password': password, 'port': port, 'sendfile': sendfile},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Email Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $("#testAndroidPN").click(function () {
@@ -3676,13 +3845,35 @@
             var androidpn_username = $.trim($("#androidpn_username").val());
             var androidpn_broadcast = ($("#androidpn_broadcast").prop('checked') == true) ? 'Y' : 'N';
             $.get("testAndroidPN", {'url': androidpn_url, 'username': androidpn_username, 'broadcast': androidpn_broadcast},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Android Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#testCalibredb').click(function () {
             var prg = $.trim($("#imp_calibredb").val());
             $.get("testCalibredb", { 'prg': prg},
-                function (data) { window.alert(data) });
+                function (data) {
+                    bootbox.dialog({
+                        title: 'CalibreDB',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
         });
 
         $('#http_look').change(function() {

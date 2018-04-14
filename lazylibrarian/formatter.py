@@ -444,6 +444,8 @@ def surnameFirst(authorname):
 
 
 def cleanName(name, extras=None):
+    if not name:
+        return u''
     validNameChars = u"-_.() %s%s%s" % (string.ascii_letters, string.digits, extras)
     try:
         cleanedName = unicodedata.normalize('NFKD', name).encode('ASCII', 'ignore')

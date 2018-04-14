@@ -84,7 +84,10 @@ class grauth:
     def goodreads_oauth2():
         global request_token, consumer, token, client
         try:
-            token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+            if request_token and 'oauth_token' in request_token and 'oauth_token_secret' in request_token:
+                token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+            else:
+                return "Unable to run oAuth2 - Have you run oAuth1?"
         except Exception as e:
             logger.error("Exception in oAuth2: %s %s" % (type(e).__name__, traceback.format_exc()))
             return "Unable to run oAuth2 - Have you run oAuth1?"
@@ -250,7 +253,7 @@ class grauth:
         body = urlencode({'user_shelf[name]': shelf.lower()})
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         gr_api_sleep()
-        
+
         try:
             response, content = client.request('%s/user_shelves.xml' % 'https://www.goodreads.com', 'POST',
                                                body, headers)
@@ -322,7 +325,7 @@ class grauth:
     def getUserId():
         global client, user_id
         gr_api_sleep()
-        
+
         try:
             response, content = client.request('%s/api/auth_user' % 'https://www.goodreads.com', 'GET')
         except Exception as e:

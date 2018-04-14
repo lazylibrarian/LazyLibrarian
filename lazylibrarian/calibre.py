@@ -432,7 +432,9 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         err = makeUnicode(err)
         if rc:
             if 'Errno 111' in err:
-                logger.warn("calibredb returned %s: Connection refused" % rc)
+                logger.warn("calibredb returned Errno 111: Connection refused")
+            elif 'Errno 13' in err:
+                logger.warn("calibredb returned Errno 13: Permission denied")
             elif cmd == 'list_categories' and len(res):
                 rc = 0  # false error return of 1 on v2.xx calibredb
         logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
@@ -440,27 +442,28 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         logger.error("calibredb exception: %s %s" % (type(e).__name__, str(e)))
         rc = 1
 
-    if rc and dest_url.startswith('http') and not res.startswith('Forbidden'):
-        # if not forbidden (auth issue), might be no server running, retry using file
-        params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
-        if prelib:
-            params.extend(prelib)
-        dest_url = lazylibrarian.DIRECTORY('eBook')
-        params.extend(['--with-library', dest_url])
-        if postlib:
-            params.extend(postlib)
-        logger.debug(str(params))
-        try:
-            q = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = q.communicate()
-            res = makeUnicode(res)
-            err = makeUnicode(err)
-            rc = q.returncode
-            if rc:
-                logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
-        except Exception as e:
-            logger.error("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
-            rc = 1
+    # if rc and dest_url.startswith('http') and not res.startswith('Forbidden'):
+    #     # if not forbidden (auth issue), might be no server running, retry using file
+    #     params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
+    #     if prelib:
+    #        params.extend(prelib)
+    #    dest_url = lazylibrarian.DIRECTORY('eBook')
+    #    params.extend(['--with-library', dest_url])
+    #    if postlib:
+    #        params.extend(postlib)
+    #    logger.debug(str(params))
+    #    try:
+    #        q = Popen(params, stdout=PIPE, stderr=PIPE)
+    #        res, err = q.communicate()
+    #        res = makeUnicode(res)
+    #        err = makeUnicode(err)
+    #        rc = q.returncode
+    #        if rc:
+    #            logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
+    #    except Exception as e:
+    #        logger.error("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
+    #        rc = 1
+
     if rc:
         return res, err, rc
     else:
