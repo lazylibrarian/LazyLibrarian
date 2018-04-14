@@ -414,7 +414,7 @@ def update():
                 logmsg('error', 'Unable to update: ' + str(output))
                 return False
 
-        # Update version.txt and timestamo
+        # Update version.txt and timestamp
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
         lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
         return True
@@ -481,7 +481,7 @@ def update():
                     os.remove(new_path)
                 os.renames(old_path, new_path)
 
-        # Update version.txt and timestamo
+        # Update version.txt and timestamp
         updateVersionFile(lazylibrarian.CONFIG['LATEST_VERSION'])
         lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
         return True

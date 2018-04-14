@@ -288,7 +288,7 @@ def bookRename(bookid):
 
     r = os.path.dirname(f)
     try:
-        calibreid = r.rsplit('(', 1)[1].split(b')')[0]
+        calibreid = r.rsplit('(', 1)[1].split(')')[0]
         if not calibreid.isdigit():
             calibreid = ''
     except IndexError:
