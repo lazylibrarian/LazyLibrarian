@@ -89,8 +89,25 @@ def processAlternate(source_dir=None):
         # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
+
         new_book = book_file(source_dir, booktype='ebook')
-        if new_book:
+        # Check for more than one book in the folder. Note we can't rely on basename
+        # being the same, so just check for more than one bookfile of the same type
+        filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+        reject = ''
+        flist = os.listdir(makeBytestr(source_dir))
+        flist = [makeUnicode(item) for item in flist]
+        for item in filetypes:
+            counter = 0
+            for fname in flist:
+                if fname.endswith(item):
+                    counter += 1
+                    if counter > 1:
+                        reject = item
+                        break
+        if reject:
+            logger.debug("Not processing %s, found multiple %s" % (source_dir, reject))
+        elif new_book:
             metadata = {}
             # see if there is a metadata file in this folder with the info we need
             # try book_name.opf first, or fall back to any filename.opf
