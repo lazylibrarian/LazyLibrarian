@@ -89,7 +89,6 @@ def processAlternate(source_dir=None):
         # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
         # which book is it for?
-
         new_book = book_file(source_dir, booktype='ebook')
         # Check for more than one book in the folder. Note we can't rely on basename
         # being the same, so just check for more than one bookfile of the same type
