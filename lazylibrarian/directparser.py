@@ -127,13 +127,13 @@ def GEN(book=None, prov=None, test=False):
                 rows = []
 
                 try:
-                    table = soup.find_all('table')[2]  # un-named table
+                    table = soup.find_all('table')[-1]  # un-named table, last one in page
                     if table:
                         rows = table.find_all('tr')
                 except IndexError:  # no results table in result page
                     rows = []
 
-                if 'search.php' in search and len(rows) > 1:
+                if len(rows) > 1:  # skip table headers
                     rows = rows[1:]
 
                 for row in rows:
@@ -151,8 +151,8 @@ def GEN(book=None, prov=None, test=False):
                             newsoup = BeautifulSoup(str(td[4]), 'html5lib')
                             data = newsoup.find('a')
                             link = data.get('href')
-                            extn = data.text.split('(')[0]
-                            size = data.text.split('(')[1].split(')')[0]
+                            extn = td[4].text.split('(')[0].strip()
+                            size = td[4].text.split('(')[1].split(')')[0]
                             size = size.upper()
                         except IndexError as e:
                             logger.debug('Error parsing libgen index.php results: %s' % str(e))
@@ -169,6 +169,7 @@ def GEN(book=None, prov=None, test=False):
                                 output = res.get('href')
                                 if 'md5' in output:
                                     link = output
+                                    break
                         except IndexError as e:
                             logger.debug('Error parsing libgen search.php results; %s' % str(e))
 
