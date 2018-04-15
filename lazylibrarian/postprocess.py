@@ -38,7 +38,7 @@ from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
-    safe_copy, safe_move
+    safe_copy, safe_move, octal
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int
 from lazylibrarian.gr import GoodReads
@@ -1118,9 +1118,6 @@ def import_book(pp_path=None, bookID=None):
                 '$$', ' ')
             global_name = ' '.join(global_name.split()).strip()
 
-            if int(lazylibrarian.LOGLEVEL) > 2:
-                logger.debug("processDestination %s" % pp_path)
-
             success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
                                                     global_name, bookID, book_type)
             if success:
@@ -1362,6 +1359,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 if os.path.isdir(target_dir):
                     _ = LibraryScan(target_dir, remove=remove)
                     newbookfile = book_file(target_dir, booktype='ebook')
+                    # should we be setting permissions on calibres directories and files?
                     if newbookfile:
                         setperm(target_dir)
                         for fname in os.listdir(makeBytestr(target_dir)):
@@ -1382,7 +1380,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             return False, 'calibredb import failed, %s %s' % (type(e).__name__, str(e))
     else:
         # we are copying the files ourselves, either it's audiobook, magazine or we don't want to use calibre
-        logger.debug("BookType: %s, calibredb: [%s]" % (booktype, lazylibrarian.CONFIG['IMP_CALIBREDB']))
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("BookType: %s, calibredb: [%s]" % (booktype, lazylibrarian.CONFIG['IMP_CALIBREDB']))
         if not os.path.exists(dest_path):
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)
         elif not os.path.isdir(dest_path):
@@ -1392,13 +1391,19 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
         if not os.path.isdir(dest_path):
+            setperm(dest_path)
+        else:
+            perm = octal(lazylibrarian.CONFIG['DIR_PERM'], 0o755)
+            # make sure umask allows makedirs to set the permissions we want
+            original_umask = os.umask(0)
             try:
-                os.makedirs(dest_path)
+                os.makedirs(dest_path, perm)
+                os.umask(original_umask)
             except OSError as why:
+                os.umask(original_umask)
                 return False, 'Unable to create directory %s: %s' % (dest_path, why)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
-        setperm(dest_path)
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
         for fname in os.listdir(makeBytestr(pp_path)):
             fname = makeUnicode(fname)

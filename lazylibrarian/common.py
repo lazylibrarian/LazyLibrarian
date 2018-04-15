@@ -243,41 +243,57 @@ OjAwC98hhgAAAABJRU5ErkJggg==" alt="embedded icon" align="middle"><br><br>
 ''' % (title, body)
 
 
+def octal(value, default):
+    if not value:
+        return default
+    try:
+        value = int(str(value), 8)
+        return value
+    except ValueError:
+        return default
+
+
 def setperm(file_or_dir):
     """
     Force newly created directories to rwxr-xr-x and files to rw-r--r--
+    or other value as set in config
     """
     if not file_or_dir:
         return False
 
     if os.path.isdir(file_or_dir):
-        value = lazylibrarian.CONFIG['DIR_PERM']
-        if value and value.startswith('0o') and len(value) == 5:
-            perm = int(value, 8)
-        else:
-            perm = 0o755
-            value = '0o755'
+        perm = octal(lazylibrarian.CONFIG['DIR_PERM'], 0o755)
     elif os.path.isfile(file_or_dir):
-        value = lazylibrarian.CONFIG['FILE_PERM']
-        if value and value.startswith('0o') and len(value) == 5:
-            perm = int(lazylibrarian.CONFIG['FILE_PERM'], 8)
-        else:
-            perm = 0o644
-            value = '0o644'
+        perm = octal(lazylibrarian.CONFIG['FILE_PERM'], 0o644)
     else:
+        # not a file or a directory (symlink?)
         return False
+
+    value = oct(perm)[-3:].zfill(3)
+    st = os.stat(file_or_dir)
+    oct_perm = oct(st.st_mode)[-3:].zfill(3)
+    if oct_perm == value:
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Permission for %s is already %s" % (file_or_dir, value))
+        return True
+
+    # if setting directory permission, recursively do parents here?
     try:
         os.chmod(file_or_dir, perm)
     except Exception as e:
-        if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Failed to set permission %s for %s: %s %s" % (value, file_or_dir, type(e).__name__, str(e)))
+        logger.debug("Error setting permission %s for %s: %s %s" % (value, file_or_dir, type(e).__name__, str(e)))
         return False
 
     st = os.stat(file_or_dir)
-    oct_perm = oct(st.st_mode)
-    if int(lazylibrarian.LOGLEVEL) > 2:
-        logger.debug("Set permission (%s) for %s: %s" % (value, file_or_dir, oct_perm))
-    return True
+    oct_perm = oct(st.st_mode)[-3:].zfill(3)
+
+    if oct_perm == value:
+        if int(lazylibrarian.LOGLEVEL) > 2:
+            logger.debug("Set permission %s for %s" % (value, file_or_dir))
+        return True
+    else:
+        logger.debug("Failed to set permission %s for %s: %s" % (value, file_or_dir, oct_perm))
+    return False
 
 
 def any_file(search_dir=None, extn=None):
