@@ -235,9 +235,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                         if isinstance(torrent, text_type):
                             torrent = torrent.encode('iso-8859-1')
                         torrent_file.write(torrent)
-                    msg += 'SettingPerm'
+                    msg += 'SettingPerm '
                     setperm(tor_path)
-                    msg += 'Saved'
+                    msg += 'Saved '
                     logger.debug('Magnet file saved: %s' % tor_path)
                     downloadID = Source
                 except Exception as e:
@@ -258,7 +258,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     torrent_file.write(torrent)
                 msg += 'SettingPerm '
                 setperm(tor_path)
-                msg += 'Saved'
+                msg += 'Saved '
                 logger.debug('Torrent file saved: %s' % tor_name)
                 downloadID = Source
             except Exception as e:
