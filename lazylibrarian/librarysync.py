@@ -522,15 +522,38 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         performer = id3r.artist
                                         composer = id3r.composer
                                         book = id3r.album
+                                        albumartist = id3r.albumartist
+
+                                        if performer:
+                                            performer = performer.strip()
+                                        else:
+                                            performer = ''
+                                        if composer:
+                                            composer = composer.strip()
+                                        else:
+                                            composer = ''
+                                        if book:
+                                            book = book.strip()
+                                        else:
+                                            book = ''
+                                        if albumartist:
+                                            albumartist = albumartist.strip()
+                                        else:
+                                            albumartist = ''
+
                                         if lazylibrarian.LOGLEVEL > 2:
                                             logger.debug("id3r.filename [%s]" % filename)
                                             logger.debug("id3r.performer [%s]" % performer)
                                             logger.debug("id3r.composer [%s]" % composer)
                                             logger.debug("id3r.album [%s]" % book)
+                                            logger.debug("id3r.albumartist [%s]" % albumartist)
+
                                         if composer:  # if present, should be author
                                             author = composer
                                         elif performer:  # author, or narrator if composer == author
                                             author = performer
+                                        elif albumartist:
+                                            author = albumartist
                                         else:
                                             author = None
                                         if author and type(author) is list:

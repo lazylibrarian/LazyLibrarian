@@ -288,6 +288,7 @@ def bookRename(bookid):
 
     r = os.path.dirname(f)
     try:
+        # noinspection PyTypeChecker
         calibreid = r.rsplit('(', 1)[1].split(')')[0]
         if not calibreid.isdigit():
             calibreid = ''
