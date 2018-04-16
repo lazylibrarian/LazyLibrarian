@@ -519,18 +519,22 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 if TinyTag:
                                     try:
                                         id3r = TinyTag.get(filename)
-                                        performer = id3r.artist
-                                        composer = id3r.composer
-                                        book = id3r.album
+                                        performer = id3r.artist.strip()
+                                        composer = id3r.composer.strip()
+                                        book = id3r.album.strip()
+                                        albumartist = id3r.albumartist.strip()
                                         if lazylibrarian.LOGLEVEL > 2:
                                             logger.debug("id3r.filename [%s]" % filename)
                                             logger.debug("id3r.performer [%s]" % performer)
                                             logger.debug("id3r.composer [%s]" % composer)
                                             logger.debug("id3r.album [%s]" % book)
+                                            logger.debug("id3r.albumartist [%s]" % albumartist)
                                         if composer:  # if present, should be author
                                             author = composer
                                         elif performer:  # author, or narrator if composer == author
                                             author = performer
+                                        elif albumartist:
+                                            author = albumartist
                                         else:
                                             author = None
                                         if author and type(author) is list:
