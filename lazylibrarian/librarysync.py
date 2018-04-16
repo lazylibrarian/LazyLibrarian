@@ -494,6 +494,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         if res and 'title' in res and 'creator' in res:
                             book = res['title']
                             author = res['creator']
+                            author = author.strip()  # some audiobooks have fields of spaces
+                            book = book.strip()
                             if author and book and len(book) > 2 and len(author) > 2:
                                 match = 1
                             if 'language' in res:
@@ -670,7 +672,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         if author[1] in '. ':
                                             surname = author
                                             forename = ''
-                                            while surname[1] in '. ':
+                                            while surname and surname[1] in '. ':
                                                 forename = forename + surname[0] + '.'
                                                 surname = surname[2:].strip()
                                             if author != forename + ' ' + surname:
