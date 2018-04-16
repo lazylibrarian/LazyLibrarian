@@ -1390,7 +1390,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 os.remove(dest_path)
             except OSError as why:
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
-        if not os.path.isdir(dest_path):
+        if os.path.isdir(dest_path):
             setperm(dest_path)
         else:
             perm = octal(lazylibrarian.CONFIG['DIR_PERM'], 0o755)
