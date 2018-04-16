@@ -123,24 +123,29 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
         return False
 
-    bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
-    logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
-    destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
-    if not os.path.isdir(destdir):
-        try:
-            os.makedirs(destdir)
-            setperm(destdir)
-        except OSError as e:
-            logger.debug("Error creating directory %s, %s" % (destdir, e))
+    if not str(r.status_code).startswith('2'):
+        logger.debug("Got a %s response for %s" % (r.status_code, tor_url))
+    elif len(r.content) < 1000:
+        logger.debug("Only got %s bytes for %s/%s, rejecting" % (len(r.content), tor_title, bookname))
+    else:
+        bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
+        logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
+        destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
+        if not os.path.isdir(destdir):
+            try:
+                os.makedirs(destdir)
+                setperm(destdir)
+            except OSError as e:
+                logger.debug("Error creating directory %s, %s" % (destdir, e))
 
-    destfile = os.path.join(destdir, bookname)
-    try:
-        with open(destfile, 'wb') as bookfile:
-            bookfile.write(r.content)
-        setperm(destfile)
-        downloadID = True
-    except Exception as e:
-        logger.error("%s writing book to %s, %s" % (type(e).__name__, destfile, e))
+        destfile = os.path.join(destdir, bookname)
+        try:
+            with open(destfile, 'wb') as bookfile:
+                bookfile.write(r.content)
+            setperm(destfile)
+            downloadID = True
+        except Exception as e:
+            logger.error("%s writing book to %s, %s" % (type(e).__name__, destfile, e))
 
     if downloadID:
         logger.debug('File %s has been downloaded from %s' % (tor_title, tor_url))
