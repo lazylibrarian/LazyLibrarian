@@ -45,7 +45,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, \
-    getList, makeUnicode, makeBytestr, unaccented
+    getList, makeUnicode, makeBytestr, unaccented, replace_all
 
 USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
@@ -56,37 +56,55 @@ NOTIFY_DOWNLOAD = 2
 
 notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to Library"}
 
+# dict to remove/replace characters we don't want in a filename - this might be too strict?
+__dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', '|': '',
+           ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
-def safe_move(src, dst):
-    """ Move src to dst, retry without accents if unicode error as some
-        file systems can't handle accents. Return dst if success """
-    try:
-        shutil.move(src, dst)
-    except UnicodeEncodeError:
-        dst = unaccented(dst)
+
+def safe_move(src, dst, action='move'):
+    """ Move or copy src to dst
+        Retry without accents if unicode error as some file systems can't handle (some) accents
+        Retry with some characters stripped if bad filename
+        eg windows can't handle <>?":| (and maybe others) in filenames
+        Return (new) dst if success """
+
+    while action:  # might have more than one problem...
         try:
-            shutil.move(src, dst)
+            if action == 'copy':
+                shutil.copy(src, dst)
+            else:
+                shutil.move(src, dst)
+            return dst
+
+        except UnicodeEncodeError:
+            newdst = unaccented(dst)
+            if newdst != dst:
+                dst = newdst
+            else:
+                raise
+
+        except IOError as e:
+            if e.errno == 22:  # bad mode or filename
+                drive, path = os.path.splitdrive(dst)
+                # strip some characters windows can't handle
+                newpath = replace_all(path, __dic__)
+                # windows filenames can't end in space or dot
+                while newpath and newpath[-1] in '. ':
+                    newpath = newpath[:-1]
+                # anything left? has it changed?
+                if newpath and newpath != path:
+                    dst = os.path.join(drive, newpath)
+                else:
+                    raise
+            else:
+                raise
         except Exception:
             raise
-    except Exception:
-        raise
     return dst
 
 
 def safe_copy(src, dst):
-    """ Copy src to dst, retry without accents if unicode error as some
-        file systems can't handle accents. Return dst if success as may have changed """
-    try:
-        shutil.copyfile(src, dst)
-    except UnicodeEncodeError:
-        dst = unaccented(dst)
-        try:
-            shutil.copyfile(src, dst)
-        except Exception:
-            raise
-    except Exception:
-        raise
-    return dst
+    return safe_move(src, dst, action='copy')
 
 
 def gr_api_sleep():
@@ -715,7 +733,8 @@ def saveLog():
     passchars = string.ascii_letters + string.digits + ':_/'  # used by slack, telegram and googlebooks
     redactlist = ['api -> ', 'key -> ', 'secret -> ', 'pass -> ', 'password -> ', 'token -> ', 'keys -> ',
                   'apitoken -> ', 'username -> ', '&r=', 'using api [', 'apikey=', 'key=', 'apikey%3D', "apikey': ",
-                  "'--password', u'", "'--password', '", "api:", "keys:", "token:", "secret="]
+                  "'--password', u'", "'--password', '", "api:", "keys:", "token:", "secret=", "email_from -> ",
+                  "email_to -> ", "email_smtp_user -> "]
     with open(outfile + '.tmp', 'w') as out:
         nextfile = True
         extn = 0
