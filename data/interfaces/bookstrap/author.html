@@ -84,7 +84,7 @@
         <div id="authorhead_menu">
             <h1><a href="${author['AuthorLink']}" target="_blank" rel="noreferrer">${author['AuthorName']}</a>
             %if perm&lazylibrarian.perm_edit:
-            <a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new"><small><i>Edit</i></small></a>
+            <a href="editAuthor?authorid=${author['AuthorID']}"&amp; target="_new"><small><i>Edit</i></small></a>
             %endif
             </h1>
             %if author['AuthorDeath']:
@@ -234,6 +234,7 @@
         })
         $('#chooselanguage').val(getUrlVars()['BookLang']);
         $('#chooselib').val(getUrlVars()['library']);
+
         if ($("#chooselib").val() != 'AudioBook') {
             $('#chooselib').val('eBook')
         }
@@ -246,7 +247,7 @@
             {
                 "order": [[ 6, 'desc' ]],
                 "bAutoWidth": false,
-                "stateSave": true,
+                "stateSave": ${savestate},
                 "columnDefs":[
                     { targets: 'no-sort', orderable: false },
                     { targets: [0], 'render': function(data, type, row) {
