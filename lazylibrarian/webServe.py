@@ -1168,13 +1168,12 @@ class WebInterface(object):
         if not author:
             raise cherrypy.HTTPRedirect("home")
 
-        # if we've changed author, drop savestate as number of pages of books will differ,
-        # so reset to first page of new authors books
+        # if we've changed author, reset to first page of new authors books
         if AuthorID == lastauthor:
-            savestate = 'true'
+            firstpage = 'false'
         else:
             lastauthor = AuthorID
-            savestate = 'false'
+            firstpage = 'true'
 
         authorname = author['AuthorName']
         if PY2:
@@ -1183,7 +1182,7 @@ class WebInterface(object):
         return serve_template(
             templatename="author.html", title=quote_plus(authorname),
             author=author, languages=languages, booklang=BookLang, types=types, library=library, ignored=Ignored,
-            showseries=lazylibrarian.SHOW_SERIES, savestate=savestate)
+            showseries=lazylibrarian.SHOW_SERIES, firstpage=firstpage)
 
     @cherrypy.expose
     def setAuthor(self, AuthorID, status):

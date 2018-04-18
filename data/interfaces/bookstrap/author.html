@@ -247,7 +247,7 @@
             {
                 "order": [[ 6, 'desc' ]],
                 "bAutoWidth": false,
-                "stateSave": ${savestate},
+                "stateSave": true,
                 "columnDefs":[
                     { targets: 'no-sort', orderable: false },
                     { targets: [0], 'render': function(data, type, row) {
@@ -330,6 +330,9 @@
                     return nRow;
                 },
             });
+
+        if (${firstpage}) { oTable.page( 'first' ).draw( 'page' ); }
+
         $('.dataTables_filter input').attr("placeholder", "Results Filter");
         //$(window).resize(function() {oTable.draw(false)});
         $('a.toggle-vis').click(function (e) {
