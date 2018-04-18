@@ -61,6 +61,33 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
 
+def mymakedirs(dest_path):
+    """ os.makedirs only seems to set the right permission on the final leaf directory
+        not any intermediate parents it creates on the way, so we'll try to do it ourselves
+        setting permissions as we go. Could use recursion but probably aren't many levels to do...
+        Build a list of missing intermediate directories in reverse order, exit when we encounter
+        an existing directory or hit root level. Set permission on any directories we create.
+        return True or False """
+
+    to_make = []
+    while not os.path.isdir(dest_path):
+        to_make.insert(0, dest_path)
+        parent = os.path.dirname(dest_path)
+        if parent == dest_path:
+            break
+        else:
+            dest_path = parent
+
+    for entry in to_make:
+        try:
+            os.mkdir(entry)  # mkdir uses umask, so set perm ourselves
+            _ = setperm(entry)  # failing to set perm might not be fatal
+        except OSError as why:
+            logger.error('Unable to create directory %s: %s' % (entry, why))
+            return False
+    return True
+
+
 def safe_move(src, dst, action='move'):
     """ Move or copy src to dst
         Retry without accents if unicode error as some file systems can't handle (some) accents
@@ -287,30 +314,29 @@ def setperm(file_or_dir):
         # not a file or a directory (symlink?)
         return False
 
-    value = oct(perm)[-3:].zfill(3)
+    want_perm = oct(perm)[-3:].zfill(3)
     st = os.stat(file_or_dir)
-    oct_perm = oct(st.st_mode)[-3:].zfill(3)
-    if oct_perm == value:
+    old_perm = oct(st.st_mode)[-3:].zfill(3)
+    if old_perm == want_perm:
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Permission for %s is already %s" % (file_or_dir, value))
+            logger.debug("Permission for %s is already %s" % (file_or_dir, want_perm))
         return True
 
-    # if setting directory permission, recursively do parents here?
     try:
         os.chmod(file_or_dir, perm)
     except Exception as e:
-        logger.debug("Error setting permission %s for %s: %s %s" % (value, file_or_dir, type(e).__name__, str(e)))
+        logger.debug("Error setting permission %s for %s: %s %s" % (want_perm, file_or_dir, type(e).__name__, str(e)))
         return False
 
     st = os.stat(file_or_dir)
-    oct_perm = oct(st.st_mode)[-3:].zfill(3)
+    new_perm = oct(st.st_mode)[-3:].zfill(3)
 
-    if oct_perm == value:
+    if new_perm == want_perm:
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Set permission %s for %s" % (value, file_or_dir))
+            logger.debug("Set permission %s for %s, was %s" % (want_perm, file_or_dir, old_perm))
         return True
     else:
-        logger.debug("Failed to set permission %s for %s: %s" % (value, file_or_dir, oct_perm))
+        logger.debug("Failed to set permission %s for %s, got %s" % (want_perm, file_or_dir, new_perm))
     return False
 
 
@@ -613,22 +639,25 @@ def showJobs():
 
 
 def clearLog():
-    logger.lazylibrarian_log.stopLogger()
+    lazylibrarian.LOGLIST = []
     error = False
-    if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
-        try:
-            shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
-            os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
-        except OSError as e:
-            error = e.strerror
-    logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
-
-    if error:
-        return 'Failed to clear log: %s' % error
+    if 'windows' in platform.system().lower():
+        return "Screen log cleared"
     else:
-        lazylibrarian.LOGLIST = []
-        return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
-            lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
+        logger.lazylibrarian_log.stopLogger()
+        if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
+            try:
+                shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
+                os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
+            except OSError as e:
+                error = e.strerror
+        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+
+        if error:
+            return 'Failed to clear logfiles: %s' % error
+        else:
+            return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
+                lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
 
 
 def reverse_readline(filename, buf_size=8192):
