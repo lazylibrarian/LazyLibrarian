@@ -61,6 +61,33 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
 
+def mymakedirs(dest_path):
+    """ os.makedirs only seems to set the right permission on the final leaf directory
+        not any intermediate parents it creates on the way, so we'll try to do it ourselves
+        setting permissions as we go. Could use recursion but probably aren't many levels to do...
+        Build a list of missing intermediate directories in reverse order, exit when we encounter
+        an existing directory or hit root level. Set permission on any directories we create.
+        return True or False """
+
+    to_make = []
+    while not os.path.isdir(dest_path):
+        to_make.insert(0, dest_path)
+        parent = os.path.dirname(dest_path)
+        if parent == dest_path:
+            break
+        else:
+            dest_path = parent
+
+    for entry in to_make:
+        try:
+            os.mkdir(entry)  # mkdir uses umask, so set perm ourselves
+            _ = setperm(entry)  # failing to set perm might not be fatal
+        except OSError as why:
+            logger.error('Unable to create directory %s: %s' % (entry, why))
+            return False
+    return True
+
+
 def safe_move(src, dst, action='move'):
     """ Move or copy src to dst
         Retry without accents if unicode error as some file systems can't handle (some) accents
@@ -612,22 +639,25 @@ def showJobs():
 
 
 def clearLog():
-    logger.lazylibrarian_log.stopLogger()
+    lazylibrarian.LOGLIST = []
     error = False
-    if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
-        try:
-            shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
-            os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
-        except OSError as e:
-            error = e.strerror
-    logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
-
-    if error:
-        return 'Failed to clear log: %s' % error
+    if 'windows' in platform.system().lower():
+        return "Screen log cleared"
     else:
-        lazylibrarian.LOGLIST = []
-        return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
-            lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
+        logger.lazylibrarian_log.stopLogger()
+        if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
+            try:
+                shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
+                os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
+            except OSError as e:
+                error = e.strerror
+        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+
+        if error:
+            return 'Failed to clear logfiles: %s' % error
+        else:
+            return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
+                lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
 
 
 def reverse_readline(filename, buf_size=8192):
