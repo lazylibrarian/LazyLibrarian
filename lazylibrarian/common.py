@@ -287,30 +287,29 @@ def setperm(file_or_dir):
         # not a file or a directory (symlink?)
         return False
 
-    value = oct(perm)[-3:].zfill(3)
+    want_perm = oct(perm)[-3:].zfill(3)
     st = os.stat(file_or_dir)
-    oct_perm = oct(st.st_mode)[-3:].zfill(3)
-    if oct_perm == value:
+    old_perm = oct(st.st_mode)[-3:].zfill(3)
+    if old_perm == want_perm:
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Permission for %s is already %s" % (file_or_dir, value))
+            logger.debug("Permission for %s is already %s" % (file_or_dir, want_perm))
         return True
 
-    # if setting directory permission, recursively do parents here?
     try:
         os.chmod(file_or_dir, perm)
     except Exception as e:
-        logger.debug("Error setting permission %s for %s: %s %s" % (value, file_or_dir, type(e).__name__, str(e)))
+        logger.debug("Error setting permission %s for %s: %s %s" % (want_perm, file_or_dir, type(e).__name__, str(e)))
         return False
 
     st = os.stat(file_or_dir)
-    oct_perm = oct(st.st_mode)[-3:].zfill(3)
+    new_perm = oct(st.st_mode)[-3:].zfill(3)
 
-    if oct_perm == value:
+    if new_perm == want_perm:
         if int(lazylibrarian.LOGLEVEL) > 2:
-            logger.debug("Set permission %s for %s" % (value, file_or_dir))
+            logger.debug("Set permission %s for %s, was %s" % (want_perm, file_or_dir, old_perm))
         return True
     else:
-        logger.debug("Failed to set permission %s for %s: %s" % (value, file_or_dir, oct_perm))
+        logger.debug("Failed to set permission %s for %s, got %s" % (want_perm, file_or_dir, new_perm))
     return False
 
 

@@ -38,7 +38,7 @@ from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
-    safe_copy, safe_move, octal
+    safe_copy, safe_move
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int
 from lazylibrarian.gr import GoodReads
@@ -1393,15 +1393,25 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         if os.path.isdir(dest_path):
             setperm(dest_path)
         else:
-            perm = octal(lazylibrarian.CONFIG['DIR_PERM'], 0o755)
-            # make sure umask allows makedirs to set the permissions we want
-            original_umask = os.umask(0)
-            try:
-                os.makedirs(dest_path, perm)
-                os.umask(original_umask)
-            except OSError as why:
-                os.umask(original_umask)
-                return False, 'Unable to create directory %s: %s' % (dest_path, why)
+            # makedirs only seems to set the right permission on the final leaf directory
+            # so we'll try to do it ourselves setting permissions as we go...
+            to_make = []
+            # build a list of missing directories in reverse order
+            # exit when we encounter an existing directory or hit root level
+            while not os.path.isdir(dest_path):
+                to_make.insert(0, dest_path)
+                parent = os.path.dirname(dest_path)
+                if parent == dest_path:
+                    break
+                else:
+                    dest_path = parent
+
+            for entry in to_make:
+                try:
+                    os.mkdir(entry)  # mkdir uses umask, so set perm ourselves
+                    _ = setperm(entry)  # failing to set perm might not be fatal
+                except OSError as why:
+                    return False, 'Unable to create directory %s: %s' % (entry, why)
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
