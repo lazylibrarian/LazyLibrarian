@@ -1144,8 +1144,13 @@ class WebInterface(object):
 
         raise cherrypy.HTTPRedirect(redirect)
 
+    global lastauthor
+    # noinspection PyRedeclaration
+    lastauthor = ''
+
     @cherrypy.expose
     def authorPage(self, AuthorID, BookLang=None, library='eBook', Ignored=False):
+        global lastauthor
         myDB = database.DBConnection()
         if Ignored:
             languages = myDB.select(
@@ -1162,6 +1167,14 @@ class WebInterface(object):
 
         if not author:
             raise cherrypy.HTTPRedirect("home")
+
+        # if we've changed author, reset to first page of new authors books
+        if AuthorID == lastauthor:
+            firstpage = 'false'
+        else:
+            lastauthor = AuthorID
+            firstpage = 'true'
+
         authorname = author['AuthorName']
         if PY2:
             authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
@@ -1169,7 +1182,7 @@ class WebInterface(object):
         return serve_template(
             templatename="author.html", title=quote_plus(authorname),
             author=author, languages=languages, booklang=BookLang, types=types, library=library, ignored=Ignored,
-            showseries=lazylibrarian.SHOW_SERIES)
+            showseries=lazylibrarian.SHOW_SERIES, firstpage=firstpage)
 
     @cherrypy.expose
     def setAuthor(self, AuthorID, status):
