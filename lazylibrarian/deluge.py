@@ -16,6 +16,8 @@
 # URL: http://code.google.com/p/sickbeard/
 # Adapted for Headphones by <noamgit@gmail.com>
 # URL: https://github.com/noam09
+# Adapted for LazyLibrarian by Phil Borman
+# URL: https://github.com/philborman
 #
 
 from __future__ import unicode_literals
@@ -34,7 +36,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.formatter import check_int
-from lazylibrarian.common import setperm
+from lazylibrarian.common import mymakedirs
 
 delugeweb_auth = {}
 delugeweb_url = ''
@@ -502,11 +504,7 @@ def setTorrentPath(result):
 
         if not os.path.isdir(dl_dir):
             logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % dl_dir)
-            try:
-                os.makedirs(dl_dir)
-                setperm(dl_dir)
-            except OSError as e:
-                logger.debug("Error creating directory %s, %s" % (dl_dir, e))
+            _ = mymakedirs(dl_dir)
 
         post_json = {"method": "core.set_torrent_move_completed_path", "params": [result['hash'], dl_dir], "id": 8}
 

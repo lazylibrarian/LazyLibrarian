@@ -38,7 +38,7 @@ from lazylibrarian.bookwork import audioRename, seriesInfo
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
-    safe_copy, safe_move
+    safe_copy, safe_move, mymakedirs
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int
 from lazylibrarian.gr import GoodReads
@@ -241,11 +241,8 @@ def unpack_archive(pp_path, download_dir, title):
                 if not targetdir:
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
-                    try:
-                        os.makedirs(targetdir)
-                        setperm(targetdir)
-                    except OSError as why:
-                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                    res = mymakedirs(targetdir)
+                    if not res:
                         return ''
                 if PY2:
                     fmode = 'wb'
@@ -273,11 +270,8 @@ def unpack_archive(pp_path, download_dir, title):
                 if not targetdir:
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
-                    try:
-                        os.makedirs(targetdir)
-                        setperm(targetdir)
-                    except OSError as why:
-                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                    res = mymakedirs(targetdir)
+                    if not res:
                         return ''
                 if PY2:
                     fmode = 'wb'
@@ -305,11 +299,8 @@ def unpack_archive(pp_path, download_dir, title):
                 if not targetdir:
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
-                    try:
-                        os.makedirs(targetdir)
-                        setperm(targetdir)
-                    except OSError as why:
-                        logger.error('Failed to create dir [%s], %s' % (targetdir, why))
+                    res = mymakedirs(targetdir)
+                    if not res:
                         return ''
                 if PY2:
                     fmode = 'wb'
@@ -543,12 +534,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                 move = 'move'
 
                                             if not os.path.isdir(targetdir):
-                                                try:
-                                                    os.makedirs(targetdir)
-                                                    setperm(targetdir)
-                                                except OSError as why:
-                                                    logger.error('Failed to create directory [%s], %s' %
-                                                                 (targetdir, why))
+                                                _ = mymakedirs(targetdir)
+                                                
                                             if os.path.isdir(targetdir):
                                                 cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
                                                 if cnt:
@@ -1393,25 +1380,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         if os.path.isdir(dest_path):
             setperm(dest_path)
         else:
-            # makedirs only seems to set the right permission on the final leaf directory
-            # so we'll try to do it ourselves setting permissions as we go...
-            to_make = []
-            # build a list of missing directories in reverse order
-            # exit when we encounter an existing directory or hit root level
-            while not os.path.isdir(dest_path):
-                to_make.insert(0, dest_path)
-                parent = os.path.dirname(dest_path)
-                if parent == dest_path:
-                    break
-                else:
-                    dest_path = parent
-
-            for entry in to_make:
-                try:
-                    os.mkdir(entry)  # mkdir uses umask, so set perm ourselves
-                    _ = setperm(entry)  # failing to set perm might not be fatal
-                except OSError as why:
-                    return False, 'Unable to create directory %s: %s' % (entry, why)
+            res = mymakedirs(dest_path)
+            if not res:
+                return False, 'Unable to create directory %s: %s' % dest_path
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks

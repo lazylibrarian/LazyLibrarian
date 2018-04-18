@@ -26,7 +26,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import setperm, USER_AGENT, proxyList
+from lazylibrarian.common import setperm, USER_AGENT, proxyList, mymakedirs
 from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
 from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
@@ -132,11 +132,7 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
         logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
         destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
         if not os.path.isdir(destdir):
-            try:
-                os.makedirs(destdir)
-                setperm(destdir)
-            except OSError as e:
-                logger.debug("Error creating directory %s, %s" % (destdir, e))
+            _ = mymakedirs(destdir)
 
         destfile = os.path.join(destdir, bookname)
         try:
