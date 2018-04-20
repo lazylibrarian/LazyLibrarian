@@ -179,6 +179,8 @@ def dateFormat(datestr, formatstr):
 
     if not formatstr or formatstr == '$Y-$m-$d':  # shortcut for default values
         return datestr[:11]
+    if datestr is None:
+        return ""
     if datestr.isdigit():
         return datestr
 
