@@ -495,6 +495,15 @@
                       e.g: fr_FR.utf8, es_ES.utf8<br/>
                       English month names are preloaded   Changes to this setting require a restart</span>
                   </div>
+                   <div class="form-group">
+                    <label for="date_format" class="control=label">Date format for Added columns:</label>
+                    <input type="text" id="date_format" name="date_format" value="${lazylibrarian.CONFIG['DATE_FORMAT']}" class="form-control" placeholder="Format for column dates">
+                  </div>
+                   <div class="form-group">
+                    <label for="iss_format" class="control=label">Date format for Issue Date:</label>
+                    <input type="text" id="iss_format" name="iss_format" value="${lazylibrarian.CONFIG['ISS_FORMAT']}" class="form-control" placeholder="Format for issue dates">
+                    <span class="help-block">$d Day of the month as a number<br>$b Month as abbreviated name<br>$B Month as full name<br>$m Month as a number<br>$y	Year without century<br>$Y	Year with century<br>eg $Y-$m-$d</span>
+                  </div>
                 </fieldset>
               </div>
             </div>

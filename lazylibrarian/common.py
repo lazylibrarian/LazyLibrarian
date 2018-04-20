@@ -15,6 +15,7 @@
 
 import datetime
 import os
+import glob
 import sys
 import platform
 import string
@@ -641,23 +642,23 @@ def showJobs():
 def clearLog():
     lazylibrarian.LOGLIST = []
     error = False
-    if 'windows' in platform.system().lower():
-        return "Screen log cleared"
-    else:
-        logger.lazylibrarian_log.stopLogger()
-        if os.path.exists(lazylibrarian.CONFIG['LOGDIR']):
-            try:
-                shutil.rmtree(lazylibrarian.CONFIG['LOGDIR'])
-                os.mkdir(lazylibrarian.CONFIG['LOGDIR'])
-            except OSError as e:
-                error = e.strerror
-        logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
+    # if 'windows' in platform.system().lower():
+    #     return "Screen log cleared"
+    # else:
+    logger.lazylibrarian_log.stopLogger()
+    for f in glob.glob(lazylibrarian.CONFIG['LOGDIR'] + "/*.log*"):
+        try:
+            os.remove(f)
+        except OSError as e:
+            error = e.strerror
+            break
+    logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
 
-        if error:
-            return 'Failed to clear logfiles: %s' % error
-        else:
-            return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
-                lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
+    if error:
+        return 'Failed to clear logfiles: %s' % error
+    else:
+        return "Log cleared, level set to [%s]- Log Directory is [%s]" % (
+            lazylibrarian.LOGLEVEL, lazylibrarian.CONFIG['LOGDIR'])
 
 
 def reverse_readline(filename, buf_size=8192):

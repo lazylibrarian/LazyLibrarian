@@ -67,7 +67,11 @@
       <table class="display table table-striped table-hover table-bordered" id="book_table">
         <thead>
           <tr>
+            %if perm&lazylibrarian.perm_status:
             <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            %else:
+            <th class="hidden"></th>
+            %endif
             <th class="bookart text-center no-sort">Cover</th>
             <th class="authorname">Author</th>
             <th class="bookname">Title</th>
@@ -135,8 +139,7 @@
                 { targets: [5], 'render': function(data, type, row) {
                     return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
                 { targets: [7], 'render': function(data, type, row) {
-                    var dtime = row[10];
-                    var str = String(dtime).substr(0, 10);
+                    var str = row[10];
                     if (str === "null"){ str = ""}
                     return str ;} },
                 { targets: [8], 'render': function(data, type, row) {
@@ -187,15 +190,14 @@
             "sAjaxSource": 'getBooks?source=Books&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                %if perm&lazylibrarian.perm_status:
                 $('td', nRow).eq(0).addClass("text-center");
+                %else:
+                $('td', nRow).eq(0).addClass("hidden");
+                %endif
                 $('td', nRow).eq(5).addClass('text-center');
                 $('td', nRow).eq(6).addClass('text-center');
                 $('td', nRow).eq(7).addClass('text-center');
-                // hide cover,stars,date on small devices
-                //$('td', nRow).eq(1).addClass('hidden-xs');
-                //$('td', nRow).eq(5).addClass('hidden-xs');
-                //$('td', nRow).eq(6).addClass('hidden-xs');
-                //$('td', nRow).eq(7).addClass('hidden-xs');
                 return nRow;
             },
         });

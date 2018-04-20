@@ -161,9 +161,9 @@ def get_cached_request(url, useCache=True, cache="XML"):
                 logger.debug("Error decoding json from %s" % hashfilename)
                 return None, False
         elif cache == "XML":
-            with open(hashfilename, "r") as cachefile:
+            with open(hashfilename, "rb") as cachefile:
                 result = cachefile.read()
-            if result and result.startswith('<?xml'):
+            if result and result.startswith(b'<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
                 except (ElementTree.ParseError, UnicodeEncodeError):
@@ -177,7 +177,9 @@ def get_cached_request(url, useCache=True, cache="XML"):
         lazylibrarian.CACHE_MISS = int(lazylibrarian.CACHE_MISS) + 1
         if cache == 'XML':
             gr_api_sleep()
-        result, success = fetchURL(url)
+            result, success = fetchURL(url, raw=True)
+        else:
+            result, success = fetchURL(url)
 
         if success:
             logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
@@ -192,7 +194,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
-                if result and result.startswith('<?xml'):
+                if result and result.startswith(b'<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
                         if not expiry:
@@ -201,7 +203,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                         logger.debug("Error parsing xml from %s" % url)
                         source = None
                 if source is not None:
-                    with open(hashfilename, "w") as cachefile:
+                    with open(hashfilename, "wb") as cachefile:
                         cachefile.write(result)
                 else:
                     logger.debug("Error getting xml data from %s" % url)

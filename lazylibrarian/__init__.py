@@ -158,7 +158,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
-                     'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE']
+                     'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -212,6 +212,8 @@ CONFIG_DEFINITIONS = {
     'SKIPPED_EXT': ('str', 'General', 'fail, part, bts, !ut, torrent, magnet, nzb, unpack'),
     'BANNED_EXT': ('str', 'General', 'avi, mp4, mov, iso, m4v'),
     'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
+    'ISS_FORMAT': ('str', 'General', '$Y-$m-$d'),
+    'DATE_FORMAT': ('str', 'General', '$Y-$m-$d'),
     'IMP_MONTHLANG': ('str', 'General', ''),
     'IMP_AUTOADD': ('str', 'General', ''),
     'IMP_AUTOADD_BOOKONLY': ('bool', 'General', 0),

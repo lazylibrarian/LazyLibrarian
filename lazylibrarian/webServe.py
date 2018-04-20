@@ -37,7 +37,7 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
-    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8
+    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8, dateFormat
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -1447,6 +1447,10 @@ class WebInterface(object):
         # for arg in kwargs:
         #     print arg, kwargs[arg]
 
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
         myDB = database.DBConnection()
         ToRead = []
         HaveRead = []
@@ -1468,10 +1472,6 @@ class WebInterface(object):
                     if lazylibrarian.LOGLEVEL > 3:
                         logger.debug("getBooks userid %s read %s,%s" % (
                             cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
-
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         # group_concat needs sqlite3 >= 3.5.4, we check version in __init__
 
@@ -1633,10 +1633,12 @@ class WebInterface(object):
                 # Need to pass bookid and status twice as datatables modifies first one
                 if status_type == 'audiostatus':
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
-                              row[6], row[15], row[14], row[16], flag])
+                              row[6], dateFormat(row[15], lazylibrarian.CONFIG['DATE_FORMAT']),
+                              row[14], row[16], flag])
                 else:
                     d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                              row[6], row[13], row[5], row[16], flag])
+                              row[6], dateFormat(row[13], lazylibrarian.CONFIG['DATE_FORMAT']),
+                              row[5], row[16], flag])
             rows = d
 
         if lazylibrarian.LOGLEVEL > 3:
@@ -2408,8 +2410,96 @@ class WebInterface(object):
 
     # MAGAZINES #########################################################
 
+    # noinspection PyUnusedLocal
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def getMags(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
+        # for arg in kwargs:
+        #     print arg, kwargs[arg]
+
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
+        myDB = database.DBConnection()
+        cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
+        cmd += ' as Iss_Cnt from magazines order by Title'
+        rowlist = myDB.select(cmd)
+        mags = []
+        rows = []
+        filtered = []
+
+        if len(rowlist):
+            for mag in rowlist:
+                magimg = mag['LatestCover']
+                # special flag to say "no covers required"
+                if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
+                    magimg = 'images/nocover.jpg'
+                else:
+                    myhash = md5_utf8(magimg)
+                    hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
+                    if not os.path.isfile(hashname):
+                        copyfile(magimg, hashname)
+                        setperm(hashname)
+                    magimg = 'cache/magazine/' + myhash + '.jpg'
+
+                this_mag = dict(mag)
+                this_mag['Cover'] = magimg
+                temp_title = mag['Title']
+                if PY2:
+                    temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
+                this_mag['safetitle'] = quote_plus(temp_title)
+                mags.append(this_mag)
+
+            rowlist = []
+            if len(mags):
+                for mag in mags:
+                    entry = [mag['safetitle'], mag['Cover'], mag['Title'], mag['Iss_Cnt'], mag['LastAcquired'],
+                             mag['IssueDate'], mag['Status'], mag['IssueStatus']]
+                    rowlist.append(entry)  # add each rowlist to the masterlist
+
+            if sSearch:
+                filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
+            else:
+                filtered = rowlist
+
+            sortcolumn = int(iSortCol_0)
+
+            if sortcolumn in [4, 5]:  # dates
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+            elif sortcolumn == 2:  # title
+                filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
+            else:
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+            for row in rows:
+                row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
+                row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
+
+        if lazylibrarian.LOGLEVEL > 3:
+            logger.debug("getMags returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getMags filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
+        return mydict
+
     @cherrypy.expose
     def magazines(self):
+        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
+            # use server-side processing
+            covers = 1
+            if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
+                covers = 0
+            return serve_template(templatename="magazines.html", title="Magazines", magazines=[], covercount=covers)
+
         myDB = database.DBConnection()
 
         cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
@@ -2440,16 +2530,102 @@ class WebInterface(object):
                 this_mag['safetitle'] = quote_plus(temp_title)
                 mags.append(this_mag)
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
-                if not lazylibrarian.CONFIG['MAG_IMG']:
-                    covercount = 0
-            else:
-                if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
-                    covercount = 0
+            if not lazylibrarian.CONFIG['MAG_IMG']:
+                covercount = 0
+
         return serve_template(templatename="magazines.html", title="Magazines", magazines=mags, covercount=covercount)
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def getIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
+        filtered = []
+        rows = filtered
+        title = kwargs['title'].replace('&amp;', '&')
+        myDB = database.DBConnection()
+        rowlist = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
+        if len(rowlist):
+            mod_issues = []
+            covercount = 0
+            for issue in rowlist:
+                magfile = issue['IssueFile']
+                extn = os.path.splitext(magfile)[1]
+                if extn:
+                    magimg = magfile.replace(extn, '.jpg')
+                    if not magimg or not os.path.isfile(magimg):
+                        magimg = 'images/nocover.jpg'
+                    else:
+                        myhash = md5_utf8(magimg)
+                        hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
+                        if not os.path.isfile(hashname):
+                            copyfile(magimg, hashname)
+                            setperm(hashname)
+                        magimg = 'cache/magazine/' + myhash + '.jpg'
+                        covercount += 1
+                else:
+                    logger.debug('No extension found on %s' % magfile)
+                    magimg = 'images/nocover.jpg'
+
+                this_issue = dict(issue)
+                this_issue['Cover'] = magimg
+                mod_issues.append(this_issue)
+
+            rowlist = []
+            if len(mod_issues):
+                for mag in mod_issues:
+                    entry = [mag['Title'], mag['Cover'], mag['IssueDate'], mag['IssueAcquired'],
+                             mag['IssueID']]
+                    rowlist.append(entry)  # add each rowlist to the masterlist
+
+            if sSearch:
+                filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
+            else:
+                filtered = rowlist
+
+            sortcolumn = int(iSortCol_0)
+
+            if sortcolumn in [2, 3]:  # dates
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+            else:
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        for row in rows:
+            row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
+            row[3] = dateFormat(row[3], lazylibrarian.CONFIG['DATE_FORMAT'])
+
+        if lazylibrarian.LOGLEVEL > 3:
+            logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
+        return mydict
+
+    @cherrypy.expose
     def issuePage(self, title):
+        if title and '&' in title and '&amp;' not in title:  # could use htmlparser but seems overkill for just '&'
+            safetitle = title.replace('&', '&amp;')
+        else:
+            safetitle = title
+
+        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
+            # use server-side processing
+            if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
+                covercount = 0
+            else:
+                covercount = 1
+            return serve_template(templatename="issues.html", title=safetitle, issues=[], covercount=covercount)
+
         myDB = database.DBConnection()
 
         issues = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
@@ -2483,17 +2659,10 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
-                if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
-                    covercount = 0
-            elif not lazylibrarian.CONFIG['TOGGLES']:
-                if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
-                    covercount = 0
+            if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
+                covercount = 0
 
-        if '&' in title and '&amp;' not in title:  # could use htmlparser but seems overkill for just '&'
-            title = title.replace('&', '&amp;')
-
-        return serve_template(templatename="issues.html", title=title, issues=mod_issues, covercount=covercount)
+        return serve_template(templatename="issues.html", title=safetitle, issues=mod_issues, covercount=covercount)
 
     @cherrypy.expose
     def pastIssues(self, whichStatus=None, mag=None):

@@ -73,7 +73,11 @@
         %>
       <thead>
         <tr>
-          <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            %if perm&lazylibrarian.perm_status:
+            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            %else:
+            <th class="hidden"></th>
+            %endif
           <th class="authorimg no-sort ${hidden}">Image</th>
           <th class="authorname">Author</th>
           <th class="bookname">Latest Book</th>
@@ -146,7 +150,11 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    $('td', nRow).eq(0).addClass('text-center');
+                    %if perm&lazylibrarian.perm_status:
+                    $('td', nRow).eq(0).addClass("text-center");
+                    %else:
+                    $('td', nRow).eq(0).addClass("hidden");
+                    %endif
                     $('td', nRow).eq(4).addClass('text-center');
                     $('td', nRow).eq(5).addClass('text-center');
                     $('td', nRow).eq(6).addClass('text-center');
