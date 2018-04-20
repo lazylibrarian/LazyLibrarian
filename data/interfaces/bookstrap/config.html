@@ -3632,7 +3632,9 @@
                                 className: 'btn-primary'
                             }
                         }
-                    }); } })
+                    }); 
+                } 
+              })
         });
 
         $('#grauthStep2').click(function () {
@@ -3643,10 +3645,11 @@
                         buttons: {
                             primary: {
                                 label: "Close",
-                                className: 'btn-primary'
+                                className: 'btn-primary',
+                                callback: function(){ document.location.reload(true); }
                             }
                         }
-                    });
+                    });  
                 })
         });
 
