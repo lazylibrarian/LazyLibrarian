@@ -167,6 +167,36 @@ def nzbdate2format(nzbdate):
         return "1970-01-01"
 
 
+def dateFormat(datestr, formatstr):
+    # return date formatted in requested style
+    # $d	Day of the month as a zero-padded decimal number
+    # $b	Month as abbreviated name
+    # $B	Month as full name
+    # $m	Month as a zero-padded decimal number
+    # $y	Year without century as a zero-padded decimal number
+    # $Y	Year with century as a decimal number
+    # datestr are stored in lazylibrarian as YYYY-MM-DD or YYYY-MM-DD HH:MM:SS or nnnn for issue number
+
+    if not formatstr or formatstr == '$Y-$m-$d':  # shortcut for default values
+        return datestr[:11]
+    if datestr.isdigit():
+        return datestr
+
+    # noinspection PyBroadException
+    try:
+        Y = datestr[0:4]
+        y = datestr[2:4]
+        m = datestr[5:7]
+        d = datestr[8:10]
+        B = lazylibrarian.MONTHNAMES[int(m)][0]
+        b = lazylibrarian.MONTHNAMES[int(m)][1]
+        return formatstr.replace('$Y', Y).replace('$y', y).replace(
+                                 '$m', m).replace('$d', d).replace(
+                                 '$B', B.title()).replace('$b', b.title())
+    except Exception:
+        return datestr
+
+
 def month2num(month):
     # return month number given month name (long or short) in requested locales
     # or season name (only in English currently)

@@ -30,7 +30,7 @@
         </select>
         <button type="submit" class=" btn btn-m btn-primary" onclick="validateForm()">Go</button>
         %if lazylibrarian.CONFIG['TOGGLES'] == True:
-        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Issue</a> - <a class="toggle-vis" data-column="3">Acquired</a> - <a class="toggle-vis" data-column="4">Select</a>
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Issue</a> - <a class="toggle-vis" data-column="3">Added</a> - <a class="toggle-vis" data-column="4">Select</a>
         %endif
       </div>
       <p>&nbsp;</p>
@@ -49,29 +49,10 @@
             <th class="bookart hidden">Cover</th>
           % endif
             <th class="issuedate text-center">Issue</th>
-            <th class="lastacquired text-center">Acquired</th>
+            <th class="lastacquired text-center">Added</th>
             <th class="issue text-center">Select</th>
         </tr>
         </thead>
-        <tbody>
-        %for result in issues:
-        <tr>
-          %if perm&lazylibrarian.perm_status:
-            <td class="select text-center"><input type="checkbox" name="${result['IssueID']}" class="form-control" /></td>
-          %else:
-            <td class="hidden"></td>
-          %endif
-          % if covercount > 0:
-            <td class="bookart text-center"><a href="${result['Cover']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" width="90%"></a></td>
-          % else:
-            <td class="bookart hidden"></td>
-          % endif
-            <td class="issuedate text-center">${result['IssueDate']}</td>
-            <td class="lastacquired text-center">${result['IssueAcquired']}</td>
-            <td class="issue text-center"><a class="button green btn btn-xs btn-warning" href="openMag?bookid=${result['IssueID']}" target="_self"><i class="fa fa-book"></i> Open</a></td>
-        </tr>
-        %endfor
-        </tbody>
         </table>
       </div>
     </form>
@@ -85,13 +66,27 @@
   <script type="text/javascript">
     $(document).ready(function()
     {
+        var show = ""+${lazylibrarian.CONFIG['MAG_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
 
         var table = $('#book_table').DataTable(
             {
                 "bAutoWidth": false,
                 "stateSave": true,
                 "order": [[ 2, 'desc']],
-                "columnDefs": [{ targets: 'no-sort', orderable: false }],
+                "columnDefs": [{ targets: 'no-sort', orderable: false },
+                    { targets: [0], 'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                    { targets: [1],
+                        'visible': showimg,
+                        'render': function(data, type, row) {
+                        return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                    { targets: [4], 'render': function(data, type, row) {
+                        btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + data +
+                                    '" target="_self"><i class="fa fa-book"></i> Open</a>'
+                            return btn;} },
+                ],
                 "oLanguage": {
                     "sSearch": "Filter: ",
                     "sLengthMenu":"Show _MENU_ issues per page",
@@ -101,8 +96,23 @@
                     "sInfoFiltered":"(filtered from _MAX_ total issues)"},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [[2, 'desc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getIssues?title=${title | u}',
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    %if perm&lazylibrarian.perm_status:
+                    $('td', nRow).eq(0).addClass("text-center");
+                    %else:
+                    $('td', nRow).eq(0).addClass("hidden");
+                    %endif
+                    $('td', nRow).eq(1).addClass('text-center');
+                    $('td', nRow).eq(2).addClass('text-center');
+                    $('td', nRow).eq(3).addClass('text-center');
+                    $('td', nRow).eq(4).addClass("text-center");
+                    return nRow;
+                },
             });
             $('.dataTables_filter input').attr("placeholder", "Results filter");
             $('a.toggle-vis').click(function (e) {
