@@ -177,12 +177,12 @@ def dateFormat(datestr, formatstr):
     # $Y	Year with century as a decimal number
     # datestr are stored in lazylibrarian as YYYY-MM-DD or YYYY-MM-DD HH:MM:SS or nnnn for issue number
 
-    if not formatstr or formatstr == '$Y-$m-$d':  # shortcut for default values
-        return datestr[:11]
-    if datestr is None:
+    if not datestr:
         return ""
     if datestr.isdigit():
         return datestr
+    if not formatstr or formatstr == '$Y-$m-$d':  # shortcut for default values
+        return datestr[:11]
 
     # noinspection PyBroadException
     try:

@@ -1474,7 +1474,6 @@ class WebInterface(object):
                             cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
         # group_concat needs sqlite3 >= 3.5.4, we check version in __init__
-
         if lazylibrarian.GROUP_CONCAT:
             cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,books.bookid,booklang,'
             cmd += ' booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary,'
@@ -1581,8 +1580,8 @@ class WebInterface(object):
             else:  # rating, date
                 sortcolumn -= 2
 
-            if sortcolumn in [4, 12]:  # date, series
-                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+            if sortcolumn in [12, 13, 15]:  # series, date
+                self.natural_sort(filtered, key=lambda y: str(y[sortcolumn]), reverse=sSortDir_0 == "desc")
             elif sortcolumn in [2]:  # title
                 filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
             else:
