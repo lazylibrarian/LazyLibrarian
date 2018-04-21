@@ -922,7 +922,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                          (st['cache_hits'], plural(st['cache_hits'])))
             logger.debug("Unwanted language removed %s book%s" %
                          (st['bad_lang'], plural(st['bad_lang'])))
-            logger.debug("Unwanted characters removed %s book%s" %
+            logger.debug("Invalid/Incomplete removed %s book%s" %
                          (st['bad_char'], plural(st['bad_char'])))
             logger.debug("Unable to cache language for %s book%s with missing ISBN" %
                          (st['uncached'], plural(st['uncached'])))

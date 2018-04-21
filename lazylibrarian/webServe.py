@@ -1581,7 +1581,8 @@ class WebInterface(object):
                 sortcolumn -= 2
 
             if sortcolumn in [12, 13, 15]:  # series, date
-                self.natural_sort(filtered, key=lambda y: str(y[sortcolumn]), reverse=sSortDir_0 == "desc")
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
+                                  reverse=sSortDir_0 == "desc")
             elif sortcolumn in [2]:  # title
                 filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
             else:
@@ -1658,7 +1659,7 @@ class WebInterface(object):
 
         # noinspection PyShadowingNames
         def get_alphanum_key_func(key):
-            convert = lambda text: int(text) if text.isdigit() else text
+            convert = lambda text: int(text) if text and text.isdigit() else text
             return lambda s: [convert(c) for c in re.split('([0-9]+)', key(s))]
 
         sort_key = get_alphanum_key_func(key)
@@ -2466,7 +2467,8 @@ class WebInterface(object):
             sortcolumn = int(iSortCol_0)
 
             if sortcolumn in [4, 5]:  # dates
-                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
+                                  reverse=sSortDir_0 == "desc")
             elif sortcolumn == 2:  # title
                 filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
             else:
@@ -2588,7 +2590,8 @@ class WebInterface(object):
             sortcolumn = int(iSortCol_0)
 
             if sortcolumn in [2, 3]:  # dates
-                self.natural_sort(filtered, key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+                self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
+                                  reverse=sSortDir_0 == "desc")
             else:
                 filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 

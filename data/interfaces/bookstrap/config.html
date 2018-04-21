@@ -443,17 +443,6 @@
                     <label for="gb_api" class="control-label">GoogleBooks API:</label>
                     <input type="text" id="gb_api" name="gb_api" value="${lazylibrarian.CONFIG['GB_API']}" class="form-control">
                   </div>
-                  <div class="checkbox">
-                    <%
-                    if lazylibrarian.CONFIG['NO_FUTURE'] == True:
-                        checked = 'checked="checked"'
-                    else:
-                        checked = ''
-                    %>
-                    <label for="no_future">
-                      <input type="checkbox" id="no_future" name="no_future" value="1" ${checked} />
-                      Ignore books with future publication date</label>
-                  </div>
                 </fieldset>
               </div>
               <div class="col-md-4">
@@ -473,6 +462,39 @@
                     <label for="mag_type" class="control-label">Magazines:</label>
                     <input type="text" id="mag_type" name="mag_type" value="${lazylibrarian.CONFIG['MAG_TYPE']}" class="form-control"       placeholder="Magazine file formats">
                     <span class="help-block">Comma separated file extensions</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                    if lazylibrarian.CONFIG['NO_FUTURE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_future">
+                      <input type="checkbox" id="no_future" name="no_future" value="1" ${checked} />
+                      Ignore books with future publication date</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                    if lazylibrarian.CONFIG['NO_PUBDATE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_pubdate">
+                      <input type="checkbox" id="no_pubdate" name="no_pubdate" value="1" ${checked} />
+                      Ignore books with unknown publication date</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                    if lazylibrarian.CONFIG['NO_ISBN'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_isbn">
+                      <input type="checkbox" id="no_isbn" name="no_isbn" value="1" ${checked} />
+                      Ignore books with no isbn</label>
                   </div>
                 </fieldset>
               </div>
@@ -1622,6 +1644,7 @@
                     <label for="mag_single" class="control-label">
                       <input type="checkbox" id="mag_single" name="mag_single" value="1" ${checked} />
                       Quick open single issues of magazines</label>
+                      <span class="help-block">If only one issue available, open it</span>
                   </div>
                 </fieldset>
               </div>
@@ -3632,8 +3655,8 @@
                                 className: 'btn-primary'
                             }
                         }
-                    }); 
-                } 
+                    });
+                }
               })
         });
 
@@ -3649,7 +3672,7 @@
                                 callback: function(){ document.location.reload(true); }
                             }
                         }
-                    });  
+                    });
                 })
         });
 

@@ -331,7 +331,10 @@
                 },
             });
 
-        if (${firstpage}) { oTable.page( 'first' ).draw( 'page' ); }
+        var page = oTable.page();
+        if ( page != '0' ) {
+            if (${firstpage}) { oTable.page( 'first' ).draw( 'page' ); }
+        }
 
         $('.dataTables_filter input').attr("placeholder", "Results Filter");
         //$(window).resize(function() {oTable.draw(false)});

@@ -12,6 +12,7 @@
 
 import logging
 import os
+import platform
 import threading
 import inspect
 from logging import handlers
@@ -84,9 +85,12 @@ class RotatingLogger(object):
             method = ""
             lineno = ""
 
-        if PY2:
+        if 'windows' in platform.system().lower():  # windows cp1252 can't handle some accents
+            message = formatter.unaccented(message)
+        elif PY2:
             message = formatter.safe_unicode(message)
             message = message.encode(lazylibrarian.SYS_ENCODING)
+
         if level != 'DEBUG' or lazylibrarian.LOGLEVEL >= 2:
             # Limit the size of the "in-memory" log, as gets slow if too long
             lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, threadname, program, method, lineno, message))

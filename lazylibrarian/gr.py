@@ -445,6 +445,13 @@ class GoodReads:
                                     rejected = True
 
                         if not rejected:
+                            if lazylibrarian.CONFIG['NO_PUBDATE']:
+                                if not bookdate or bookdate == '0000':
+                                    logger.debug('Rejecting %s, no publication date' % bookname)
+                                    removedResults += 1
+                                    rejected = True
+
+                        if not rejected:
                             if not bookimg or 'nocover' in bookimg:
                                 bookimg = 'images/nocover.png'
 
@@ -457,7 +464,7 @@ class GoodReads:
                                     bookisbn = isbn10
                                     isbnhead = bookisbn[0:3]
 
-                            if not isbnhead:
+                            if not isbnhead and not lazylibrarian.CONFIG['NO_ISBN']:
                                 # try lookup by name
                                 if bookname:
                                     try:
@@ -477,120 +484,131 @@ class GoodReads:
                                         else:
                                             isbnhead = res[0:3]
 
-                            if not isbnhead:
-                                logger.warn("No isbn found for %s" % bookid)
+                            # Try to use shortcut of ISBN identifier codes described here...
+                            # http://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
+                            if isbnhead:
+                                if find_field == "isbn13" and bookisbn.startswith('979'):
+                                    for item in lazylibrarian.isbn_979_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_979_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
+                                elif (find_field == "isbn") or (find_field == "isbn13" and
+                                                                bookisbn.startswith('978')):
+                                    for item in lazylibrarian.isbn_978_dict:
+                                        if isbnhead.startswith(item):
+                                            bookLanguage = lazylibrarian.isbn_978_dict[item]
+                                            break
+                                    if bookLanguage != "Unknown":
+                                        logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
+
+                            if bookLanguage == "Unknown" and isbnhead:
+                                # Nothing in the isbn dictionary, try any cached results
+                                match = myDB.match('SELECT lang FROM languages where isbn=?', (isbnhead,))
+                                if match:
+                                    bookLanguage = match['lang']
+                                    cache_hits += 1
+                                    logger.debug("Found cached language [%s] for %s [%s]" %
+                                                 (bookLanguage, find_field, isbnhead))
+                                else:
+                                    # no match in cache, try searching librarything for language using the isbn
+                                    # if no language found, librarything return value is "invalid" or "unknown"
+                                    # returns plain text, not xml, or html page if error
+                                    BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
+                                    proxies = proxyList()
+                                    try:
+                                        librarything_wait()
+                                        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+                                        r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
+                                        resp = r.text
+                                        lt_lang_hits += 1
+                                        if resp.startswith('<!DOCTYPE HTML'):
+                                            logger.debug("LibraryThing returned html (error or maintenance page?)")
+                                            resp = "Unknown"
+                                        else:
+                                            logger.debug("LibraryThing reports language [%s] for %s" %
+                                                         (resp, isbnhead))
+
+                                        if 'invalid' in resp or 'Unknown' in resp:
+                                            bookLanguage = "Unknown"
+                                        else:
+                                            bookLanguage = resp  # found a language code
+                                            myDB.action('insert into languages values (?, ?)',
+                                                        (isbnhead, bookLanguage))
+                                            logger.debug("LT language %s: %s" % (isbnhead, bookLanguage))
+                                    except Exception as e:
+                                        logger.error("%s finding LT language result for [%s], %s" %
+                                                     (type(e).__name__, bookisbn, str(e)))
+
+                            if bookLanguage == "Unknown":
+                                # still  no earlier match, we'll have to search the goodreads api
+                                try:
+                                    if book.find(find_field).text:
+                                        BOOK_URL = 'https://www.goodreads.com/book/show?id=' + \
+                                                   book.find(find_field).text + \
+                                                   '&' + urlencode(self.params)
+                                        logger.debug("Book URL: " + BOOK_URL)
+                                        bookLanguage = ""
+                                        try:
+                                            BOOK_rootxml, in_cache = gr_xml_request(BOOK_URL)
+                                            if BOOK_rootxml is None:
+                                                logger.debug('Error requesting book page')
+                                            else:
+                                                try:
+                                                    bookLanguage = BOOK_rootxml.find('./book/language_code').text
+                                                except Exception as e:
+                                                    logger.error("%s finding language_code in book xml: %s" %
+                                                                 (type(e).__name__, str(e)))
+                                                try:
+                                                    res = BOOK_rootxml.find('./book/isbn').text
+                                                    isbnhead = res[0:3]
+                                                except Exception:
+                                                    try:
+                                                        res = BOOK_rootxml.find('./book/isbn13').text
+                                                        isbnhead = res[3:6]
+                                                    except Exception:
+                                                        isbnhead = ''
+                                                if bookLanguage and not isbnhead:
+                                                    print(BOOK_URL)
+                                        except Exception as e:
+                                            logger.error("%s getting book xml: %s" % (type(e).__name__, str(e)))
+
+                                        if not in_cache:
+                                            gr_lang_hits += 1
+                                        if not bookLanguage:
+                                            bookLanguage = "Unknown"
+                                        elif isbnhead:
+                                            # if GR didn't give an isbn we can't cache it
+                                            # just use language for this book
+                                            myDB.action('insert into languages values (?, ?)',
+                                                        (isbnhead, bookLanguage))
+                                            logger.debug("GoodReads reports language [%s] for %s" %
+                                                         (bookLanguage, isbnhead))
+                                        else:
+                                            not_cached += 1
+
+                                        logger.debug("GR language: " + bookLanguage)
+                                    else:
+                                        logger.debug("No %s provided for [%s]" % (find_field, bookname))
+                                        # continue
+
+                                except Exception as e:
+                                    logger.error("Goodreads language search failed: %s %s" %
+                                                 (type(e).__name__, str(e)))
+
+                            if not isbnhead and lazylibrarian.CONFIG['NO_ISBN']:
+                                logger.debug('Rejecting %s, no isbn' % bookname)
+                                removedResults += 1
+                                rejected = True
 
                             if "All" not in valid_langs:  # do we care about language
-                                # Try to use shortcut of ISBN identifier codes described here...
-                                # http://en.wikipedia.org/wiki/List_of_ISBN_identifier_groups
-                                if isbnhead:
-                                    if find_field == "isbn13" and bookisbn.startswith('979'):
-                                        for item in lazylibrarian.isbn_979_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = lazylibrarian.isbn_979_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN979 returned %s for %s" % (bookLanguage, isbnhead))
-                                    elif (find_field == "isbn") or (find_field == "isbn13" and
-                                                                    bookisbn.startswith('978')):
-                                        for item in lazylibrarian.isbn_978_dict:
-                                            if isbnhead.startswith(item):
-                                                bookLanguage = lazylibrarian.isbn_978_dict[item]
-                                                break
-                                        if bookLanguage != "Unknown":
-                                            logger.debug("ISBN978 returned %s for %s" % (bookLanguage, isbnhead))
-
-                                if bookLanguage == "Unknown" and isbnhead:
-                                    # Nothing in the isbn dictionary, try any cached results
-                                    match = myDB.match('SELECT lang FROM languages where isbn=?', (isbnhead,))
-                                    if match:
-                                        bookLanguage = match['lang']
-                                        cache_hits += 1
-                                        logger.debug("Found cached language [%s] for %s [%s]" %
-                                                     (bookLanguage, find_field, isbnhead))
-                                    else:
-                                        # no match in cache, try searching librarything for language using the isbn
-                                        # if no language found, librarything return value is "invalid" or "unknown"
-                                        # returns plain text, not xml, or html page if error
-                                        BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
-                                        proxies = proxyList()
-                                        try:
-                                            librarything_wait()
-                                            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
-                                            r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
-                                            resp = r.text
-                                            lt_lang_hits += 1
-                                            if resp.startswith('<!DOCTYPE HTML'):
-                                                logger.debug("LibraryThing returned html (error or maintenance page?)")
-                                                resp = "Unknown"
-                                            else:
-                                                logger.debug("LibraryThing reports language [%s] for %s" %
-                                                             (resp, isbnhead))
-
-                                            if 'invalid' in resp or 'Unknown' in resp:
-                                                bookLanguage = "Unknown"
-                                            else:
-                                                bookLanguage = resp  # found a language code
-                                                myDB.action('insert into languages values (?, ?)',
-                                                            (isbnhead, bookLanguage))
-                                                logger.debug("LT language %s: %s" % (isbnhead, bookLanguage))
-                                        except Exception as e:
-                                            logger.error("%s finding LT language result for [%s], %s" %
-                                                         (type(e).__name__, bookisbn, str(e)))
-
-                                if bookLanguage == "Unknown":
-                                    # still  no earlier match, we'll have to search the goodreads api
-                                    try:
-                                        if book.find(find_field).text:
-                                            BOOK_URL = 'https://www.goodreads.com/book/show?id=' + \
-                                                       book.find(find_field).text + \
-                                                       '&' + urlencode(self.params)
-                                            logger.debug("Book URL: " + BOOK_URL)
-
-                                            bookLanguage = ""
-                                            
-                                            try:
-                                                BOOK_rootxml, in_cache = gr_xml_request(BOOK_URL)
-                                                if BOOK_rootxml is None:
-                                                    logger.debug('Error requesting book page')
-                                                else:
-                                                    try:
-                                                        bookLanguage = BOOK_rootxml.find('./book/language_code').text
-                                                    except Exception as e:
-                                                        logger.error("%s finding language_code in book xml: %s" %
-                                                                     (type(e).__name__, str(e)))
-                                            except Exception as e:
-                                                logger.error("%s getting book xml: %s" % (type(e).__name__, str(e)))
-
-                                            if not in_cache:
-                                                gr_lang_hits += 1
-                                            if not bookLanguage:
-                                                bookLanguage = "Unknown"
-
-                                            if isbnhead != "":
-                                                # if GR didn't give an isbn we can't cache it
-                                                # just use language for this book
-                                                myDB.action('insert into languages values (?, ?)',
-                                                            (isbnhead, bookLanguage))
-                                                logger.debug("GoodReads reports language [%s] for %s" %
-                                                             (bookLanguage, isbnhead))
-                                            else:
-                                                not_cached += 1
-
-                                            logger.debug("GR language: " + bookLanguage)
-                                        else:
-                                            logger.debug("No %s provided for [%s]" % (find_field, bookname))
-                                            # continue
-
-                                    except Exception as e:
-                                        logger.error("Goodreads language search failed: %s %s" %
-                                                     (type(e).__name__, str(e)))
-
                                 if bookLanguage not in valid_langs:
                                     logger.debug('Skipped %s with language %s' % (bookname, bookLanguage))
                                     ignored += 1
-                                    continue
+                                    rejected = True
 
+                        if not rejected:
                             bookname = unaccented(bookname)
                             bookname, booksub = split_title(authorNameResult, bookname)
                             dic = {':': '.', '"': ''}  # do we need to strip apostrophes , '\'': ''}
@@ -886,12 +904,20 @@ class GoodReads:
         #
         valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if bookLanguage not in valid_langs:
-            logger.debug('Book %s goodreads language does not match preference, %s' % (bookname, bookLanguage))
+            logger.warn('Book %s goodreads language does not match preference, %s' % (bookname, bookLanguage))
 
         if rootxml.find('./book/publication_year').text is None:
             bookdate = "0000"
         else:
             bookdate = rootxml.find('./book/publication_year').text
+
+        if lazylibrarian.CONFIG['NO_PUBDATE']:
+            if not bookdate or bookdate == '0000':
+                logger.warn('Book %s Publication date does not match preference, %s' % (bookname, bookdate))
+
+        if lazylibrarian.CONFIG['NO_FUTURE']:
+            if bookdate > today()[:4]:
+                logger.warn('Book %s Future publication date does not match preference, %s' % (bookname, bookdate))
 
         try:
             bookimg = rootxml.find('./book/img_url').text

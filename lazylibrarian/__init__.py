@@ -158,7 +158,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
-                     'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT']
+                     'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
+                     'NO_ISBN', 'NO_PUBDATE']
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -225,7 +226,6 @@ CONFIG_DEFINITIONS = {
     'CALIBRE_SERVER': ('str', 'General', ''),
     'CALIBRE_USER': ('str', 'General', ''),
     'CALIBRE_PASS': ('str', 'General', ''),
-    'IMP_ONLYISBN': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_RENAME': ('bool', 'General', 0),
     'MAG_RENAME': ('bool', 'General', 0),
@@ -375,6 +375,8 @@ CONFIG_DEFINITIONS = {
     'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_BOOKS': ('bool', 'LibraryScan', 0),
     'NO_FUTURE': ('bool', 'LibraryScan', 0),
+    'NO_PUBDATE': ('bool', 'LibraryScan', 0),
+    'NO_ISBN': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
     'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title: Part $Part of $Total'),
@@ -634,10 +636,10 @@ def initialize():
         except Exception as e:
             logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
 
-        debuginfo = logHeader()
-        for item in debuginfo.splitlines():
-            if 'missing' in item:
-                logger.warn(item)
+        # debuginfo = logHeader()
+        # for item in debuginfo.splitlines():
+        #     if 'missing' in item:
+        #         logger.warn(item)
 
         try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
             # noinspection PyUnresolvedReferences

@@ -437,6 +437,18 @@ class GoogleBooks:
                                 removedResults += 1
                                 rejected = True
 
+                        if not rejected and lazylibrarian.CONFIG['NO_PUBDATE']:
+                            if not book['date']:
+                                logger.debug('Rejecting %s, no publication date' % bookname)
+                                removedResults += 1
+                                rejected = True
+
+                        if not rejected and lazylibrarian.CONFIG['NO_ISBN']:
+                            if not isbnhead:
+                                logger.debug('Rejecting %s, no isbn' % bookname)
+                                removedResults += 1
+                                rejected = True
+
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
@@ -625,6 +637,14 @@ class GoogleBooks:
         valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
         if book['lang'] not in valid_langs and 'All' not in valid_langs:
             logger.debug('Book %s googlebooks language does not match preference, %s' % (bookname, book['lang']))
+
+        if lazylibrarian.CONFIG['NO_PUBDATE']:
+            if not book['date'] or book['date'] == '0000':
+                logger.warn('Book %s Publication date does not match preference, %s' % (bookname, book['date']))
+
+        if lazylibrarian.CONFIG['NO_FUTURE']:
+            if book['date'] > today()[:4]:
+                logger.warn('Book %s Future publication date does not match preference, %s' % (bookname, book['date']))
 
         authorname = book['author']
         GR = GoodReads(authorname)
