@@ -159,7 +159,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
-                     'NO_ISBN', 'NO_PUBDATE']
+                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE']
+
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
     'USER_ACCOUNTS': ('bool', 'General', 0),
@@ -377,6 +378,7 @@ CONFIG_DEFINITIONS = {
     'NO_FUTURE': ('bool', 'LibraryScan', 0),
     'NO_PUBDATE': ('bool', 'LibraryScan', 0),
     'NO_ISBN': ('bool', 'LibraryScan', 0),
+    'IMP_IGNORE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
     'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title: Part $Part of $Total'),

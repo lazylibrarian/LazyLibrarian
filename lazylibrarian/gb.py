@@ -395,7 +395,7 @@ class GoogleBooks:
                                 ignored += 1
                                 continue
 
-                        rejected = False
+                        rejected = 0
                         check_status = False
                         book_status = bookstatus  # new_book status, or new_author status
                         audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
@@ -407,7 +407,7 @@ class GoogleBooks:
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
                             removedResults += 1
-                            rejected = True
+                            rejected = 1
                         else:
                             bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
                             # GoodReads sometimes has multiple bookids for the same book (same author/title, different
@@ -424,18 +424,39 @@ class GoogleBooks:
                                     locked = False
                                 elif locked.isdigit():
                                     locked = bool(int(locked))
+                            else:
+                                if rejected in [3, 4, 5]:
+                                    book_status = 'Ignored'
+                                    audio_status = 'Ignored'
+                                else:
+                                    book_status = bookstatus  # new_book status, or new_author status
+                                    audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
+                                added = today()
+                                locked = False
 
                         if not rejected and re.match('[^\w-]', bookname):  # remove books with bad characters in title
                             logger.debug("[%s] removed book for bad characters" % bookname)
                             removedResults += 1
-                            rejected = True
+                            rejected = 2
 
                         if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
                             # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
                             if book['date'] > today()[:len(book['date'])]:
                                 logger.debug('Rejecting %s, future publication date %s' % (bookname, book['date']))
                                 removedResults += 1
-                                rejected = True
+                                rejected = 3
+
+                        if not rejected and lazylibrarian.CONFIG['NO_PUBDATE']:
+                            if not book['date']:
+                                logger.debug('Rejecting %s, no publication date' % bookname)
+                                removedResults += 1
+                                rejected = 4
+
+                        if not rejected and lazylibrarian.CONFIG['NO_ISBN']:
+                            if not isbnhead:
+                                logger.debug('Rejecting %s, no isbn' % bookname)
+                                removedResults += 1
+                                rejected = 5
 
                         if not rejected and lazylibrarian.CONFIG['NO_PUBDATE']:
                             if not book['date']:
@@ -457,7 +478,7 @@ class GoogleBooks:
                                 if match['BookID'] != bookid:  # we have a different book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                                  (match['BookID'], authorname, bookname, bookid))
-                                    rejected = True
+                                    rejected = 6
                                     duplicates += 1
 
                         if not rejected:
@@ -473,10 +494,11 @@ class GoogleBooks:
                                                  (bookid, authorname, bookname))
                                     check_status = True
                                 duplicates += 1
-                                rejected = True
+                                rejected = 7
 
-                        if check_status or not rejected:
-                            if book_status != "Ignored" and not locked:
+                        if check_status or not rejected or (
+                                lazylibrarian.CONFIG['IMP_IGNORE'] and rejected in [3, 4, 5]):  # dates, isbn
+                            if not locked:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,

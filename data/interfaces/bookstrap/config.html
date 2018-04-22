@@ -496,6 +496,17 @@
                       <input type="checkbox" id="no_isbn" name="no_isbn" value="1" ${checked} />
                       Ignore books with no isbn</label>
                   </div>
+                  <div class="checkbox">
+                    <%
+                    if lazylibrarian.CONFIG['IMP_IGNORE'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="imp_ignore">
+                      <input type="checkbox" id="imp_ignore" name="imp_ignore" value="1" ${checked} />
+                      Include ignored books in database</label>
+                  </div>
                 </fieldset>
               </div>
               <div class="col-md-4">

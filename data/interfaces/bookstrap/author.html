@@ -27,7 +27,11 @@
             %endif
           % endif
             <button class="button btn btn-sm btn-primary" type="button" value="removeme" id="removeme"><i class="fa fa-remove"></i> Remove Author</button>
-            <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Ignored Books</a>
+            %if ignored == 'True':
+                <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=False" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Show Active</a>
+            %else:
+            <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=True" class="btn btn-sm btn-primary"><i class="fa fa-ban"></i> Show Ignored</a>
+            %endif
             %endif
             %if showseries >= 1:
               %if perm&lazylibrarian.perm_series:

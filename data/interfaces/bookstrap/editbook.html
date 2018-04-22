@@ -64,10 +64,17 @@
                 <label for="bookgenre" class="control-label">Genre:</label>
                 <input type="text" id="bookgenre" name="bookgenre" value="${config['BookGenre']}" class="form-control" placeholder="Genre">
             </div>
-            <div class="form-group">
+              <fieldset  class="form-group col-md-6">
+              <div>
                 <label for="booklang" class="control-label">Language:</label>
                 <input type="text" id="booklang" name="booklang" value="${config['BookLang']}" class="form-control" placeholder="Language">
+              </div>
+              </fieldset>
+              <div class="form-group col-md-6">
+                <label for="bookdate" class="control-label">Publication Date:</label>
+                <input type="text" id="bookdate" name="bookdate" value="${config['BookDate']}" class="form-control" placeholder="Publication Date (YYYY)">
             </div>
+            </fieldset>
             <div class="form-group">
                 %for item in seriesdict:
                     <label for="series[${loop.index}]" class="control-label">

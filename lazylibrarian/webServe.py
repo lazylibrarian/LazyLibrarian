@@ -37,7 +37,7 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
-    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8, dateFormat
+    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8, dateFormat, check_year
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
@@ -1580,6 +1580,9 @@ class WebInterface(object):
             else:  # rating, date
                 sortcolumn -= 2
 
+            if lazylibrarian.LOGLEVEL > 3:
+                logger.debug("Sortcolumn %s" % sortcolumn)
+
             if sortcolumn in [12, 13, 15]:  # series, date
                 self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
                                   reverse=sSortDir_0 == "desc")
@@ -2003,7 +2006,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID '
+        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID,BookDate '
         cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
         bookdata = myDB.match(cmd, (bookid,))
         cmd = 'SELECT SeriesName, SeriesNum from member,series '
@@ -2022,12 +2025,12 @@ class WebInterface(object):
             logger.info('Missing book %s' % bookid)
 
     @cherrypy.expose
-    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='',
+    def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='', bookdate='',
                    manual='0', authorname='', cover='', newid='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
             cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,books.Manual,AuthorName,books.AuthorID '
-            cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+            cmd += 'BookDate from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
             bookdata = myDB.match(cmd, (bookid,))
             if bookdata:
                 edited = ''
@@ -2054,6 +2057,20 @@ class WebInterface(object):
                     edited += "Genre "
                 if not (bookdata["BookLang"] == booklang):
                     edited += "Language "
+                if not (bookdata["BookDate"] == bookdate):
+                    if bookdate == '0000':
+                        edited += "Date "
+                    else:
+                        # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
+                        n = 0
+                        if len(bookdate) == 4:
+                            n = check_year(bookdate)
+                        if len(bookdate) in [7, 10]:
+                            n = check_year(bookdate[:4])
+                        if n:
+                            edited += "Date "
+                        else:
+                            bookdate = bookdata["BookDate"]
                 if not (bool(check_int(bookdata["Manual"], 0)) == manual):
                     edited += "Manual "
                 if not (bookdata["AuthorName"] == authorname):
@@ -2085,6 +2102,7 @@ class WebInterface(object):
                         'BookSub': booksub,
                         'BookGenre': bookgenre,
                         'BookLang': booklang,
+                        'BookDate': bookdate,
                         'BookImg': coverlink,
                         'Manual': bool(manual)
                     }
