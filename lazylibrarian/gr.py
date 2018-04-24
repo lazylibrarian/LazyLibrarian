@@ -452,13 +452,6 @@ class GoodReads:
                                     rejected = 4
 
                         if not rejected:
-                            if lazylibrarian.CONFIG['NO_PUBDATE']:
-                                if not bookdate or bookdate == '0000':
-                                    logger.debug('Rejecting %s, no publication date' % bookname)
-                                    removedResults += 1
-                                    rejected = 4
-
-                        if not rejected:
                             if not bookimg or 'nocover' in bookimg:
                                 bookimg = 'images/nocover.png'
 

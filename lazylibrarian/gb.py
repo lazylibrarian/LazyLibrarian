@@ -440,18 +440,6 @@ class GoogleBooks:
                                 removedResults += 1
                                 rejected = 5
 
-                        if not rejected and lazylibrarian.CONFIG['NO_PUBDATE']:
-                            if not book['date']:
-                                logger.debug('Rejecting %s, no publication date' % bookname)
-                                removedResults += 1
-                                rejected = 4
-
-                        if not rejected and lazylibrarian.CONFIG['NO_ISBN']:
-                            if not isbnhead:
-                                logger.debug('Rejecting %s, no isbn' % bookname)
-                                removedResults += 1
-                                rejected = 5
-
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
