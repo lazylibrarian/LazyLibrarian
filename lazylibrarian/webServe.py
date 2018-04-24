@@ -29,7 +29,8 @@ import lib.simplejson as simplejson
 from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
-from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors, getBookCover
+from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
+from lazylibrarian.images import getBookCover
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
@@ -2014,7 +2015,7 @@ class WebInterface(object):
         seriesdict = myDB.select(cmd, (bookid,))
         if bookdata:
             covers = []
-            for source in ['current', 'cover', 'goodreads', 'librarything', 'google']:
+            for source in ['current', 'cover', 'goodreads', 'librarything', 'whatwork', 'google']:
                 cover, _ = getBookCover(bookid, source)
                 if cover:
                     covers.append([source, cover])
@@ -2029,8 +2030,8 @@ class WebInterface(object):
                    manual='0', authorname='', cover='', newid='', **kwargs):
         myDB = database.DBConnection()
         if bookid:
-            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,books.Manual,AuthorName,books.AuthorID '
-            cmd += 'BookDate from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,books.Manual,AuthorName,books.AuthorID '
+            cmd += ' from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
             bookdata = myDB.match(cmd, (bookid,))
             if bookdata:
                 edited = ''
@@ -2062,12 +2063,23 @@ class WebInterface(object):
                         edited += "Date "
                     else:
                         # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
-                        n = 0
                         if len(bookdate) == 4:
-                            n = check_year(bookdate)
-                        if len(bookdate) in [7, 10]:
-                            n = check_year(bookdate[:4])
-                        if n:
+                            y = check_year(bookdate)
+                        elif len(bookdate) in [7, 10]:
+                            y = check_year(bookdate[:4])
+                            if y and len(bookdate) == 7:
+                                try:
+                                    _ = datetime.date(int(bookdate[:4]), int(bookdate[5:7]), 1)
+                                except ValueError:
+                                    y = 0
+                            elif y and len(bookdate) == 10:
+                                try:
+                                    _ = datetime.date(int(bookdate[:4]), int(bookdate[5:7]), int(bookdate[8:]))
+                                except ValueError:
+                                    y = 0
+                        else:
+                            y = 0
+                        if y:
                             edited += "Date "
                         else:
                             bookdate = bookdata["BookDate"]
@@ -2079,14 +2091,16 @@ class WebInterface(object):
                 covertype = ''
                 if cover == 'librarything':
                     covertype = '_lt'
-                if cover == 'goodreads':
+                elif cover == 'whatwork':
+                    covertype = '_ww'
+                elif cover == 'goodreads':
                     covertype = '_gr'
-                if cover == 'google':
+                elif cover == 'google':
                     covertype = '_gb'
 
                 if covertype:
                     cachedir = lazylibrarian.CACHEDIR
-                    coverlink = 'cache/book/' + bookid + covertype + '.jpg'
+                    coverlink = 'cache/book/' + bookid + '.jpg'
                     coverfile = os.path.join(cachedir, "book", bookid + '.jpg')
                     newcoverfile = os.path.join(cachedir, "book", bookid + covertype + '.jpg')
                     if os.path.exists(newcoverfile):
@@ -2906,8 +2920,8 @@ class WebInterface(object):
             # if the directory is now empty, delete that too
             try:
                 os.rmdir(os.path.dirname(issuefile))
-            except OSError:
-                logger.debug('Directory %s not deleted, not empty?' % os.path.dirname(issuefile))
+            except OSError as e:
+                logger.debug('Directory %s not deleted: %s' % (os.path.dirname(issuefile), str(e)))
             return True
         except Exception as e:
             logger.warn('delete issue failed on %s, %s %s' % (issuefile, type(e).__name__, str(e)))
@@ -2918,16 +2932,17 @@ class WebInterface(object):
         myDB = database.DBConnection()
         for item in args:
             item = makeUnicode(item)
+            title = unquote_plus(item)
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 if action == "Paused" or action == "Active":
-                    controlValueDict = {"Title": item}
+                    controlValueDict = {"Title": title}
                     newValueDict = {"Status": action}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info('Status of magazine %s changed to %s' % (item, action))
+                    logger.info('Status of magazine %s changed to %s' % (title, action))
                 if action == "Delete":
-                    issues = myDB.select('SELECT IssueFile from issues WHERE Title=?', (item,))
-                    logger.debug('Deleting magazine %s from disc' % item)
+                    issues = myDB.select('SELECT IssueFile from issues WHERE Title=?', (title,))
+                    logger.debug('Deleting magazine %s from disc' % title)
                     issuedir = ''
                     for issue in issues:  # delete all issues of this magazine
                         result = self.deleteIssue(issue['IssueFile'])
@@ -2946,13 +2961,13 @@ class WebInterface(object):
                             logger.debug('Magazine directory %s is not empty' % magdir)
                     logger.info('Magazine %s deleted from disc' % item)
                 if action == "Remove" or action == "Delete":
-                    myDB.action('DELETE from magazines WHERE Title=?', (item,))
-                    myDB.action('DELETE from pastissues WHERE BookID=?', (item,))
-                    myDB.action('DELETE from issues WHERE Title=?', (item,))
-                    myDB.action('DELETE from wanted where BookID=?', (item,))
-                    logger.info('Magazine %s removed from database' % item)
+                    myDB.action('DELETE from magazines WHERE Title=?', (title,))
+                    myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
+                    myDB.action('DELETE from issues WHERE Title=?', (title,))
+                    myDB.action('DELETE from wanted where BookID=?', (title,))
+                    logger.info('Magazine %s removed from database' % title)
                 if action == "Reset":
-                    controlValueDict = {"Title": item}
+                    controlValueDict = {"Title": title}
                     newValueDict = {
                         "LastAcquired": None,
                         "IssueDate": None,
@@ -2960,7 +2975,7 @@ class WebInterface(object):
                         "IssueStatus": "Wanted"
                     }
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info('Magazine %s details reset' % item)
+                    logger.info('Magazine %s details reset' % title)
 
         raise cherrypy.HTTPRedirect("magazines")
 

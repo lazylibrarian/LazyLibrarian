@@ -198,7 +198,7 @@ def get_capabilities(provider, force=False):
 
         # most providers will give you caps without an api key
         logger.debug('Requesting capabilities for %s' % URL)
-        source_xml, success = fetchURL(URL)
+        source_xml, success = fetchURL(URL, raw=True)
         data = None
         if not success:
             logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
@@ -216,7 +216,7 @@ def get_capabilities(provider, force=False):
             if provider['API']:
                 URL = URL + '&apikey=' + provider['API']
                 logger.debug('Retrying capabilities with apikey for %s' % URL)
-                source_xml, success = fetchURL(URL)
+                source_xml, success = fetchURL(URL, raw=True)
                 if not success:
                     logger.debug("Error getting xml from %s, %s" % (URL, source_xml))
                 else:
@@ -798,9 +798,14 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
 
         rootxml = None
         logger.debug("[NewzNabPlus] URL = %s" % URL)
-        result, success = fetchURL(URL)
+        result, success = fetchURL(URL, raw=True)
 
         if test:
+            try:
+                result = result.decode('utf-8')
+            except UnicodeDecodeError:
+                result = result.decode('latin-1')
+
             if result.startswith('<') and result.endswith('/>') and "error code" in result:
                 result = result[1:-2]
                 success = False
@@ -815,6 +820,11 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 logger.error('Error parsing data from %s: %s %s' % (host, type(e).__name__, str(e)))
                 rootxml = None
         else:
+            try:
+                result = result.decode('utf-8')
+            except UnicodeDecodeError:
+                result = result.decode('latin-1')
+
             if not result or result == "''":
                 result = "Got an empty response"
             logger.error('Error reading data from %s: %s' % (host, result))

@@ -16,7 +16,7 @@ from operator import itemgetter
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import getAuthorImage
+from lazylibrarian.images import getAuthorImage
 from lazylibrarian.cache import cache_img
 from lazylibrarian.formatter import today, unaccented, formatAuthorName, makeUnicode
 from lazylibrarian.grsync import grfollow

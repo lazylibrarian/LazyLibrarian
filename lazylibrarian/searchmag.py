@@ -339,7 +339,7 @@ def search_magazines(mags=None, reset=False):
                                 # invalid comparison of date and issue number
                                 comp_date = 0
                                 if re.match('\d+-\d\d-\d\d', str(control_date)):
-                                    if regex_pass > 3 and year:
+                                    if regex_pass > 7 and year:
                                         # we think it was an issue number, but could be a date
                                         year = check_int(year, 0)
                                         issuenum = check_int(issuedate, 0)
@@ -467,13 +467,20 @@ def get_issue_date(nzbtitle_exploded):
     issuedate = ''
     year = 0
     # Magazine names have many different styles of date
-    # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
-    # MonthName DD YYYY or MonthName DD, YYYY
-    # YYYY MM or YYYY MM DD
-    # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
-    # nn YYYY issue number without "Nr" before it
-    # issue and year as a single 6 digit string eg 222015
-    # DD MonthName YYYY OR MonthName YYYY or Issue nn, MonthName YYYY
+    # These are the ones we can currently match...
+    # 1 MonthName MonthName YYYY for bimonthly
+    # 2 Issue nn, MonthName YYYY
+    # 3 DD MonthName YYYY
+    # 4 MonthName YYYY
+    # 5 MonthName DD YYYY or MonthName DD, YYYY
+    # 6 YYYY MM DD
+    # 7 YYYY MM
+    # 8 Issue/No/Nr/Vol nn, YYYY
+    # 9 Issue/No/Nr/Vol nn
+    # 10 nn YYYY issue number without "Nr" before it
+    # 11 issue and year as a single 6 digit string eg 222015
+    # 12 3 or more digit zero padded issue number eg 0063
+    #
     pos = 0
     while pos < len(nzbtitle_exploded):
         year = check_year(nzbtitle_exploded[pos])
@@ -481,15 +488,26 @@ def get_issue_date(nzbtitle_exploded):
             month = month2num(nzbtitle_exploded[pos - 1])
             if month:
                 if pos - 1:
-                    day = check_int(nzbtitle_exploded[pos - 2], 1)
-                    if day > 31:  # probably issue number nn
+                    month2 = month2num(nzbtitle_exploded[pos - 2])
+                    if month2:
+                        # bimonthly, for now just use first month
+                        month = min(month, month2)
                         day = 1
+                        regex_pass = 1
+                    else:
+                        day = check_int(nzbtitle_exploded[pos - 2], 1)
+                        if day > 31:  # probably issue number nn
+                            regex_pass = 2
+                            day = 1
+                        else:
+                            regex_pass = 3
                 else:
+                    regex_pass = 4
                     day = 1
+
                 issuedate = "%04d-%02d-%02d" % (year, month, day)
                 try:
                     _ = datetime.date(year, month, day)
-                    regex_pass = 1
                     break
                 except ValueError:
                     regex_pass = 0
@@ -507,7 +525,7 @@ def get_issue_date(nzbtitle_exploded):
                     try:
                         _ = datetime.date(year, month, day)
                         issuedate = "%04d-%02d-%02d" % (year, month, day)
-                        regex_pass = 2
+                        regex_pass = 5
                         break
                     except ValueError:
                         regex_pass = 0
@@ -523,12 +541,13 @@ def get_issue_date(nzbtitle_exploded):
                 if month:
                     if pos + 2 < len(nzbtitle_exploded):
                         day = check_int(nzbtitle_exploded[pos + 2], 1)
+                        regex_pass = 6
                     else:
+                        regex_pass = 7
                         day = 1
                     try:
                         _ = datetime.date(year, month, day)
                         issuedate = "%04d-%02d-%02d" % (year, month, day)
-                        regex_pass = 3
                         break
                     except ValueError:
                         regex_pass = 0
@@ -546,12 +565,10 @@ def get_issue_date(nzbtitle_exploded):
                         issuedate = str(issue)  # 4 == 04 == 004
                         if pos + 2 < len(nzbtitle_exploded):
                             year = check_year(nzbtitle_exploded[pos + 2])
-                            # if year and year < int(datetime.date.today().year):
-                            #     issuedate = '0'  # it's old
-                            regex_pass = 4  # Issue/No/Nr/Vol nn, YYYY
+                            regex_pass = 8  # Issue/No/Nr/Vol nn, YYYY
                         else:
                             # year = 0
-                            regex_pass = 5  # Issue/No/Nr/Vol nn
+                            regex_pass = 9  # Issue/No/Nr/Vol nn
                         break
             pos += 1
 
@@ -564,7 +581,7 @@ def get_issue_date(nzbtitle_exploded):
                 issue = check_int(nzbtitle_exploded[pos - 1], 0)
                 if issue:
                     issuedate = str(issue)  # 4 == 04 == 004
-                    regex_pass = 6
+                    regex_pass = 10
                     # if year < int(datetime.date.today().year):
                     #     issuedate = '0'  # it's old
                     break
@@ -579,7 +596,7 @@ def get_issue_date(nzbtitle_exploded):
                 year = int(issue[2:])
                 issue = int(issue[:2])
                 issuedate = str(issue)  # 4 == 04 == 004
-                regex_pass = 7
+                regex_pass = 11
                 if year < int(datetime.date.today().year):
                     issuedate = '0'  # it's old
                 break
@@ -593,7 +610,7 @@ def get_issue_date(nzbtitle_exploded):
             if issue.isdigit() and len(issue) > 2 and issue[0] == '0':
                 issuedate = issue
                 year = 0
-                regex_pass = 8
+                regex_pass = 12
                 break
             pos += 1
 

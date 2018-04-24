@@ -11,9 +11,9 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import time
 import traceback
 import unicodedata
-import time
 
 try:
     import requests
@@ -22,12 +22,12 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
-    setSeries, setStatus, isbn_from_words
+from lazylibrarian.bookwork import getWorkSeries, getWorkPage, deleteEmptySeries, \
+    setSeries, setStatus, isbn_from_words, thingLang
+from lazylibrarian.images import getBookCover
 from lazylibrarian.cache import gr_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
     cleanName, is_valid_isbn, formatAuthorName, check_int, makeUnicode
-from lazylibrarian.common import proxyList
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
@@ -456,7 +456,7 @@ class GoodReads:
                                 if not bookdate or bookdate == '0000':
                                     logger.debug('Rejecting %s, no publication date' % bookname)
                                     removedResults += 1
-                                    rejected = True
+                                    rejected = 4
 
                         if not rejected:
                             if not bookimg or 'nocover' in bookimg:
@@ -519,36 +519,12 @@ class GoodReads:
                                     logger.debug("Found cached language [%s] for %s [%s]" %
                                                  (bookLanguage, find_field, isbnhead))
                                 else:
-                                    # no match in cache, try searching librarything for language using the isbn
-                                    # if no language found, librarything return value is "invalid" or "unknown"
-                                    # returns plain text, not xml, or html page if error
-                                    BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + bookisbn
-                                    proxies = proxyList()
-                                    try:
-                                        librarything_wait()
-                                        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
-                                        r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
-                                        resp = r.text
-                                        lt_lang_hits += 1
-                                        if resp.startswith('<!DOCTYPE HTML'):
-                                            logger.debug("LibraryThing returned html (error or maintenance page?)")
-                                            resp = "Unknown"
-                                        else:
-                                            logger.debug("LibraryThing reports language [%s] for %s" %
-                                                         (resp, isbnhead))
+                                    bookLanguage = thingLang(bookisbn)
+                                    lt_lang_hits += 1
+                                    if bookLanguage:
+                                        myDB.action('insert into languages values (?, ?)', (isbnhead, bookLanguage))
 
-                                        if 'invalid' in resp or 'Unknown' in resp:
-                                            bookLanguage = "Unknown"
-                                        else:
-                                            bookLanguage = resp  # found a language code
-                                            myDB.action('insert into languages values (?, ?)',
-                                                        (isbnhead, bookLanguage))
-                                            logger.debug("LT language %s: %s" % (isbnhead, bookLanguage))
-                                    except Exception as e:
-                                        logger.error("%s finding LT language result for [%s], %s" %
-                                                     (type(e).__name__, bookisbn, str(e)))
-
-                            if bookLanguage == "Unknown":
+                            if not bookLanguage or bookLanguage == "Unknown":
                                 # still  no earlier match, we'll have to search the goodreads api
                                 try:
                                     if book.find(find_field).text:
@@ -616,6 +592,7 @@ class GoodReads:
                                     logger.debug('Skipped %s with language %s' % (bookname, bookLanguage))
                                     ignored += 1
                                     rejected = 6
+
                         if not rejected:
                             bookname = unaccented(bookname)
                             bookname, booksub = split_title(authorNameResult, bookname)
@@ -755,6 +732,7 @@ class GoodReads:
                                     if source != 'cache':
                                         cover_count += 1
                                         cover_time += (time.time() - start)
+
                                     if workcover:
                                         logger.debug('Updated cover for %s using %s' % (bookname, source))
                                         controlValueDict = {"BookID": bookid}

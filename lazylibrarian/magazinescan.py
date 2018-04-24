@@ -12,259 +12,17 @@
 
 import datetime
 import os
-import platform
 import re
-import subprocess
 import traceback
 from hashlib import sha1
-from lib.six import PY2, text_type
 
 import lazylibrarian
-try:
-    import zipfile
-except ImportError:
-    if PY2:
-        import lib.zipfile as zipfile
-    else:
-        import lib3.zipfile as zipfile
+from lib.six import PY2
 
 from lazylibrarian import database, logger
-from lazylibrarian.common import setperm, safe_move, safe_copy
+from lazylibrarian.common import safe_move
 from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr, replace_all
-
-
-def create_covers(refresh=False):
-    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
-        logger.info('Cover creation is disabled in config')
-        return
-    myDB = database.DBConnection()
-    #  <> '' ignores empty string or NULL
-    issues = myDB.select("SELECT IssueFile from issues WHERE IssueFile <> ''")
-    if refresh:
-        logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
-    else:
-        logger.info("Checking covers for %s issue%s" % (len(issues), plural(len(issues))))
-    cnt = 0
-    for item in issues:
-        try:
-            create_cover(item['IssueFile'], refresh=refresh)
-            cnt += 1
-        except Exception as why:
-            logger.warn('Unable to create cover for %s, %s %s' % (item['IssueFile'], type(why).__name__, str(why)))
-    logger.info("Cover creation completed")
-    if refresh:
-        return "Created covers for %s issue%s" % (cnt, plural(cnt))
-    return "Checked covers for %s issue%s" % (cnt, plural(cnt))
-
-
-def create_cover(issuefile=None, refresh=False):
-    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
-        return
-    if issuefile is None or not os.path.isfile(issuefile):
-        logger.debug('No issuefile %s' % issuefile)
-        return
-
-    base, extn = os.path.splitext(issuefile)
-    if not extn:
-        logger.debug('Unable to create cover for %s, no extension?' % issuefile)
-        return
-
-    coverfile = base + '.jpg'
-
-    if os.path.isfile(coverfile):
-        if refresh:
-            os.remove(coverfile)
-        else:
-            logger.debug('Cover for %s exists' % issuefile)
-            return  # quit if cover already exists and we didn't want to refresh
-
-    logger.debug('Creating cover for %s' % issuefile)
-    data = ''  # result from unzip or unrar
-    extn = extn.lower()
-    if extn in ['.cbz', '.epub']:
-        try:
-            data = zipfile.ZipFile(issuefile)
-        except Exception as why:
-            logger.error("Failed to read zip file %s, %s %s" % (issuefile, type(why).__name__, str(why)))
-            data = ''
-    elif extn in ['.cbr']:
-        try:
-            # unrar will complain if the library isn't installed, needs to be compiled separately
-            # see https://pypi.python.org/pypi/unrar/ for instructions
-            # Download source from http://www.rarlab.com/rar_add.htm
-            # note we need LIBRARY SOURCE not a binary package
-            # make lib; sudo make install-lib; sudo ldconfig
-            # lib.unrar should then be able to find libunrar.so
-            from lib.unrar import rarfile
-            data = rarfile.RarFile(issuefile)
-        except Exception as why:
-            logger.error("Failed to read rar file %s, %s %s" % (issuefile, type(why).__name__, str(why)))
-            data = ''
-    if data:
-        img = None
-        try:
-            for member in data.namelist():
-                memlow = member.lower()
-                if '-00.' in memlow or '000.' in memlow or 'cover.' in memlow:
-                    if memlow.endswith('.jpg') or memlow.endswith('.jpeg'):
-                        img = data.read(member)
-                        break
-            if img:
-                with open(coverfile, 'wb') as f:
-                    if PY2:
-                        f.write(img)
-                    else:
-                        f.write(img.encode())
-                return
-            else:
-                logger.debug("Failed to find image in %s" % issuefile)
-        except Exception as why:
-            logger.error("Failed to extract image from %s, %s %s" % (issuefile, type(why).__name__, str(why)))
-
-    elif extn == '.pdf':
-        generator = ""
-        if len(lazylibrarian.CONFIG['IMP_CONVERT']):  # allow external convert to override libraries
-            generator = "external program: %s" % lazylibrarian.CONFIG['IMP_CONVERT']
-            if "gsconvert.py" in lazylibrarian.CONFIG['IMP_CONVERT']:
-                msg = "Use of gsconvert.py is deprecated, equivalent functionality is now built in. "
-                msg += "Support for gsconvert.py may be removed in a future release. See wiki for details."
-                logger.warn(msg)
-            converter = lazylibrarian.CONFIG['IMP_CONVERT']
-            postfix = ''
-            # if not os.path.isfile(converter):  # full path given, or just program_name?
-            #     converter = os.path.join(os.getcwd(), lazylibrarian.CONFIG['IMP_CONVERT'])
-            if 'convert' in converter and 'gs' not in converter:
-                # tell imagemagick to only convert first page
-                postfix = '[0]'
-            try:
-                params = [converter, '%s%s' % (issuefile, postfix), '%s' % coverfile]
-                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                res = makeUnicode(res).strip()
-                if res:
-                    logger.debug('%s reports: %s' % (lazylibrarian.CONFIG['IMP_CONVERT'], res))
-            except Exception as e:
-                # logger.debug(params)
-                logger.warn('External "convert" failed %s %s' % (type(e).__name__, str(e)))
-
-        elif platform.system() == "Windows":
-            GS = os.path.join(os.getcwd(), "gswin64c.exe")
-            generator = "local gswin64c"
-            if not os.path.isfile(GS):
-                GS = os.path.join(os.getcwd(), "gswin32c.exe")
-                generator = "local gswin32c"
-            if not os.path.isfile(GS):
-                params = ["where", "gswin64c"]
-                try:
-                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    GS = makeUnicode(GS).strip()
-                    generator = "gswin64c"
-                except Exception as e:
-                    logger.debug("where gswin64c failed: %s %s" % (type(e).__name__, str(e)))
-            if not os.path.isfile(GS):
-                params = ["where", "gswin32c"]
-                try:
-                    GS = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    GS = makeUnicode(GS).strip()
-                    generator = "gswin32c"
-                except Exception as e:
-                    logger.debug("where gswin32c failed: %s %s" % (type(e).__name__, str(e)))
-            if not os.path.isfile(GS):
-                logger.debug("No gswin found")
-                generator = "(no windows ghostscript found)"
-            else:
-                # noinspection PyBroadException
-                try:
-                    params = [GS, "--version"]
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    res = makeUnicode(res).strip()
-                    logger.debug("Found %s [%s] version %s" % (generator, GS, res))
-                    generator = "%s version %s" % (generator, res)
-                    issuefile = issuefile.split('[')[0]
-                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
-                              "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    res = makeUnicode(res).strip()
-
-                    if not os.path.isfile(coverfile):
-                        logger.debug("Failed to create jpg: %s" % res)
-                except Exception:  # as why:
-                    logger.warn("Failed to create jpg for %s" % issuefile)
-                    logger.debug('Exception in gswin create_cover: %s' % traceback.format_exc())
-        else:  # not windows
-            try:
-                # noinspection PyUnresolvedReferences
-                from wand.image import Image
-                interface = "wand"
-            except ImportError:
-                try:
-                    # No PythonMagick in python3
-                    # noinspection PyUnresolvedReferences
-                    import PythonMagick
-                    interface = "pythonmagick"
-                except ImportError:
-                    interface = ""
-            try:
-                if interface == 'wand':
-                    generator = "wand interface"
-                    with Image(filename=issuefile + '[0]') as img:
-                        img.save(filename=coverfile)
-
-                elif interface == 'pythonmagick':
-                    generator = "pythonmagick interface"
-                    img = PythonMagick.Image()
-                    # PythonMagick requires filenames to be bytestr, not unicode
-                    if type(issuefile) is text_type:
-                        issuefile = makeBytestr(issuefile)
-                    if type(coverfile) is text_type:
-                        coverfile = makeBytestr(coverfile)
-                    img.read(issuefile + '[0]')
-                    img.write(coverfile)
-
-                else:
-                    GS = os.path.join(os.getcwd(), "gs")
-                    generator = "local gs"
-                    if not os.path.isfile(GS):
-                        GS = ""
-                        params = ["which", "gs"]
-                        try:
-                            GS = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            GS = makeUnicode(GS).strip()
-                            generator = GS
-                        except Exception as e:
-                            logger.debug("which gs failed: %s %s" % (type(e).__name__, str(e)))
-                        if not os.path.isfile(GS):
-                            logger.debug("Cannot find gs")
-                            generator = "(no gs found)"
-                        else:
-                            params = [GS, "--version"]
-                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            res = makeUnicode(res).strip()
-                            logger.debug("Found gs [%s] version %s" % (GS, res))
-                            generator = "%s version %s" % (generator, res)
-                            issuefile = issuefile.split('[')[0]
-                            params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
-                                      "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
-                            res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                            res = makeUnicode(res).strip()
-                            if not os.path.isfile(coverfile):
-                                logger.debug("Failed to create jpg: %s" % res)
-            except Exception as e:
-                logger.warn("Unable to create cover for %s using %s %s" % (issuefile, type(e).__name__, generator))
-                logger.debug('Exception in create_cover: %s' % traceback.format_exc())
-
-        if os.path.isfile(coverfile):
-            setperm(coverfile)
-            logger.debug("Created cover for %s using %s" % (issuefile, generator))
-            return
-
-    # if not recognised extension or cover creation failed
-    try:
-        coverfile = safe_copy(os.path.join(lazylibrarian.PROG_DIR, 'data/images/nocover.jpg'), coverfile)
-        setperm(coverfile)
-    except Exception as why:
-        logger.error("Failed to copy nocover file, %s %s" % (type(why).__name__, str(why)))
-    return
+from lazylibrarian.images import createMagCover
 
 
 def create_id(issuename=None):
@@ -396,33 +154,31 @@ def magazineScan(title=None):
                         title = os.path.basename(rootdir)
                         if regex_pass:
                             match = True
-                        else:
-                            logger.debug("Issue Date failed for [%s]" % fname)
 
                     if not match:
                         logger.warn("Invalid name format for [%s]" % fname)
                         continue
 
-                    extn = os.path.splitext(fname)[1]
-                    newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$Title', title).replace(
-                                                                             '$IssueDate', issuedate)
-                    newfname = newfname + extn
-
-                    logger.debug("Found %s Issue %s" % (title, issuedate))
                     issuefile = os.path.join(rootdir, fname)  # full path to issue.pdf
                     mtime = os.path.getmtime(issuefile)
                     iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                    if newfname and newfname != fname:
-                        logger.debug("Rename %s -> %s" % (fname, newfname))
-                        newissuefile = os.path.join(rootdir, newfname)
-                        newissuefile = safe_move(issuefile, newissuefile)
-                        if os.path.exists(issuefile.replace(extn, '.jpg')):
-                            safe_move(issuefile.replace(extn, '.jpg'), newissuefile.replace(extn, '.jpg'))
-                        if os.path.exists(issuefile.replace(extn, '.opf')):
-                            safe_move(issuefile.replace(extn, '.opf'), newissuefile.replace(extn, '.opf'))
-                        issuefile = newissuefile
+                    if lazylibrarian.CONFIG['MAG_RENAME']:
+                        extn = os.path.splitext(fname)[1]
+                        newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$Title', title).replace(
+                                                                                 '$IssueDate', issuedate)
+                        newfname = newfname + extn
+                        if newfname and newfname != fname:
+                            logger.debug("Rename %s -> %s" % (fname, newfname))
+                            newissuefile = os.path.join(rootdir, newfname)
+                            newissuefile = safe_move(issuefile, newissuefile)
+                            if os.path.exists(issuefile.replace(extn, '.jpg')):
+                                safe_move(issuefile.replace(extn, '.jpg'), newissuefile.replace(extn, '.jpg'))
+                            if os.path.exists(issuefile.replace(extn, '.opf')):
+                                safe_move(issuefile.replace(extn, '.opf'), newissuefile.replace(extn, '.opf'))
+                            issuefile = newissuefile
 
+                    logger.debug("Found %s Issue %s" % (title, issuedate))
                     controlValueDict = {"Title": title}
 
                     # is this magazine already in the database?
@@ -472,7 +228,7 @@ def magazineScan(title=None):
                         }
                         myDB.upsert("Issues", newValueDict, controlValueDict)
 
-                    create_cover(issuefile)
+                    createMagCover(issuefile)
                     lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id, overwrite=new_opf)
 
                     # see if this issues date values are useful

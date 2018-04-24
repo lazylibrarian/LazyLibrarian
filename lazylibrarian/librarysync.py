@@ -19,7 +19,8 @@ from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages, bookRename, audioRename
+from lazylibrarian.bookwork import setWorkPages
+from lazylibrarian.bookrename import bookRename, audioRename
 from lazylibrarian.cache import cache_img, gr_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \

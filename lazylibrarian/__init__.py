@@ -150,7 +150,7 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
-                 'SYS_ENCODING']
+                 'SYS_ENCODING', 'LT_DEVKEY']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -159,7 +159,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
-                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE']
+                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -379,6 +379,7 @@ CONFIG_DEFINITIONS = {
     'NO_PUBDATE': ('bool', 'LibraryScan', 0),
     'NO_ISBN': ('bool', 'LibraryScan', 0),
     'IMP_IGNORE': ('bool', 'LibraryScan', 0),
+    'IMP_GOOGLEIMAGE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
     'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title: Part $Part of $Total'),
@@ -451,6 +452,7 @@ CONFIG_DEFINITIONS = {
     'EMAIL_SMTP_USER': ('str', 'Email', ''),
     'EMAIL_SMTP_PASSWORD': ('str', 'Email', ''),
     'BOOK_API': ('str', 'API', 'GoodReads'),
+    'LT_DEVKEY': ('str', 'API', ''),
     'GR_API': ('str', 'API', 'ckvsiSDsuqh7omh74ZZ6Q'),
     'GR_SYNC': ('bool', 'API', 0),
     'GR_SECRET': ('str', 'API', ''),  # tied to users own api key

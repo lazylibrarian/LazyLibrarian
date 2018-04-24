@@ -23,9 +23,10 @@ from lib.six.moves import configparser, queue
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import setWorkPages, getBookCovers, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getBookCover, getAuthorImage, getAuthorImages, getSeriesMembers, getSeriesAuthors, deleteEmptySeries, \
-    getBookAuthors, setAllBookAuthors, audioRename
+from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, setAllBookSeries, \
+    getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors
+from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers
+from lazylibrarian.bookrename import audioRename
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
@@ -36,7 +37,7 @@ from lazylibrarian.gr import GoodReads
 from lazylibrarian.grsync import grfollow, grsync
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
-from lazylibrarian.magazinescan import magazineScan, create_covers
+from lazylibrarian.magazinescan import magazineScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
@@ -534,7 +535,7 @@ class Api(object):
         name_exploded = name_formatted.split(' ')
         regex_pass, issuedate, _ = get_issue_date(name_exploded)
         if regex_pass:
-            if int(regex_pass) > 3:  # it's an issue number
+            if int(regex_pass) > 7:  # it's an issue number
                 if issuedate.isdigit():
                     issuedate = issuedate.zfill(4)  # pad with leading zeros
             if dirname:
@@ -554,9 +555,9 @@ class Api(object):
         else:
             refresh = False
         if 'wait' in kwargs:
-            self.data = create_covers(refresh=refresh)
+            self.data = createMagCovers(refresh=refresh)
         else:
-            threading.Thread(target=create_covers, name='API-MAGCOVERS', args=[refresh]).start()
+            threading.Thread(target=createMagCovers, name='API-MAGCOVERS', args=[refresh]).start()
 
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:

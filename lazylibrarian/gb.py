@@ -24,12 +24,12 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.bookwork import librarything_wait, getBookCover, getWorkSeries, getWorkPage, deleteEmptySeries, \
-    setSeries, setStatus
+from lazylibrarian.bookwork import getWorkSeries, getWorkPage, deleteEmptySeries, \
+    setSeries, setStatus, thingLang
+from lazylibrarian.images import getBookCover
 from lazylibrarian.cache import gb_json_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, unaccented, unaccented_str, is_valid_isbn, \
-    getList, cleanName, check_int, makeUnicode
-from lazylibrarian.common import proxyList
+    getList, cleanName, makeUnicode
 from lazylibrarian.gr import GoodReads
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
@@ -353,31 +353,13 @@ class GoogleBooks:
                                             if match:
                                                 myDB.action('insert into languages values (?, ?)',
                                                             (isbnhead, booklang))
-                                                logger.debug("GB language: " + booklang)
 
                                     if not match:
-                                        # try searching librarything for a language code using the isbn
-                                        # if no language found, librarything return value is "invalid" or "unknown"
-                                        # librarything returns plain text, not xml
-                                        BOOK_URL = 'http://www.librarything.com/api/thingLang.php?isbn=' + book['isbn']
-                                        proxies = proxyList()
-                                        try:
-                                            librarything_wait()
-                                            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
-                                            r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
-                                            resp = r.text
-                                            lt_lang_hits += 1
-                                            logger.debug(
-                                                "LibraryThing reports language [%s] for %s" % (resp, isbnhead))
-                                            if resp != 'invalid' and resp != 'unknown':
-                                                booklang = resp  # found a language code
-                                                match = True
-                                                myDB.action('insert into languages values (?, ?)',
-                                                            (isbnhead, booklang))
-                                                logger.debug("LT language: " + booklang)
-                                        except Exception as e:
-                                            booklang = ""
-                                            logger.error("%s finding language: %s" % (type(e).__name__, str(e)))
+                                        booklang = thingLang(book['isbn'])
+                                        lt_lang_hits += 1
+                                        if booklang:
+                                            match = True
+                                            myDB.action('insert into languages values (?, ?)', (isbnhead, booklang))
 
                                     if match:
                                         # We found a better language match
@@ -462,13 +444,13 @@ class GoogleBooks:
                             if not book['date']:
                                 logger.debug('Rejecting %s, no publication date' % bookname)
                                 removedResults += 1
-                                rejected = True
+                                rejected = 4
 
                         if not rejected and lazylibrarian.CONFIG['NO_ISBN']:
                             if not isbnhead:
                                 logger.debug('Rejecting %s, no isbn' % bookname)
                                 removedResults += 1
-                                rejected = True
+                                rejected = 5
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'

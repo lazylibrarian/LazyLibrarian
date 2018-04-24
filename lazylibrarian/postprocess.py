@@ -34,7 +34,7 @@ except ImportError:
 
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
-from lazylibrarian.bookwork import audioRename, seriesInfo
+from lazylibrarian.bookrename import seriesInfo, audioRename
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
@@ -44,13 +44,14 @@ from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, tod
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
-from lazylibrarian.magazinescan import create_id, create_cover
+from lazylibrarian.magazinescan import create_id
+from lazylibrarian.images import createMagCover
 from lazylibrarian.notifiers import notify_download, custom_notify_download
 from lib.deluge_client import DelugeRPCClient
 from lib.fuzzywuzzy import fuzz
 
-# Need to remove characters we don't want in the filename BEFORE adding to EBOOK_DIR
-# as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere?
+# Need to remove characters we don't want in the filename BEFORE adding to drive identifier
+# as windows drive identifiers have colon, eg c:  but no colons allowed elsewhere in pathname
 __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's',
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
@@ -535,7 +536,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                                             if not os.path.isdir(targetdir):
                                                 _ = mymakedirs(targetdir)
-                                                
+
                                             if os.path.isdir(targetdir):
                                                 cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
                                                 if cnt:
@@ -627,12 +628,13 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG[
                                     'EBOOK_DEST_FOLDER'].replace('/', '\\')
                             # Default destination path, should be allowed change per config file.
+                            seriesinfo = seriesInfo(book['BookID'])
                             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
                                 '$Author', authorname).replace(
                                 '$Title', bookname).replace(
-                                '$Series', seriesInfo(book['BookID'])).replace(
-                                '$SerName', seriesInfo(book['BookID'], 'Name')).replace(
-                                '$SerNum', seriesInfo(book['BookID'], 'Num')).replace(
+                                '$Series', seriesinfo['Full']).replace(
+                                '$SerName', seriesinfo['Name']).replace(
+                                '$SerNum', seriesinfo['Num']).replace(
                                 '$$', ' ')
                             dest_path = ' '.join(dest_path.split()).strip()
                             dest_path = replace_all(dest_path, __dic__)
@@ -729,7 +731,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             myDB.upsert("issues", newValueDict, controlValueDict)
 
                             # create a thumbnail cover for the new issue
-                            create_cover(dest_file)
+                            createMagCover(dest_file)
                             processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
                             if lazylibrarian.CONFIG['IMP_AUTOADDMAG']:
                                 dest_path = os.path.dirname(dest_file)
@@ -1084,12 +1086,13 @@ def import_book(pp_path=None, bookID=None):
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
+            seriesinfo = seriesInfo(bookID)
             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
                 '$Author', authorname).replace(
                 '$Title', bookname).replace(
-                '$Series', seriesInfo(bookID)).replace(
-                '$SerName', seriesInfo(bookID, 'Name')).replace(
-                '$SerNum', seriesInfo(bookID, 'Num')).replace(
+                '$Series', seriesinfo['Full']).replace(
+                '$SerName', seriesinfo['Name']).replace(
+                '$SerNum', seriesinfo['Num']).replace(
                 '$$', ' ')
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
@@ -1382,7 +1385,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         else:
             res = mymakedirs(dest_path)
             if not res:
-                return False, 'Unable to create directory %s: %s' % dest_path
+                return False, 'Unable to create directory %s' % dest_path
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
