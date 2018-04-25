@@ -202,7 +202,8 @@ def search_magazines(mags=None, reset=False):
 
                     # Need to make sure that substrings of magazine titles don't get found
                     # (e.g. Maxim USA will find Maximum PC USA) so split into "words"
-                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ',
+                           '#': '# '}
                     nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
                     # remove extra spaces if they're in a row
                     nzbtitle_formatted = " ".join(nzbtitle_formatted.split())
@@ -377,6 +378,8 @@ def search_magazines(mags=None, reset=False):
                                     logger.debug('This issue of %s is already flagged for download' % issue)
                             else:
                                 if issuedate != "1970-01-01":  # this is our fake date for ones we can't decipher
+                                    logger.debug('This issue of %s is unknown age; skipping.' % nzbtitle_formatted)
+                                else:
                                     logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
                                     old_date += 1
 
@@ -475,7 +478,7 @@ def get_issue_date(nzbtitle_exploded):
     # 5 MonthName DD YYYY or MonthName DD, YYYY
     # 6 YYYY MM DD
     # 7 YYYY MM
-    # 8 Issue/No/Nr/Vol nn, YYYY
+    # 8 Issue/No/Nr/Vol/# nn, YYYY
     # 9 Issue/No/Nr/Vol nn
     # 10 nn YYYY issue number without "Nr" before it
     # 11 issue and year as a single 6 digit string eg 222015
@@ -487,7 +490,7 @@ def get_issue_date(nzbtitle_exploded):
         if year and pos:
             month = month2num(nzbtitle_exploded[pos - 1])
             if month:
-                if pos - 1:
+                if pos > 1:
                     month2 = month2num(nzbtitle_exploded[pos - 2])
                     if month2:
                         # bimonthly, for now just use first month
@@ -518,7 +521,7 @@ def get_issue_date(nzbtitle_exploded):
         pos = 0
         while pos < len(nzbtitle_exploded):
             year = check_year(nzbtitle_exploded[pos])
-            if year and (pos - 1):
+            if year and (pos > 1):
                 month = month2num(nzbtitle_exploded[pos - 2])
                 if month:
                     day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
@@ -553,9 +556,9 @@ def get_issue_date(nzbtitle_exploded):
                         regex_pass = 0
             pos += 1
 
-    # Issue/No/Nr/Vol nn, YYYY or Issue/No/Nr/Vol nn
+    # Issue/No/Nr/Vol/# nn, YYYY or Issue/No/Nr/Vol/# nn
     if not regex_pass:
-        nouns = ["issue", "no", "nr", "vol", "volume"]
+        nouns = ["issue", "iss", "no", "nr", "vol", "volume", '#']
         pos = 0
         while pos < len(nzbtitle_exploded):
             if nzbtitle_exploded[pos].lower().strip('.') in nouns:

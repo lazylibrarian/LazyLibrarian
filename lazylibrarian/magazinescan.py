@@ -147,7 +147,8 @@ def magazineScan(title=None):
                         title = os.path.basename(rootdir)
                         issuedate = ''
 
-                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ',
+                           '#', '# '}
                     if issuedate:
                         exploded = replace_all(issuedate, dic).strip()
                         # remove extra spaces if they're in a row
