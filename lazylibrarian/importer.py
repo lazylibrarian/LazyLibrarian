@@ -275,10 +275,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 #     book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
                 #                               refresh=refresh)
 
-            # update totals works for existing authors only.
-            # New authors need their totals updating after libraryscan or import of books.
-            if not new_author:
-                update_totals(authorid)
+            update_totals(authorid)
 
             if new_author and lazylibrarian.CONFIG['GR_FOLLOWNEW']:
                 res = grfollow(authorid, True)

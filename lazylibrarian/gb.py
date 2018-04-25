@@ -192,12 +192,13 @@ class GoogleBooks:
                             bookname = unaccented(bookname)
                             bookname = bookname.strip()  # strip whitespace
 
-                            match = myDB.match(
-                                'SELECT AuthorID FROM authors WHERE AuthorName=?', (book['author'].replace('"', '""'),))
+                            AuthorID = ''
                             if book['author']:
-                                AuthorID = match['authorid']
-                            else:
-                                AuthorID = ''
+                                match = myDB.match(
+                                    'SELECT AuthorID FROM authors WHERE AuthorName=?', (
+                                        book['author'].replace('"', '""'),))
+                                if match:
+                                    AuthorID = match['AuthorID']
 
                             resultlist.append({
                                 'authorname': book['author'],
