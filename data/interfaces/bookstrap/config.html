@@ -443,6 +443,10 @@
                     <label for="gb_api" class="control-label">GoogleBooks API:</label>
                     <input type="text" id="gb_api" name="gb_api" value="${lazylibrarian.CONFIG['GB_API']}" class="form-control">
                   </div>
+                  <div class="form-group">
+                    <label for="lt_devkey" class="control-label">LibraryThing Developer Key:</label>
+                    <input type="text" id="lt_devkey" name="lt_devkey" value="${lazylibrarian.CONFIG['LT_DEVKEY']}" class="form-control">
+                  </div>
                 </fieldset>
               </div>
               <div class="col-md-4">
@@ -539,6 +543,7 @@
                       e.g: fr_FR.utf8, es_ES.utf8<br/>
                       English month names are preloaded   Changes to this setting require a restart</span>
                   </div>
+                  <legend>Date Formats</legend>
                    <div class="form-group">
                     <label for="date_format" class="control=label">Date format for Added columns:</label>
                     <input type="text" id="date_format" name="date_format" value="${lazylibrarian.CONFIG['DATE_FORMAT']}" class="form-control" placeholder="Format for column dates">
