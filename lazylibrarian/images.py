@@ -278,32 +278,31 @@ def getBookCover(bookID=None, src=None):
                 if success:
                     try:
                         img = result.split('imgurl=')[1].split('&imgrefurl')[0]
-                        typ = "ISBN"
                     except IndexError:
                         try:
                             img = result.split('img src="')[1].split('"')[0]
-                            typ = 'isbn'
                         except IndexError:
                             img = None
 
-                if img and img.startswith('http'):
-                    if src:
-                        coverlink, success, _ = cache_img("book", bookID + '_gi', img)
+                    if img and img.startswith('http'):
+                        if src:
+                            coverlink, success, _ = cache_img("book", bookID + '_gi', img)
+                        else:
+                            coverlink, success, _ = cache_img("book", bookID, img)
+                        if success:
+                            logger.debug("Caching google isbn cover for %s %s" %
+                                         (item['AuthorName'], item['BookName']))
+                            return coverlink, 'google isbn'
+                        else:
+                            logger.debug("Error caching google image %s, [%s]" % (img, coverlink))
                     else:
-                        coverlink, success, _ = cache_img("book", bookID, img)
-                    if success:
-                        logger.debug("Caching google isbn cover for %s %s" %
-                                     (item['AuthorName'], item['BookName']))
-                        return coverlink, 'google isbn'
-                    else:
-                        logger.debug("Error caching google image %s, [%s]" % (img, coverlink))
+                        logger.debug("No image found in google isbn page for %s" % bookID)
                 else:
-                    logger.debug("No image found in google isbn page for %s" % bookID)
+                    logger.debug("Failed to fetch url from google")
             else:
                 logger.debug("No parameters for google isbn search for %s" % bookID)
             if src:
                 return None, src
-
 
         if src == 'googleimage' or not src and lazylibrarian.CONFIG['IMP_GOOGLEIMAGE']:
             # try a google image search...
@@ -312,7 +311,7 @@ def getBookCover(bookID=None, src=None):
             # ift:jpg       jpeg file type
             if safeparams:
                 URL = "https://www.google.com/search?tbm=isch&tbs=isz:l,ift:jpg&as_q=" + safeparams + "+ebook"
-                typ = 'jpg'
+                img = None
                 result, success = fetchURL(URL)
                 if success:
                     try:

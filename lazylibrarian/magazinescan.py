@@ -117,7 +117,7 @@ def magazineScan(title=None):
             for fname in filenames:
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
-                    title = ''
+                    issuedate = ''
                     # noinspection PyBroadException
                     try:
                         match = title_pattern.match(fname)
@@ -145,15 +145,27 @@ def magazineScan(title=None):
 
                     if not match:
                         title = os.path.basename(rootdir)
+                        issuedate = ''
 
                     dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
-                    exploded = replace_all(fname, dic).strip()
-                    # remove extra spaces if they're in a row
-                    exploded = " ".join(exploded.split())
-                    exploded = exploded.split(' ')
-                    regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
+                    if issuedate:
+                        exploded = replace_all(issuedate, dic).strip()
+                        # remove extra spaces if they're in a row
+                        exploded = " ".join(exploded.split())
+                        exploded = exploded.split(' ')
+                        regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
+                        if not regex_pass:
+                            issuedate = ''
 
-                    if not regex_pass:
+                    if not issuedate:
+                        exploded = replace_all(fname, dic).strip()
+                        exploded = " ".join(exploded.split())
+                        exploded = exploded.split(' ')
+                        regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
+                        if not regex_pass:
+                            issuedate = ''
+
+                    if not issuedate:
                         logger.warn("Invalid name format for [%s]" % fname)
                         continue
 
