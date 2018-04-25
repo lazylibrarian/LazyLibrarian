@@ -77,7 +77,7 @@
                 "order": [[ 2, 'desc']],
                 "columnDefs": [{ targets: 'no-sort', orderable: false },
                     { targets: [0], 'render': function(data, type, row) {
-                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                        return '<input type="checkbox" name="' + row[4] + '" class="checkbox" />';} },
                     { targets: [1],
                         'visible': showimg,
                         'render': function(data, type, row) {
