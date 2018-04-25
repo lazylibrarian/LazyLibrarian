@@ -148,7 +148,7 @@ def magazineScan(title=None):
                         issuedate = ''
 
                     dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ',
-                           '#', '# '}
+                           '#': '# '}
                     if issuedate:
                         exploded = replace_all(issuedate, dic).strip()
                         # remove extra spaces if they're in a row
