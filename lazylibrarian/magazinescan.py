@@ -118,13 +118,12 @@ def magazineScan(title=None):
                 # maybe not all magazines will be pdf?
                 if is_valid_booktype(fname, booktype='mag'):
                     issuedate = ''
-                    title = ''
                     # noinspection PyBroadException
                     try:
                         match = title_pattern.match(fname)
                         if match:
-                            issuedate = match.group("issuedate")
                             title = match.group("title")
+                            issuedate = match.group("issuedate")
                             match = True
                         else:
                             logger.debug("Title pattern match failed for [%s]" % fname)
@@ -145,17 +144,28 @@ def magazineScan(title=None):
                             match = False
 
                     if not match:
-                        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
-                        exploded = replace_all(fname, dic).strip()
+                        title = os.path.basename(rootdir)
+                        issuedate = ''
+
+                    dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' '}
+                    if issuedate:
+                        exploded = replace_all(issuedate, dic).strip()
                         # remove extra spaces if they're in a row
                         exploded = " ".join(exploded.split())
                         exploded = exploded.split(' ')
                         regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
-                        title = os.path.basename(rootdir)
-                        if regex_pass:
-                            match = True
+                        if not regex_pass:
+                            issuedate = ''
 
-                    if not match:
+                    if not issuedate:
+                        exploded = replace_all(fname, dic).strip()
+                        exploded = " ".join(exploded.split())
+                        exploded = exploded.split(' ')
+                        regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
+                        if not regex_pass:
+                            issuedate = ''
+
+                    if not issuedate:
                         logger.warn("Invalid name format for [%s]" % fname)
                         continue
 

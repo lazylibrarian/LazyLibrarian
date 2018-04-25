@@ -2015,7 +2015,7 @@ class WebInterface(object):
         seriesdict = myDB.select(cmd, (bookid,))
         if bookdata:
             covers = []
-            for source in ['current', 'cover', 'goodreads', 'librarything', 'whatwork', 'google']:
+            for source in ['current', 'cover', 'goodreads', 'librarything', 'whatwork', 'googleisbn', 'googleimage']:
                 cover, _ = getBookCover(bookid, source)
                 if cover:
                     covers.append([source, cover])

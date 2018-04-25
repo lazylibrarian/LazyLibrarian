@@ -642,16 +642,17 @@ def showJobs():
 def clearLog():
     lazylibrarian.LOGLIST = []
     error = False
-    # if 'windows' in platform.system().lower():
-    #     return "Screen log cleared"
-    # else:
+    if 'windows' in platform.system().lower():
+        return "Screen log cleared"
+
     logger.lazylibrarian_log.stopLogger()
     for f in glob.glob(lazylibrarian.CONFIG['LOGDIR'] + "/*.log*"):
         try:
             os.remove(f)
         except OSError as e:
             error = e.strerror
-            break
+            logger.debug("Failed to remove %s : %s" % (f, error))
+
     logger.lazylibrarian_log.initLogger(loglevel=lazylibrarian.LOGLEVEL)
 
     if error:
