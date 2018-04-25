@@ -2891,11 +2891,13 @@ class WebInterface(object):
     @cherrypy.expose
     def markIssues(self, action=None, **args):
         myDB = database.DBConnection()
+        title = ''
         for item in args:
             # ouch dirty workaround...
             if not item == 'book_table_length':
                 issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
                 if issue:
+                    title = issue['Title']
                     if action == "Delete":
                         result = self.deleteIssue(issue['IssueFile'])
                         if result:
@@ -2903,7 +2905,10 @@ class WebInterface(object):
                     if action == "Remove" or action == "Delete":
                         myDB.action('DELETE from issues WHERE IssueID=?', (item,))
                         logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
-        raise cherrypy.HTTPRedirect("magazines")
+        if title:
+            raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
+        else:
+            raise cherrypy.HTTPRedirect("magazines")
 
     @staticmethod
     def deleteIssue(issuefile):
