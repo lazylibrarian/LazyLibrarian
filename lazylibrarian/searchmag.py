@@ -479,8 +479,8 @@ def get_issue_date(nzbtitle_exploded):
     # 6 YYYY MM DD
     # 7 YYYY MM
     # 8 Issue/No/Nr/Vol/# nn, YYYY
-    # 9 Issue/No/Nr/Vol nn
-    # 10 nn YYYY issue number without "Nr" before it
+    # 9 Issue/No/Nr/Vol/# nn
+    # 10 nn YYYY issue number without Issue/No/Nr/Vol/# in front
     # 11 issue and year as a single 6 digit string eg 222015
     # 12 3 or more digit zero padded issue number eg 0063
     #
