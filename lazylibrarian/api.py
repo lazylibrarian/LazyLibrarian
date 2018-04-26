@@ -524,19 +524,23 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
         self.data = ''
+
         filename = os.path.basename(kwargs['name'])
         dirname = os.path.dirname(kwargs['name'])
-        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ',
-               '#': '# '}
+
+        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ', '#': '# '}
         name_formatted = replace_all(filename, dic).strip()
+
         if name_formatted and name_formatted[0] == '[' and name_formatted[-1] == ']':
             name_formatted = name_formatted[1:-1]
         # remove extra spaces if they're in a row
         name_formatted = " ".join(name_formatted.split())
         name_exploded = name_formatted.split(' ')
-        regex_pass, issuedate, _ = get_issue_date(name_exploded)
+
+        regex_pass, issuedate, year = get_issue_date(name_exploded)
+
         if regex_pass:
-            if int(regex_pass) > 7:  # it's an issue number
+            if int(regex_pass) > 8:  # we think it's an issue number
                 if issuedate.isdigit():
                     issuedate = issuedate.zfill(4)  # pad with leading zeros
             if dirname:
@@ -548,7 +552,9 @@ class Api(object):
                     fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate)
                 self.data = os.path.join(dirname, fname + '.' + name_exploded[-1])
             else:
-                self.data = issuedate
+                self.data = "Regex %s [%s] %s" % (regex_pass, issuedate, year)
+        else:
+            self.data = {regex_pass, issuedate, year}
 
     def _createMagCovers(self, **kwargs):
         if 'refresh' in kwargs:

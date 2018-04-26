@@ -2513,7 +2513,15 @@ class WebInterface(object):
 
             for row in rows:
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
-                row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
+                if row[5] and row[5].isdigit():
+                    if len(row[5]) == 6:
+                        row[5] = 'Issue ' + row[5][:2] + ' ' + row[5][2:]
+                    elif len(row[5]) == 8:
+                        row[5] = 'Vol ' + row[5][:4] + 'Issue ' + row[5][4:]
+                    elif len(row[5]) == 12:
+                        row[5] = 'Vol ' + row[5][4:8] + 'Issue ' + row[5][8:] + ' ' + row[5][:4]
+                else:
+                    row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
 
         if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getMags returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
