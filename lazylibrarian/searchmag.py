@@ -377,7 +377,7 @@ def search_magazines(mags=None, reset=False):
                                 else:
                                     logger.debug('This issue of %s is already flagged for download' % issue)
                             else:
-                                if issuedate != "1970-01-01":  # this is our fake date for ones we can't decipher
+                                if issuedate == "1970-01-01":  # this is our fake date for ones we can't decipher
                                     logger.debug('This issue of %s is unknown age; skipping.' % nzbtitle_formatted)
                                 else:
                                     logger.debug('This issue of %s is old; skipping.' % nzbtitle_formatted)
