@@ -420,7 +420,6 @@ def _add_torrent_file(result):
 def setTorrentLabel(result):
     logger.debug('Deluge: Setting label')
     label = lazylibrarian.CONFIG['DELUGE_LABEL']
-
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -434,21 +433,29 @@ def setTorrentLabel(result):
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
         labels = response.json()['result']
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("Valid labels: %s" % str(labels))
 
         if labels:
             if label not in labels:
                 try:
                     logger.debug('Deluge: %s label doesn\'t exist in Deluge, let\'s add it' % label)
                     post_json = {"method": 'label.add', "params": [label], "id": 4}
-
-                    _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
-                                      verify=deluge_verify_cert, headers=headers)
+                    response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth, timeout=30,
+                                             verify=deluge_verify_cert, headers=headers)
                     logger.debug('Deluge: %s label added to Deluge' % label)
                 except Exception as err:
                     logger.error('Deluge %s: Setting label failed: %s' % (type(err).__name__, str(err)))
                     if lazylibrarian.LOGLEVEL > 2:
                         formatted_lines = traceback.format_exc().splitlines()
                         logger.error('; '.join(formatted_lines))
+                    if not result:
+                        return False
+            else:
+                logger.debug("Label [%s] is valid" % label)
+
+            if not result:
+                return True
 
             # add label to torrent
             post_json = {"method": 'label.set_torrent', "params": [result['hash'], label], "id": 5}
@@ -533,7 +540,13 @@ def checkLink():
     logger.debug('Deluge: Checking connection')
     msg = "Deluge: Connection successful"
     auth = _get_auth()
-    if not auth:
+    if auth:
+        res = setTorrentLabel('')
+        if res:
+            msg += '\nLabel is ok'
+        else:
+            msg += '\nUnable to set label'
+    else:
         msg = "Deluge: Connection FAILED\nCheck debug log"
     logger.debug(msg)
     return msg

@@ -632,13 +632,14 @@ def get_issue_date(nzbtitle_exploded):
         while pos < len(nzbtitle_exploded):
             issue = nzbtitle_exploded[pos]
             if issue.isdigit() and len(issue) == 6:
-                year = int(issue[2:])
-                issue = int(issue[:2])
-                issuedate = str(issue)  # 4 == 04 == 004
-                regex_pass = 12
-                if year < int(datetime.date.today().year):
-                    issuedate = '0'  # it's old
-                break
+                year = check_year(int(issue[2:]))
+                if year:
+                    issue = int(issue[:2])
+                    issuedate = str(issue)  # 4 == 04 == 004
+                    regex_pass = 12
+                    # if year < int(datetime.date.today().year):
+                    #     issuedate = '0'  # it's old
+                    break
             pos += 1
 
     # issue as a 3 or more digit string with leading zero eg 0063

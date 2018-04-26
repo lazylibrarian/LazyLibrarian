@@ -3846,6 +3846,8 @@ class WebInterface(object):
                         else:
                             msg += "Deluge daemon seems to have no labels set"
                         return msg
+                    else:
+                        msg += ', label [%s] is valid' % lazylibrarian.CONFIG['DELUGE_LABEL']
             # success, save settings
             lazylibrarian.config_write('DELUGE')
             return msg
