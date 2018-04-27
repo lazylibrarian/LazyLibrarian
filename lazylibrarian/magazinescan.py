@@ -21,7 +21,8 @@ from lib.six import PY2
 
 from lazylibrarian import database, logger
 from lazylibrarian.common import safe_move
-from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr, replace_all
+from lazylibrarian.formatter import getList, is_valid_booktype, plural, makeUnicode, makeBytestr, \
+    replace_all, check_year
 from lazylibrarian.images import createMagCover
 
 
@@ -183,9 +184,20 @@ def magazineScan(title=None):
                     iss_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
                     if lazylibrarian.CONFIG['MAG_RENAME']:
+                        filedate = issuedate
+                        if issuedate and issuedate.isdigit():
+                            if len(issuedate) == 8:
+                                if check_year(issuedate[:4]):
+                                    filedate = 'Issue %d %s' % (int(issuedate[4:]), issuedate[:4])
+                                else:
+                                    filedate = 'Vol %d Iss %d' % (int(issuedate[:4]), int(issuedate[4:]))
+                            elif len(issuedate) == 12:
+                                filedate = 'Vol %d Iss %d %s' % (int(issuedate[4:8]), int(issuedate[8:]),
+                                                                 issuedate[:4])
+
                         extn = os.path.splitext(fname)[1]
                         newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$Title', title).replace(
-                                                                                 '$IssueDate', issuedate)
+                                                                                 '$IssueDate', filedate)
                         newfname = newfname + extn
                         if newfname and newfname != fname:
                             logger.debug("Rename %s -> %s" % (fname, newfname))

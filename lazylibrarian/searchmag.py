@@ -66,8 +66,8 @@ def search_magazines(mags=None, reset=False):
         # should clear old search results as might not be available any more
         # ie torrent not available, changed providers, out of news server retention etc.
         # Only delete the "skipped" ones, not wanted/snatched/processed/ignored
-        logger.debug("Removing old magazine search results")
-        myDB.action('DELETE from pastissues WHERE Status="Skipped"')
+        # logger.debug("Removing old magazine search results")
+        # myDB.action('DELETE from pastissues WHERE Status="Skipped"')
 
         logger.info('Searching for %i magazine%s' % (len(searchmags), plural(len(searchmags))))
 
@@ -321,16 +321,14 @@ def search_magazines(mags=None, reset=False):
 
                             if str(control_date).isdigit() and str(issuedate).isdigit():
                                 # for issue numbers, check if later than last one we have
-                                if not control_date:
-                                    comp_date = issuedate
-                                elif not year:
-                                    comp_date = int(issuedate) - int(control_date)
+                                if regex_pass in [9, 11, 12] and year:
+                                    issuedate = "%s%04d" % (year, int(issuedate))
                                 else:
-                                    # if it's last year's issue 3, not this years issue 3...
-                                    if year < int(datetime.date.today().year):
-                                        comp_date = 0
-                                issuedate = "%s" % issuedate
-                                issuedate = issuedate.zfill(4)  # pad so we sort correctly
+                                    issuedate = str(issuedate).zfill(4)
+                                if not control_date:
+                                    comp_date = 1
+                                else:
+                                    comp_date = int(issuedate) - int(control_date)
                             elif re.match('\d+-\d\d-\d\d', str(control_date)) and \
                                     re.match('\d+-\d\d-\d\d', str(issuedate)):
                                 # only grab a copy if it's newer than the most recent we have,
@@ -341,8 +339,10 @@ def search_magazines(mags=None, reset=False):
                                 comp_date = 0
                                 if re.match('\d+-\d\d-\d\d', str(control_date)):
                                     if regex_pass > 8 and year:
-                                        # we think it was an issue number, but could be a date
+                                        # we assumed it was an issue number, but it could be a date
                                         year = check_int(year, 0)
+                                        if regex_pass in [9, 11, 12]:
+                                            issuedate = int(issuedate[:4])
                                         issuenum = check_int(issuedate, 0)
                                         if year and 1 <= issuenum <= 12:
                                             issuedate = "%04d-%02d-01" % (year, issuenum)
@@ -471,20 +471,20 @@ def get_issue_date(nzbtitle_exploded):
     year = 0
     # Magazine names have many different styles of date
     # These are the ones we can currently match...
-    # 1 MonthName MonthName YYYY for bimonthly
-    # 2 Issue nn, MonthName YYYY
-    # 3 DD MonthName YYYY
-    # 4 MonthName YYYY
-    # 5 MonthName DD YYYY or MonthName DD, YYYY
-    # 6 YYYY MM DD or YYYY MonthName DD
-    # 7 YYYY MM or YYYY MonthName
+    # 1 MonthName MonthName YYYY (bi-monthly just use first month as date)
+    # 2 Issue nn, MonthName YYYY  (just use month and year)
+    # 3 DD MonthName YYYY (daily, weekly, bi-weekly, monthly)
+    # 4 MonthName YYYY (monthly)
+    # 5 MonthName DD YYYY or MonthName DD, YYYY (daily, weekly, bi-weekly, monthly)
+    # 6 YYYY MM DD or YYYY MonthName DD (daily, weekly, bi-weekly, monthly)
+    # 7 YYYY MM or YYYY MonthName (monthly)
     # 8 Volume x Issue y in either order, with/without year in any order
-    # 9 Issue/No/Nr/Vol/# nn, YYYY
-    # 10 Issue/No/Nr/Vol/# nn
-    # 11 nn YYYY issue number without Issue/No/Nr/Vol/# in front
-    # 12 issue and year as a single 6 digit string eg 222015
-    # 13 3 or more digit zero padded issue number eg 0063
-    # 14 just a year
+    # 9 Issue/No/Nr/Vol/# nn, YYYY (prepend year to zero filled issue number)
+    # 10 Issue/No/Nr/Vol/# nn (hopefully rolls on year on year)
+    # 11 nn YYYY issue number without Issue/No/Nr/Vol/# in front (unsure, issue could be a month number)
+    # 12 issue and year as a single 6 digit string eg 222015 (some uploaders use this, reverse it to YYYYIIII)
+    # 13 3 or more digit zero padded issue number eg 0063 (issue with no year)
+    # 14 just a year (annual)
     #
     pos = 0
     while pos < len(nzbtitle_exploded):
@@ -606,7 +606,6 @@ def get_issue_date(nzbtitle_exploded):
                             year = check_year(nzbtitle_exploded[pos + 2])
                             regex_pass = 9  # Issue/No/Nr/Vol nn, YYYY
                         else:
-                            # year = 0
                             regex_pass = 10  # Issue/No/Nr/Vol nn
                         break
             pos += 1
@@ -621,8 +620,6 @@ def get_issue_date(nzbtitle_exploded):
                 if issue:
                     issuedate = str(issue)  # 4 == 04 == 004
                     regex_pass = 11
-                    # if year < int(datetime.date.today().year):
-                    #     issuedate = '0'  # it's old
                     break
             pos += 1
 
@@ -637,8 +634,6 @@ def get_issue_date(nzbtitle_exploded):
                     issue = int(issue[:2])
                     issuedate = str(issue)  # 4 == 04 == 004
                     regex_pass = 12
-                    # if year < int(datetime.date.today().year):
-                    #     issuedate = '0'  # it's old
                     break
             pos += 1
 

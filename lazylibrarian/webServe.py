@@ -2514,12 +2514,13 @@ class WebInterface(object):
             for row in rows:
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
                 if row[5] and row[5].isdigit():
-                    if len(row[5]) == 6:
-                        row[5] = 'Issue ' + row[5][:2] + ' ' + row[5][2:]
-                    elif len(row[5]) == 8:
-                        row[5] = 'Vol ' + row[5][:4] + 'Issue ' + row[5][4:]
+                    if len(row[5]) == 8:
+                        if check_year(row[5][:4]):
+                            row[5] = 'Issue %d %s' % (int(row[5][4:]), row[5][:4])
+                        else:
+                            row[5] = 'Vol %d #%d' % (int(row[5][:4]), int(row[5][4:]))
                     elif len(row[5]) == 12:
-                        row[5] = 'Vol ' + row[5][4:8] + 'Issue ' + row[5][8:] + ' ' + row[5][:4]
+                        row[5] = 'Vol %d #%d %s' % (int(row[5][4:8]), int(row[5][8:]), row[5][:4])
                 else:
                     row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
 
@@ -2641,8 +2642,18 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
         for row in rows:
-            row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
             row[3] = dateFormat(row[3], lazylibrarian.CONFIG['DATE_FORMAT'])
+            if row[2] and row[2].isdigit():
+                if len(row[2]) == 8:
+                    # Year/Issue or Volume/Issue with no year
+                    if check_year(row[2][:4]):
+                        row[2] = 'Issue %d %s' % (int(row[2][4:]), row[2][:4])
+                    else:
+                        row[2] = 'Vol %d #%d' % (int(row[2][:4]), int(row[2][4:]))
+                elif len(row[2]) == 12:
+                    row[2] = 'Vol %d #%d %s' % (int(row[2][4:8]), int(row[2][8:]), row[2][:4])
+            else:
+                row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
 
         if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
