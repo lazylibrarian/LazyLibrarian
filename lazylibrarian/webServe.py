@@ -671,43 +671,49 @@ class WebInterface(object):
                 filtered = rows
 
             # NOTE it's time consuming to work out % for all series, but if we don't we can't order on %
-            cmd = "select (select count(status) as counter from books,member where member.bookid=books.bookid"
-            cmd += " and member.seriesid = series.seriesid and status='Open' or status='Have' or"
-            cmd += " audiostatus='Open' or audiostatus='Have') as have,"
-            cmd += "(select count(status) as counter from books,member where member.bookid=books.bookid"
-            cmd += " and member.seriesid = series.seriesid and status != 'Ignored')"
-            cmd += " as total from series where seriesid=?"
-            for row in filtered:
-                res = myDB.match(cmd, (row[0],))
-                if res['total']:
-                    percent = (res['have'] * 100.0) / res['total']
-                else:
-                    percent = 0
+            # To speed it up we only return series info on an author series page, not whole database,
+            # or maybe we could cache/store some counters in the database?
+            cmd = "select sum(case books.status when 'Ignored' then 0 else 1 end) as total,"
+            cmd += "sum(case when books.status == 'Have' then 1 when books.status == 'Open' then 1 "
+            cmd += "when books.audiostatus == 'Have' then 1 when books.audiostatus == 'Open' then 1 "
+            cmd += "else 0 end) as have from books,member,series where member.bookid=books.bookid "
+            cmd += "and member.seriesid = series.seriesid and series.seriesid=?"
+            if AuthorID:
+                for row in filtered:
+                    res = myDB.match(cmd, (row[0],))
+                    have = res['have']
+                    #res = myDB.match(cmd2, (row[0],))
+                    total = res['total']
+                    if total:
+                        percent = (have * 100.0) / total
+                    else:
+                        percent = 0
 
-                if percent > 100:
-                    percent = 100
-                css = 'success'
-                if percent <= 75:
-                    css = 'info'
-                if percent <= 50:
-                    css = 'warning'
-                if percent <= 25:
-                    css = 'danger'
+                    if percent > 100:
+                        percent = 100
+                    css = 'success'
+                    if percent <= 75:
+                        css = 'info'
+                    if percent <= 50:
+                        css = 'warning'
+                    if percent <= 25:
+                        css = 'danger'
 
-                bar = '<div class="progress center-block" style="width: 150px;">'
-                bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
-                bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
-                    percent, percent)
-                bar += '<span class="sr-only">%s%% Complete</span>' % percent
-                bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (res['have'], res['total'])
-                row.append(percent)
-                row.append(bar)
+                    bar = '<div class="progress center-block" style="width: 150px;">'
+                    bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
+                    bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
+                        percent, percent)
+                    bar += '<span class="sr-only">%s%% Complete</span>' % percent
+                    bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (res['have'], res['total'])
+                    row.append(percent)
+                    row.append(bar)
 
             sortcolumn = int(iSortCol_0)
-            if sortcolumn == 4:  # status
-                sortcolumn = 3
-            elif sortcolumn == 3:  # percent
-                sortcolumn = 6
+            if AuthorID:
+                if sortcolumn == 4:  # status
+                    sortcolumn = 3
+                elif sortcolumn == 3:  # percent
+                    sortcolumn = 6
 
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 

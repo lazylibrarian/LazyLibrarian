@@ -46,7 +46,12 @@
       </select>
     </div>
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
-    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Progress</a> - <a class="toggle-vis" data-column="4">Status</a>
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis"
+    %if authorid != None:
+        data-column="3">Have</a> - <a class="toggle-vis" data-column="4">Status</a>
+    %else:
+        data-column="3">Status</a>
+    %endif
     %endif
   </form>
   <br>
@@ -62,7 +67,9 @@
             %endif
             <th class="authorname">Author</th>
             <th class="series">Series Name</th>
-            <th class="number text-center">Have</th>
+            %if authorid != None:
+                <th class="number text-center">Have</th>
+            %endif
             <th class="status text-center">Status</th>
           </tr>
         </thead>
@@ -110,12 +117,15 @@
                     { targets: [2], 'render': function(data, type, row) {
                         return '<a href="seriesMembers?seriesid=' + row[5] + '" target="_new">' + row[2] + '</a>';}
                     },
+                    %if authorid != None:
+
                     { targets: [3], 'render': function(data, type, row) {
                         return  row[7];}
                     },
                     { targets: [4], 'render': function(data, type, row) {
                         return  row[3];}
                     }
+                    %endif
                     ],
                 "oLanguage": {
                     "sSearch": "Filter: ",
