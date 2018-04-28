@@ -540,7 +540,7 @@ class Api(object):
         regex_pass, issuedate, year = get_issue_date(name_exploded)
 
         if regex_pass:
-            if int(regex_pass) > 8:  # we think it's an issue number
+            if int(regex_pass) > 9:  # we think it's an issue number
                 if issuedate.isdigit():
                     issuedate = issuedate.zfill(4)  # pad with leading zeros
             if dirname:

@@ -670,7 +670,45 @@ class WebInterface(object):
             else:
                 filtered = rows
 
+            # NOTE it's time consuming to work out % for all series, but if we don't we can't order on %
+            cmd = "select (select count(status) as counter from books,member where member.bookid=books.bookid"
+            cmd += " and member.seriesid = series.seriesid and status='Open' or status='Have' or"
+            cmd += " audiostatus='Open' or audiostatus='Have') as have,"
+            cmd += "(select count(status) as counter from books,member where member.bookid=books.bookid"
+            cmd += " and member.seriesid = series.seriesid and status != 'Ignored')"
+            cmd += " as total from series where seriesid=?"
+            for row in filtered:
+                res = myDB.match(cmd, (row[0],))
+                if res['total']:
+                    percent = (res['have'] * 100.0) / res['total']
+                else:
+                    percent = 0
+
+                if percent > 100:
+                    percent = 100
+                css = 'success'
+                if percent <= 75:
+                    css = 'info'
+                if percent <= 50:
+                    css = 'warning'
+                if percent <= 25:
+                    css = 'danger'
+
+                bar = '<div class="progress center-block" style="width: 150px;">'
+                bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
+                bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
+                    percent, percent)
+                bar += '<span class="sr-only">%s%% Complete</span>' % percent
+                bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (res['have'], res['total'])
+                row.append(percent)
+                row.append(bar)
+
             sortcolumn = int(iSortCol_0)
+            if sortcolumn == 4:  # status
+                sortcolumn = 3
+            elif sortcolumn == 3:  # percent
+                sortcolumn = 6
+
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
@@ -855,7 +893,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by Title COLLATE NOCASE')
+        magazines = myDB.select('SELECT Title,Reject,Regex,DateType from magazines ORDER by Title COLLATE NOCASE')
 
         if magazines:
             for mag in magazines:
@@ -866,10 +904,14 @@ class WebInterface(object):
                 reject = mag['Reject']
                 if reject is None:
                     reject = ""
+                datetype = mag['DateType']
+                if datetype is None:
+                    datetype = ""
                 mags_list.append({
                     'Title': title,
                     'Reject': reject,
-                    'Regex': regex
+                    'Regex': regex,
+                    'DateType': datetype
                 })
 
         # Don't pass the whole config, no need to pass the
@@ -950,7 +992,7 @@ class WebInterface(object):
                     # print "No entry for str " + key
                     lazylibrarian.CONFIG[key] = ''
 
-        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
+        magazines = myDB.select('SELECT Title,Reject,Regex,DateType from magazines ORDER by upper(Title)')
 
         if magazines:
             count = 0
@@ -958,6 +1000,7 @@ class WebInterface(object):
                 title = mag['Title']
                 reject = mag['Reject']
                 regex = mag['Regex']
+                datetype = mag['DateType']
                 # seems kwargs parameters from cherrypy are sometimes passed as latin-1,
                 # can't see how to configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute stored as unicode
@@ -986,6 +1029,12 @@ class WebInterface(object):
                     count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                new_datetype = kwargs.get('datetype[%s]' % title, None)
+                if not new_datetype == datetype:
+                    count += 1
+                    controlValueDict = {'Title': title}
+                    newValueDict = {'DateType': new_datetype}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
             if count:
                 logger.info("Magazine filters updated")
@@ -3048,6 +3097,7 @@ class WebInterface(object):
                 newValueDict = {
                     "Regex": None,
                     "Reject": reject,
+                    "DateType": "",
                     "Status": "Active",
                     "MagazineAdded": today(),
                     "IssueStatus": "Wanted"

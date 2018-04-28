@@ -76,8 +76,9 @@ def upgrade_needed():
     # 28 add CalibreRead and CalibreToRead columns to user table
     # 29 add goodreads workid to books table
     # 30 add BookType to users table
+    # 31 add DateType to magazines table
 
-    db_current_version = 30
+    db_current_version = 31
 
     if db_version < db_current_version:
         return db_current_version
@@ -147,7 +148,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
                     myDB.action('CREATE TABLE IF NOT EXISTS magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, \
                 MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT, \
-                LatestCover TEXT)')
+                LatestCover TEXT, DateType TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT UNIQUE, \
                 IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
@@ -334,7 +335,7 @@ def dbupgrade(db_current_version):
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
                                     db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29,
-                                    db_v30]
+                                    db_v30, db_v31]
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index + 2 > db_version:
                         upgrade_function(myDB, upgradelog)
@@ -1043,3 +1044,11 @@ def db_v30(myDB, upgradelog):
         upgradelog.write("%s v30: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('ALTER TABLE users ADD COLUMN BookType TEXT')
     upgradelog.write("%s v30: complete\n" % time.ctime())
+
+
+def db_v31(myDB, upgradelog):
+    if not has_column(myDB, "magazines", "DateType"):
+        lazylibrarian.UPDATE_MSG = 'Adding DateType to Magazines table'
+        upgradelog.write("%s v31: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE magazines ADD COLUMN DateType TEXT')
+    upgradelog.write("%s v31: complete\n" % time.ctime())
