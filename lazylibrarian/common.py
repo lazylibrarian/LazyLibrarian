@@ -571,7 +571,7 @@ def checkRunningJobs():
 
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
-    wanted = myDB.match("SELECT count(*)) as counter FROM books WHERE Status = 'Wanted'")
+    wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
     if snatched:
         ensureRunning('processDir')
     if wanted:
