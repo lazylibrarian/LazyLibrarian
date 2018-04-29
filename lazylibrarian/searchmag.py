@@ -91,7 +91,7 @@ def search_magazines(mags=None, reset=False):
                 if PY2:
                     searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
 
-            searchlist.append({"bookid": bookid, "searchterm": searchterm})
+            searchlist.append({"bookid": bookid, "searchterm": searchterm, "datetype": datetype})
 
         if not searchlist:
             logger.warn('There is nothing to search for.  Mark some magazines as active.')
@@ -291,6 +291,7 @@ def search_magazines(mags=None, reset=False):
                                 logger.debug('Issue %s (regex %s) for %s ' %
                                              (issuedate, regex_pass, nzbtitle_formatted))
                                 datetype_ok = True
+                                datetype = book['datetype']
                                 if datetype:
                                     # check all wanted parts are in the regex result
                                     # Day Month Year Vol Iss (MM needs two months)
@@ -311,6 +312,7 @@ def search_magazines(mags=None, reset=False):
                                                                                 12, 13, 15]:
                                         datetype_ok = False
                             else:
+                                datetype_ok = False
                                 logger.debug('Magazine %s not in a recognised date format.' % nzbtitle_formatted)
                                 bad_date += 1
                                 # allow issues with good name but bad date to be included

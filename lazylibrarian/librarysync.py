@@ -888,7 +888,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             setWorkPages()
             # and books with unknown language
             nolang = myDB.match(
-                "select count('BookID') as counter from Books where status='Open' and BookLang='Unknown'")
+                "select count(*) as counter from Books where status='Open' and BookLang='Unknown'")
             nolang = nolang['counter']
             if nolang:
                 logger.warn("Found %s book%s in your library with unknown language" % (nolang, plural(nolang)))
@@ -933,7 +933,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                          (rescan_hits, plural(rescan_hits), rescan_count - rescan_hits))
             logger.debug("Cache %s hit%s, %s miss" %
                          (lazylibrarian.CACHE_HIT, plural(lazylibrarian.CACHE_HIT), lazylibrarian.CACHE_MISS))
-            cachesize = myDB.match("select count('ISBN') as counter from languages")
+            cachesize = myDB.match("select count(*) as counter from languages")
             logger.debug("ISBN Language cache holds %s entries" % cachesize['counter'])
 
             # Cache any covers and images

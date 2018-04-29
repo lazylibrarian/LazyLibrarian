@@ -133,7 +133,7 @@ def setSeries(serieslist=None, bookid=None):
                     seriesid = item[0]
                 else:
                     # no seriesid so generate it (row count + 1)
-                    cnt = myDB.match("select count('SeriesID') as counter from series")
+                    cnt = myDB.match("select count(*) as counter from series")
                     res = check_int(cnt['counter'], 0)
                     seriesid = str(res + 1)
                 myDB.action('INSERT into series VALUES (?, ?, ?)', (seriesid, item[2], "Active"), suppress='UNIQUE')
@@ -524,7 +524,7 @@ def getSeriesAuthors(seriesid):
         and import those authors (and their books) into the database
         Return how many authors you added """
     myDB = database.DBConnection()
-    result = myDB.match("select count('AuthorID') as counter from authors")
+    result = myDB.match("select count(*) as counter from authors")
     start = int(result['counter'])
     result = myDB.match('select SeriesName from series where SeriesID=?', (seriesid,))
     seriesname = result['SeriesName']
@@ -614,7 +614,7 @@ def getSeriesAuthors(seriesid):
             if authorid:
                 lazylibrarian.importer.addAuthorToDB(refresh=False, authorid=authorid)
 
-    result = myDB.match("select count('AuthorID') as counter from authors")
+    result = myDB.match("select count(*) as counter from authors")
     finish = int(result['counter'])
     newauth = finish - start
     logger.info("Added %s new author%s for %s" % (newauth, plural(newauth), seriesname))

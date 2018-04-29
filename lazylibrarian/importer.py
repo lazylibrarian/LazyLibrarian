@@ -311,26 +311,39 @@ def update_totals(AuthorID):
     if not match:
         logger.debug('Update_totals - authorid [%s] not found' % AuthorID)
         return
+
     cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID=?'
     cmd += ' AND Status != "Ignored" order by BookDate DESC'
     lastbook = myDB.match(cmd, (AuthorID,))
-    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID=? AND Status != "Ignored"'
-    unignoredbooks = myDB.match(cmd, (AuthorID,))
-    totalbooks = myDB.match('SELECT count("BookID") as counter FROM books WHERE AuthorID=?', (AuthorID,))
-    cmd = 'SELECT count("BookID") as counter FROM books WHERE AuthorID=?'
-    cmd += ' AND (Status="Have" OR Status="Open" OR AudioStatus="Have" OR AudioStatus="Open")'
-    havebooks = myDB.match(cmd, (AuthorID,))
-    controlValueDict = {"AuthorID": AuthorID}
 
+    cmd = "select sum(case status when 'Ignored' then 0 else 1 end) as unignored,"
+    cmd += "sum(case when status == 'Have' then 1 when status == 'Open' then 1 "
+    cmd += "when audiostatus == 'Have' then 1 when audiostatus == 'Open' then 1 "
+    cmd += "else 0 end) as have, count(*) as total from books where authorid=?"
+    totals = myDB.match(cmd, (AuthorID,))
+
+    controlValueDict = {"AuthorID": AuthorID}
     newValueDict = {
-        "TotalBooks": totalbooks['counter'],
-        "UnignoredBooks": unignoredbooks['counter'],
-        "HaveBooks": havebooks['counter'],
+        "TotalBooks": totals['total'],
+        "UnignoredBooks": totals['unignored'],
+        "HaveBooks": totals['have'],
         "LastBook": lastbook['BookName'] if lastbook else None,
         "LastLink": lastbook['BookLink'] if lastbook else None,
         "LastDate": lastbook['BookDate'] if lastbook else None
     }
     myDB.upsert("authors", newValueDict, controlValueDict)
+
+    cmd = "select series.seriesid as Series,sum(case books.status when 'Ignored' then 0 else 1 end) as Total,"
+    cmd += "sum(case when books.status == 'Have' then 1 when books.status == 'Open' then 1"
+    cmd += " when books.audiostatus == 'Have' then 1 when books.audiostatus == 'Open' then 1"
+    cmd += " else 0 end) as Have from books,member,series,seriesauthors where member.bookid=books.bookid"
+    cmd += " and member.seriesid = series.seriesid and seriesauthors.seriesid = series.seriesid"
+    cmd += " and seriesauthors.authorid=? group by series.seriesid"
+    res = myDB.select(cmd, (AuthorID,))
+    if len(res):
+        for series in res:
+            myDB.action('UPDATE series SET Have=?, Total=? WHERE SeriesID=?',
+                        (series['Have'], series['Total'], series['Series']))
 
 
 def import_book(bookid):

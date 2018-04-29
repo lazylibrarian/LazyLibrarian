@@ -85,7 +85,7 @@ def serve_template(templatename, **kwargs):
         if cookie and 'll_uid' in list(cookie.keys()):
             res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
         else:
-            cnt = myDB.match("select count('UserID') as counter from users")
+            cnt = myDB.match("select count(*) as counter from users")
             if cnt['counter'] == 1 and lazylibrarian.CONFIG['SINGLE_USER']:
                 res = myDB.match('SELECT UserName,Perms,UserID from users')
                 cherrypy.response.cookie['ll_uid'] = res['UserID']
@@ -629,21 +629,24 @@ class WebInterface(object):
         if kwargs['whichStatus']:
             whichStatus = kwargs['whichStatus']
 
-        AuthorID = None
+        AuthorID = ''
         if kwargs['AuthorID']:
             AuthorID = kwargs['AuthorID']
+
+        if not AuthorID or AuthorID == 'None':
+            AuthorID = ''
 
         myDB = database.DBConnection()
         # We pass series.SeriesID twice for datatables as the render function modifies it
         # and we need it in two columns. There is probably a better way...
-        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
-        cmd += ' from series,authors,seriesauthors'
+        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
+        cmd += 'Have,Total from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         args = []
         if whichStatus not in ['All', 'None']:
             cmd += ' and series.Status=?'
             args.append(whichStatus)
-        if AuthorID and not AuthorID == 'None':
+        if AuthorID:
             cmd += ' and seriesauthors.AuthorID=?'
             args.append(AuthorID)
         cmd += ' GROUP BY series.seriesID'
@@ -670,46 +673,36 @@ class WebInterface(object):
             else:
                 filtered = rows
 
-            # NOTE it's time consuming to work out % for all series, but if we don't we can't order on %
-            # To speed it up we only return series info on an author series page, not whole database,
-            # or maybe we could cache/store some counters in the database?
-            cmd = "select sum(case books.status when 'Ignored' then 0 else 1 end) as total,"
-            cmd += "sum(case when books.status == 'Have' then 1 when books.status == 'Open' then 1 "
-            cmd += "when books.audiostatus == 'Have' then 1 when books.audiostatus == 'Open' then 1 "
-            cmd += "else 0 end) as have from books,member,series where member.bookid=books.bookid "
-            cmd += "and member.seriesid = series.seriesid and series.seriesid=?"
-            if AuthorID:
-                for row in filtered:
-                    res = myDB.match(cmd, (row[0],))
-                    have = res['have']
-                    #res = myDB.match(cmd2, (row[0],))
-                    total = res['total']
-                    if total:
-                        percent = (have * 100.0) / total
-                    else:
-                        percent = 0
-
-                    if percent > 100:
-                        percent = 100
-                    css = 'success'
-                    if percent <= 75:
-                        css = 'info'
-                    if percent <= 50:
-                        css = 'warning'
-                    if percent <= 25:
-                        css = 'danger'
-
-                    bar = '<div class="progress center-block" style="width: 150px;">'
-                    bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
-                    bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
-                        percent, percent)
-                    bar += '<span class="sr-only">%s%% Complete</span>' % percent
-                    bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (res['have'], res['total'])
-                    row.append(percent)
-                    row.append(bar)
-
             sortcolumn = int(iSortCol_0)
-            if AuthorID:
+
+            for row in filtered:
+                have = check_int(row[6], 0)
+                total = check_int(row[7], 0)
+                if total:
+                    percent = (have * 100.0) / total
+                else:
+                    percent = 0
+
+                if percent > 100:
+                    percent = 100
+                css = 'success'
+                if percent <= 75:
+                    css = 'info'
+                if percent <= 50:
+                    css = 'warning'
+                if percent <= 25:
+                    css = 'danger'
+
+                bar = '<div class="progress center-block" style="width: 150px;">'
+                bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
+                bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
+                    percent, percent)
+                bar += '<span class="sr-only">%s%% Complete</span>' % percent
+                bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (have, total)
+
+                row[6] = percent
+                row[7] = bar
+
                 if sortcolumn == 4:  # status
                     sortcolumn = 3
                 elif sortcolumn == 3:  # percent
@@ -2510,7 +2503,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         myDB = database.DBConnection()
-        cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
+        cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
         cmd += ' as Iss_Cnt from magazines order by Title'
         rowlist = myDB.select(cmd)
         mags = []
@@ -2599,7 +2592,7 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
 
-        cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
+        cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
         cmd += ' as Iss_Cnt from magazines order by Title'
         magazines = myDB.select(cmd)
         mags = []
@@ -3504,7 +3497,7 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # clear download counters
         myDB = database.DBConnection()
-        count = myDB.match('SELECT COUNT(Provider) as counter FROM downloads')
+        count = myDB.match('SELECT COUNT(*) as counter FROM downloads')
         if count:
             num = count['counter']
         else:
