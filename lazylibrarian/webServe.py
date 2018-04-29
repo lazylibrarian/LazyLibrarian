@@ -85,7 +85,7 @@ def serve_template(templatename, **kwargs):
         if cookie and 'll_uid' in list(cookie.keys()):
             res = myDB.match('SELECT UserName,Perms from users where UserID=?', (cookie['ll_uid'].value,))
         else:
-            cnt = myDB.match("select count('UserID') as counter from users")
+            cnt = myDB.match("select count(*) as counter from users")
             if cnt['counter'] == 1 and lazylibrarian.CONFIG['SINGLE_USER']:
                 res = myDB.match('SELECT UserName,Perms,UserID from users')
                 cherrypy.response.cookie['ll_uid'] = res['UserID']
@@ -629,21 +629,24 @@ class WebInterface(object):
         if kwargs['whichStatus']:
             whichStatus = kwargs['whichStatus']
 
-        AuthorID = None
+        AuthorID = ''
         if kwargs['AuthorID']:
             AuthorID = kwargs['AuthorID']
+
+        if not AuthorID or AuthorID == 'None':
+            AuthorID = ''
 
         myDB = database.DBConnection()
         # We pass series.SeriesID twice for datatables as the render function modifies it
         # and we need it in two columns. There is probably a better way...
-        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID'
-        cmd += ' from series,authors,seriesauthors'
+        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
+        cmd += 'Have,Total from series,authors,seriesauthors'
         cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
         args = []
         if whichStatus not in ['All', 'None']:
             cmd += ' and series.Status=?'
             args.append(whichStatus)
-        if AuthorID and not AuthorID == 'None':
+        if AuthorID:
             cmd += ' and seriesauthors.AuthorID=?'
             args.append(AuthorID)
         cmd += ' GROUP BY series.seriesID'
@@ -671,6 +674,40 @@ class WebInterface(object):
                 filtered = rows
 
             sortcolumn = int(iSortCol_0)
+
+            for row in filtered:
+                have = check_int(row[6], 0)
+                total = check_int(row[7], 0)
+                if total:
+                    percent = (have * 100.0) / total
+                else:
+                    percent = 0
+
+                if percent > 100:
+                    percent = 100
+                css = 'success'
+                if percent <= 75:
+                    css = 'info'
+                if percent <= 50:
+                    css = 'warning'
+                if percent <= 25:
+                    css = 'danger'
+
+                bar = '<div class="progress center-block" style="width: 150px;">'
+                bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
+                bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
+                    percent, percent)
+                bar += '<span class="sr-only">%s%% Complete</span>' % percent
+                bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (have, total)
+
+                row[6] = percent
+                row[7] = bar
+
+                if sortcolumn == 4:  # status
+                    sortcolumn = 3
+                elif sortcolumn == 3:  # percent
+                    sortcolumn = 6
+
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
@@ -855,7 +892,7 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by Title COLLATE NOCASE')
+        magazines = myDB.select('SELECT Title,Reject,Regex,DateType from magazines ORDER by Title COLLATE NOCASE')
 
         if magazines:
             for mag in magazines:
@@ -866,10 +903,14 @@ class WebInterface(object):
                 reject = mag['Reject']
                 if reject is None:
                     reject = ""
+                datetype = mag['DateType']
+                if datetype is None:
+                    datetype = ""
                 mags_list.append({
                     'Title': title,
                     'Reject': reject,
-                    'Regex': regex
+                    'Regex': regex,
+                    'DateType': datetype
                 })
 
         # Don't pass the whole config, no need to pass the
@@ -950,7 +991,7 @@ class WebInterface(object):
                     # print "No entry for str " + key
                     lazylibrarian.CONFIG[key] = ''
 
-        magazines = myDB.select('SELECT Title,Reject,Regex from magazines ORDER by upper(Title)')
+        magazines = myDB.select('SELECT Title,Reject,Regex,DateType from magazines ORDER by upper(Title)')
 
         if magazines:
             count = 0
@@ -958,6 +999,7 @@ class WebInterface(object):
                 title = mag['Title']
                 reject = mag['Reject']
                 regex = mag['Regex']
+                datetype = mag['DateType']
                 # seems kwargs parameters from cherrypy are sometimes passed as latin-1,
                 # can't see how to configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute stored as unicode
@@ -986,6 +1028,12 @@ class WebInterface(object):
                     count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'Regex': new_regex}
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                new_datetype = kwargs.get('datetype[%s]' % title, None)
+                if not new_datetype == datetype:
+                    count += 1
+                    controlValueDict = {'Title': title}
+                    newValueDict = {'DateType': new_datetype}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
             if count:
                 logger.info("Magazine filters updated")
@@ -2455,7 +2503,7 @@ class WebInterface(object):
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
         myDB = database.DBConnection()
-        cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
+        cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
         cmd += ' as Iss_Cnt from magazines order by Title'
         rowlist = myDB.select(cmd)
         mags = []
@@ -2514,12 +2562,13 @@ class WebInterface(object):
             for row in rows:
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
                 if row[5] and row[5].isdigit():
-                    if len(row[5]) == 6:
-                        row[5] = 'Issue ' + row[5][:2] + ' ' + row[5][2:]
-                    elif len(row[5]) == 8:
-                        row[5] = 'Vol ' + row[5][:4] + 'Issue ' + row[5][4:]
+                    if len(row[5]) == 8:
+                        if check_year(row[5][:4]):
+                            row[5] = 'Issue %d %s' % (int(row[5][4:]), row[5][:4])
+                        else:
+                            row[5] = 'Vol %d #%d' % (int(row[5][:4]), int(row[5][4:]))
                     elif len(row[5]) == 12:
-                        row[5] = 'Vol ' + row[5][4:8] + 'Issue ' + row[5][8:] + ' ' + row[5][:4]
+                        row[5] = 'Vol %d #%d %s' % (int(row[5][4:8]), int(row[5][8:]), row[5][:4])
                 else:
                     row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
 
@@ -2543,7 +2592,7 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
 
-        cmd = 'select magazines.*,(select count(title) as counter from issues where magazines.title = issues.title)'
+        cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
         cmd += ' as Iss_Cnt from magazines order by Title'
         magazines = myDB.select(cmd)
         mags = []
@@ -2641,8 +2690,18 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
         for row in rows:
-            row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
             row[3] = dateFormat(row[3], lazylibrarian.CONFIG['DATE_FORMAT'])
+            if row[2] and row[2].isdigit():
+                if len(row[2]) == 8:
+                    # Year/Issue or Volume/Issue with no year
+                    if check_year(row[2][:4]):
+                        row[2] = 'Issue %d %s' % (int(row[2][4:]), row[2][:4])
+                    else:
+                        row[2] = 'Vol %d #%d' % (int(row[2][:4]), int(row[2][4:]))
+                elif len(row[2]) == 12:
+                    row[2] = 'Vol %d #%d %s' % (int(row[2][4:8]), int(row[2][8:]), row[2][:4])
+            else:
+                row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
 
         if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
@@ -3037,6 +3096,7 @@ class WebInterface(object):
                 newValueDict = {
                     "Regex": None,
                     "Reject": reject,
+                    "DateType": "",
                     "Status": "Active",
                     "MagazineAdded": today(),
                     "IssueStatus": "Wanted"
@@ -3437,7 +3497,7 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # clear download counters
         myDB = database.DBConnection()
-        count = myDB.match('SELECT COUNT(Provider) as counter FROM downloads')
+        count = myDB.match('SELECT COUNT(*) as counter FROM downloads')
         if count:
             num = count['counter']
         else:

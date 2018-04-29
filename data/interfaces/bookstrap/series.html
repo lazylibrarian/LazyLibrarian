@@ -46,7 +46,7 @@
       </select>
     </div>
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
-    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Status</a>
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Author</a> - <a class="toggle-vis" data-column="2">Series</a> - <a class="toggle-vis" data-column="3">Have</a> - <a class="toggle-vis" data-column="4">Status</a>
     %endif
   </form>
   <br>
@@ -62,6 +62,7 @@
             %endif
             <th class="authorname">Author</th>
             <th class="series">Series Name</th>
+            <th class="number text-center">Have</th>
             <th class="status text-center">Status</th>
           </tr>
         </thead>
@@ -108,6 +109,12 @@
                     },
                     { targets: [2], 'render': function(data, type, row) {
                         return '<a href="seriesMembers?seriesid=' + row[5] + '" target="_new">' + row[2] + '</a>';}
+                    },
+                    { targets: [3], 'render': function(data, type, row) {
+                        return  row[7];}
+                    },
+                    { targets: [4], 'render': function(data, type, row) {
+                        return  row[3];}
                     }
                     ],
                 "oLanguage": {
@@ -130,8 +137,8 @@
                     %else:
                     $('td', nRow).eq(0).addClass("hidden");
                     %endif
-                    $('td', nRow).eq(3).addClass("text-center");
-                    //$('td', nRow).eq(4).addClass("text-center");
+                    //$('td', nRow).eq(3).addClass("text-center");
+                    $('td', nRow).eq(4).addClass("text-center");
                     // hide author,status on small devices
                     //$('td', nRow).eq(1).addClass('hidden-xs');
                     //$('td', nRow).eq(3).addClass('hidden-xs');

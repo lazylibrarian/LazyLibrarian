@@ -465,7 +465,7 @@ def scheduleJob(action='Start', target=None):
             # Try to get all authors scanned evenly inside the cache age
             minutes = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0) * 24 * 60
             myDB = database.DBConnection()
-            cmd = "select count('AuthorID') as counter from Authors where Status='Active' or Status='Wanted'"
+            cmd = "select count(*) as counter from Authors where Status='Active' or Status='Wanted'"
             cmd += " or Status='Loading'"
             authors = myDB.match(cmd)
             authcount = authors['counter']
@@ -570,8 +570,8 @@ def checkRunningJobs():
     # but check anyway for completeness...
 
     myDB = database.DBConnection()
-    snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
-    wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
+    snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
+    wanted = myDB.match("SELECT count(*)) as counter FROM books WHERE Status = 'Wanted'")
     if snatched:
         ensureRunning('processDir')
     if wanted:
@@ -597,8 +597,8 @@ def showJobs():
                                              check_int(lazylibrarian.CACHE_MISS, 0)),
               "Sleep %.2f goodreads, %.2f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
     myDB = database.DBConnection()
-    snatched = myDB.match("SELECT count('Status') as counter from wanted WHERE Status = 'Snatched'")
-    wanted = myDB.match("SELECT count('Status') as counter FROM books WHERE Status = 'Wanted'")
+    snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
+    wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
     result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
     result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
     for job in lazylibrarian.SCHED.get_jobs():
