@@ -118,7 +118,7 @@ def setAllBookSeries():
 def setSeries(serieslist=None, bookid=None):
     """ set series details in series/member tables from the supplied dict
         and a displayable summary in book table
-        serislist is a tuple (SeriesID, SeriesNum, SeriesName) """
+        serieslist is a tuple (SeriesID, SeriesNum, SeriesName) """
     myDB = database.DBConnection()
     if bookid:
         # delete any old series-member entries
@@ -136,7 +136,8 @@ def setSeries(serieslist=None, bookid=None):
                     cnt = myDB.match("select count(*) as counter from series")
                     res = check_int(cnt['counter'], 0)
                     seriesid = str(res + 1)
-                myDB.action('INSERT into series VALUES (?, ?, ?)', (seriesid, item[2], "Active"), suppress='UNIQUE')
+                myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)', 
+                            (seriesid, item[2], "Active", 0, 0), suppress='UNIQUE')
                 # don't ask what other books are in the series - leave for user to query if series wanted
                 # _ = getSeriesMembers(match['SeriesID'])
             book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
@@ -715,7 +716,8 @@ def getWorkSeries(bookID=None):
                     serieslist.append((seriesid, seriesnum, seriesname))
                     match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
                     if not match:
-                        myDB.action('INSERT INTO series VALUES (?, ?, ?)', (seriesid, seriesname, "Active"))
+                        myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)', 
+                                    (seriesid, seriesname, "Active", 0, 0))
                     elif match['SeriesID'] != seriesid:
                         myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
     else:
