@@ -237,7 +237,11 @@ class WebInterface(object):
                 filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
             else:
                 filtered = rows
-            sortcolumn = int(iSortCol_0) - 1
+
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
+                sortcolumn = int(iSortCol_0)
+            else:
+                sortcolumn = int(iSortCol_0) - 1
 
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 

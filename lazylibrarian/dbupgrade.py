@@ -1054,6 +1054,7 @@ def db_v31(myDB, upgradelog):
         myDB.action('ALTER TABLE magazines ADD COLUMN DateType TEXT')
     upgradelog.write("%s v31: complete\n" % time.ctime())
 
+
 def db_v32(myDB, upgradelog):
     if not has_column(myDB, "series", "Have"):
         lazylibrarian.UPDATE_MSG = 'Adding counters to Series table'
