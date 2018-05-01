@@ -157,7 +157,7 @@ def dbupgrade(db_current_version):
                 GR_lang_hits int, LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, \
                 uncached int, duplicates int)')
                     myDB.action('CREATE TABLE IF NOT EXISTS series (SeriesID INTEGER UNIQUE, SeriesName TEXT, \
-                Status TEXT)')
+                Status TEXT, Have TEXT, Total TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, \
                                  SeriesNum TEXT)')
                     myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, \
