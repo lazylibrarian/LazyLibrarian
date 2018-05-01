@@ -785,7 +785,7 @@ def bookdict(item):
                 try:
                     series, seriesNum = item.split('(')[1].split(' Series ')
                     seriesNum = seriesNum.rstrip(')').lstrip('#')
-                except IndexError:
+                except (IndexError, ValueError):
                     series = ""
                     seriesNum = ""
             if not series and '#' in item:
@@ -793,7 +793,7 @@ def bookdict(item):
                     series, seriesNum = item.rsplit('#', 1)
                     series = series.split('(')[1].strip()
                     seriesNum = seriesNum.rstrip(')')
-                except IndexError:
+                except (IndexError, ValueError):
                     series = ""
                     seriesNum = ""
             if not series and ' ' in item:
@@ -805,7 +805,7 @@ def bookdict(item):
                     if not (u"%s" % seriesNum).isnumeric():
                         series = ""
                         seriesNum = ""
-                except IndexError:
+                except (IndexError, ValueError):
                     series = ""
                     seriesNum = ""
             if series and seriesNum:
