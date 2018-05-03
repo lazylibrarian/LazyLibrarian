@@ -12,14 +12,14 @@
 
 
 import datetime
+import hashlib
 import os
 import re
 import string
-import time
 import unicodedata
-import hashlib
-from lib.six import PY2, text_type
+
 import lazylibrarian
+from lib.six import PY2, text_type
 
 
 def bookSeries(bookname):

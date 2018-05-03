@@ -1939,6 +1939,8 @@ class WebInterface(object):
         else:
             logger.info('Missing author %s:' % authorid)
 
+    # noinspection PyUnusedLocal
+    # kwargs needed for passing utf8 hidden input
     @cherrypy.expose
     def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='',
                      manual='0', **kwargs):

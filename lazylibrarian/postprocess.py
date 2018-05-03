@@ -19,10 +19,10 @@ import platform
 import shutil
 import tarfile
 import threading
-import time
 import traceback
-from lib.six import PY2
+
 import lazylibrarian
+from lib.six import PY2
 
 try:
     import zipfile
@@ -838,8 +838,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # if percentage is increasing, it's just slow
                 try:
                     when_snatched = datetime.datetime.strptime(book['NZBdate'], '%Y-%m-%d %H:%M:%S')
-                    now = datetime.datetime.now()
-                    td = now - when_snatched
+                    timenow = datetime.datetime.now()
+                    td = timenow - when_snatched
                     diff = td.seconds  # time difference in seconds
                 except ValueError:
                     diff = 0

@@ -447,6 +447,7 @@ def setTorrentLabel(result):
                     response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth, timeout=30,
                                              verify=deluge_verify_cert, headers=headers)
                     logger.debug('Deluge: %s label added to Deluge' % label)
+                    logger.debug(response.json())
                 except Exception as err:
                     logger.error('Deluge %s: Setting label failed: %s' % (type(err).__name__, str(err)))
                     if lazylibrarian.LOGLEVEL > 2:
