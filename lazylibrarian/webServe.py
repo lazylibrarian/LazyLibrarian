@@ -1940,7 +1940,8 @@ class WebInterface(object):
             logger.info('Missing author %s:' % authorid)
 
     @cherrypy.expose
-    def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='', manual='0'):
+    def authorUpdate(self, authorid='', authorname='', authorborn='', authordeath='', authorimg='',
+                     manual='0', **kwargs):
         myDB = database.DBConnection()
         if authorid:
             authdata = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
@@ -1958,7 +1959,7 @@ class WebInterface(object):
                     edited += "Born "
                 if not (authdata["AuthorDeath"] == authordeath):
                     edited += "Died "
-                if not (authdata["AuthorImg"] == authorimg):
+                if authorimg and (authdata["AuthorImg"] != authorimg):
                     edited += "Image "
                 if not (bool(check_int(authdata["Manual"], 0)) == manual):
                     edited += "Manual "
