@@ -837,9 +837,10 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # FUTURE: we could check percentage downloaded or eta?
                 # if percentage is increasing, it's just slow
                 try:
-                    when_snatched = time.strptime(book['NZBdate'], '%Y-%m-%d %H:%M:%S')
-                    when_snatched = time.mktime(when_snatched)
-                    diff = time.time() - when_snatched  # time difference in seconds
+                    when_snatched = datetime.datetime.strptime(book['NZBdate'], '%Y-%m-%d %H:%M:%S')
+                    now = datetime.datetime.now()
+                    td = now - when_snatched
+                    diff = td.seconds  # time difference in seconds
                 except ValueError:
                     diff = 0
                 hours = int(diff / 3600)

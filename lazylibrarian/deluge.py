@@ -182,7 +182,10 @@ def getTorrentStatus(torrentid, data):
             time.sleep(5)
             response = requests.post(delugeweb_url, json=post_json,
                                      verify=deluge_verify_cert, cookies=delugeweb_auth, headers=headers)
-            total_done = response.json()['result']['total_done']
+            try:
+                total_done = response.json()['result']['total_done']
+            except KeyError:
+                pass
 
         post_json = {"method": "web.get_torrent_status",
                      "params": [torrentid,
