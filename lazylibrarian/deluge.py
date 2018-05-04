@@ -174,7 +174,15 @@ def getTorrentStatus(torrentid, data):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
-        total_done = response.json()['result']['total_done']
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
+
+        try:
+            total_done = response.json()['result']['total_done']
+        except KeyError:
+            total_done = 0
+            pass
 
         tries = 0
         while total_done == 0 and tries < 10:
@@ -204,6 +212,9 @@ def getTorrentStatus(torrentid, data):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
 
         res = response.json()['result'][data]
 
@@ -221,6 +232,10 @@ def removeTorrent(torrentid, remove_data=False):
 
     response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                              verify=deluge_verify_cert, headers=headers)
+    if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+        logger.debug('Status code: %s' % response.status_code)
+        logger.debug(response.text)
+
     result = response.json()['result']
 
     return result
@@ -294,6 +309,10 @@ def _get_auth():
     try:
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
+
     except Exception as err:
         logger.debug('Deluge %s: web.connected returned %s' % (type(err).__name__, str(err)))
         delugeweb_auth = {}
@@ -309,6 +328,10 @@ def _get_auth():
         try:
             response = requests.post(delugeweb_url, json=post_json, verify=deluge_verify_cert,
                                      cookies=delugeweb_auth, headers=headers)
+            if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+                logger.debug('Status code: %s' % response.status_code)
+                logger.debug(response.text)
+
         except Exception as err:
             logger.debug('Deluge %s: web.get_hosts returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
@@ -325,8 +348,12 @@ def _get_auth():
         post_json = {"method": "web.connect", "params": [delugeweb_hosts[0][0]], "id": 11}
 
         try:
-            _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
-                              verify=deluge_verify_cert, headers=headers)
+            response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
+                                     verify=deluge_verify_cert, headers=headers)
+            if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+                logger.debug('Status code: %s' % response.status_code)
+                logger.debug(response.text)
+
         except Exception as err:
             logger.debug('Deluge %s: web.connect returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
@@ -337,6 +364,10 @@ def _get_auth():
         try:
             response = requests.post(delugeweb_url, json=post_json, verify=deluge_verify_cert,
                                      cookies=delugeweb_auth, headers=headers)
+            if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+                logger.debug('Status code: %s' % response.status_code)
+                logger.debug(response.text)
+
         except Exception as err:
             logger.debug('Deluge %s: web.connected returned %s' % (type(err).__name__, str(err)))
             delugeweb_auth = {}
@@ -361,6 +392,10 @@ def _add_torrent_magnet(result):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
+
         result['hash'] = response.json()['result']
         msg = 'Deluge: Response was %s' % result['hash']
         logger.debug(msg)
@@ -381,6 +416,10 @@ def _add_torrent_url(result):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
 
         result['hash'] = response.json()['result']
         msg = 'Deluge: Response was %s' % result['hash']
@@ -406,6 +445,11 @@ def _add_torrent_file(result):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
+
         result['hash'] = response.json()['result']
         msg = 'Deluge: Response was %s' % result['hash']
         logger.debug(msg)
@@ -435,6 +479,10 @@ def setTorrentLabel(result):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
+
         labels = response.json()['result']
         if lazylibrarian.LOGLEVEL > 2:
             logger.debug("Valid labels: %s" % str(labels))
@@ -446,8 +494,11 @@ def setTorrentLabel(result):
                     post_json = {"method": 'label.add', "params": [label], "id": 4}
                     response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth, timeout=30,
                                              verify=deluge_verify_cert, headers=headers)
+                    if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+                        logger.debug('Status code: %s' % response.status_code)
+                        logger.debug(response.text)
                     logger.debug('Deluge: %s label added to Deluge' % label)
-                    logger.debug(response.json())
+
                 except Exception as err:
                     logger.error('Deluge %s: Setting label failed: %s' % (type(err).__name__, str(err)))
                     if lazylibrarian.LOGLEVEL > 2:
@@ -466,6 +517,9 @@ def setTorrentLabel(result):
 
             response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                      verify=deluge_verify_cert, headers=headers)
+            if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+                logger.debug('Status code: %s' % response.status_code)
+                logger.debug(response.text)
             logger.debug('Deluge: %s label added to torrent' % label)
             return not response.json()['error']
         else:
@@ -488,12 +542,19 @@ def setSeedRatio(result):
     if ratio:
         post_json = {"method": "core.set_torrent_stop_at_ratio", "params": [result['hash'], True], "id": 5}
 
-        _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
-                          verify=deluge_verify_cert, headers=headers)
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
+                                 verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
+
         post_json = {"method": "core.set_torrent_stop_ratio", "params": [result['hash'], float(ratio)], "id": 6}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
 
         return not response.json()['error']
 
@@ -510,8 +571,11 @@ def setTorrentPath(result):
     if dl_dir:
         post_json = {"method": "core.set_torrent_move_completed", "params": [result['hash'], True], "id": 7}
 
-        _ = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
-                          verify=deluge_verify_cert, headers=headers)
+        response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
+                                 verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
 
         if not os.path.isdir(dl_dir):
             logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % dl_dir)
@@ -521,6 +585,9 @@ def setTorrentPath(result):
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers)
+        if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+            logger.debug('Status code: %s' % response.status_code)
+            logger.debug(response.text)
 
         return not response.json()['error']
 
@@ -536,6 +603,9 @@ def setTorrentPause(result):
 
     response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                              verify=deluge_verify_cert, headers=headers)
+    if lazylibrarian.CONFIG['LOGLEVEL'] > 2:
+        logger.debug('Status code: %s' % response.status_code)
+        logger.debug(response.text)
 
     return not response.json()['error']
 
