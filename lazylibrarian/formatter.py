@@ -95,7 +95,7 @@ def next_run(when_run):
     try:
         when_run = datetime.datetime.strptime(when_run, '%Y-%m-%d %H:%M:%S')
         timenow = datetime.datetime.now()
-        td = timenow - when_run
+        td = when_run - timenow
         diff = td.seconds  # time difference in seconds
     except ValueError:
         diff = 0
