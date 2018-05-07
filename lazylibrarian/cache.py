@@ -166,7 +166,15 @@ def get_cached_request(url, useCache=True, cache="XML"):
             if result and result.startswith(b'<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
-                except (ElementTree.ParseError, UnicodeEncodeError):
+                except UnicodeEncodeError:
+                    # seems sometimes the page contains utf-16 but the header says it's utf-8
+                    try:
+                        result = result.decode('utf-16').encode('utf-8')
+                        source = ElementTree.fromstring(result)
+                    except (ElementTree.ParseError, UnicodeEncodeError, UnicodeDecodeError):
+                        logger.debug("Error parsing xml from %s" % hashfilename)
+                        source = None
+                except ElementTree.ParseError:
                     logger.debug("Error parsing xml from %s" % hashfilename)
                     source = None
             if source is None:
@@ -199,9 +207,20 @@ def get_cached_request(url, useCache=True, cache="XML"):
                         source = ElementTree.fromstring(result)
                         if not expiry:
                             return source, False
-                    except (ElementTree.ParseError, UnicodeEncodeError):
+                    except UnicodeEncodeError:
+                        # sometimes we get utf-16 data labelled as utf-8
+                        try:
+                            result = result.decode('utf-16').encode('utf-8')
+                            source = ElementTree.fromstring(result)
+                            if not expiry:
+                                return source, False
+                        except (ElementTree.ParseError, UnicodeEncodeError, UnicodeDecodeError):
+                            logger.debug("Error parsing xml from %s" % url)
+                            source = None
+                    except ElementTree.ParseError:
                         logger.debug("Error parsing xml from %s" % url)
                         source = None
+
                 if source is not None:
                     with open(hashfilename, "wb") as cachefile:
                         cachefile.write(result)

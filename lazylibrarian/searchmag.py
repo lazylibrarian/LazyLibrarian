@@ -49,7 +49,7 @@ def search_magazines(mags=None, reset=False):
         searchlist = []
 
         if mags is None:  # backlog search
-            searchmags = myDB.select('SELECT Title, Regex, LastAcquired, \
+            searchmags = myDB.select('SELECT Title, Regex, DateType, LastAcquired, \
                                  IssueDate from magazines WHERE Status="Active"')
         else:
             searchmags = []

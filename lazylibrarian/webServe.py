@@ -205,20 +205,22 @@ class WebInterface(object):
                 havebooks = check_int(arow[7], 0)
                 totalbooks = check_int(arow[8], 0)
                 if totalbooks:
-                    percent = (havebooks * 100.0) / totalbooks
+                    percent = int((havebooks * 100.0) / totalbooks)
                 else:
                     percent = 0
                 if percent > 100:
                     percent = 100
-                css = 'success'
-                if percent <= 75:
-                    css = 'info'
-                if percent <= 50:
-                    css = 'warning'
+
                 if percent <= 25:
                     css = 'danger'
+                elif percent <= 50:
+                    css = 'warning'
+                elif percent <= 75:
+                    css = 'info'
+                else:
+                    css = 'success'
 
-                nrow.append(percent)  # convert have/total into a float
+                nrow.append(percent)
                 nrow.extend(arow[4:])
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
                     bar = '<div class="progress-container %s">' % css
@@ -683,19 +685,21 @@ class WebInterface(object):
                 have = check_int(row[6], 0)
                 total = check_int(row[7], 0)
                 if total:
-                    percent = (have * 100.0) / total
+                    percent = int((have * 100.0) / total)
                 else:
                     percent = 0
 
                 if percent > 100:
                     percent = 100
-                css = 'success'
-                if percent <= 75:
-                    css = 'info'
-                if percent <= 50:
-                    css = 'warning'
+
                 if percent <= 25:
                     css = 'danger'
+                elif percent <= 50:
+                    css = 'warning'
+                elif percent <= 75:
+                    css = 'info'
+                else:
+                    css = 'success'
 
                 bar = '<div class="progress center-block" style="width: 150px;">'
                 bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
@@ -704,15 +708,21 @@ class WebInterface(object):
                 bar += '<span class="sr-only">%s%% Complete</span>' % percent
                 bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (have, total)
 
-                row[6] = percent
-                row[7] = bar
+                row.append(percent)
+                row.append(bar)
 
                 if sortcolumn == 4:  # status
                     sortcolumn = 3
                 elif sortcolumn == 3:  # percent
-                    sortcolumn = 6
+                    sortcolumn = 8
 
-            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+            if sortcolumn == 8:  # sort on percent,-total
+                if sSortDir_0 == "desc":
+                    filtered.sort(key=lambda y: (-int(y[8]), int(y[7])))
+                else:
+                    filtered.sort(key=lambda y: (int(y[8]), -int(y[7])))
+            else:
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
             if iDisplayLength < 0:  # display = all
                 rows = filtered
