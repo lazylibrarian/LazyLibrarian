@@ -435,10 +435,10 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         wsp = re.escape(string.whitespace)
         res = makeUnicode(res)
         err = makeUnicode(err)
-        res = re.sub(r'['+wsp+']', ' ', res)
-        err = re.sub(r'['+wsp+']', ' ', err)
-        logger.debug("calibredb res %d[%s]" % (len(res), res))
-        logger.debug("calibredb err %d[%s]" % (len(err), err))
+        nres = re.sub(r'['+wsp+']', ' ', res)
+        nerr = re.sub(r'['+wsp+']', ' ', err)
+        logger.debug("calibredb res %d[%s]" % (len(nres), nres))
+        logger.debug("calibredb err %d[%s]" % (len(nerr), nerr))
         if rc:
             if 'Errno 111' in err:
                 logger.warn("calibredb returned Errno 111: Connection refused")

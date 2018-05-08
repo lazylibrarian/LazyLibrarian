@@ -3388,7 +3388,6 @@ class WebInterface(object):
         iDisplayLength = int(iDisplayLength)
         lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
         myDB = database.DBConnection()
-        cmd = "SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,Source,DownloadID from wanted"
         cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID from wanted"
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of dicts
@@ -3435,6 +3434,9 @@ class WebInterface(object):
                 rows = filtered
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+            for row in rows:
+                row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
         if lazylibrarian.LOGLEVEL > 3:
             logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
