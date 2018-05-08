@@ -111,7 +111,18 @@
                         return '<a href="seriesMembers?seriesid=' + row[5] + '" target="_new">' + row[2] + '</a>';}
                     },
                     { targets: [3], 'render': function(data, type, row) {
-                        return  row[9];}
+                        percent = row[8]
+                        if (percent <= 25) {css = 'danger'}
+                        else if (percent <= 50) {css = 'warning'}
+                        else if (percent <= 75) {css = 'info'}
+                        else {css = 'success'};
+                        bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' +
+                        css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + percent +
+                        '" aria-valuemin="0" aria-valuemax="100" style="width: ' + percent +
+                        '%;"><span class="sr-only">' + percent +
+                        '% Complete</span><span class="progressbar-front-text">' + row[6] + '/' + row[7] +
+                        '</span></div></div>';
+                        return bar;}
                     },
                     { targets: [4], 'render': function(data, type, row) {
                         return  row[3];}

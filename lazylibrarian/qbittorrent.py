@@ -189,6 +189,25 @@ class qbittorrentclient(object):
         return self._command(command, args, 'application/x-www-form-urlencoded')
 
 
+def getProgress(hashid):
+    logger.debug('getProgress(%s)' % hashid)
+    qbclient = qbittorrentclient()
+    if not len(qbclient.cookiejar):
+        logger.debug("Failed to login to qBittorrent")
+        return False
+    # noinspection PyProtectedMember
+    torrentList = qbclient._get_list()
+    if torrentList:
+        for torrent in torrentList:
+            if torrent['hash'].upper() == hashid.upper():
+                if 'progress' in torrent:
+                    try:
+                        return int(100 * float(torrent['progress']))
+                    except ValueError:
+                        return 0
+    return 0
+
+
 def removeTorrent(hashid, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
     qbclient = qbittorrentclient()

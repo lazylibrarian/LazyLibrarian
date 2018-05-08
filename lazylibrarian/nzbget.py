@@ -49,7 +49,7 @@ def deleteNZB(nzbID, remove_data=False):
 
 def sendNZB(nzb=None, cmd=None, nzbID=None):
     # we can send a new nzb, or commands to act on an existing nzbID (or array of nzbIDs)
-    # by setting nzbID and cmd (we currently only use test and delete)
+    # by setting nzbID and cmd (we currently only use test, listgroups and delete)
 
     host = lazylibrarian.CONFIG['NZBGET_HOST']
     port = check_int(lazylibrarian.CONFIG['NZBGET_PORT'], 0)
@@ -114,6 +114,8 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
         id_array = [int(nzbID)]
         if cmd == 'GroupDelete' or cmd == 'GroupFinalDelete':
             return nzbGetRPC.editqueue(cmd, 0, "", id_array)
+        elif cmd == 'listgroups':
+            return nzbGetRPC.listgroups()
         else:
             logger.debug('Unsupported nzbget command %s' % repr(cmd))
         return False

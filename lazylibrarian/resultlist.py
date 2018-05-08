@@ -271,3 +271,4 @@ def downloadResult(match, book):
         return False
     except Exception:
         logger.error('Unhandled exception in downloadResult: %s' % traceback.format_exc())
+        return False

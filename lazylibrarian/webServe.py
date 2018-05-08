@@ -19,7 +19,7 @@ import re
 import threading
 import time
 from shutil import copyfile, rmtree
-from lib.six import PY2
+
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, unquote_plus
 
@@ -30,8 +30,8 @@ from cherrypy.lib.static import serve_file
 from lazylibrarian import logger, database, notifiers, versioncheck, magazinescan, \
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
-from lazylibrarian.images import getBookCover
 from lazylibrarian.cache import cache_img
+from lazylibrarian.calibre import calibreTest, syncCalibreList
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
     aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
@@ -41,16 +41,17 @@ from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, tod
     safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8, dateFormat, check_year
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
+from lazylibrarian.images import getBookCover
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.notifiers import notify_snatch, custom_notify_snatch
-from lazylibrarian.postprocess import processAlternate, processDir, delete_task
+from lazylibrarian.postprocess import processAlternate, processDir, delete_task, getDownloadProgress
+from lazylibrarian.providers import test_provider
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.calibre import calibreTest, syncCalibreList
-from lazylibrarian.providers import test_provider
 from lib.deluge_client import DelugeRPCClient
+from lib.six import PY2
 from mako import exceptions
 from mako.lookup import TemplateLookup
 
@@ -227,12 +228,7 @@ class WebInterface(object):
                     bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
                     bar += '%s/%s</span></div>' % (havebooks, totalbooks)
                 else:
-                    bar = '<div class="progress center-block" style="width: 150px;">'
-                    bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
-                    bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
-                        percent, percent)
-                    bar += '<span class="sr-only">%s%% Complete</span>' % percent
-                    bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (havebooks, totalbooks)
+                    bar = ''
                 nrow.append(bar)
                 rows.append(nrow)  # add each rowlist to the masterlist
             if sSearch:
@@ -692,24 +688,7 @@ class WebInterface(object):
                 if percent > 100:
                     percent = 100
 
-                if percent <= 25:
-                    css = 'danger'
-                elif percent <= 50:
-                    css = 'warning'
-                elif percent <= 75:
-                    css = 'info'
-                else:
-                    css = 'success'
-
-                bar = '<div class="progress center-block" style="width: 150px;">'
-                bar += '<div class="progress-bar-%s progress-bar progress-bar-striped" role="progressbar"' % css
-                bar += 'aria-valuenow="%s" aria-valuemin="0" aria-valuemax="100" style="width: %s%%;">' % (
-                    percent, percent)
-                bar += '<span class="sr-only">%s%% Complete</span>' % percent
-                bar += '<span class="progressbar-front-text">%s/%s</span></div></div>' % (have, total)
-
                 row.append(percent)
-                row.append(bar)
 
                 if sortcolumn == 4:  # status
                     sortcolumn = 3
@@ -3395,32 +3374,76 @@ class WebInterface(object):
 
     @cherrypy.expose
     def history(self):
+        return serve_template(templatename="history.html", title="History", history=[])
+
+    # noinspection PyUnusedLocal
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def getHistory(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
+        # kwargs is used by datatables to pass params
+        # for arg in kwargs:
+        #     print arg, kwargs[arg]
         myDB = database.DBConnection()
-        cmd = "SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo from wanted"
+        iDisplayStart = int(iDisplayStart)
+        iDisplayLength = int(iDisplayLength)
+        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+        myDB = database.DBConnection()
+        cmd = "SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,Source,DownloadID from wanted"
+        cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID from wanted"
         rowlist = myDB.select(cmd)
         # turn the sqlite rowlist into a list of dicts
         rows = []
+        filtered = []
         if len(rowlist):
             # the masterlist to be filled with the row data
             for row in rowlist:  # iterate through the sqlite3.Row objects
-                thisrow = dict(row)
+                nrow = list(row)
                 # title needs spaces, not dots, for column resizing
-                title = thisrow['NZBtitle']
+                title = nrow[0]
                 if title:
                     title = title.replace('.', ' ')
                     title = title.replace('LL (', 'LL.(')
-                    thisrow['NZBtitle'] = title
+                    nrow[0] = title
                 # provider needs to be shorter and with spaces for column resizing
-                provider = thisrow['NZBprov']
+                provider = nrow[3]
                 if provider:
+                    # noinspection PyTypeChecker
                     if len(provider) > 20:
                         while len(provider) > 20 and '/' in provider:
                             provider = provider.split('/', 1)[1]
                         provider = provider.replace('/', ' ')
-                        thisrow['NZBprov'] = provider
+                        nrow[3] = provider
                 if title and provider:
-                    rows.append(thisrow)  # add the rowlist to the masterlist
-        return serve_template(templatename="history.html", title="History", history=rows)
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
+                        nrow.append(getDownloadProgress(nrow[7], nrow[8]))
+                    else:
+                        nrow.append(0)
+                    rows.append(nrow)  # add the rowlist to the masterlist
+
+            if sSearch:
+                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
+            else:
+                filtered = rows
+
+            sortcolumn = int(iSortCol_0)
+            if sortcolumn == 6:
+                sortcolumn = 9
+
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+        if lazylibrarian.LOGLEVEL > 3:
+            logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+            logger.debug("getHistory filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        mydict = {'iTotalDisplayRecords': len(filtered),
+                  'iTotalRecords': len(rowlist),
+                  'aaData': rows,
+                  }
+        return mydict
 
     @cherrypy.expose
     def clearhistory(self, status=None):

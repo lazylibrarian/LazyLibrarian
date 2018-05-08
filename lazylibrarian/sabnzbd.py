@@ -45,8 +45,8 @@ def checkLink():
 
 def SABnzbd(title=None, nzburl=None, remove_data=False):
 
-    if (nzburl == 'delete' or nzburl == 'delhistory') and title == 'unknown':
-        logger.debug('Delete functions unavailable in this version of sabnzbd, no nzo_ids')
+    if nzburl in ['delete', 'delhistory'] and title == 'unknown':
+        logger.debug('%s function unavailable in this version of sabnzbd, no nzo_ids' % nzburl)
         return False
 
     hostname = lazylibrarian.CONFIG['SAB_HOST']
@@ -73,6 +73,26 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         if lazylibrarian.CONFIG['SAB_API']:
             params['apikey'] = lazylibrarian.CONFIG['SAB_API']
         title = 'LL.(%s)' % nzburl
+    elif nzburl == 'queue':
+        params['mode'] = 'queue'
+        params['output'] = 'json'
+        if lazylibrarian.CONFIG['SAB_USER']:
+            params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
+        if lazylibrarian.CONFIG['SAB_PASS']:
+            params['ma_password'] = lazylibrarian.CONFIG['SAB_PASS']
+        if lazylibrarian.CONFIG['SAB_API']:
+            params['apikey'] = lazylibrarian.CONFIG['SAB_API']
+        title = 'LL.(Queue)'
+    elif nzburl == 'history':
+        params['mode'] = 'history'
+        params['output'] = 'json'
+        if lazylibrarian.CONFIG['SAB_USER']:
+            params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
+        if lazylibrarian.CONFIG['SAB_PASS']:
+            params['ma_password'] = lazylibrarian.CONFIG['SAB_PASS']
+        if lazylibrarian.CONFIG['SAB_API']:
+            params['apikey'] = lazylibrarian.CONFIG['SAB_API']
+        title = 'LL.(History)'
     elif nzburl == 'delete':
         # only deletes tasks if still in the queue, ie NOT completed tasks
         params['mode'] = 'queue'
@@ -150,6 +170,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         return False
 
     logger.debug("Result text from SAB: " + str(result))
+
     if title:
         title = unaccented_str(title)
         if title.startswith('LL.('):
