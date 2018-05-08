@@ -132,6 +132,31 @@ def getTorrentFiles(torrentid):  # uses hashid
     return ''
 
 
+def getTorrentProgress(torrentid):  # uses hashid
+    method = 'torrent-get'
+    arguments = {'ids': [torrentid], 'fields': ['id', 'percentDone']}
+    retries = 3
+    while retries:
+        response = torrentAction(method, arguments)  # type: dict
+        if response:
+            if len(response['arguments']['torrents'][0]):
+                res = response['arguments']['torrents'][0]['percentDone']
+                try:
+                    res = int(float(res) * 100)
+                    return res
+                except ValueError:
+                    continue
+        else:
+            logger.debug('getTorrentProgress: No response from transmission')
+            return 0
+
+        retries -= 1
+        if retries:
+            time.sleep(1)
+
+    return 0
+
+
 def setSeedRatio(torrentid, ratio):
     method = 'torrent-set'
     if ratio != 0:
@@ -199,7 +224,8 @@ def torrentAction(method, arguments):
     password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
     if host_url:
-        logger.debug("Using existing host %s" % host_url)
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug("Using existing host %s" % host_url)
     else:
         host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
         port = check_int(lazylibrarian.CONFIG['TRANSMISSION_PORT'], 0)
@@ -234,7 +260,8 @@ def torrentAction(method, arguments):
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     # Retrieve session id
     if session_id:
-        logger.debug('Using existing session_id %s' % session_id)
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug('Using existing session_id %s' % session_id)
     else:
         response = requests.get(host_url, auth=auth, proxies=proxies, timeout=timeout)
         if response is None:

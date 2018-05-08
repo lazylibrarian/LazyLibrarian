@@ -31,31 +31,10 @@
                     <th class="dateadded">Date</th>
                     <th class="size text-right">Size</th>
                     <th class="status text-center">Status</th>
+                    <th class="hidden">percent</th>
                 </tr>
             </thead>
-            <tbody>
-            %for item in history:
-                <%
-                    if item['Status'] == 'Processed':
-                        grade = 'A'
-                    elif item['Status'] == 'Snatched':
-                        grade = 'C'
-                    elif item['Status'] == 'Unprocessed':
-                        grade = 'X'
-                    else:
-                        grade = 'U'
-                %>
-<tr class="grade${grade}">
-  <td class="filename">${item['NZBtitle']}</td>
-  <td class="type">${item['AuxInfo']}</td>
-  <td class="bookid">${item['BookID']}</td>
-  <td class="provider"><a href="${item['NZBurl']}">${item['NZBprov']}</a></td>
-  <td class="dateadded">${item['NZBdate']}</td>
-  <td class="size text-right">${item['NZBsize']} MB</td>
-  <td class="status text-center">${item['Status']}</td>
-</tr>
-%endfor
-</tbody>
+
 </table>
 </div>
 
@@ -100,6 +79,20 @@
                         if ( ftype == 'None' ) {ftype = 'eBook'}
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
+                    { targets: [6], 'render': function(data, type, row) {
+                        if ( row[9] == 0 ) { bar = data }
+                        else {
+                            if ( row[9] <= 25 ) { css = 'danger' }
+                            else if ( row[9] <= 50 ) { css = 'warning' }
+                            else if ( row[9] <= 75 ) { css = 'info' }
+                            else { css = 'success' };
+                            bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' +
+                            css + ' progress-bar progress-bar-striped" role="progressbar aria-valuenow="' + row[9] +
+                            '" aria-valuemin="0" aria-valuemax="100" style="width: ' + row[9] +
+                            '%;"><span class="sr-only">' + row[9] +
+                            '% Complete</span><span class="progressbar-front-text">' + row[9] + '%</span></div></div>'
+                            };
+                        return bar;} },
                 ],
                 "oLanguage": {
                     "sSearch": "Filter: ",
@@ -108,9 +101,18 @@
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "bServerSide": true,
+                "sAjaxSource": 'getHistory',
+                "bFilter": true,
                 "sPaginationType": "full_numbers",
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $('td', nRow).eq(4).addClass('text-center');
+                    $('td', nRow).eq(7).addClass('hidden');
+                    return nRow;
+                },
+                "aaSorting": [[4, 'desc']],
             });
             $('.dataTables_filter input').attr("placeholder", "Results filter");
             $('a.toggle-vis').click(function (e) {
@@ -119,5 +121,19 @@
                 column.visible( ! column.visible() );
             } );
     });
+    // to redraw the progress bars...
+    // table.rows().invalidate().draw( false );
+    // or table.cell( this ).invalidate().draw();
+    var timer;
+    refreshrate = 5000;
+    if(timer)
+          {
+            clearInterval(timer);
+        }
+        if(refreshrate != 0)
+        {
+            timer = setInterval("$('#book_table').rows().invalidate().draw( false )", refreshrate);
+        }
   </script>
+
 </%def>

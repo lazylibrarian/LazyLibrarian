@@ -132,19 +132,20 @@
                      { targets: [4], 'render': function(data, type, row) {
                          return row[3];} },
                      { targets: [5], 'render': function(data, type, row) {
-                        return row[11];} },
-                        // can't see why the code below doesn't work. Fails to draw the coloured bar
-                        // but the string produced looks just like row[11] ...
-                        //var have = +row[8] || 0;
-                        //var tot = +row[9] || 0;
-                        //var percent = (have * 100 / tot);
-                        //if (percent <= 25) {css = 'danger'}
-                        //else if (percent <= 50) {css = 'warning'}
-                        //else if (percent <= 75) {css = 'info'}
-                        //else {css = 'success'};
-                        //pc = String(percent);
-                        //var bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' + css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100" style="width: ' + pc + '%%;"><span class="sr-only">' + pc + '%% Complete</span><span class="progressbar-front-text">' + have + '/' + tot + '</span></div></div>';
-                        //return bar;} },
+                        var have = +row[8] || 0;
+                        var tot = +row[9] || 0;
+                        var percent = (have * 100 / tot);
+                        if (percent <= 25) {css = 'danger'}
+                        else if (percent <= 50) {css = 'warning'}
+                        else if (percent <= 75) {css = 'info'}
+                        else {css = 'success'};
+                        bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' +
+                        css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + percent +
+                        '" aria-valuemin="0" aria-valuemax="100" style="width: ' + percent +
+                        '%;"><span class="sr-only">' + percent +
+                        '% Complete</span><span class="progressbar-front-text">' + have + '/' + tot +
+                        '</span></div></div>';
+                        return bar;} },
                      { targets: [6], 'render': function(data, type, row) {
                          return row[5];} },
                      { type: 'natural-nohtml', targets: 5 }],

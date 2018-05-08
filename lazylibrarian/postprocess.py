@@ -992,6 +992,69 @@ def getTorrentFiles(source, downloadid):
         return None
 
 
+def getDownloadProgress(source, downloadid):
+    progress = 0
+    try:
+        if source == 'TRANSMISSION':
+            progress = transmission.getTorrentProgress(downloadid)
+        elif source == 'SABNZBD':
+            res = sabnzbd.SABnzbd(nzburl='queue')
+            found = False
+            if res and 'queue' in res:
+                for item in res['queue']['slots']:
+                    if item['nzo_id'] == downloadid:
+                        found = True
+                        progress = item['percentage']
+                        break
+            if not found:  # not in queue, try history in case already completed
+                res = sabnzbd.SABnzbd(nzburl='history')
+                if res and 'history' in res:
+                    for item in res['history']['slots']:
+                        if item['nzo_id'] == downloadid:
+                            # 100% if completed, 99% if still extracting, 0% if not found
+                            if item['status'] == 'Completed':
+                                progress = 100
+                            elif item['status'] == 'Extracting':
+                                progress = 99
+                            break
+        elif source == 'NZBGET':
+            res = nzbget.sendNZB(cmd='listgroups', nzbID=downloadid)
+            for item in res:
+                if item['NZBID'] == downloadid:
+                    total = item['FileSizeHi'] << 32 + item['FileSizeLo']
+                    remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
+                    done = total - remaining
+                    progress = done * 100 / total
+                    break
+        # elif source == 'UTORRENT':
+        #     torrentname = utorrent.nameTorrent(downloadid)
+        # elif source == 'RTORRENT':
+        #     torrentname = rtorrent.getName(downloadid)
+        elif source == 'QBITTORRENT':
+            progress = qbittorrent.getProgress(downloadid)
+        # elif source == 'SYNOLOGY_TOR':
+        #     torrentname = synology.getName(downloadid)
+        elif source == 'DELUGEWEBUI':
+            progress = deluge.getTorrentProgress(downloadid)
+        elif source == 'DELUGERPC':
+            client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
+                                     lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
+            try:
+                client.connect()
+                result = client.call('core.get_torrent_status', downloadid, {})
+                if 'percentDone' in result:
+                    progress = result['percentDone']
+            except Exception as e:
+                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
+
+        return progress
+
+    except Exception as e:
+        logger.error("Failed to get torrent progress from %s for %s: %s %s" %
+                     (source, downloadid, type(e).__name__, str(e)))
+        return 0
+
+
 def delete_task(Source, DownloadID, remove_data):
     try:
         if Source == "BLACKHOLE":

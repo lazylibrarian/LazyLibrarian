@@ -11,6 +11,8 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 from subprocess import Popen, PIPE
+import string
+import re
 import json
 import time
 import cherrypy
@@ -428,8 +430,15 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         p = Popen(params, stdout=PIPE, stderr=PIPE)
         res, err = p.communicate()
         rc = p.returncode
+        logger.debug("calibredb rc %s" % rc)
+        # strip linefeeds etc from calibre response
+        wsp = re.escape(string.whitespace)
         res = makeUnicode(res)
         err = makeUnicode(err)
+        res = re.sub(r'['+wsp+']', ' ', res)
+        err = re.sub(r'['+wsp+']', ' ', err)
+        logger.debug("calibredb res %d[%s]" % (len(res), res))
+        logger.debug("calibredb err %d[%s]" % (len(err), err))
         if rc:
             if 'Errno 111' in err:
                 logger.warn("calibredb returned Errno 111: Connection refused")
@@ -437,7 +446,6 @@ def calibredb(cmd=None, prelib=None, postlib=None):
                 logger.warn("calibredb returned Errno 13: Permission denied")
             elif cmd == 'list_categories' and len(res):
                 rc = 0  # false error return of 1 on v2.xx calibredb
-        logger.debug("calibredb returned %s: res[%s] err[%s]" % (rc, res, err))
     except Exception as e:
         logger.error("calibredb exception: %s %s" % (type(e).__name__, str(e)))
         rc = 1
