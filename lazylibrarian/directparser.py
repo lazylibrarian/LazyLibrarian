@@ -150,10 +150,11 @@ def GEN(book=None, prov=None, test=False):
                             title = td[2].text
                             newsoup = BeautifulSoup(str(td[4]), 'html5lib')
                             data = newsoup.find('a')
-                            link = data.get('href')
-                            extn = td[4].text.split('(')[0].strip()
-                            size = td[4].text.split('(')[1].split(')')[0]
-                            size = size.upper()
+                            if data:
+                                link = data.get('href')
+                                extn = td[4].text.split('(')[0].strip()
+                                size = td[4].text.split('(')[1].split(')')[0]
+                                size = size.upper()
                         except IndexError as e:
                             logger.debug('Error parsing libgen index.php results: %s' % str(e))
 
