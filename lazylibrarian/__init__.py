@@ -96,6 +96,7 @@ AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
 GROUP_CONCAT = 0
+HIST_REFRESH = 0
 
 # user permissions
 perm_config = 1 << 0  # 1 access to config page

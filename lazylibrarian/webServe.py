@@ -3393,6 +3393,7 @@ class WebInterface(object):
         # turn the sqlite rowlist into a list of dicts
         rows = []
         filtered = []
+        lazylibrarian.HIST_REFRESH = 0
         if len(rowlist):
             # the masterlist to be filled with the row data
             for row in rowlist:  # iterate through the sqlite3.Row objects
@@ -3414,9 +3415,10 @@ class WebInterface(object):
                         nrow[3] = provider
                 if title and provider:
                     if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
+                        lazylibrarian.HIST_REFRESH = 1000
                         nrow.append(getDownloadProgress(nrow[7], nrow[8]))
                     else:
-                        nrow.append(0)
+                        nrow.append(-1)
                     rows.append(nrow)  # add the rowlist to the masterlist
 
             if sSearch:

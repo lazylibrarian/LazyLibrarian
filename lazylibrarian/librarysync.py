@@ -199,6 +199,7 @@ def find_book_in_db(author, book):
         book_lower = unaccented(book.lower())
         book_lower = replace_all(book_lower, dic)
         book_partname, book_sub = split_title(author, book_lower)
+        book_partname = replace_all(book_partname, dic)
         if book_partname == book_lower:
             book_partname = ''
 

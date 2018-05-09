@@ -149,7 +149,8 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     URL = HOST + "/api?" + urlencode(params)
 
     # to debug because of api
-    logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
+    if lazylibrarian.LOGLEVEL > 3:
+        logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
     proxies = proxyList()
     try:
         timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
@@ -168,8 +169,8 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
 
         logger.error("Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
         return False
-
-    logger.debug("Result text from SAB: " + str(result))
+    if lazylibrarian.LOGLEVEL > 3:
+        logger.debug("Result text from SAB: " + str(result))
 
     if title:
         title = unaccented_str(title)

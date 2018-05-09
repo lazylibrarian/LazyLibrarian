@@ -139,13 +139,17 @@ def getTorrentProgress(torrentid):  # uses hashid
     while retries:
         response = torrentAction(method, arguments)  # type: dict
         if response:
-            if len(response['arguments']['torrents'][0]):
-                res = response['arguments']['torrents'][0]['percentDone']
-                try:
-                    res = int(float(res) * 100)
-                    return res
-                except ValueError:
-                    continue
+            try:
+                if len(response['arguments']['torrents'][0]):
+                    res = response['arguments']['torrents'][0]['percentDone']
+                    try:
+                        res = int(float(res) * 100)
+                        return res
+                    except ValueError:
+                        continue
+            except IndexError:
+                logger.debug('getTorrentProgress: %s not found at transmission' % torrentid)
+                return 0
         else:
             logger.debug('getTorrentProgress: No response from transmission')
             return 0
