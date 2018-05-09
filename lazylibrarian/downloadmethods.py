@@ -32,7 +32,7 @@ from lazylibrarian.postprocess import delete_task
 from lib.deluge_client import DelugeRPCClient
 from .magnet2torrent import magnet2torrent
 from lib.bencode import encode, decode
-from lib.six import text_type
+from lib.six import text_type, binary_type
 
 
 def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
@@ -286,7 +286,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] and lazylibrarian.CONFIG['QBITTORRENT_HOST']:
         logger.debug("Sending %s to qbittorrent" % tor_title)
         Source = "QBITTORRENT"
-        if torrent.startswith(b'magnet'):
+        if isinstance(torrent, binary_type) and torrent.startswith(b'magnet'):
+            status = qbittorrent.addTorrent(torrent, hashid)
+        elif isinstance(torrent, text_type) and torrent.startswith('magnet'):
             status = qbittorrent.addTorrent(torrent, hashid)
         else:
             status = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
@@ -299,8 +301,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         if lazylibrarian.LOGLEVEL > 2:
             logger.debug("TORRENT %s [%s] [%s]" % (len(torrent), torrent[:20], torrent[-20:]))
         Source = "TRANSMISSION"
-        if torrent.startswith(b'magnet'):
+        if isinstance(torrent, binary_type) and torrent.startswith(b'magnet'):
             downloadID = transmission.addTorrent(torrent)  # returns id or False
+        elif isinstance(torrent, text_type) and torrent.startswith('magnet'):
+            downloadID = transmission.addTorrent(torrent)
         elif torrent:
             downloadID = transmission.addTorrent(None, metainfo=b64encode(torrent))
         else:
@@ -323,7 +327,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         if not lazylibrarian.CONFIG['DELUGE_USER']:
             # no username, talk to the webui
             Source = "DELUGEWEBUI"
-            if torrent.startswith(b'magnet'):
+            if isinstance(torrent, binary_type) and torrent.startswith(b'magnet'):
+                downloadID = deluge.addTorrent(torrent)
+            elif isinstance(torrent, text_type) and torrent.startswith('magnet'):
                 downloadID = deluge.addTorrent(torrent)
             elif torrent:
                 downloadID = deluge.addTorrent(tor_title, data=b64encode(torrent))
@@ -343,7 +349,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 args = {"name": tor_title}
                 if tor_url.startswith('magnet'):
                     downloadID = client.call('core.add_torrent_magnet', tor_url, args)
-                elif torrent.startswith(b'magnet'):
+                elif isinstance(torrent, binary_type) and torrent.startswith(b'magnet'):
+                    downloadID = client.call('core.add_torrent_magnet', torrent, args)
+                elif isinstance(torrent, text_type) and torrent.startswith('magnet'):
                     downloadID = client.call('core.add_torrent_magnet', torrent, args)
                 elif torrent:
                     downloadID = client.call('core.add_torrent_file', tor_title, b64encode(torrent), args)

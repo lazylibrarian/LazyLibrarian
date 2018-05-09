@@ -258,6 +258,7 @@ def import_CSV(search_dir=None):
     """ Find a csv file in the search_dir and process all the books in it,
         adding authors to the database if not found
         and marking the books as "Wanted"
+        Optionally delete the file on successful completion
     """
     # noinspection PyBroadException
     try:
@@ -369,6 +370,12 @@ def import_CSV(search_dir=None):
             msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
                   (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
             logger.info(msg)
+            if lazylibrarian.CONFIG['DELETE_CSV'] and skipcount == 0:
+                logger.info("Deleting %s on successful completion" % csvFile)
+                try:
+                    os.remove(csvFile)
+                except OSError as why:
+                    logger.warn('Unable to delete %s: %s' % (dest_path, why.strerror))
             return msg
     except Exception:
         msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()

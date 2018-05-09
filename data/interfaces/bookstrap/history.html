@@ -46,7 +46,6 @@
 
     $(document).ready(function()
     {
-
         $('#showdownloads').on('click', function(e) {
             $.get('showdownloads', function(data) {
                 bootbox.dialog({
@@ -80,7 +79,7 @@
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
                     { targets: [6], 'render': function(data, type, row) {
-                        if ( row[9] == 0 ) { bar = data }
+                        if ( row[9] < 0 ) { bar = data }
                         else {
                             if ( row[9] <= 25 ) { css = 'danger' }
                             else if ( row[9] <= 50 ) { css = 'warning' }
@@ -109,6 +108,7 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $('td', nRow).eq(4).addClass('text-center');
+                    $('td', nRow).eq(6).addClass('text-center');
                     $('td', nRow).eq(7).addClass('hidden');
                     return nRow;
                 },
@@ -120,20 +120,11 @@
                 var column = table.column( $(this).attr('data-column') );
                 column.visible( ! column.visible() );
             } );
+
+            if ( ${lazylibrarian.HIST_REFRESH} > 0 ) {
+                setInterval( function () { table.ajax.reload( null, false ); }, ${lazylibrarian.HIST_REFRESH} );
+            };
     });
-    // to redraw the progress bars...
-    // table.rows().invalidate().draw( false );
-    // or table.cell( this ).invalidate().draw();
-    var timer;
-    refreshrate = 5000;
-    if(timer)
-          {
-            clearInterval(timer);
-        }
-        if(refreshrate != 0)
-        {
-            timer = setInterval("$('#book_table').rows().invalidate().draw( false )", refreshrate);
-        }
   </script>
 
 </%def>

@@ -77,8 +77,8 @@ CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
-GR_SLEEP = 0
-LT_SLEEP = 0
+GR_SLEEP = 0.0
+LT_SLEEP = 0.0
 MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
@@ -96,6 +96,7 @@ AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
 GROUP_CONCAT = 0
+HIST_REFRESH = 1000
 
 # user permissions
 perm_config = 1 << 0  # 1 access to config page
@@ -150,7 +151,7 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
-                 'SYS_ENCODING', 'LT_DEVKEY']
+                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -159,7 +160,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
-                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE']
+                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -182,6 +183,7 @@ CONFIG_DEFINITIONS = {
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),
+    'HIST_REFRESH': ('int', 'General', 1000),
     'HTTP_PORT': ('int', 'General', 5299),
     'HTTP_HOST': ('str', 'General', '0.0.0.0'),
     'HTTP_USER': ('str', 'General', ''),
@@ -261,6 +263,7 @@ CONFIG_DEFINITIONS = {
     'EBOOK_DIR': ('str', 'General', ''),
     'AUDIO_DIR': ('str', 'General', ''),
     'ALTERNATE_DIR': ('str', 'General', ''),
+    'DELETE_CSV': ('bool', 'General', 0),
     'DOWNLOAD_DIR': ('str', 'General', ''),
     'NZB_DOWNLOADER_SABNZBD': ('bool', 'USENET', 0),
     'NZB_DOWNLOADER_NZBGET': ('bool', 'USENET', 0),
@@ -612,8 +615,8 @@ def initialize():
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
-        GR_SLEEP = 0
-        LT_SLEEP = 0
+        GR_SLEEP = 0.0
+        LT_SLEEP = 0.0
 
         # Initialize the database
         try:
