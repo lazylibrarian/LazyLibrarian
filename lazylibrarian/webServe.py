@@ -3415,7 +3415,7 @@ class WebInterface(object):
                         nrow[3] = provider
                 if title and provider:
                     if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
-                        lazylibrarian.HIST_REFRESH = 1000
+                        lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
                         nrow.append(getDownloadProgress(nrow[7], nrow[8]))
                     else:
                         nrow.append(-1)

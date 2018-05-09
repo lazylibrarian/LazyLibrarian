@@ -96,7 +96,7 @@ AUDIO_UPDATE = 0
 AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
 GROUP_CONCAT = 0
-HIST_REFRESH = 0
+HIST_REFRESH = 1000
 
 # user permissions
 perm_config = 1 << 0  # 1 access to config page
@@ -151,7 +151,7 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
-                 'SYS_ENCODING', 'LT_DEVKEY']
+                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'AUDIO_TAB',
@@ -183,6 +183,7 @@ CONFIG_DEFINITIONS = {
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
     'DISPLAYLENGTH': ('int', 'General', 10),
+    'HIST_REFRESH': ('int', 'General', 1000),
     'HTTP_PORT': ('int', 'General', 5299),
     'HTTP_HOST': ('str', 'General', '0.0.0.0'),
     'HTTP_USER': ('str', 'General', ''),

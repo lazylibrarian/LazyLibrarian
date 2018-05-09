@@ -199,12 +199,13 @@ def find_book_in_db(author, book):
         book_lower = unaccented(book.lower())
         book_lower = replace_all(book_lower, dic)
         book_partname, book_sub = split_title(author, book_lower)
-        book_partname = replace_all(book_partname, dic)
-        if book_partname == book_lower:
-            book_partname = ''
 
         logger.debug('Searching %s book%s by [%s] in database for [%s]' %
                      (len(books), plural(len(books)), author, book))
+        if lazylibrarian.LOGLEVEL > 2:
+            logger.debug('book partname [%s] book_sub [%s]' % (book_partname, book_sub))
+        if book_partname == book_lower:
+            book_partname = ''
 
         for a_book in books:
             # tidy up everything to raise fuzziness scores
