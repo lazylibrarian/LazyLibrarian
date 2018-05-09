@@ -509,7 +509,7 @@
                     %>
                     <label for="imp_ignore">
                       <input type="checkbox" id="imp_ignore" name="imp_ignore" value="1" ${checked} />
-                      Include ignored books in database</label>
+                      Add ignored books to database</label>
                   </div>
                   <div class="checkbox">
                     <%
@@ -521,6 +521,17 @@
                     <label for="imp_googleimage">
                       <input type="checkbox" id="imp_googleimage" name="imp_googleimage" value="1" ${checked} />
                       Try google image search as final option for missing book covers</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['DELETE_CSV'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="delete_csv">
+                      <input type="checkbox" id="delete_csv" name="delete_csv" value="1" ${checked} />
+                      Delete csv file or wishlist after successful import</label>
                   </div>
                 </fieldset>
               </div>

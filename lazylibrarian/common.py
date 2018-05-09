@@ -140,9 +140,9 @@ def gr_api_sleep():
     delay = time_now - lazylibrarian.LAST_GOODREADS
     if delay < 1.0:
         sleep_time = 1.0 - delay
-        logger.debug("GoodReads sleep %.3f" % sleep_time)
-        time.sleep(sleep_time)
         lazylibrarian.GR_SLEEP += sleep_time
+        logger.debug("GoodReads sleep %.3f, total %.3f" % (sleep_time, lazylibrarian.GR_SLEEP))
+        time.sleep(sleep_time)
     lazylibrarian.LAST_GOODREADS = time_now
 
 
@@ -594,13 +594,14 @@ def checkRunningJobs():
 def showJobs():
     result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),
                                              plural(check_int(lazylibrarian.CACHE_HIT, 0)),
-                                             check_int(lazylibrarian.CACHE_MISS, 0)),
-              "Sleep %.2f goodreads, %.2f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
+                                             check_int(lazylibrarian.CACHE_MISS, 0))]
+    result.append("Sleep %.3f goodreads, %.3f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP))
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
     result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
     result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
+
     for job in lazylibrarian.SCHED.get_jobs():
         job = str(job)
         if "search_magazines" in job:
@@ -632,9 +633,10 @@ def showJobs():
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
     cmd += 'or Status="Wanted" order by DateAdded ASC'
     author = myDB.match(cmd)
-    dtnow = datetime.datetime.now()
-    diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-    result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
+    if author:
+        dtnow = datetime.datetime.now()
+        diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+        result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
 
     return result
 

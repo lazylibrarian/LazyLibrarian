@@ -260,9 +260,9 @@ def librarything_wait():
     delay = time_now - lazylibrarian.LAST_LIBRARYTHING
     if delay < 1.0:
         sleep_time = 1.0 - delay
-        logger.debug("LibraryThing sleep %.3f" % sleep_time)
-        time.sleep(sleep_time)
         lazylibrarian.LT_SLEEP += sleep_time
+        logger.debug("LibraryThing sleep %.3f, total %.3f" % (sleep_time, lazylibrarian.LT_SLEEP))
+        time.sleep(sleep_time)
     lazylibrarian.LAST_LIBRARYTHING = time_now
 
 

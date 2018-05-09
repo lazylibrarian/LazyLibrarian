@@ -77,8 +77,8 @@ CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
-GR_SLEEP = 0
-LT_SLEEP = 0
+GR_SLEEP = 0.0
+LT_SLEEP = 0.0
 MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
@@ -160,7 +160,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
-                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE']
+                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -263,6 +263,7 @@ CONFIG_DEFINITIONS = {
     'EBOOK_DIR': ('str', 'General', ''),
     'AUDIO_DIR': ('str', 'General', ''),
     'ALTERNATE_DIR': ('str', 'General', ''),
+    'DELETE_CSV': ('bool', 'General', 0),
     'DOWNLOAD_DIR': ('str', 'General', ''),
     'NZB_DOWNLOADER_SABNZBD': ('bool', 'USENET', 0),
     'NZB_DOWNLOADER_NZBGET': ('bool', 'USENET', 0),
@@ -614,8 +615,8 @@ def initialize():
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
-        GR_SLEEP = 0
-        LT_SLEEP = 0
+        GR_SLEEP = 0.0
+        LT_SLEEP = 0.0
 
         # Initialize the database
         try:
