@@ -513,6 +513,7 @@ def get_issue_date(nzbtitle_exploded):
     # 13 issue and year as a single 6 digit string eg 222015 (some uploaders use this, reverse it to YYYYIIII)
     # 14 3 or more digit zero padded issue number eg 0063 (issue with no year)
     # 15 just a year (annual)
+    # 16 to 18 internal issuedates used for filenames, YYYYVVVVIIII or YYYYIIII or VVVVIIII
     #
     issuenouns = ["issue", "iss", "no", "nr", '#']
     volumenouns = ["vol", "volume"]
@@ -691,5 +692,28 @@ def get_issue_date(nzbtitle_exploded):
     if not regex_pass and year:
         issuedate = "%s-01-01" % year
         regex_pass = 15
+
+    # YYYYIIII internal issuedates for filenames
+    if not regex_pass:
+        pos = 0
+        while pos < len(nzbtitle_exploded):
+            issue = nzbtitle_exploded[pos]
+            if issue.isdigit():
+                if len(issue) == 8:
+                    if check_year(issue[:4]):  # YYYYIIII
+                        year = issue[:4]
+                        issuedate = issue
+                        regex_pass = 16
+                        break
+                    else:
+                        issuedate = issue  # VVVVIIII
+                        regex_pass = 17
+                        break
+                elif len(issuedate) == 12:  # YYYYVVVVIIII
+                    year = issue[:4]
+                    issuedate = issue
+                    regex_pass = 18
+                    break
+            pos += 1
 
     return regex_pass, issuedate, year
