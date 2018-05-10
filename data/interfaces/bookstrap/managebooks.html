@@ -19,8 +19,10 @@
                 <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads">
                 <i class="fa fa-link"></i> Goodreads Sync</button>
               %endif
+              %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
               <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
               <i class="fa fa-link"></i> Calibre Sync</button>
+              %endif
             %endif
           %endif
           <div class="pull-right">
