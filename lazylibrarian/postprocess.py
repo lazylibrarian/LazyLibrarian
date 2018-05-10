@@ -155,9 +155,9 @@ def processAlternate(source_dir=None):
                         authmatch = myDB.match('SELECT * FROM authors where AuthorID=?', (authorid,))
 
                 if authmatch:
-                    logger.debug("ALT: Author %s found in database" % authorname)
+                    logger.debug("Author %s found in database" % authorname)
                 else:
-                    logger.debug("ALT: Author %s not found, adding to database" % authorname)
+                    logger.debug("Author %s not found, adding to database" % authorname)
                     if authorid:
                         addAuthorToDB(authorid=authorid)
                     else:
