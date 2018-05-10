@@ -1345,9 +1345,9 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(makeBytestr(pp_path)):
                 fname = makeUnicode(fname)
-                if bestmatch and is_valid_booktype(fname, booktype=booktype) and not fname.endswith(bestmatch):
+                if bestmatch and not fname.endswith(bestmatch):
                     logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
-                else:
+                elif is_valid_booktype(fname, booktype=booktype):
                     filename, extn = os.path.splitext(fname)
                     srcfile = os.path.join(pp_path, filename + extn)
                     dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
