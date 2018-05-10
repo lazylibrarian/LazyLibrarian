@@ -40,8 +40,21 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
 
     author = formatAuthorName(author)
     myDB = database.DBConnection()
+
     # Check if the author exists, and import the author if not,
     check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName=?', (author.replace('"', '""'),))
+
+    # If no exact match, look for a close fuzzy match to handle misspellings, accents
+    if not check_exist_author:
+        match_name = author.replace('"', '""').lower()
+        res = myDB.action('select AuthorID,AuthorName from authors')
+        for item in res:
+            match_fuzz = fuzz.ratio(item['AuthorName'].lower(), match_name)
+            if match_fuzz >= 95:
+                logger.debug("Fuzzy match [%s] %s%% for [%s]" % (item['AuthorName'], match_fuzz, author))
+                check_exist_author = item
+                author = item['AuthorName']
+                break
 
     if not check_exist_author and lazylibrarian.CONFIG['ADD_AUTHOR']:
         logger.debug('Author %s not found in database, trying to add' % author)
