@@ -227,7 +227,7 @@ def unpack_archive(pp_path, download_dir, title):
     if not os.path.isfile(pp_path):  # regular files only
         targetdir = ''
     elif zipfile.is_zipfile(pp_path):
-        if int(lazylibrarian.LOGLEVEL) > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug('%s is a zip file' % pp_path)
         try:
             z = zipfile.ZipFile(pp_path)
@@ -256,7 +256,7 @@ def unpack_archive(pp_path, download_dir, title):
                 logger.debug('Skipping zipped file %s' % item)
 
     elif tarfile.is_tarfile(pp_path):
-        if int(lazylibrarian.LOGLEVEL) > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug('%s is a tar file' % pp_path)
         try:
             z = tarfile.TarFile(pp_path)
@@ -285,7 +285,7 @@ def unpack_archive(pp_path, download_dir, title):
                 logger.debug('Skipping tarred file %s' % item)
 
     elif gotrar and rarfile.is_rarfile(pp_path):
-        if int(lazylibrarian.LOGLEVEL) > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug('%s is a rar file' % pp_path)
         try:
             z = rarfile.RarFile(pp_path)
@@ -485,7 +485,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                     for fname in downloads:
                         # skip if failed before or incomplete torrents, or incomplete btsync etc
-                        if int(lazylibrarian.LOGLEVEL) > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                             logger.debug("Checking extn on %s" % fname)
                         extn = os.path.splitext(fname)[1]
                         if not extn or extn.strip('.') not in skipped_extensions:
@@ -499,12 +499,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             matchname = matchname.split(' LL.(')[0].replace('_', ' ')
                             matchtitle = matchtitle.split(' LL.(')[0].replace('_', ' ')
                             match = fuzz.token_set_ratio(matchtitle, matchname)
-                            if int(lazylibrarian.LOGLEVEL) > 2:
+                            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                                 logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
                             if match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                                 pp_path = os.path.join(download_dir, fname)
 
-                                if int(lazylibrarian.LOGLEVEL) > 2:
+                                if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                     logger.debug("processDir found %s %s" % (type(pp_path), repr(pp_path)))
 
                                 if os.path.isfile(pp_path):
@@ -516,7 +516,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     if is_valid_booktype(fname, booktype="book") \
                                             or is_valid_booktype(fname, booktype="audiobook") \
                                             or is_valid_booktype(fname, booktype="mag"):
-                                        if int(lazylibrarian.LOGLEVEL) > 2:
+                                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                             logger.debug('file [%s] is a valid book/mag' % fname)
                                         if bts_file(download_dir):
                                             logger.debug("Skipping %s, found a .bts file" % download_dir)
@@ -685,7 +685,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                      (book['NZBmode'], book['NZBtitle']))
                         if match:
                             logger.debug('Closest match (%s%%): %s' % (match, pp_path))
-                            if int(lazylibrarian.LOGLEVEL) > 2:
+                            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                                 for match in matches:
                                     logger.debug('Match: %s%%  %s' % (match[0], match[1]))
 
@@ -885,7 +885,7 @@ def check_residual(download_dir):
     ppcount = 0
     downloads = os.listdir(makeBytestr(download_dir))
     downloads = [makeUnicode(item) for item in downloads]
-    if int(lazylibrarian.LOGLEVEL) > 2:
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
         logger.debug("Scanning %s entries in %s for LL.(num)" % (len(downloads), download_dir))
     for entry in downloads:
         if "LL.(" in entry:
@@ -899,26 +899,26 @@ def check_residual(download_dir):
                 else:
                     pp_path = os.path.join(download_dir, entry)
 
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                         logger.debug("Checking type of %s" % pp_path)
 
                     if os.path.isfile(pp_path):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                             logger.debug("%s is a file" % pp_path)
                         pp_path = os.path.join(download_dir)
 
                     if os.path.isdir(pp_path):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                             logger.debug("%s is a dir" % pp_path)
                         if import_book(pp_path, bookID):
-                            if int(lazylibrarian.LOGLEVEL) > 2:
+                            if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                 logger.debug("Imported %s" % pp_path)
                             ppcount += 1
             else:
-                if int(lazylibrarian.LOGLEVEL) > 2:
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                     logger.debug("Skipping extn %s" % entry)
         else:
-            if int(lazylibrarian.LOGLEVEL) > 2:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                 logger.debug("Skipping (not LL) %s" % entry)
     return ppcount
 
@@ -1016,6 +1016,8 @@ def getDownloadProgress(source, downloadid):
                                 progress = 100
                             elif item['status'] == 'Extracting':
                                 progress = 99
+                            elif item['status'] == 'Failed':
+                                progress = -1
                             break
         elif source == 'NZBGET':
             res = nzbget.sendNZB(cmd='listgroups', nzbID=downloadid)
@@ -1103,7 +1105,7 @@ def import_book(pp_path=None, bookID=None):
     try:
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
-        if int(lazylibrarian.LOGLEVEL) > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug("import_book %s" % pp_path)
         if book_file(pp_path, "audiobook"):
             book_type = "AudioBook"
@@ -1178,14 +1180,14 @@ def import_book(pp_path=None, bookID=None):
                 # update nzbs
                 if was_snatched:
                     snatched_from = was_snatched[0]['NZBprov']
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                         logger.debug("%s was snatched from %s" % (global_name, snatched_from))
                     controlValueDict = {"BookID": bookID}
                     newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                 else:
                     snatched_from = "manually added"
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                         logger.debug("%s was %s" % (global_name, snatched_from))
 
                 processExtras(dest_file, global_name, bookID, book_type)
@@ -1434,7 +1436,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             return False, 'calibredb import failed, %s %s' % (type(e).__name__, str(e))
     else:
         # we are copying the files ourselves, either it's audiobook, magazine or we don't want to use calibre
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug("BookType: %s, calibredb: [%s]" % (booktype, lazylibrarian.CONFIG['IMP_CALIBREDB']))
         if not os.path.exists(dest_path):
             logger.debug('%s does not exist, so it\'s safe to create it' % dest_path)

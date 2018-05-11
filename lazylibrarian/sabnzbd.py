@@ -149,7 +149,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
     URL = HOST + "/api?" + urlencode(params)
 
     # to debug because of api
-    if lazylibrarian.LOGLEVEL > 3:
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
         logger.debug('Request url for <a href="%s">SABnzbd</a>' % URL)
     proxies = proxyList()
     try:
@@ -169,7 +169,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
 
         logger.error("Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
         return False
-    if lazylibrarian.LOGLEVEL > 3:
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
         logger.debug("Result text from SAB: " + str(result))
 
     if title:

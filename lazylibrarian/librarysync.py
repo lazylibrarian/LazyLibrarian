@@ -202,7 +202,7 @@ def find_book_in_db(author, book):
 
         logger.debug('Searching %s book%s by [%s] in database for [%s]' %
                      (len(books), plural(len(books)), author, book))
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
             logger.debug('book partname [%s] book_sub [%s]' % (book_partname, book_sub))
         if book_partname == book_lower:
             book_partname = ''
@@ -215,16 +215,16 @@ def find_book_in_db(author, book):
             #
             # token sort ratio allows "Lord Of The Rings, The"   to match  "The Lord Of The Rings"
             ratio = fuzz.token_sort_ratio(book_lower, a_book_lower)
-            if int(lazylibrarian.LOGLEVEL) > 2:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                 logger.debug("Ratio %s [%s][%s]" % (ratio, book_lower, a_book_lower))
             # partial ratio allows "Lord Of The Rings"   to match  "The Lord Of The Rings"
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
-            if int(lazylibrarian.LOGLEVEL) > 2:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                 logger.debug("PartialRatio %s [%s][%s]" % (partial, book_lower, a_book_lower))
             if book_partname:
                 # partname allows "Lord Of The Rings (illustrated edition)"   to match  "The Lord Of The Rings"
                 partname = fuzz.partial_ratio(book_partname, a_book_lower)
-                if int(lazylibrarian.LOGLEVEL) > 2:
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                     logger.debug("PartName %s [%s][%s]" % (partname, book_partname, a_book_lower))
 
             # lose a point for each extra word in the fuzzy matches so we get the closest match
@@ -423,10 +423,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 # in case user keeps multiple different books in the same subdirectory
                 if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
                         (subdirectory in processed_subdirectories):
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                         logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                         logger.debug("[%s] already scanned" % subdirectory)
                 elif not os.path.isdir(rootdir):
                     logger.debug("[%s] missing (renamed?)" % rootdir)
@@ -544,7 +544,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         else:
                                             albumartist = ''
 
-                                        if lazylibrarian.LOGLEVEL > 2:
+                                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                                             logger.debug("id3r.filename [%s]" % filename)
                                             logger.debug("id3r.performer [%s]" % performer)
                                             logger.debug("id3r.composer [%s]" % composer)

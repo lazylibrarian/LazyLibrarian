@@ -181,10 +181,10 @@ class grauth:
                         shelves.append({'name': shelf_name, 'books': shelf_count, 'exclusive': shelf_exclusive})
                         page_shelves += 1
 
-                        if lazylibrarian.LOGLEVEL > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
                             logger.debug('Shelf %s : %s: Exclusive %s' % (shelf_name, shelf_count, shelf_exclusive))
 
-                    if lazylibrarian.LOGLEVEL > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
                         logger.debug('Found %s shelves on page %s' % (page_shelves, current_page))
 
             logger.debug('Found %s shelves on %s page%s' % (len(shelves), current_page - 1, plural(current_page - 1)))
@@ -298,7 +298,7 @@ class grauth:
                 for book in xmldoc.getElementsByTagName('book'):
                     book_id, book_title = self.getBookInfo(book)
 
-                    if lazylibrarian.LOGLEVEL > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
                         try:
                             logger.debug('Book %10s : %s' % (str(book_id), book_title))
                         except UnicodeEncodeError:
@@ -309,7 +309,7 @@ class grauth:
                     page_books += 1
                     total_books += 1
 
-                if lazylibrarian.LOGLEVEL > 2:
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
                     logger.debug('Found %s books on page %s (total = %s)' % (page_books, current_page, total_books))
                 if page_books == 0:
                     break

@@ -134,7 +134,7 @@ def serve_template(templatename, **kwargs):
             logger.warn('User %s attempted to access %s' % (username, templatename))
             templatename = "login.html"
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_admin:
             logger.debug("User %s: %s %s" % (username, perm, templatename))
 
         template = _hplookup.get_template(templatename)
@@ -248,7 +248,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -708,7 +708,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -1511,7 +1511,7 @@ class WebInterface(object):
                     ToRead = getList(res['ToRead'])
                     HaveRead = getList(res['HaveRead'])
 
-                    if lazylibrarian.LOGLEVEL > 3:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                         logger.debug("getBooks userid %s read %s,%s" % (
                             cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
@@ -1622,7 +1622,7 @@ class WebInterface(object):
             else:  # rating, date
                 sortcolumn -= 2
 
-            if lazylibrarian.LOGLEVEL > 3:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                 logger.debug("Sortcolumn %s" % sortcolumn)
 
             if sortcolumn in [12, 13, 15]:  # series, date
@@ -1686,7 +1686,7 @@ class WebInterface(object):
                               row[5], row[16], flag])
             rows = d
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
                 kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
@@ -2568,7 +2568,7 @@ class WebInterface(object):
                 else:
                     row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getMags returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getMags filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -2699,7 +2699,7 @@ class WebInterface(object):
             else:
                 row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -2819,7 +2819,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -3361,7 +3361,7 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -3399,7 +3399,7 @@ class WebInterface(object):
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 nrow = list(row)
                 # title needs spaces, not dots, for column resizing
-                title = nrow[0]
+                title = nrow[0]  # type: str
                 if title:
                     title = title.replace('.', ' ')
                     title = title.replace('LL (', 'LL.(')
@@ -3440,7 +3440,7 @@ class WebInterface(object):
             for row in rows:
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getHistory filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
