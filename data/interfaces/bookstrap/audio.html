@@ -9,9 +9,9 @@
         %if perm&lazylibrarian.perm_force:
         <a id="forcesearch" class="btn btn-sm btn-primary" href="forceSearch?source=audio"><i class="fa fa-search"></i> Search</a>
         <a id="forcepostprocess" class="btn btn-sm btn-primary" href="forceProcess?source=audio"><i class="fa fa-cogs"></i> Run Post-Processor</a>
-        <a href="libraryScan?library=Audio" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
+        <a href="libraryScan?library=Audio" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-bolt"></i> Library Scan</a>
         %endif
-        <a href="audioWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Recent AudioBooks</a>
+        <a href="audioWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-check"></i> Recent AudioBooks</a>
       </div>
       <div class="col-xs-2">
         %if len(languages) > 1:
@@ -32,7 +32,7 @@
 <%def name="body()">
   <h1>${title}</h1>
   %if lazylibrarian.AUDIO_UPDATE == True:
-    <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Library scan in progress ...</p>
+    <p class="alert alert-info"><i class="fas fa-circle-notch fa-spin"></i> Library scan in progress ...</p>
   %endif
   <form name="markBooks" id="markBooks" action="markBooks" method="get" class="form-inline" onsubmit="return false;">
     <div class="indented">

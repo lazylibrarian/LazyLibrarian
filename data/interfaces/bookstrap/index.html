@@ -7,7 +7,7 @@
       <form action="search" method="get">
         <div id="subhead_menu"  class="col-xs-12 col-md-8">
             %if perm&lazylibrarian.perm_force:
-            <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
+            <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-sync"></i> Refresh Active Authors</a>
             %endif
             %if lazylibrarian.IGNORED_AUTHORS == True:
               <a href="toggleAuth" class="button btn btn-sm btn-primary"><i class="fa fa-user"></i> Show Active Authors</a>

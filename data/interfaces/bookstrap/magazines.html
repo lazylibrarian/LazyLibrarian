@@ -9,10 +9,10 @@
         %if perm&lazylibrarian.perm_force:
         <a href="forceSearch?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> Search</a>
         <a href="forceProcess?source=magazines" class="button btn btn-sm btn-primary"><i class="fa fa-cogs"></i> Run Post-Processor</a>
-        <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-flash"></i> Library Scan</a>
-        <a href="pastIssues?whichStatus=Skipped" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-o"></i> Past Issues</a>
+        <a href="magazineScan" class="button btn btn-sm btn-primary"><i class="fa fa-bolt"></i> Library Scan</a>
+        <a href="pastIssues?whichStatus=Skipped" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-alt"></i> Past Issues</a>
         %endif
-        <a href="magWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar"></i> Recent Issues</a>
+        <a href="magWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-check"></i> Recent Issues</a>
       </div>
       <div class="clearfix visible-xs"><hr/></div>
       <div class="col-xs-12 col-md-4">
@@ -32,7 +32,7 @@
 <%def name="body()">
   <h1>${title}</h1>
   %if lazylibrarian.MAG_UPDATE == True:
-      <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Library scan in progress ...</p>
+      <p class="alert alert-info"><i class="fas fa-circle-notch fa-spin"></i> Library scan in progress ...</p>
   %endif
   <form name="markMagazines" id="markMagazines" action="markMagazines" method="get" class="form-inline" onsubmit="return false;">
     <div class="indented">
