@@ -114,21 +114,6 @@
                       <input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="Log      Level">
                       <span class="help-block">0=Errors/Warnings, 1=Normal, 2=Debug, >2 Reserved</span>
                     </div>
-                    <div class="form-group">
-                      <label for="displaylength">Table Display Length:</label>
-                      <select name="displaylength" id="displaylength" class="form-control">
-                        %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
-                        <%
-                            if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
-                                selected = 'selected="selected"'
-                            else:
-                                selected = ''
-                        %>
-                        <option value="${displaylength}" ${selected}>${displaylength}</option>
-                        %endfor
-                      </select>
-                      <span class="help-block">Use -1 to display all rows</span>
-                    </div>
                   </fieldset>
                   <fieldset>
                     <legend>Proxy Details</legend>
@@ -1429,7 +1414,7 @@
                       Auto Update when new version found</label>
                     <span class="help-block">This will auto update if the task finds a new version. Does not apply to manual version checks</span>
                   </div>
-                  <div class="help-block">Changes to the scan intervals only take effect when the jobs are restarted</div>
+                  <div class="help-block">Setting a scan interval to zero disables the task</div>
                 </fieldset>
                 <legend>Status</legend>
                   <div class="form-group">

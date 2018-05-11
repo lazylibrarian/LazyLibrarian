@@ -74,20 +74,6 @@
 <label>Log Level:</label><input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" size="4"><br>
 <i class="smalltext">0=Quiet, 1=Normal, 2=Debug</i>
 <br>
-<label>Table Display Length:</label>
-<select name="displaylength">
-  %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
-  <%
-    if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
-        selected = 'selected="selected"'
-    else:
-        selected = ''
-  %>
-  <option value="${displaylength}" ${selected}>${displaylength}</option>
-  %endfor
-</select><br>
-<i class="smalltext">Use -1 to display all rows</i>
-<br>
 <div>
   <label>Proxy Host:</label><input type="text" id="proxy_host" name="proxy_host" value="${lazylibrarian.CONFIG['PROXY_HOST']}" size="20"><br>
   <i class="smalltext">Set this value if you are behind a proxy</i>
