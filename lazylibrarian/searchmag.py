@@ -302,14 +302,14 @@ def search_magazines(mags=None, reset=False):
                                         datetype_ok = False
                                     elif 'MM' in datetype and regex_pass not in [1]:  # bi monthly
                                         datetype_ok = False
-                                    elif 'V' in datetype and 'I' in datetype and regex_pass not in [8, 9]:
+                                    elif 'V' in datetype and 'I' in datetype and regex_pass not in [8, 9, 17, 18]:
                                         datetype_ok = False
-                                    elif 'V' in datetype and regex_pass not in [2, 10, 11, 12, 13, 14]:
+                                    elif 'V' in datetype and regex_pass not in [2, 10, 11, 12, 13, 14, 17, 18]:
                                         datetype_ok = False
-                                    elif 'I' in datetype and regex_pass not in [2, 10, 11, 12, 13, 14]:
+                                    elif 'I' in datetype and regex_pass not in [2, 10, 11, 12, 13, 14, 16, 17, 18]:
                                         datetype_ok = False
                                     elif 'Y' in datetype and regex_pass not in [1, 2, 3, 4, 5, 6, 7, 8, 10,
-                                                                                12, 13, 15]:
+                                                                                12, 13, 15, 16, 18]:
                                         datetype_ok = False
                             else:
                                 datetype_ok = False
@@ -514,7 +514,7 @@ def get_issue_date(nzbtitle_exploded):
     # 13 issue and year as a single 6 digit string eg 222015 (some uploaders use this, reverse it to YYYYIIII)
     # 14 3 or more digit zero padded issue number eg 0063 (issue with no year)
     # 15 just a year (annual)
-    # 16 to 18 internal issuedates used for filenames, YYYYVVVVIIII or YYYYIIII or VVVVIIII
+    # 16 to 18 internal issuedates used for filenames, YYYYIIII, VVVVIIII, YYYYVVVVIIII
     #
     issuenouns = ["issue", "iss", "no", "nr", '#']
     volumenouns = ["vol", "volume"]
