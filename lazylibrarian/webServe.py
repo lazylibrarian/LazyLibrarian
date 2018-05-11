@@ -776,9 +776,9 @@ class WebInterface(object):
             for row in members:  # iterate through the sqlite3.Row objects
                 entry = list(row)
                 if entry[0] in ToRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                    flag = '&nbsp;<i class="far fa-bookmark"></i>'
                 elif entry[0] in HaveRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                    flag = '&nbsp;<i class="fas fa-bookmark"></i>'
                 else:
                     flag = ''
                 newrow = {'BookID': entry[0], 'BookName': entry[1], 'SeriesNum': entry[2], 'BookImg': entry[3],
@@ -1667,10 +1667,10 @@ class WebInterface(object):
                     row.append('')  # empty string for series links as no group_concat
 
                 if row[6] in ToRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                    flag = '&nbsp;<i class="far fa-bookmark"></i>'
                     flagTo += 1
                 elif row[6] in HaveRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                    flag = '&nbsp;<i class="fas fa-bookmark"></i>'
                     flagHave += 1
                 else:
                     flag = ''
@@ -2244,6 +2244,7 @@ class WebInterface(object):
         if not redirect:
             redirect = "books"
         authorcheck = []
+        check_totals = False
         if action:
             for bookid in args:
                 # ouch dirty workaround...
@@ -2281,6 +2282,7 @@ class WebInterface(object):
                                             (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
 
                     elif action in ["Wanted", "Have", "Ignored", "Skipped"]:
+                        check_totals = True
                         title = myDB.match('SELECT BookName from books WHERE BookID=?', (bookid,))
                         if title:
                             bookname = title['BookName']
@@ -2291,6 +2293,7 @@ class WebInterface(object):
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
                                 logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
                     elif action in ["Remove", "Delete"]:
+                        check_totals = True
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
                         if bookdata:
@@ -2354,7 +2357,7 @@ class WebInterface(object):
                                 myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
 
-        if redirect == "author" or len(authorcheck):
+        if redirect == "author" or len(authorcheck) or check_totals:
             update_totals(AuthorID)
 
         # start searchthreads
