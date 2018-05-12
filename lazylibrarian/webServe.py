@@ -2073,6 +2073,7 @@ class WebInterface(object):
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='', bookdate='',
                    manual='0', authorname='', cover='', newid='', **kwargs):
         myDB = database.DBConnection()
+
         if bookid:
             cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,books.Manual,AuthorName,books.AuthorID '
             cmd += ' from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
@@ -2139,7 +2140,9 @@ class WebInterface(object):
                     covertype = '_ww'
                 elif cover == 'goodreads':
                     covertype = '_gr'
-                elif cover == 'google':
+                elif cover == 'googleisbn':
+                    covertype = '_gi'
+                elif cover == 'googleimage':
                     covertype = '_gb'
 
                 if covertype:
@@ -2234,12 +2237,10 @@ class WebInterface(object):
             library = 'eBook'
             if redirect == 'audio':
                 library = 'AudioBook'
-        if redirect == 'members' and ' ' in action:
-            library, action = action.split(' ')
-            if library == 'A':
-                library = 'AudioBook'
-            else:
-                library = 'eBook'
+
+        if 'marktype' in args:
+            library = args['marktype']
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -2286,10 +2287,10 @@ class WebInterface(object):
                         title = myDB.match('SELECT BookName from books WHERE BookID=?', (bookid,))
                         if title:
                             bookname = title['BookName']
-                            if library == 'eBook':
+                            if 'eBook' in library:
                                 myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                                 logger.debug('Status set to "%s" for "%s"' % (action, bookname))
-                            elif library == 'AudioBook':
+                            if 'Audio' in library:
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
                                 logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
                     elif action in ["Remove", "Delete"]:
@@ -2300,21 +2301,28 @@ class WebInterface(object):
                             AuthorID = bookdata['AuthorID']
                             bookname = bookdata['BookName']
                             if action == "Delete":
-                                if library == 'eBook':
-                                    bookfile = bookdata['BookFile']
-                                else:
+                                if 'Audio' in library:
                                     bookfile = bookdata['AudioFile']
-                                if bookfile and os.path.isfile(bookfile):
-                                    try:
-                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
-                                        deleted = True
-                                    except Exception as e:
-                                        logger.warn('rmtree failed on %s, %s %s' %
-                                                    (bookfile, type(e).__name__, str(e)))
-                                        deleted = False
+                                    if bookfile and os.path.isfile(bookfile):
+                                        try:
+                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                            logger.info('AudioBook %s deleted from disc' % bookname)
+                                        except Exception as e:
+                                            logger.warn('rmtree failed on %s, %s %s' %
+                                                        (bookfile, type(e).__name__, str(e)))
 
-                                    if deleted:
-                                        if bookfile == bookdata['BookFile']:
+                                if 'eBook' in library:
+                                    bookfile = bookdata['BookFile']
+                                    if bookfile and os.path.isfile(bookfile):
+                                        try:
+                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                            deleted = True
+                                        except Exception as e:
+                                            logger.warn('rmtree failed on %s, %s %s' %
+                                                        (bookfile, type(e).__name__, str(e)))
+                                            deleted = False
+
+                                        if deleted:
                                             logger.info('eBook %s deleted from disc' % bookname)
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
@@ -2337,8 +2345,6 @@ class WebInterface(object):
                                                 else:
                                                     logger.debug('No response from %s' %
                                                                  lazylibrarian.CONFIG['IMP_CALIBREDB'])
-                                        if bookfile == bookdata['AudioFile']:
-                                            logger.info('AudioBook %s deleted from disc' % bookname)
 
                             authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (AuthorID,))
                             if authorcheck:
@@ -2346,10 +2352,10 @@ class WebInterface(object):
                                     myDB.action('delete from books where bookid=?', (bookid,))
                                     myDB.action('delete from wanted where bookid=?', (bookid,))
                                     logger.info('Removed "%s" from database' % bookname)
-                                elif library == 'eBook':
+                                elif 'eBook' in library:
                                     myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                     logger.debug('Status set to Ignored for "%s"' % bookname)
-                                else:
+                                elif 'Audio' in library:
                                     myDB.upsert("books", {"AudioStatus": "Ignored"}, {"BookID": bookid})
                                     logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
                             else:
@@ -2370,16 +2376,23 @@ class WebInterface(object):
 
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, library]).start()
+                if 'eBook' in library:
+                    threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, 'eBook']).start()
+                if 'Audio' in library:
+                    threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, 'AudioBook']).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
+                if 'eBook' in library:
+                    raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, 'eBook'))
+                if 'Audio' in library:
+                    raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, 'AudioBook'))
         elif redirect in ["books", "audio"]:
             raise cherrypy.HTTPRedirect(redirect)
         elif redirect == "members":
             raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
-        else:
-            raise cherrypy.HTTPRedirect("manage?library=%s" % library)
+        elif 'Audio' in library:
+            raise cherrypy.HTTPRedirect("manage?library=%s" % 'AudioBook')
+        raise cherrypy.HTTPRedirect("manage?library=%s" % 'eBook')
 
     # WALL #########################################################
 
