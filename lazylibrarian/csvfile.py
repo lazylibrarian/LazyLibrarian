@@ -375,7 +375,7 @@ def import_CSV(search_dir=None):
                 try:
                     os.remove(csvFile)
                 except OSError as why:
-                    logger.warn('Unable to delete %s: %s' % (dest_path, why.strerror))
+                    logger.warn('Unable to delete %s: %s' % (csvFile, why.strerror))
             return msg
     except Exception:
         msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()

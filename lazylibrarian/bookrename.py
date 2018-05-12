@@ -59,7 +59,6 @@ def audioRename(bookid):
     parts = []
     author = ''
     book = ''
-    track = 0
     total = 0
     audio_file = ''
     for f in os.listdir(makeBytestr(r)):
