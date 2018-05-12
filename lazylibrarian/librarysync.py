@@ -327,6 +327,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
         # allow full_scan override so we can scan in alternate directories without deleting others
         if remove:
+
             if library == 'eBook':
                 cmd = 'select AuthorName, BookName, BookFile, BookID from books,authors'
                 cmd += ' where BookLibrary is not null and books.AuthorID = authors.AuthorID'
@@ -391,7 +392,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             "\\$\\$", "") + '\.[' + booktypes + ']'  # ignore any series, we just want author/title
 
         pattern = re.compile(matchString, re.VERBOSE)
-
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
         # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
         for rootdir, dirnames, filenames in os.walk(makeBytestr(startdir)):
