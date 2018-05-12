@@ -94,7 +94,11 @@
     $(document).ready(function()
     {
         $('#whichStatus').change(function(){
-            window.location = 'series?whichStatus=' + $(this).val()
+            %if authorid != None:
+               window.location = 'series?AuthorID=${authorid}&whichStatus=' + $(this).val()
+            %else:
+               window.location = 'series?whichStatus=' + $(this).val()
+            %endif
         })
 
         var oTable = $('#book_table').DataTable(
