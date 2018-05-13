@@ -2244,8 +2244,9 @@ class WebInterface(object):
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
-        authorcheck = []
-        check_totals = False
+        check_totals = []
+        if redirect == 'author':
+            check_totals = [AuthorID]
         if action:
             for bookid in args:
                 # ouch dirty workaround...
@@ -2283,10 +2284,12 @@ class WebInterface(object):
                                             (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
 
                     elif action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        check_totals = True
-                        title = myDB.match('SELECT BookName from books WHERE BookID=?', (bookid,))
-                        if title:
-                            bookname = title['BookName']
+                        bookdata = myDB.match('SELECT AuthorID,BookName from books WHERE BookID=?', (bookid,))
+                        if bookdata:
+                            authorid = bookdata['AuthorID']
+                            bookname = bookdata['BookName']
+                            if authorid not in check_totals:
+                                check_totals.append(authorid)
                             if 'eBook' in library:
                                 myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                                 logger.debug('Status set to "%s" for "%s"' % (action, bookname))
@@ -2294,12 +2297,13 @@ class WebInterface(object):
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
                                 logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
                     elif action in ["Remove", "Delete"]:
-                        check_totals = True
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
                         if bookdata:
-                            AuthorID = bookdata['AuthorID']
+                            authorid = bookdata['AuthorID']
                             bookname = bookdata['BookName']
+                            if authorid not in check_totals:
+                                check_totals.append(authorid)
                             if action == "Delete":
                                 if 'Audio' in library:
                                     bookfile = bookdata['AudioFile']
@@ -2346,7 +2350,7 @@ class WebInterface(object):
                                                     logger.debug('No response from %s' %
                                                                  lazylibrarian.CONFIG['IMP_CALIBREDB'])
 
-                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (AuthorID,))
+                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (authorid,))
                             if authorcheck:
                                 if authorcheck['Status'] not in ['Active', 'Wanted']:
                                     myDB.action('delete from books where bookid=?', (bookid,))
@@ -2363,8 +2367,9 @@ class WebInterface(object):
                                 myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
 
-        if redirect == "author" or len(authorcheck) or check_totals:
-            update_totals(AuthorID)
+        if check_totals:
+            for author in check_totals:
+                update_totals(author)
 
         # start searchthreads
         if action == 'Wanted':
