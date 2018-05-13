@@ -163,10 +163,15 @@ def processAlternate(source_dir=None):
                     else:
                         addAuthorNameToDB(author=authorname)
 
-                bookid = find_book_in_db(authorname, bookname)
+                bookid = find_book_in_db(authorname, bookname, ignored=False)
                 if bookid:
                     return import_book(source_dir, bookid)
                 else:
+                    bookid = find_book_in_db(authorname, bookname, ignored=True)
+                    if bookid:
+                        logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
+                                    (bookname, authorname))
+                        return import_book(source_dir, bookid)
                     logger.warn("Book %s by %s not found in database" % (bookname, authorname))
             else:
                 logger.warn('Book %s has no metadata, unable to import' % new_book)

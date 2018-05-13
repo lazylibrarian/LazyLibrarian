@@ -246,7 +246,12 @@ def finditem(item, authorname, headers):
             fullcmd = cmd + 'and BookIsbn=?'
             bookmatch = myDB.match(fullcmd, (isbn13,))
     if not bookmatch:
-        bookid = find_book_in_db(authorname, bookname)
+        bookid = find_book_in_db(authorname, bookname, ignored=False)
+        if not bookid:
+            bookid = find_book_in_db(authorname, bookname, ignored=True)
+            if bookid:
+                logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
+                            (bookname, authorname))
         if bookid:
             fullcmd = cmd + 'and BookID=?'
             bookmatch = myDB.match(fullcmd, (bookid,))

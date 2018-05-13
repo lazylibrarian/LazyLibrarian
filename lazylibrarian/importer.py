@@ -358,6 +358,9 @@ def update_totals(AuthorID):
             myDB.action('UPDATE series SET Have=?, Total=? WHERE SeriesID=?',
                         (series['Have'], series['Total'], series['Series']))
 
+    res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (AuthorID,))
+    logger.debug('Updated totals for [%s]' % res['AuthorName'])
+
 
 def import_book(bookid):
     """ search goodreads or googlebooks for a bookid and import the book """

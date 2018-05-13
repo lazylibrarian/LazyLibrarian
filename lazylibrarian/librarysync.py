@@ -163,13 +163,17 @@ def get_book_info(fname):
     return res
 
 
-def find_book_in_db(author, book):
+def find_book_in_db(author, book, ignored=None):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
     logger.debug('Searching database for [%s] by [%s]' % (book, author))
     myDB = database.DBConnection()
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
+    if ignored is True:
+        cmd += 'and books.Status = "Ignored" '
+    elif ignored is False:
+        cmd += 'and books.Status != "Ignored" '
     cmd += 'and AuthorName=? COLLATE NOCASE and BookName=? COLLATE NOCASE'
     match = myDB.match(cmd, (author.replace('"', '""'), book.replace('"', '""')))
     if match:
@@ -182,6 +186,10 @@ def find_book_in_db(author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
         cmd = 'SELECT BookID,BookName,BookISBN FROM books,authors where books.AuthorID = authors.AuthorID '
+        if ignored is True:
+            cmd += 'and books.Status = "Ignored" '
+        elif ignored is False:
+            cmd += 'and books.Status != "Ignored" '
         cmd += 'and AuthorName=? COLLATE NOCASE'
         books = myDB.select(cmd, (author.replace('"', '""'),))
         best_ratio = 0
@@ -635,8 +643,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 # First try and find it under author and bookname
                                 # as we may have it under a different bookid or isbn to goodreads/googlebooks
                                 # which might have several bookid/isbn for the same book
-                                bookid = find_book_in_db(author, book)
-
+                                bookid = find_book_in_db(author, book, ignored=False)  # try unignored first
+                                if not bookid:
+                                    bookid = find_book_in_db(author, book, ignored=True)
+                                    if bookid:
+                                        logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
+                                                    (book, author))
                                 if not bookid:
                                     # Title or author name might not match, or maybe multiple authors
                                     # See if the gr_id, gb_id is already in our database
@@ -681,7 +693,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         newauthor = newauthor[:-1] + '.'
                                     if author.lower() != newauthor.lower():
                                         logger.debug("Trying authorname [%s]" % newauthor)
-                                        bookid = find_book_in_db(newauthor, book)
+                                        bookid = find_book_in_db(newauthor, book, ignored=False)
+                                        if not bookid:
+                                            bookid = find_book_in_db(newauthor, book, ignored=True)
+                                            if bookid:
+                                                msg = "Book %s by %s is marked Ignored in database, importing anyway"
+                                                logger.warn(msg % (book, newauthor))
                                         if bookid:
                                             logger.warn("%s not found under [%s], found under [%s]" %
                                                         (book, author, newauthor))
