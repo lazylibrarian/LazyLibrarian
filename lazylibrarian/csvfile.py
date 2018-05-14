@@ -95,7 +95,7 @@ def restore_table(table, savedir=None, status=None):
             savedir = lazylibrarian.DATADIR
 
         headers = ''
-        content = {}
+        content = []
 
         label = table
         if status:
@@ -109,35 +109,34 @@ def restore_table(table, savedir=None, status=None):
             if csvreader.line_num == 1:
                 headers = row
             else:
-                content[row[0]] = dict(list(zip(headers, row)))
+                content.append(dict(list(zip(headers, row))))
 
-        logger.debug("Found %s item%s in csv file" % (
-                     len(list(content.keys())), plural(len(list(content.keys())))))
+        logger.debug("Found %s item%s in csv file" % (len(content), plural(len(content))))
 
         if table == 'magazines':
-            for item in list(content.keys()):
-                controlValueDict = {"Title": makeUnicode(content[item]['Title'])}
-                newValueDict = {"Regex": makeUnicode(content[item]['Regex']),
-                                "Reject": makeUnicode(content[item]['Reject']),
-                                "Status": content[item]['Status'],
-                                "MagazineAdded": content[item]['MagazineAdded'],
-                                "IssueStatus": content[item]['IssueStatus']}
+            for item in content:
+                controlValueDict = {"Title": makeUnicode(item['Title'])}
+                newValueDict = {"Regex": makeUnicode(item['Regex']),
+                                "Reject": makeUnicode(item['Reject']),
+                                "Status": item['Status'],
+                                "MagazineAdded": item['MagazineAdded'],
+                                "IssueStatus": item['IssueStatus']}
                 myDB.upsert("magazines", newValueDict, controlValueDict)
                 count += 1
 
         elif table == 'users':
-            for item in list(content.keys()):
-                controlValueDict = {"UserID": content[item]['UserID']}
-                newValueDict = {"UserName": content[item]['UserName'],
-                                "Password": content[item]['Password'],
-                                "Email": content[item]['Email'],
-                                "Name": content[item]['Name'],
-                                "Perms": content[item]['Perms'],
-                                "HaveRead": content[item]['HaveRead'],
-                                "ToRead": content[item]['ToRead'],
-                                "CalibreRead": content[item]['CalibreRead'],
-                                "CalibreToRead": content[item]['CalibreToRead'],
-                                "BookType": content[item]['BookType']
+            for item in content:
+                controlValueDict = {"UserID": item['UserID']}
+                newValueDict = {"UserName": item['UserName'],
+                                "Password": item['Password'],
+                                "Email": item['Email'],
+                                "Name": item['Name'],
+                                "Perms": item['Perms'],
+                                "HaveRead": item['HaveRead'],
+                                "ToRead": item['ToRead'],
+                                "CalibreRead": item['CalibreRead'],
+                                "CalibreToRead": item['CalibreToRead'],
+                                "BookType": item['BookType']
                                 }
                 myDB.upsert("users", newValueDict, controlValueDict)
                 count += 1
@@ -212,7 +211,7 @@ def export_CSV(search_dir=None, status="Wanted"):
         return msg
 
 
-def finditem(item, authorname, headers):
+def finditem(item, preferred_authorname):
     """
     Try to find book matching the csv item in the database
     Return database entry, or False if not found
@@ -225,11 +224,11 @@ def finditem(item, authorname, headers):
     bookname = item['Title']
 
     bookname = makeUnicode(bookname)
-    if 'ISBN' in headers:
+    if 'ISBN' in item:
         isbn10 = item['ISBN']
-    if 'ISBN13' in headers:
+    if 'ISBN13' in item:
         isbn13 = item['ISBN13']
-    if 'BookID' in headers:
+    if 'BookID' in item:
         bookid = item['BookID']
 
     # try to find book in our database using bookid or isbn, or if that fails, name matching
@@ -246,12 +245,12 @@ def finditem(item, authorname, headers):
             fullcmd = cmd + 'and BookIsbn=?'
             bookmatch = myDB.match(fullcmd, (isbn13,))
     if not bookmatch:
-        bookid = find_book_in_db(authorname, bookname, ignored=False)
+        bookid = find_book_in_db(preferred_authorname, bookname, ignored=False)
         if not bookid:
-            bookid = find_book_in_db(authorname, bookname, ignored=True)
+            bookid = find_book_in_db(preferred_authorname, bookname, ignored=True)
             if bookid:
                 logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
-                            (bookname, authorname))
+                            (bookname, preferred_authorname))
         if bookid:
             fullcmd = cmd + 'and BookID=?'
             bookmatch = myDB.match(fullcmd, (bookid,))
@@ -279,7 +278,7 @@ def import_CSV(search_dir=None):
         csvFile = csv_file(search_dir)
 
         headers = None
-        content = {}
+        content = []
 
         if not csvFile:
             msg = "No CSV file found in %s" % search_dir
@@ -293,16 +292,9 @@ def import_CSV(search_dir=None):
                     # If we are on the first line, create the headers list from the first row
                     headers = row
                 else:
-                    # Otherwise, the key in the content dictionary is the first item in the
-                    # row and we can create the sub-dictionary by using the zip() function.
-                    # we include the key in the dictionary as our exported csv files use
-                    # bookid as the key
-                    content[row[0]] = dict(list(zip(headers, row)))
+                    content.append(dict(list(zip(headers, row))))
 
-            # We can now get to the content by using the resulting dictionary, so to see
-            # the list of lines, we can do: print content.keys()  to get a list of keys
-            # To see the list of fields available for each book:  print headers
-
+            # We can now get to the content by using the resulting list of dictionarys
             if 'Author' not in headers or 'Title' not in headers:
                 msg = 'Invalid CSV file found %s' % csvFile
                 logger.warn(msg)
@@ -313,10 +305,10 @@ def import_CSV(search_dir=None):
             authcount = 0
             skipcount = 0
             logger.debug("CSV: Found %s book%s in csv file" % (
-                         len(list(content.keys())), plural(len(list(content.keys())))))
-            for item in list(content.keys()):
-                authorname = formatAuthorName(content[item]['Author'])
-                title = makeUnicode(content[item]['Title'])
+                         len(content), plural(len(content))))
+            for item in content:
+                authorname = formatAuthorName(item['Author'])
+                title = makeUnicode(item['Title'])
 
                 authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
 
@@ -332,7 +324,7 @@ def import_CSV(search_dir=None):
                     if new:
                         authcount += 1
 
-                bookmatch = finditem(content[item], authorname, headers)
+                bookmatch = finditem(item, authorname)
                 result = ''
                 if bookmatch:
                     authorname = bookmatch['AuthorName']
