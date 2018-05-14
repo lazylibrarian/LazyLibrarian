@@ -672,7 +672,6 @@ class GoogleBooks:
                         self.get_author_books(AuthorID, entrystatus=lazylibrarian.CONFIG['NEWAUTHOR_STATUS'])
         else:
             logger.warn("No AuthorID for %s, unable to add book %s" % (book['author'], bookname))
-            return
 
         controlValueDict = {"BookID": bookid}
         newValueDict = {

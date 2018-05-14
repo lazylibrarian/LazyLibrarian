@@ -157,7 +157,7 @@ def getBookCover(bookID=None, src=None):
                     if src:
                         coverlink, success, _ = cache_img("book", bookID + '_lt', img)
                     else:
-                        coverlink, success, _ = cache_img("book", bookID, img)
+                        coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
 
                     # if librarything has no image they return a 1x1 gif
                     data = ''
@@ -165,7 +165,6 @@ def getBookCover(bookID=None, src=None):
                     if os.path.isfile(coverfile):
                         with open(coverfile, 'rb') as f:
                             data = f.read()
-
                     if len(data) < 50:
                         logger.debug('Got an empty librarything image for %s [%s]' % (bookID, coverlink))
                     elif success:
@@ -188,8 +187,17 @@ def getBookCover(bookID=None, src=None):
                         if src:
                             coverlink, success, _ = cache_img("book", bookID + '_ww', img)
                         else:
-                            coverlink, success, _ = cache_img("book", bookID, img)
-                        if success:
+                            coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
+
+                        # if librarything has no image they return a 1x1 gif
+                        data = ''
+                        coverfile = os.path.join(lazylibrarian.DATADIR, coverlink)
+                        if os.path.isfile(coverfile):
+                            with open(coverfile, 'rb') as f:
+                                data = f.read()
+                        if len(data) < 50:
+                            logger.debug('Got an empty whatwork image for %s [%s]' % (bookID, coverlink))
+                        elif success:
                             logger.debug("Caching whatwork cover for %s" % bookID)
                             return coverlink, 'whatwork'
                         else:
@@ -205,7 +213,16 @@ def getBookCover(bookID=None, src=None):
                         if src:
                             coverlink, success, _ = cache_img("book", bookID + '_ww', img)
                         else:
-                            coverlink, success, _ = cache_img("book", bookID, img)
+                            coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
+
+                        # if librarything has no image they return a 1x1 gif
+                        data = ''
+                        coverfile = os.path.join(lazylibrarian.DATADIR, coverlink)
+                        if os.path.isfile(coverfile):
+                            with open(coverfile, 'rb') as f:
+                                data = f.read()
+                        if len(data) < 50:
+                            logger.debug('Got an empty whatwork image for %s [%s]' % (bookID, coverlink))
                         if success:
                             logger.debug("Caching whatwork cover for %s" % bookID)
                             return coverlink, 'whatwork'
@@ -255,10 +272,17 @@ def getBookCover(bookID=None, src=None):
                         if src == 'goodreads':
                             coverlink, success, _ = cache_img("book", bookID + '_gr', img)
                         else:
-                            coverlink, success, _ = cache_img("book", bookID, img)
-                        if success:
-                            logger.debug("Caching goodreads cover for %s %s" %
-                                         (item['AuthorName'], item['BookName']))
+                            coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
+
+                        data = ''
+                        coverfile = os.path.join(lazylibrarian.DATADIR, coverlink)
+                        if os.path.isfile(coverfile):
+                            with open(coverfile, 'rb') as f:
+                                data = f.read()
+                        if len(data) < 50:
+                            logger.debug('Got an empty goodreads image for %s [%s]' % (bookID, coverlink))
+                        elif success:
+                            logger.debug("Caching goodreads cover for %s %s" % (item['AuthorName'], item['BookName']))
                             return coverlink, 'goodreads'
                         else:
                             logger.debug("Error getting goodreads image for %s, [%s]" % (img, coverlink))
@@ -288,8 +312,16 @@ def getBookCover(bookID=None, src=None):
                         if src:
                             coverlink, success, _ = cache_img("book", bookID + '_gi', img)
                         else:
-                            coverlink, success, _ = cache_img("book", bookID, img)
-                        if success:
+                            coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
+
+                        data = ''
+                        coverfile = os.path.join(lazylibrarian.DATADIR, coverlink)
+                        if os.path.isfile(coverfile):
+                            with open(coverfile, 'rb') as f:
+                                data = f.read()
+                        if len(data) < 50:
+                            logger.debug('Got an empty google image for %s [%s]' % (bookID, coverlink))
+                        elif success:
                             logger.debug("Caching google isbn cover for %s %s" %
                                          (item['AuthorName'], item['BookName']))
                             return coverlink, 'google isbn'
@@ -323,8 +355,16 @@ def getBookCover(bookID=None, src=None):
                     if src:
                         coverlink, success, _ = cache_img("book", bookID + '_gb', img)
                     else:
-                        coverlink, success, _ = cache_img("book", bookID, img)
-                    if success:
+                        coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
+
+                    data = ''
+                    coverfile = os.path.join(lazylibrarian.DATADIR, coverlink)
+                    if os.path.isfile(coverfile):
+                        with open(coverfile, 'rb') as f:
+                            data = f.read()
+                    if len(data) < 50:
+                        logger.debug('Got an empty goodreads image for %s [%s]' % (bookID, coverlink))
+                    elif success:
                         logger.debug("Caching google search cover for %s %s" %
                                      (item['AuthorName'], item['BookName']))
                         return coverlink, 'google image'
@@ -337,6 +377,8 @@ def getBookCover(bookID=None, src=None):
             if src:
                 return None, src
 
+        logger.debug("No image found from any configured source")
+        return None, src
     except Exception:
         logger.error('Unhandled exception in getBookCover: %s' % traceback.format_exc())
     return None, src

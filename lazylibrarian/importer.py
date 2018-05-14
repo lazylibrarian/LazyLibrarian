@@ -362,14 +362,20 @@ def update_totals(AuthorID):
     logger.debug('Updated totals for [%s]' % res['AuthorName'])
 
 
-def import_book(bookid):
+def import_book(bookid, wait=False):
     """ search goodreads or googlebooks for a bookid and import the book """
     if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
         GB = GoogleBooks(bookid)
-        _ = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid, "Wanted"]).start()
+        if not wait:
+            _ = threading.Thread(target=GB.find_book, name='GB-IMPORT', args=[bookid, "Wanted"]).start()
+        else:
+            GB.find_book(bookid, "Wanted")
     else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
         GR = GoodReads(bookid)
-        _ = threading.Thread(target=GR.find_book, name='GR-IMPORT', args=[bookid, "Wanted"]).start()
+        if not wait:
+            _ = threading.Thread(target=GR.find_book, name='GR-IMPORT', args=[bookid, "Wanted"]).start()
+        else:
+            GR.find_book(bookid, "Wanted")
 
 
 def search_for(searchterm):
