@@ -6,9 +6,11 @@
   <div id="subhead_container">
     <div id="subhead_menu">
       <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
-      <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-refresh"></i> Restart</a>
-      <a class="button btn btn-sm btn-primary" href="checkForUpdates" data-toggle="tooltip" data-placement="bottom" title="Check for the latest release"><i class="fa fa-check-square-o"></i> Check Version</a>
+      <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-sync"></i> Restart</a>
+      <a class="button btn btn-sm btn-primary" href="checkForUpdates" id="checkversion" data-toggle="tooltip" data-placement="bottom" title="Check for the latest release"><i class="far fa-check-square"></i> Check Version</a>
+      %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
       <a class="button btn btn-sm btn-primary" href="userAdmin" data-toggle="tooltip" data-placement="bottom" title="Manage user accounts"><i class="fa fa-user"></i> User Admin</a>
+      %endif
     </div>
   </div>
 </%def>
@@ -111,21 +113,6 @@
                       <label for="loglevel">Log Level:</label>
                       <input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="Log      Level">
                       <span class="help-block">0=Errors/Warnings, 1=Normal, 2=Debug, >2 Reserved</span>
-                    </div>
-                    <div class="form-group">
-                      <label for="displaylength">Table Display Length:</label>
-                      <select name="displaylength" id="displaylength" class="form-control">
-                        %for displaylength in [5, 10, 15, 25, 50, 100, -1]:
-                        <%
-                            if displaylength == lazylibrarian.CONFIG['DISPLAYLENGTH']:
-                                selected = 'selected="selected"'
-                            else:
-                                selected = ''
-                        %>
-                        <option value="${displaylength}" ${selected}>${displaylength}</option>
-                        %endfor
-                      </select>
-                      <span class="help-block">Use -1 to display all rows</span>
                     </div>
                   </fieldset>
                   <fieldset>
@@ -1427,7 +1414,7 @@
                       Auto Update when new version found</label>
                     <span class="help-block">This will auto update if the task finds a new version. Does not apply to manual version checks</span>
                   </div>
-                  <div class="help-block">Changes to the scan intervals only take effect when the jobs are restarted</div>
+                  <div class="help-block">Setting a scan interval to zero disables the task</div>
                 </fieldset>
                 <legend>Status</legend>
                   <div class="form-group">
@@ -1849,7 +1836,7 @@
               </div>
             </div>
             <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
-            <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-refresh"></i> Restart Jobs</button>
+            <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-sync"></i> Restart Jobs</button>
             <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
             <br>
             <br>
@@ -3174,6 +3161,8 @@
                 });
             });
         });
+
+        $('#checkversion').on('click', function(e) { eraseCookie("ignoreUpdate");} );
 
         $('#testSABnzbd').on('click', function() {
             var host = $.trim($("#sab_host").val());

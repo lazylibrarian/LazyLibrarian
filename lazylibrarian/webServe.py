@@ -134,7 +134,7 @@ def serve_template(templatename, **kwargs):
             logger.warn('User %s attempted to access %s' % (username, templatename))
             templatename = "login.html"
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_admin:
             logger.debug("User %s: %s %s" % (username, perm, templatename))
 
         template = _hplookup.get_template(templatename)
@@ -248,7 +248,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -708,7 +708,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -776,9 +776,9 @@ class WebInterface(object):
             for row in members:  # iterate through the sqlite3.Row objects
                 entry = list(row)
                 if entry[0] in ToRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                    flag = '&nbsp;<i class="far fa-bookmark"></i>'
                 elif entry[0] in HaveRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                    flag = '&nbsp;<i class="fas fa-bookmark"></i>'
                 else:
                     flag = ''
                 newrow = {'BookID': entry[0], 'BookName': entry[1], 'SeriesNum': entry[2], 'BookImg': entry[3],
@@ -1511,7 +1511,7 @@ class WebInterface(object):
                     ToRead = getList(res['ToRead'])
                     HaveRead = getList(res['HaveRead'])
 
-                    if lazylibrarian.LOGLEVEL > 3:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                         logger.debug("getBooks userid %s read %s,%s" % (
                             cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
@@ -1622,7 +1622,7 @@ class WebInterface(object):
             else:  # rating, date
                 sortcolumn -= 2
 
-            if lazylibrarian.LOGLEVEL > 3:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                 logger.debug("Sortcolumn %s" % sortcolumn)
 
             if sortcolumn in [12, 13, 15]:  # series, date
@@ -1667,10 +1667,10 @@ class WebInterface(object):
                     row.append('')  # empty string for series links as no group_concat
 
                 if row[6] in ToRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark-o"></i>'
+                    flag = '&nbsp;<i class="far fa-bookmark"></i>'
                     flagTo += 1
                 elif row[6] in HaveRead:
-                    flag = '&nbsp;<i class="fa fa-bookmark"></i>'
+                    flag = '&nbsp;<i class="fas fa-bookmark"></i>'
                     flagHave += 1
                 else:
                     flag = ''
@@ -1686,7 +1686,7 @@ class WebInterface(object):
                               row[5], row[16], flag])
             rows = d
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
                 kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
             logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
@@ -2073,6 +2073,7 @@ class WebInterface(object):
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='', bookdate='',
                    manual='0', authorname='', cover='', newid='', **kwargs):
         myDB = database.DBConnection()
+
         if bookid:
             cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,books.Manual,AuthorName,books.AuthorID '
             cmd += ' from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
@@ -2139,7 +2140,9 @@ class WebInterface(object):
                     covertype = '_ww'
                 elif cover == 'goodreads':
                     covertype = '_gr'
-                elif cover == 'google':
+                elif cover == 'googleisbn':
+                    covertype = '_gi'
+                elif cover == 'googleimage':
                     covertype = '_gb'
 
                 if covertype:
@@ -2234,16 +2237,16 @@ class WebInterface(object):
             library = 'eBook'
             if redirect == 'audio':
                 library = 'AudioBook'
-        if redirect == 'members' and ' ' in action:
-            library, action = action.split(' ')
-            if library == 'A':
-                library = 'AudioBook'
-            else:
-                library = 'eBook'
+
+        if 'marktype' in args:
+            library = args['marktype']
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
-        authorcheck = []
+        check_totals = []
+        if redirect == 'author':
+            check_totals = [AuthorID]
         if action:
             for bookid in args:
                 # ouch dirty workaround...
@@ -2281,37 +2284,49 @@ class WebInterface(object):
                                             (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
 
                     elif action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        title = myDB.match('SELECT BookName from books WHERE BookID=?', (bookid,))
-                        if title:
-                            bookname = title['BookName']
-                            if library == 'eBook':
+                        bookdata = myDB.match('SELECT AuthorID,BookName from books WHERE BookID=?', (bookid,))
+                        if bookdata:
+                            authorid = bookdata['AuthorID']
+                            bookname = bookdata['BookName']
+                            if authorid not in check_totals:
+                                check_totals.append(authorid)
+                            if 'eBook' in library:
                                 myDB.upsert("books", {'Status': action}, {'BookID': bookid})
                                 logger.debug('Status set to "%s" for "%s"' % (action, bookname))
-                            elif library == 'AudioBook':
+                            if 'Audio' in library:
                                 myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
                                 logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
                     elif action in ["Remove", "Delete"]:
                         bookdata = myDB.match(
                             'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
                         if bookdata:
-                            AuthorID = bookdata['AuthorID']
+                            authorid = bookdata['AuthorID']
                             bookname = bookdata['BookName']
+                            if authorid not in check_totals:
+                                check_totals.append(authorid)
                             if action == "Delete":
-                                if library == 'eBook':
-                                    bookfile = bookdata['BookFile']
-                                else:
+                                if 'Audio' in library:
                                     bookfile = bookdata['AudioFile']
-                                if bookfile and os.path.isfile(bookfile):
-                                    try:
-                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
-                                        deleted = True
-                                    except Exception as e:
-                                        logger.warn('rmtree failed on %s, %s %s' %
-                                                    (bookfile, type(e).__name__, str(e)))
-                                        deleted = False
+                                    if bookfile and os.path.isfile(bookfile):
+                                        try:
+                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                            logger.info('AudioBook %s deleted from disc' % bookname)
+                                        except Exception as e:
+                                            logger.warn('rmtree failed on %s, %s %s' %
+                                                        (bookfile, type(e).__name__, str(e)))
 
-                                    if deleted:
-                                        if bookfile == bookdata['BookFile']:
+                                if 'eBook' in library:
+                                    bookfile = bookdata['BookFile']
+                                    if bookfile and os.path.isfile(bookfile):
+                                        try:
+                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                            deleted = True
+                                        except Exception as e:
+                                            logger.warn('rmtree failed on %s, %s %s' %
+                                                        (bookfile, type(e).__name__, str(e)))
+                                            deleted = False
+
+                                        if deleted:
                                             logger.info('eBook %s deleted from disc' % bookname)
                                             try:
                                                 calibreid = os.path.dirname(bookfile)
@@ -2334,19 +2349,17 @@ class WebInterface(object):
                                                 else:
                                                     logger.debug('No response from %s' %
                                                                  lazylibrarian.CONFIG['IMP_CALIBREDB'])
-                                        if bookfile == bookdata['AudioFile']:
-                                            logger.info('AudioBook %s deleted from disc' % bookname)
 
-                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (AuthorID,))
+                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (authorid,))
                             if authorcheck:
                                 if authorcheck['Status'] not in ['Active', 'Wanted']:
                                     myDB.action('delete from books where bookid=?', (bookid,))
                                     myDB.action('delete from wanted where bookid=?', (bookid,))
                                     logger.info('Removed "%s" from database' % bookname)
-                                elif library == 'eBook':
+                                elif 'eBook' in library:
                                     myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
                                     logger.debug('Status set to Ignored for "%s"' % bookname)
-                                else:
+                                elif 'Audio' in library:
                                     myDB.upsert("books", {"AudioStatus": "Ignored"}, {"BookID": bookid})
                                     logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
                             else:
@@ -2354,8 +2367,9 @@ class WebInterface(object):
                                 myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
 
-        if redirect == "author" or len(authorcheck):
-            update_totals(AuthorID)
+        if check_totals:
+            for author in check_totals:
+                update_totals(author)
 
         # start searchthreads
         if action == 'Wanted':
@@ -2367,16 +2381,23 @@ class WebInterface(object):
 
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, library]).start()
+                if 'eBook' in library:
+                    threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, 'eBook']).start()
+                if 'Audio' in library:
+                    threading.Thread(target=search_book, name='SEARCHBOOK', args=[books, 'AudioBook']).start()
 
         if redirect == "author":
-            raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
+                if 'eBook' in library:
+                    raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, 'eBook'))
+                if 'Audio' in library:
+                    raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, 'AudioBook'))
         elif redirect in ["books", "audio"]:
             raise cherrypy.HTTPRedirect(redirect)
         elif redirect == "members":
             raise cherrypy.HTTPRedirect("seriesMembers?seriesid=%s" % seriesid)
-        else:
-            raise cherrypy.HTTPRedirect("manage?library=%s" % library)
+        elif 'Audio' in library:
+            raise cherrypy.HTTPRedirect("manage?library=%s" % 'AudioBook')
+        raise cherrypy.HTTPRedirect("manage?library=%s" % 'eBook')
 
     # WALL #########################################################
 
@@ -2568,7 +2589,7 @@ class WebInterface(object):
                 else:
                     row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getMags returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getMags filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -2699,7 +2720,7 @@ class WebInterface(object):
             else:
                 row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -2819,7 +2840,7 @@ class WebInterface(object):
             else:
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -3361,7 +3382,7 @@ class WebInterface(object):
             rows = filtered
         else:
             rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),
@@ -3399,7 +3420,7 @@ class WebInterface(object):
             for row in rowlist:  # iterate through the sqlite3.Row objects
                 nrow = list(row)
                 # title needs spaces, not dots, for column resizing
-                title = nrow[0]
+                title = nrow[0]  # type: str
                 if title:
                     title = title.replace('.', ' ')
                     title = title.replace('LL (', 'LL.(')
@@ -3440,7 +3461,7 @@ class WebInterface(object):
             for row in rows:
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL > 3:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
             logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
             logger.debug("getHistory filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
         mydict = {'iTotalDisplayRecords': len(filtered),

@@ -228,7 +228,7 @@ def torrentAction(method, arguments):
     password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
 
     if host_url:
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug("Using existing host %s" % host_url)
     else:
         host = lazylibrarian.CONFIG['TRANSMISSION_HOST']
@@ -264,7 +264,7 @@ def torrentAction(method, arguments):
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     # Retrieve session id
     if session_id:
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug('Using existing session_id %s' % session_id)
     else:
         response = requests.get(host_url, auth=auth, proxies=proxies, timeout=timeout)

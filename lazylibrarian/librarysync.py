@@ -163,13 +163,17 @@ def get_book_info(fname):
     return res
 
 
-def find_book_in_db(author, book):
+def find_book_in_db(author, book, ignored=None):
     # PAB fuzzy search for book in library, return LL bookid if found or zero
     # if not, return bookid to more easily update status
     # prefer an exact match on author & book
     logger.debug('Searching database for [%s] by [%s]' % (book, author))
     myDB = database.DBConnection()
     cmd = 'SELECT BookID FROM books,authors where books.AuthorID = authors.AuthorID '
+    if ignored is True:
+        cmd += 'and books.Status = "Ignored" '
+    elif ignored is False:
+        cmd += 'and books.Status != "Ignored" '
     cmd += 'and AuthorName=? COLLATE NOCASE and BookName=? COLLATE NOCASE'
     match = myDB.match(cmd, (author.replace('"', '""'), book.replace('"', '""')))
     if match:
@@ -182,6 +186,10 @@ def find_book_in_db(author, book):
         # on books that should be matched
         # Maybe make ratios configurable in config.ini later
         cmd = 'SELECT BookID,BookName,BookISBN FROM books,authors where books.AuthorID = authors.AuthorID '
+        if ignored is True:
+            cmd += 'and books.Status = "Ignored" '
+        elif ignored is False:
+            cmd += 'and books.Status != "Ignored" '
         cmd += 'and AuthorName=? COLLATE NOCASE'
         books = myDB.select(cmd, (author.replace('"', '""'),))
         best_ratio = 0
@@ -202,7 +210,7 @@ def find_book_in_db(author, book):
 
         logger.debug('Searching %s book%s by [%s] in database for [%s]' %
                      (len(books), plural(len(books)), author, book))
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
             logger.debug('book partname [%s] book_sub [%s]' % (book_partname, book_sub))
         if book_partname == book_lower:
             book_partname = ''
@@ -215,16 +223,16 @@ def find_book_in_db(author, book):
             #
             # token sort ratio allows "Lord Of The Rings, The"   to match  "The Lord Of The Rings"
             ratio = fuzz.token_sort_ratio(book_lower, a_book_lower)
-            if int(lazylibrarian.LOGLEVEL) > 2:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                 logger.debug("Ratio %s [%s][%s]" % (ratio, book_lower, a_book_lower))
             # partial ratio allows "Lord Of The Rings"   to match  "The Lord Of The Rings"
             partial = fuzz.partial_ratio(book_lower, a_book_lower)
-            if int(lazylibrarian.LOGLEVEL) > 2:
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                 logger.debug("PartialRatio %s [%s][%s]" % (partial, book_lower, a_book_lower))
             if book_partname:
                 # partname allows "Lord Of The Rings (illustrated edition)"   to match  "The Lord Of The Rings"
                 partname = fuzz.partial_ratio(book_partname, a_book_lower)
-                if int(lazylibrarian.LOGLEVEL) > 2:
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                     logger.debug("PartName %s [%s][%s]" % (partname, book_partname, a_book_lower))
 
             # lose a point for each extra word in the fuzzy matches so we get the closest match
@@ -327,6 +335,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
         # allow full_scan override so we can scan in alternate directories without deleting others
         if remove:
+
             if library == 'eBook':
                 cmd = 'select AuthorName, BookName, BookFile, BookID from books,authors'
                 cmd += ' where BookLibrary is not null and books.AuthorID = authors.AuthorID'
@@ -391,7 +400,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             "\\$\\$", "") + '\.[' + booktypes + ']'  # ignore any series, we just want author/title
 
         pattern = re.compile(matchString, re.VERBOSE)
-
         # try to ensure startdir is str as os.walk can fail if it tries to convert a subdir or file
         # to utf-8 and fails (eg scandinavian characters in ascii 8bit)
         for rootdir, dirnames, filenames in os.walk(makeBytestr(startdir)):
@@ -423,10 +431,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 # in case user keeps multiple different books in the same subdirectory
                 if library == 'eBook' and lazylibrarian.CONFIG['IMP_SINGLEBOOK'] and \
                         (subdirectory in processed_subdirectories):
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                         logger.debug("[%s] already scanned" % subdirectory)
                 elif library == 'Audio' and (subdirectory in processed_subdirectories):
-                    if int(lazylibrarian.LOGLEVEL) > 2:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                         logger.debug("[%s] already scanned" % subdirectory)
                 elif not os.path.isdir(rootdir):
                     logger.debug("[%s] missing (renamed?)" % rootdir)
@@ -544,7 +552,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         else:
                                             albumartist = ''
 
-                                        if lazylibrarian.LOGLEVEL > 2:
+                                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                                             logger.debug("id3r.filename [%s]" % filename)
                                             logger.debug("id3r.performer [%s]" % performer)
                                             logger.debug("id3r.composer [%s]" % composer)
@@ -635,8 +643,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 # First try and find it under author and bookname
                                 # as we may have it under a different bookid or isbn to goodreads/googlebooks
                                 # which might have several bookid/isbn for the same book
-                                bookid = find_book_in_db(author, book)
-
+                                bookid = find_book_in_db(author, book, ignored=False)  # try unignored first
+                                if not bookid:
+                                    bookid = find_book_in_db(author, book, ignored=True)
+                                    if bookid:
+                                        logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
+                                                    (book, author))
                                 if not bookid:
                                     # Title or author name might not match, or maybe multiple authors
                                     # See if the gr_id, gb_id is already in our database
@@ -681,7 +693,12 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                         newauthor = newauthor[:-1] + '.'
                                     if author.lower() != newauthor.lower():
                                         logger.debug("Trying authorname [%s]" % newauthor)
-                                        bookid = find_book_in_db(newauthor, book)
+                                        bookid = find_book_in_db(newauthor, book, ignored=False)
+                                        if not bookid:
+                                            bookid = find_book_in_db(newauthor, book, ignored=True)
+                                            if bookid:
+                                                msg = "Book %s by %s is marked Ignored in database, importing anyway"
+                                                logger.warn(msg % (book, newauthor))
                                         if bookid:
                                             logger.warn("%s not found under [%s], found under [%s]" %
                                                         (book, author, newauthor))

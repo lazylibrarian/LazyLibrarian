@@ -29,7 +29,7 @@ import cherrypy
 from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
     searchmag, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import restartJobs, logHeader
+from lazylibrarian.common import restartJobs, logHeader, scheduleJob
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
 from lib.apscheduler.scheduler import Scheduler
 from lib.six import PY2, text_type
@@ -98,6 +98,20 @@ LOGIN_MSG = ''
 GROUP_CONCAT = 0
 HIST_REFRESH = 1000
 
+# extended loglevels
+log_magdates = 1 << 2  # 4 magazine date matching
+log_searchmag = 1 << 3  # 8 extra searchmag logging
+log_dlcomms = 1 << 4  # 16 detailed downloader communication
+log_dbcomms = 1 << 5  # 32 database comms
+log_postprocess = 1 << 6  # 64 detailed postprocessing
+log_fuzz = 1 << 7  # 128 fuzzy logic
+log_serverside = 1 << 8  # 256 serverside processing
+log_fileperms = 1 << 9  # 512 changes to file permissions
+log_grsync = 1 << 10  # 1024 detailed goodreads sync
+log_cache = 1 << 11  # 2048 cache results
+log_libsync = 1 << 12  # 4096 librarysync details
+log_admin = 1 << 13  # 8192 admin logging
+
 # user permissions
 perm_config = 1 << 0  # 1 access to config page
 perm_logs = 1 << 1  # 2 access to logs
@@ -149,7 +163,7 @@ isbn_978_dict = {
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
-CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER',
+CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH']
 # default interface does not know about these items, so leave them unchanged
@@ -885,7 +899,7 @@ def config_write(part=None):
 
     for key in list(CONFIG_DEFINITIONS.keys()):
         item_type, section, default = CONFIG_DEFINITIONS[key]
-        if key == 'WALL_COLUMNS':  # may be modified by user interface but not on config page
+        if key in ['WALL_COLUMNS', 'DISPLAY_LENGTH']:  # may be modified by user interface but not on config page
             value = CONFIG[key]
         elif part and section != part:
             value = CFG.get(section, key.lower())  # keep the old value
@@ -912,6 +926,22 @@ def config_write(part=None):
             except UnicodeError:
                 logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
                 value = unaccented_str(value)
+
+        if key in ['SEARCH_INTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL', 'SEARCHRSS_INTERVAL',
+                   'GOODREADS_INTERVAL']:
+            oldvalue = CFG.get(section, key.lower())
+            if value != oldvalue:
+                if key == 'SEARCH_INTERVAL':
+                    scheduleJob('Restart', 'search_book')
+                    scheduleJob('Restart', 'search_magazine')
+                elif key == 'SEARCHRSS_INTERVAL':
+                    scheduleJob('Restart', 'search_rss_book')
+                elif key == 'SCAN_INTERVAL':
+                    scheduleJob('Restart', 'processDir')
+                elif key == 'VERSIONCHECK_INTERVAL':
+                    scheduleJob('Restart', 'checkForUpdates')
+                elif key == 'GOODREADS_INTERVAL' and CONFIG['GR_SYNC']:
+                    scheduleJob('Restart', 'sync_to_gr')
 
         CFG.set(section, key.lower(), value)
 
@@ -1165,7 +1195,19 @@ def add_rss_slot():
                          })
 
 
+def USE_RSS():
+    if not check_int(CONFIG['SEARCHRSS_INTERVAL'], 0):
+        return 0
+    count = 0
+    for provider in RSS_PROV:
+        if bool(provider['ENABLED']):
+            count += 1
+    return count
+
+
 def USE_NZB():
+    if not check_int(CONFIG['SEARCH_INTERVAL'], 0):
+        return 0
     # Count how many nzb providers are active
     count = 0
     for provider in NEWZNAB_PROV:
@@ -1177,15 +1219,9 @@ def USE_NZB():
     return count
 
 
-def USE_RSS():
-    count = 0
-    for provider in RSS_PROV:
-        if bool(provider['ENABLED']):
-            count += 1
-    return count
-
-
 def USE_TOR():
+    if not check_int(CONFIG['SEARCH_INTERVAL'], 0):
+        return 0
     count = 0
     for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
         if bool(provider):
@@ -1194,6 +1230,8 @@ def USE_TOR():
 
 
 def USE_DIRECT():
+    if not check_int(CONFIG['SEARCH_INTERVAL'], 0):
+        return 0
     count = 0
     for provider in [CONFIG['GEN'], CONFIG['GEN2']]:
         if bool(provider):

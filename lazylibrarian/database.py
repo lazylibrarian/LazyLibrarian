@@ -70,7 +70,7 @@ class DBConnection:
                     msg = str(e)
                     msg = msg.lower()
                     if suppress == 'UNIQUE' and ('not unique' in msg or 'unique constraint failed' in msg):
-                        if int(lazylibrarian.LOGLEVEL) > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dbcomms:
                             logger.debug('Suppressed [%s] %s' % (query, e))
                             logger.debug("Suppressed args: [%s]" % str(args))
                         self.connection.commit()

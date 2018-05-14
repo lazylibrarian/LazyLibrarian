@@ -125,7 +125,7 @@ def magazineScan(title=None):
                         if match:
                             title = match.group("title")
                             issuedate = match.group("issuedate")
-                            if lazylibrarian.LOGLEVEL > 2:
+                            if lazylibrarian.LOGLEVEL & lazylibrarian.log_magdates:
                                 logger.debug("Title pattern [%s][%s]" % (title, issuedate))
                             match = True
                         else:
@@ -140,7 +140,7 @@ def magazineScan(title=None):
                             if match:
                                 issuedate = match.group("issuedate")
                                 title = os.path.basename(rootdir)
-                                if lazylibrarian.LOGLEVEL > 2:
+                                if lazylibrarian.LOGLEVEL & lazylibrarian.log_magdates:
                                     logger.debug("Date pattern [%s][%s]" % (title, issuedate))
                                 match = True
                             else:
@@ -160,7 +160,7 @@ def magazineScan(title=None):
                         exploded = " ".join(exploded.split())
                         exploded = exploded.split(' ')
                         regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
-                        if lazylibrarian.LOGLEVEL > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_magdates:
                             logger.debug("Date regex [%s][%s][%s]" % (regex_pass, issuedate, year))
                         if not regex_pass:
                             issuedate = ''
@@ -170,7 +170,7 @@ def magazineScan(title=None):
                         exploded = " ".join(exploded.split())
                         exploded = exploded.split(' ')
                         regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
-                        if lazylibrarian.LOGLEVEL > 2:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_magdates:
                             logger.debug("File regex [%s][%s][%s]" % (regex_pass, issuedate, year))
                         if not regex_pass:
                             issuedate = ''

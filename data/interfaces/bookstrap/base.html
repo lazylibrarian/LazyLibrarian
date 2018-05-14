@@ -12,16 +12,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/png"  href="images/ll.ico">
     <link rel="apple-touch-icon" href="images/ll.png">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="css/datatables.min.css"/>
     %if lazylibrarian.BOOKSTRAP_THEMELIST:
     <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/${lazylibrarian.CONFIG['BOOKSTRAP_THEME']}/bootstrap.min.css" rel="stylesheet">
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
     %else:
     <link href="css/bootstrap.min.css" rel="stylesheet">
     %endif
+    <!--link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous"-->
+    <link href="css/fontawesome/fontawesome-all.css" rel="stylesheet">
     <link href="css/bookstrap.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
-    <script src="https://code.jquery.com/jquery-migrate-1.3.0.min.js"></script>
+    <script src="js/jquery-1.12.0.min.js"></script>
+    <script src="js/jquery-migrate-1.3.0.min.js"></script>
     <script src="js/lazylibrarian-bs.js"></script>
     ${next.headIncludes()}
     <script type="text/javascript">
@@ -56,18 +57,18 @@
           $('td input:checkbox', table).prop('checked', e.checked);
       }
     </script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.js"></script>
-    <script src="js/natural.js"></script>
-    <script src="js/bootbox.min.js"></script>
-    <script src="js/bootstrap-notify.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/datatables.min.js"></script>
+    <script type="text/javascript" src="js/natural.js"></script>
+    <script type="text/javascript" src="js/bootbox.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap-notify.min.js"></script>
 <style>
 
 #myBtn {
   display: none;
   position: fixed;
-  bottom: 20px;
-  right: 30px;
+  bottom: 10px;
+  right: 15px;
   z-index: 99;
   font-size: 18px;
   border: none;

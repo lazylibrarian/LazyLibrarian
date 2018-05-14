@@ -319,7 +319,7 @@ def setperm(file_or_dir):
     st = os.stat(file_or_dir)
     old_perm = oct(st.st_mode)[-3:].zfill(3)
     if old_perm == want_perm:
-        if int(lazylibrarian.LOGLEVEL) > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_fileperms:
             logger.debug("Permission for %s is already %s" % (file_or_dir, want_perm))
         return True
 
@@ -333,7 +333,7 @@ def setperm(file_or_dir):
     new_perm = oct(st.st_mode)[-3:].zfill(3)
 
     if new_perm == want_perm:
-        if int(lazylibrarian.LOGLEVEL) > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_fileperms:
             logger.debug("Set permission %s for %s, was %s" % (want_perm, file_or_dir, old_perm))
         return True
     else:
@@ -594,8 +594,8 @@ def checkRunningJobs():
 def showJobs():
     result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),
                                              plural(check_int(lazylibrarian.CACHE_HIT, 0)),
-                                             check_int(lazylibrarian.CACHE_MISS, 0))]
-    result.append("Sleep %.3f goodreads, %.3f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP))
+                                             check_int(lazylibrarian.CACHE_MISS, 0)),
+              "Sleep %.3f goodreads, %.3f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")

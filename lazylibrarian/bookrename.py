@@ -59,8 +59,7 @@ def audioRename(bookid):
     parts = []
     author = ''
     book = ''
-    track = ''
-    total = ''
+    total = 0
     audio_file = ''
     for f in os.listdir(makeBytestr(r)):
         f = makeUnicode(f)
@@ -75,8 +74,9 @@ def audioRename(bookid):
                 track = id3r.track
                 total = id3r.track_total
 
-                if not track:
-                    track = '0'
+                track = check_int(track, 0)
+                total = check_int(total, 0)
+
                 if composer:  # if present, should be author
                     author = composer
                 elif performer:  # author, or narrator if composer == author
@@ -90,21 +90,15 @@ def audioRename(bookid):
     logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
 
     if cnt == 1 and not parts:  # single file audiobook
-        parts = ['1', exists['BookName'], exists['AuthorName'], audio_file]
+        parts = [1, exists['BookName'], exists['AuthorName'], audio_file]
 
     if cnt != len(parts):
         logger.warn("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
         return book_filename
 
-    if check_int(total, 0) and check_int(total, 0) != cnt:
-        logger.warn("%s: Reported %s parts, got %i" % (exists['BookName'], total, cnt))
+    if total and total != cnt:
+        logger.warn("%s: Reported %i parts, got %i" % (exists['BookName'], total, cnt))
         return book_filename
-
-    if '/' in track:  # does the track include total (eg 1/12)
-        a, b = track.split('/')
-        if check_int(b, 0) and check_int(b, 0) != cnt:
-            logger.warn("%s: Expected %s parts, got %i" % (exists['BookName'], b, cnt))
-            return book_filename
 
     # check all parts have the same author and title
     if len(parts) > 1:
@@ -116,13 +110,8 @@ def audioRename(bookid):
                 logger.warn("%s: Inconsistent author: [%s][%s]" % (exists['BookName'], part[2], author))
                 return book_filename
 
-    # strip out just part number
-    for part in parts:
-        if '/' in part[0]:
-            part[0] = part[0].split('/')[0]
-
     # do we have any track info (value is 0 if not)
-    if check_int(parts[0][0], 0) == 0:
+    if parts[0][0] == 0:
         tokmatch = ''
         # try to extract part information from filename. Search for token style of part 1 in this order...
         for token in [' 001.', ' 01.', ' 1.', ' 001 ', ' 01 ', ' 1 ', '01']:
@@ -153,7 +142,7 @@ def audioRename(bookid):
                 # standardise numbering of the parts
                 for part in parts:
                     if pattern in part[3]:
-                        part[0] = str(cnt)
+                        part[0] = cnt
                         break
     # check all parts are present
     cnt = 0
@@ -162,7 +151,7 @@ def audioRename(bookid):
         found = False
         cnt += 1
         for part in parts:
-            trk = check_int(part[0], 0)
+            trk = part[0]
             if trk == cnt:
                 found = True
                 break
@@ -197,7 +186,7 @@ def audioRename(bookid):
         pattern = pattern.replace(
             '$Author', author).replace(
             '$Title', book).replace(
-            '$Part', part[0].zfill(len(str(len(parts))))).replace(
+            '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
             '$Total', str(len(parts))).replace(
             '$Series', seriesinfo['Full']).replace(
             '$SerName', seriesinfo['Name']).replace(
@@ -210,7 +199,7 @@ def audioRename(bookid):
         if o != n:
             try:
                 n = safe_move(o, n)
-                if check_int(part[0], 0) == 1:
+                if part[0] == 1:
                     book_filename = n  # return part 1 of set
                 logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
 

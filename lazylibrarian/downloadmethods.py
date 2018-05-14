@@ -298,7 +298,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_TRANSMISSION'] and lazylibrarian.CONFIG['TRANSMISSION_HOST']:
         logger.debug("Sending %s to Transmission" % tor_title)
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug("TORRENT %s [%s] [%s]" % (len(torrent), torrent[:20], torrent[-20:]))
         Source = "TRANSMISSION"
         if isinstance(torrent, binary_type) and torrent.startswith(b'magnet'):

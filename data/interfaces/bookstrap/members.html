@@ -10,7 +10,7 @@
     <i class="fa fa-list"></i> Series List</a>
     %if perm&lazylibrarian.perm_force:
       <a href="refreshAuthor?AuthorID=${series['AuthorID']}" class="btn btn-sm btn-primary">
-      <i class="fa fa-refresh"></i> Refresh Author</a>
+      <i class="fa fa-sync"></i> Refresh Author</a>
     %endif
   </div>
 </%def>
@@ -24,28 +24,38 @@
     <div class="indented">
       <input type="hidden" name="redirect" value="members">
       <input type="hidden" name="seriesid" value="${series['SeriesID']}">
+      <input type="hidden" name="AuthorID" value="${series['AuthorID']}">
       %if perm&lazylibrarian.perm_status:
       <div class="form-group">
-        <label for="action" class="">Mark selected as</label>
+        <label for="marktype" class="">Mark selected </label>
+        % if lazylibrarian.SHOW_AUDIO != 0:
+        <select class="markTypes form-control input-sm" id="marktype" name="marktype">
+          // would be nice to use fontawesome icons here but options are not styleable
+          // and some browsers don't show them, eg linux firefox, android chrome
+          // They only show icons on closed select, not in dropdown
+          %for item in ["eBook", "AudioBook", "eBook+Audio"]:
+            <option value="${item}">${item}</option>
+          %endfor
+        </select>
+        %else:
+        <label for="marktype" class="">Mark selected eBook </label>
+        <select class="markTypes form-control input-sm hidden" id="marktype" name="marktype">
+          <option value="eBook">eBook</option>
+        </select>
+        %endif
+        <label for="action" class=""> as </label>
         <select class="markBooks form-control input-sm" id="action" name="action">
           // would be nice to use fontawesome icons here but options are not styleable
           // and some browsers don't show them, eg linux firefox, android chrome
           // They only show icons on closed select, not in dropdown
           %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
-            <option value="E ${item}"
-            >eBook ${item}</option>
+            <option value="${item}">${item}</option>
           %endfor
           %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
-            <option value="E Unread">Unread</option>
-            <option value="E Read">Read</option>
-            <option value="E ToRead">To Read</option>
+            <option value="Unread">Unread</option>
+            <option value="Read">Read</option>
+            <option value="ToRead">To Read</option>
           %endif
-          % if lazylibrarian.SHOW_AUDIO != 0:
-            %for item in ["Wanted", "Have", "Ignored", "Skipped", "Remove", "Delete"]:
-              <option value="A ${item}"
-              >Audio ${item}</option>
-            %endfor
-          % endif
         </select>
       </div>
       <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
@@ -114,8 +124,7 @@
               %endif
             % endif
             </td>
-          </td>
-        </tr>
+          </tr>
         %endfor
       </tbody>
     </table>

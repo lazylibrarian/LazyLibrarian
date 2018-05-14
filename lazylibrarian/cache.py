@@ -152,7 +152,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
 
     if valid_cache:
         lazylibrarian.CACHE_HIT = int(lazylibrarian.CACHE_HIT) + 1
-        if lazylibrarian.LOGLEVEL > 2:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_cache:
             logger.debug("CacheHandler: Returning CACHED response %s for %s" % (hashfilename, url))
         if cache == "JSON":
             try:

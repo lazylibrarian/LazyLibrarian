@@ -19,14 +19,14 @@
                 %endif
               %endif
             %endif
-            <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> Refresh Author</a>
-            <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=eBook" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> eBook Scan</a>
+            <a href="refreshAuthor?AuthorID=${author['AuthorID']}" class="btn btn-sm btn-primary"><i class="fa fa-sync"></i> Refresh Author</a>
+            <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=eBook" class="btn btn-sm btn-primary"><i class="fa fa-sync"></i> eBook Scan</a>
           % if lazylibrarian.SHOW_AUDIO > 0:
             %if perm&lazylibrarian.perm_force:
-                <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=AudioBook" class="btn btn-sm btn-primary"><i class="fa fa-refresh"></i> AudioBook Scan</a>
+                <a href="libraryScanAuthor?AuthorID=${author['AuthorID']}&library=AudioBook" class="btn btn-sm btn-primary"><i class="fa fa-sync"></i> AudioBook Scan</a>
             %endif
           % endif
-            <button class="button btn btn-sm btn-primary" type="button" value="removeme" id="removeme"><i class="fa fa-remove"></i> Remove Author</button>
+            <button class="button btn btn-sm btn-primary" type="button" value="removeme" id="removeme"><i class="fa fa-times"></i> Remove Author</button>
             %if ignored == 'True':
                 <a href="authorPage?AuthorID=${author['AuthorID']}&amp;Ignored=False" class="btn btn-sm btn-primary"><i class="fa fa-book"></i> Show Active</a>
             %else:
@@ -99,7 +99,7 @@
                 %endif
             %endif
             %if author['Status'] == 'Loading':
-            <p class="alert alert-info"><i class="fa fa-circle-o-notch fa-spin"></i> Fetching information for this author ...</p>
+            <p class="alert alert-info"><i class="fas fa-circle-notch fa-spin"></i> Fetching information for this author ...</p>
             %endif
             <p><b>Totalbooks:</b> ${author['TotalBooks']}</p>
 
