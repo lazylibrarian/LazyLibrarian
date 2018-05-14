@@ -79,16 +79,13 @@ def search_rss_book(books=None, library=None):
                         new_books += 1
                 else:
                     item = {}
-                    headers = []
                     results = None
                     item['Title'] = book['rss_title']
                     if book['rss_bookid']:
                         item['BookID'] = book['rss_bookid']
-                        headers.append('BookID')
                     if book['rss_isbn']:
                         item['ISBN'] = book['rss_isbn']
-                        headers.append('ISBN')
-                    bookmatch = finditem(item, book['rss_author'], headers)
+                    bookmatch = finditem(item, book['rss_author'])
                     if bookmatch:  # it's already in the database
                         authorname = bookmatch['AuthorName']
                         bookname = bookmatch['BookName']
