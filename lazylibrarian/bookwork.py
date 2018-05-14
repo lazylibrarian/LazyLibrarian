@@ -23,7 +23,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.cache import fetchURL, gr_xml_request
 from lazylibrarian.common import proxyList
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
-    check_int
+    check_int, replace_all
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
 
@@ -530,6 +530,8 @@ def getSeriesAuthors(seriesid):
     result = myDB.match('select SeriesName from series where SeriesID=?', (seriesid,))
     seriesname = result['SeriesName']
     members = getSeriesMembers(seriesid)
+    dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '', "'": "", '"': ''}
+
     if members:
         myDB = database.DBConnection()
         for member in members:
@@ -538,7 +540,7 @@ def getSeriesAuthors(seriesid):
             authorname = member[2]
             # workid = member[3]
             authorid = member[4]
-
+            bookname = replace_all(bookname, dic)
             if not authorid:
                 # goodreads gives us all the info we need, librarything/google doesn't
                 base_url = 'https://www.goodreads.com/search.xml?q='
@@ -558,6 +560,7 @@ def getSeriesAuthors(seriesid):
                         for item in resultxml:
                             try:
                                 booktitle = item.find('./best_book/title').text
+                                booktitle = replace_all(booktitle, dic)
                             except (KeyError, AttributeError):
                                 booktitle = ""
                             book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
@@ -590,6 +593,7 @@ def getSeriesAuthors(seriesid):
                             resultxml = rootxml.getiterator('work')
                             for item in resultxml:
                                 booktitle = item.find('./best_book/title').text
+                                booktitle = replace_all(booktitle, dic)
                                 book_fuzz = fuzz.token_set_ratio(booktitle, bookname)
                                 if book_fuzz >= 98:
                                     try:
