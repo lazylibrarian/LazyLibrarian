@@ -21,7 +21,7 @@ import platform
 
 from ctypes.util import find_library
 
-from unrar import constants
+from . import constants
 
 
 __all__ = ["RAROpenArchiveDataEx", "RARHeaderDataEx", "RAROpenArchiveEx",
