@@ -1352,18 +1352,19 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(makeBytestr(pp_path)):
                 fname = makeUnicode(fname)
-                if bestmatch and not fname.endswith(bestmatch):
-                    logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
-                elif is_valid_booktype(fname, booktype=booktype):
-                    filename, extn = os.path.splitext(fname)
-                    srcfile = os.path.join(pp_path, filename + extn)
-                    dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
-                    # calibre does not like quotes in author names
-                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                        _ = safe_copy(srcfile, dstfile)
+                filename, extn = os.path.splitext(fname)
+                srcfile = os.path.join(pp_path, fname)
+                if is_valid_booktype(fname, booktype=booktype) or extn in ['.opf', '.jpg']:
+                    if bestmatch and not fname.endswith(bestmatch) and extn not in ['.opf', '.jpg']:
+                        logger.debug("Removing %s as not %s" % (fname, bestmatch))
+                        os.remove(srcfile)
                     else:
+                        dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
+                        # calibre does not like quotes in author names
                         _ = safe_move(srcfile, dstfile)
-
+                else:
+                    logger.debug('Removing %s as not wanted' % fname)
+                    os.remove(srcfile)
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
