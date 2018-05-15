@@ -398,7 +398,6 @@ def import_CSV(search_dir=None):
                         logger.warn('Unable to delete %s: %s' % (csvFile, why.strerror))
                 else:
                     logger.warn("Not deleting %s as not all books found" % csvFile)
-
             return msg
     except Exception:
         msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()
