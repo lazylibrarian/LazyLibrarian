@@ -22,8 +22,8 @@ import io
 import os
 import sys
 
-from unrar import constants
-from unrar import unrarlib
+from . import constants
+from . import unrarlib
 
 
 __all__ = ["BadRarFile", "is_rarfile", "RarFile", "RarInfo"]

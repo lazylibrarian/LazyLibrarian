@@ -44,10 +44,11 @@ def magazineScan(title=None):
         mag_path = mag_path.split('$')[0]
 
         if lazylibrarian.CONFIG['MAG_RELATIVE']:
-            if mag_path[0] not in '._':
-                mag_path = '_' + mag_path
             mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
-
+        else:
+            ignorefile = os.path.join(mag_path, '.ll_ignore')
+            with open(ignorefile, 'a'):
+                os.utime(ignorefile, None)
         if PY2:
             mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
@@ -194,6 +195,8 @@ def magazineScan(title=None):
                             elif len(issuedate) == 12:
                                 filedate = 'Vol %d Iss %d %s' % (int(issuedate[4:8]), int(issuedate[8:]),
                                                                  issuedate[:4])
+                            else:
+                                filedate = str(issuedate).zfill(4)
 
                         extn = os.path.splitext(fname)[1]
                         newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$Title', title).replace(

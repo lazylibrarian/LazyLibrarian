@@ -520,6 +520,28 @@
                       <input type="checkbox" id="delete_csv" name="delete_csv" value="1" ${checked} />
                       Delete csv file or wishlist after successful import</label>
                   </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['BLACKLIST_FAILED'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="blacklist_failed">
+                      <input type="checkbox" id="blacklist_failed" name="blacklist_failed" value="1" ${checked} />
+                      Blacklist failed downloads in history table</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['BLACKLIST_PROCESSED'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="blacklist_processed">
+                      <input type="checkbox" id="blacklist_processed" name="blacklist_processed" value="1" ${checked} />
+                      Blacklist processed downloads in history table</label>
+                  </div>
                 </fieldset>
               </div>
               <div class="col-md-4">
@@ -1639,13 +1661,7 @@
                   <div class="form-group">
                     <label for="mag_dest_folder">Magazine Foldername Pattern:</label>
                     <input type="text" id="mag_dest_folder" name="mag_dest_folder" value="${lazylibrarian.CONFIG['MAG_DEST_FOLDER']}" class="form-control" placeholder="Magazines Destination Folder">
-                  </div>
-                  <div class="form-group">
-                    <label for="mag_dest_file">Magazine Filename Pattern:</label>
-                    <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
-                    <span class="help-block">Options: $Title, $IssueDate, any string
-                      <BR>Current limitations: Issue Filename must contain IssueDate
-                      <BR>If Issue Filename does not contain Title, Foldername is used as Title</span>
+                    <span class="help-block">Absolute path, or inside book folder</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1657,7 +1673,13 @@
                     <label for="mag_relative" class="control-label">
                       <input type="checkbox" id="mag_relative" name="mag_relative" value="1" ${checked} />
                       Magazines inside book folder</label>
-                    <span class="help-block">Current limitation: If inside book folder, magazine folder must start with _</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="mag_dest_file">Magazine Filename Pattern:</label>
+                    <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
+                    <span class="help-block">Options: $Title, $IssueDate, any string
+                      <BR>Current limitations: Issue Filename must contain IssueDate
+                      <BR>If Issue Filename does not contain Title, Foldername is used as Title</span>
                   </div>
                   <div class="checkbox">
                     <%

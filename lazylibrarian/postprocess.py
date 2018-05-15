@@ -670,11 +670,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
 
                                 if lazylibrarian.CONFIG['MAG_RELATIVE']:
-                                    if dest_path[0] not in '._':
-                                        dest_path = '_' + dest_path
                                     dest_dir = lazylibrarian.DIRECTORY('eBook')
                                     dest_path = os.path.join(dest_dir, dest_path)
-
+                                else:
+                                    ignorefile = os.path.join(dest_path, '.ll_ignore')
+                                    with open(ignorefile, 'a'):
+                                        os.utime(ignorefile, None)
                                 if PY2:
                                     dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
@@ -1352,18 +1353,19 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(makeBytestr(pp_path)):
                 fname = makeUnicode(fname)
-                if bestmatch and not fname.endswith(bestmatch):
-                    logger.debug("Ignoring %s as not %s" % (fname, bestmatch))
-                elif is_valid_booktype(fname, booktype=booktype):
-                    filename, extn = os.path.splitext(fname)
-                    srcfile = os.path.join(pp_path, filename + extn)
-                    dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
-                    # calibre does not like quotes in author names
-                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
-                        _ = safe_copy(srcfile, dstfile)
+                filename, extn = os.path.splitext(fname)
+                srcfile = os.path.join(pp_path, fname)
+                if is_valid_booktype(fname, booktype=booktype) or extn in ['.opf', '.jpg']:
+                    if bestmatch and not fname.endswith(bestmatch) and extn not in ['.opf', '.jpg']:
+                        logger.debug("Removing %s as not %s" % (fname, bestmatch))
+                        os.remove(srcfile)
                     else:
+                        dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
+                        # calibre does not like quotes in author names
                         _ = safe_move(srcfile, dstfile)
-
+                else:
+                    logger.debug('Removing %s as not wanted' % fname)
+                    os.remove(srcfile)
             if bookid.isdigit():
                 identifier = "goodreads:%s" % bookid
             else:
