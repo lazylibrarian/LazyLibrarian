@@ -195,6 +195,8 @@ def magazineScan(title=None):
                             elif len(issuedate) == 12:
                                 filedate = 'Vol %d Iss %d %s' % (int(issuedate[4:8]), int(issuedate[8:]),
                                                                  issuedate[:4])
+                            else:
+                                filedate = str(issuedate).zfill(4)
 
                         extn = os.path.splitext(fname)[1]
                         newfname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$Title', title).replace(
