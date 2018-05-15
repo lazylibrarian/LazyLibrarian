@@ -670,11 +670,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)
 
                                 if lazylibrarian.CONFIG['MAG_RELATIVE']:
-                                    if dest_path[0] not in '._':
-                                        dest_path = '_' + dest_path
                                     dest_dir = lazylibrarian.DIRECTORY('eBook')
                                     dest_path = os.path.join(dest_dir, dest_path)
-
+                                else:
+                                    ignorefile = os.path.join(dest_path, '.ll_ignore')
+                                    with open(ignorefile, 'a'):
+                                        os.utime(ignorefile, None)
                                 if PY2:
                                     dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
