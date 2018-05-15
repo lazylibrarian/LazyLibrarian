@@ -260,8 +260,15 @@ def search_magazines(mags=None, reset=False):
                                 logger.debug("Magazine name too short (%s)" % len(nzbtitle_exploded))
                                 rejected = True
 
-                        if not rejected:
+                        if not rejected and lazylibrarian.CONFIG['BLACKLIST_FAILED']:
                             blocked = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (nzburl,))
+                            if blocked:
+                                logger.debug("Rejecting %s, blacklisted at %s" %
+                                             (nzbtitle_formatted, blocked['NZBprov']))
+                                rejected = True
+
+                        if not rejected and lazylibrarian.CONFIG['BLACKLIST_PROCESSED']:
+                            blocked = myDB.match('SELECT * from wanted WHERE NZBurl=?', (nzburl,))
                             if blocked:
                                 logger.debug("Rejecting %s, blacklisted at %s" %
                                              (nzbtitle_formatted, blocked['NZBprov']))

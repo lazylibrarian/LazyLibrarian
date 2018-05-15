@@ -520,6 +520,28 @@
                       <input type="checkbox" id="delete_csv" name="delete_csv" value="1" ${checked} />
                       Delete csv file or wishlist after successful import</label>
                   </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['BLACKLIST_FAILED'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="blacklist_failed">
+                      <input type="checkbox" id="blacklist_failed" name="blacklist_failed" value="1" ${checked} />
+                      Blacklist failed downloads in history table</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['BLACKLIST_PROCESSED'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="blacklist_processed">
+                      <input type="checkbox" id="blacklist_processed" name="blacklist_processed" value="1" ${checked} />
+                      Blacklist processed downloads in history table</label>
+                  </div>
                 </fieldset>
               </div>
               <div class="col-md-4">

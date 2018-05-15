@@ -174,7 +174,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
-                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV']
+                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
+                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -239,6 +240,8 @@ CONFIG_DEFINITIONS = {
     'IMP_AUTOADD_MAGONLY': ('bool', 'General', 0),
     'IMP_AUTOSEARCH': ('bool', 'General', 0),
     'IMP_CALIBREDB': ('str', 'General', ''),
+    'BLACKLIST_FAILED': ('bool', 'General', 1),
+    'BLACKLIST_PROCESSED': ('bool', 'General', 0),
     'CALIBRE_USE_SERVER': ('bool', 'General', 0),
     'CALIBRE_SERVER': ('str', 'General', ''),
     'CALIBRE_USER': ('str', 'General', ''),
