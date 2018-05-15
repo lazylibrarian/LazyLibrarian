@@ -17,9 +17,11 @@ import lazylibrarian
 from lib.six import PY2
 from lazylibrarian import database, logger
 from lazylibrarian.common import csv_file
-from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName, makeUnicode
+from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName, \
+    makeUnicode, split_title
 from lazylibrarian.importer import search_for, import_book, addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
+
 try:
     from csv import writer, reader, QUOTE_MINIMAL
 except ImportError:
@@ -319,6 +321,7 @@ def import_CSV(search_dir=None):
 
                     bookmatch = finditem(item, authorname)
                     result = ''
+                    imported = ''
                     if bookmatch:
                         authorname = bookmatch['AuthorName']
                         bookname = bookmatch['BookName']
@@ -341,20 +344,37 @@ def import_CSV(search_dir=None):
                             result = results[0]
                             if result['author_fuzz'] >= lazylibrarian.CONFIG['MATCH_RATIO'] \
                                     and result['book_fuzz'] >= lazylibrarian.CONFIG['MATCH_RATIO']:
-                                logger.info("Found (%s%% %s%%) %s: %s for %s: %s" %
-                                            (result['author_fuzz'], result['book_fuzz'],
-                                             result['authorname'], result['bookname'],
-                                             authorname, title))
-                                import_book(result['bookid'], wait=True)
-                                res = myDB.match('select * from books where BookID=?', (result['bookid'],))
-                                if res:
-                                    bookcount += 1
-                                    bookmatch = True
+                                bookmatch = True
+                        if not bookmatch:  # no match on full searchterm, try splitting out subtitle
+                            newtitle, _ = split_title(authorname, title)
+                            if newtitle != title:
+                                title = newtitle
+                                searchterm = "%s <ll> %s" % (title, authorname)
+                                results = search_for(unaccented(searchterm))
+                                if results:
+                                    result = results[0]
+                                    if result['author_fuzz'] >= lazylibrarian.CONFIG['MATCH_RATIO'] \
+                                            and result['book_fuzz'] >= lazylibrarian.CONFIG['MATCH_RATIO']:
+                                        bookmatch = True
+                        if bookmatch:
+                            logger.info("Found (%s%% %s%%) %s: %s for %s: %s" %
+                                        (result['author_fuzz'], result['book_fuzz'],
+                                         result['authorname'], result['bookname'],
+                                         authorname, title))
+                            import_book(result['bookid'], wait=True)
+                            imported = myDB.match('select * from books where BookID=?', (result['bookid'],))
+                            if imported:
+                                bookcount += 1
+                            else:
+                                bookmatch = False
 
                     if not bookmatch:
                         msg = "Skipping book %s by %s" % (title, authorname)
                         if not result:
-                            msg += ', No results returned'
+                            msg += ', No results found'
+                            logger.warn(msg)
+                        elif not imported:
+                            msg += ', Failed to import %s' % result['bookid']
                             logger.warn(msg)
                         else:
                             msg += ', No match found'
@@ -369,12 +389,16 @@ def import_CSV(search_dir=None):
             msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
                   (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
             logger.info(msg)
-            if lazylibrarian.CONFIG['DELETE_CSV'] and skipcount == 0:
-                logger.info("Deleting %s on successful completion" % csvFile)
-                try:
-                    os.remove(csvFile)
-                except OSError as why:
-                    logger.warn('Unable to delete %s: %s' % (csvFile, why.strerror))
+            if lazylibrarian.CONFIG['DELETE_CSV']:
+                if skipcount == 0:
+                    logger.info("Deleting %s on successful completion" % csvFile)
+                    try:
+                        os.remove(csvFile)
+                    except OSError as why:
+                        logger.warn('Unable to delete %s: %s' % (csvFile, why.strerror))
+                else:
+                    logger.warn("Not deleting %s as not all books found" % csvFile)
+
             return msg
     except Exception:
         msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()
