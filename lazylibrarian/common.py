@@ -721,6 +721,11 @@ def logHeader():
         # 3.5.4 is the earliest version with GROUP_CONCAT which we use, but is not essential
         header += 'sqlite3: missing required functionality. Try upgrading to v3.5.4 or newer. You have '
     header += "sqlite3: %s\n" % getattr(sqlite3, 'sqlite_version', None)
+    try:
+        from lib.unrar import rarfile
+        header += "unrar library available\n"
+    except Exception as e:
+        header += "unrar library missing: %s\n" % str(e)
 
     ssl_report = False
     if ssl_report:
