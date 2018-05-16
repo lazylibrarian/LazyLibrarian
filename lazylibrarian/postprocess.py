@@ -845,7 +845,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 try:
                     when_snatched = datetime.datetime.strptime(book['NZBdate'], '%Y-%m-%d %H:%M:%S')
                     timenow = datetime.datetime.now()
-                    td = when_snatched - timenow
+                    td = timenow - when_snatched
                     diff = td.seconds  # time difference in seconds
                 except ValueError:
                     diff = 0
