@@ -176,7 +176,7 @@
 
     function validateForm() {
         var x = document.forms["markMagazines"]["action"].value;
-        var c = (document.querySelectorAll('input[type="checkbox"]:checked').length);
+        var c = (document.querySelectorAll('input[class="checkbox"]:checked').length);
         if (c > 0 && x == "Delete") {
             if (c == 1) {msg = "Are you sure you want to permanently delete the selected magazine?"}
             if (c > 1) {msg = "Are you sure you want to permanently delete the " + c + " selected magazines?"}
