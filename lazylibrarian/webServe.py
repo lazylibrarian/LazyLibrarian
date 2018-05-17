@@ -1131,10 +1131,14 @@ class WebInterface(object):
 
         myDB = database.DBConnection()
 
-        authorids = myDB.select("SELECT AuthorID from authors")
+        authorids = myDB.select("SELECT AuthorID from authors where status != 'Loading'")
         authorlist = []
         for item in authorids:
             authorlist.append(item['AuthorID'])
+        authorids = myDB.select("SELECT AuthorID from authors where status = 'Loading'")
+        loadlist = []
+        for item in authorids:
+            loadlist.append(item['AuthorID'])
 
         booksearch = myDB.select("SELECT Status,BookID from books")
         booklist = []
@@ -1143,7 +1147,7 @@ class WebInterface(object):
 
         searchresults = search_for(name)
         return serve_template(templatename="searchresults.html", title='Search Results: "' + name + '"',
-                              searchresults=searchresults, authorlist=authorlist,
+                              searchresults=searchresults, authorlist=authorlist, loadlist=loadlist,
                               booklist=booklist, booksearch=booksearch)
 
     # AUTHOR ############################################################
@@ -1218,6 +1222,9 @@ class WebInterface(object):
             firstpage = 'true'
 
         authorname = author['AuthorName']
+        if not authorname:  # still loading?
+            raise cherrypy.HTTPRedirect("home")
+
         if PY2:
             authorname = authorname.encode(lazylibrarian.SYS_ENCODING)
 
@@ -1447,7 +1454,7 @@ class WebInterface(object):
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
             bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
-            if 'libgen' in provider:  # for libgen we use direct download links
+            if mode == 'direct':
                 snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], library)
             elif mode in ["torznab", "torrent", "magnet"]:
                 snatch = TORDownloadMethod(bookid, bookname, url, library)

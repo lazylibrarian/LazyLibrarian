@@ -151,9 +151,12 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
 
             controlValueDict = {"AuthorID": authorid}
             newValueDict = {"Status": "Loading"}
+            if new_author:
+                newValueDict["AuthorName"] = "Loading"
+                newValueDict["AuthorImg"] = "images/nophoto.png"
             myDB.upsert("authors", newValueDict, controlValueDict)
 
-            GR = GoodReads(authorname)
+            GR = GoodReads(authorid)
             author = GR.get_author_info(authorid=authorid)
             if author:
                 authorname = author['authorname']
