@@ -37,6 +37,7 @@
                 <th class="bookname">Title</th>
                 <th class="date text-center">Released</th>
                 <th class="stars text-center">Rating</th>
+                <th class="stars text-center">Rating count</th>
                 <th class="addAuthor text-center no-sort">Add</th>
                 <th class="fuzz text-right">Match</th>
              </tr>
@@ -115,6 +116,7 @@
   <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
   <td class="date text-center">${result['bookdate']}</td>
   <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
+  <td class="bookrate_count">${result.get('bookrate_count', 0)}</td>
   <td class="addAuthor text-center">
     <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
     </p>
@@ -140,6 +142,7 @@
                 "responsive": true,
                 "order": [[ 6, 'desc' ]],
                 "aoColumns": [
+                    null,
                     null,
                     null,
                     null,
