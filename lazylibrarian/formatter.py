@@ -20,6 +20,19 @@ import unicodedata
 
 import lazylibrarian
 from lib.six import PY2, text_type
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_parse import quote_plus, quote, urlencode, urlsplit, urlunsplit
+
+
+def url_fix(s, charset='utf-8'):
+    if PY2 and isinstance(s, text_type):
+        s = s.encode(charset, 'ignore')
+    elif not PY2 and not isinstance(s, text_type):
+        s = s.decode(charset)
+    scheme, netloc, path, qs, anchor = urlsplit(s)
+    path = quote(path, '/%')
+    qs = quote_plus(qs, ':&=')
+    return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
 def bookSeries(bookname):
@@ -265,6 +278,30 @@ def check_int(var, default):
         return int(var)
     except (ValueError, TypeError):
         return default
+
+
+def size_in_bytes(size):
+    """
+    Take a size string with units eg 10 Mb, 5.3Kb
+    and return integer bytes
+    """
+    if not size:
+        return 0
+    mult = 1
+    try:
+        if 'K' in size:
+            size = size.split('K')[0]
+            mult = 1024
+        elif 'M' in size:
+            size = size.split('M')[0]
+            mult = 1024 * 1024
+        elif 'G' in size:
+            size = size.split('G')[0]
+            mult = 1024 * 1024 * 1024
+        size = int(float(size) * mult)
+    except (ValueError, IndexError):
+        size = 0
+    return size
 
 
 def md5_utf8(txt):

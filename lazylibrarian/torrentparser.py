@@ -16,10 +16,10 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, unaccented, makeUnicode
-from lib.six import PY2, PY3, text_type
+from lazylibrarian.formatter import plural, unaccented, makeUnicode, size_in_bytes, url_fix
+from lib.six import PY2
 # noinspection PyUnresolvedReferences
-from lib.six.moves.urllib_parse import quote_plus, quote, urlencode, urlsplit, urlunsplit
+from lib.six.moves.urllib_parse import quote, urlencode
 
 if PY2:
     from lib.bs4 import BeautifulSoup
@@ -27,17 +27,6 @@ if PY2:
 else:
     from lib3.bs4 import BeautifulSoup
     import lib3.feedparser as feedparser
-
-
-def url_fix(s, charset='utf-8'):
-    if PY2 and isinstance(s, text_type):
-        s = s.encode(charset, 'ignore')
-    elif PY3 and not isinstance(s, text_type):
-        s = s.decode(charset)
-    scheme, netloc, path, qs, anchor = urlsplit(s)
-    path = quote(path, '/%')
-    qs = quote_plus(qs, ':&=')
-    return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
 def TPB(book=None, test=False):
@@ -115,20 +104,7 @@ def TPB(book=None, test=False):
                         title = link.text
                         size = td[1].text.split(', Size ')[1].split('iB')[0]
                         size = size.replace('&nbsp;', '')
-                        mult = 1
-                        try:
-                            if 'K' in size:
-                                size = size.split('K')[0]
-                                mult = 1024
-                            elif 'M' in size:
-                                size = size.split('M')[0]
-                                mult = 1024 * 1024
-                            elif 'G' in size:
-                                size = size.split('G')[0]
-                                mult = 1024 * 1024 * 1024
-                            size = int(float(size) * mult)
-                        except (ValueError, IndexError):
-                            size = 0
+                        size = size_in_bytes(size)
                         try:
                             seeders = int(td[2].text)
                         except ValueError:
@@ -253,18 +229,8 @@ def KAT(book=None, test=False):
 
                     try:
                         size = str(td[1].text).replace('&nbsp;', '').upper()
-                        mult = 1
-                        if 'K' in size:
-                            size = size.split('K')[0]
-                            mult = 1024
-                        elif 'M' in size:
-                            size = size.split('M')[0]
-                            mult = 1024 * 1024
-                        elif 'G' in size:
-                            size = size.split('G')[0]
-                            mult = 1024 * 1024 * 1024
-                        size = int(float(size) * mult)
-                    except (ValueError, IndexError):
+                        size = size_in_bytes(size)
+                    except ValueError:
                         size = 0
                     try:
                         seeders = int(td[3].text)
@@ -385,18 +351,8 @@ def WWT(book=None, test=False):
 
                         try:
                             size = str(td[1].text).replace('&nbsp;', '').upper()
-                            mult = 1
-                            if 'K' in size:
-                                size = size.split('K')[0]
-                                mult = 1024
-                            elif 'M' in size:
-                                size = size.split('M')[0]
-                                mult = 1024 * 1024
-                            elif 'G' in size:
-                                size = size.split('G')[0]
-                                mult = 1024 * 1024 * 1024
-                            size = int(float(size) * mult)
-                        except (ValueError, IndexError):
+                            size = size_in_bytes(size)
+                        except ValueError:
                             size = 0
                         try:
                             seeders = int(td[2].text)
