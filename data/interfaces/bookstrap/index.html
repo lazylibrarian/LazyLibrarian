@@ -185,7 +185,7 @@
 
     function validateForm() {
         var x = document.forms["markAuthors"]["action"].value;
-        var c = (document.querySelectorAll('input[type="checkbox"]:checked').length);
+        var c = (document.querySelectorAll('input[class="checkbox"]:checked').length);
         if (c > 0 && (x == "Delete" || x == "Remove")) {
             if (x == "Delete") {
                 if (c == 1){ msg = "Are you sure you want to permanently delete the selected author and their books?"}

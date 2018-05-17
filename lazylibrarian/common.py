@@ -723,7 +723,8 @@ def logHeader():
     header += "sqlite3: %s\n" % getattr(sqlite3, 'sqlite_version', None)
     try:
         from lib.unrar import rarfile
-        header += "unrar library available\n"
+        version = rarfile.unrarlib.RARGetDllVersion()
+        header += "unrar library DLL version %s\n" % version
     except Exception as e:
         header += "unrar library missing: %s\n" % str(e)
 
