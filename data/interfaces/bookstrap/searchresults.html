@@ -115,7 +115,7 @@
   <td class="authorname">${result['authorname']}</td>
   <td class="bookname"><a href="${result['booklink']}" target="_blank" rel="noreferrer">${result['bookname']}</a></td>
   <td class="date text-center">${result['bookdate']}</td>
-  <td class="stars text-center"><img src="images/${starimg}" alt="Rating"></td>
+  <td class="stars text-center"><img src="images/${starimg}" alt="${result['bookrate']}"></td>
   <td class="bookrate_count">${result.get('bookrate_count', 0)}</td>
   <td class="addAuthor text-center">
     <p><a class="${but_class} btn btn-xs" href="${destination}">${value}</a>
@@ -152,7 +152,10 @@
                     null
                     ],
                 "columnDefs":
-                    [{ targets: 'no-sort', orderable: false }]
+                    [
+                        { targets: 'no-sort', orderable: false },
+                        {targets: 4, "type": "alt-string"},
+                    ]
                 ,
                 "oLanguage": {
                     "sSearch": "Filter: ",
