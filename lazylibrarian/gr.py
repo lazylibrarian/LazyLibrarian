@@ -110,6 +110,10 @@ class GoodReads:
                             bookrate = author.find('average_rating').text
                         except KeyError:
                             bookrate = 0
+                        try:
+                            bookrate_count = int(author.find('ratings_count').text)
+                        except KeyError:
+                            bookrate_count = 0
 
                         bookpages = '0'
                         bookgenre = ''
@@ -174,6 +178,7 @@ class GoodReads:
                             'booklang': booklang,
                             'booklink': booklink,
                             'bookrate': float(bookrate),
+                            'bookrate_count': bookrate_count,
                             'bookimg': bookimg,
                             'bookpages': bookpages,
                             'bookgenre': bookgenre,
