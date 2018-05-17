@@ -46,8 +46,10 @@ class GoogleBooks:
         self.params = {
             'maxResults': 40,
             'printType': 'books',
-            'key': lazylibrarian.CONFIG['GB_API']
         }
+
+        if lazylibrarian.CONFIG['GB_API']:
+            self.params['key'] = lazylibrarian.CONFIG['GB_API']
 
     # noinspection PyBroadException
     def find_results(self, searchterm=None, queue=None):
@@ -774,8 +776,9 @@ def bookdict(item):
     # There may be others...
     #
     try:
+
         seriesNum, series = mydict['sub'].split('Book ')[1].split(' of ')
-    except IndexError:
+    except (IndexError, ValueError):
         series = ""
         seriesNum = ""
 
