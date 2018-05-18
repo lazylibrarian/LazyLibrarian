@@ -15,8 +15,7 @@ import traceback
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode
-from lazylibrarian.torrentparser import url_fix
+from lazylibrarian.formatter import plural, formatAuthorName, makeUnicode, size_in_bytes, url_fix
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlparse, urlencode
@@ -174,23 +173,7 @@ def GEN(book=None, prov=None, test=False):
                         except IndexError as e:
                             logger.debug('Error parsing libgen search.php results; %s' % str(e))
 
-                    if not size:
-                        size = 0
-                    else:
-                        try:
-                            mult = 1
-                            if 'K' in size:
-                                size = size.split('K')[0]
-                                mult = 1024
-                            elif 'M' in size:
-                                size = size.split('M')[0]
-                                mult = 1024 * 1024
-                            elif 'G' in size:
-                                size = size.split('G')[0]
-                                mult = 1024 * 1024 * 1024
-                            size = int(float(size) * mult)
-                        except (ValueError, IndexError):
-                            size = 0
+                    size = size_in_bytes(size)
 
                     if link and title:
                         if author:

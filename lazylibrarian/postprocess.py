@@ -750,7 +750,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             # Only delete torrents if we don't want to keep seeding
                             if lazylibrarian.CONFIG['KEEP_SEEDING']:
                                 logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
-                                to_delete = False
+                                if not pp_path.endswith('.unpack'):  # even if seeding we can delete our unpacked files
+                                    to_delete = False
 
                         if ignoreclient is False and to_delete:
                             # ask downloader to delete the torrent, but not the files
