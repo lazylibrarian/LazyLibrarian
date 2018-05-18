@@ -18,7 +18,6 @@ import socket
 import sys
 
 from . import version
-from version import __version__
 from . import core
 from . import errors
 from . import shim
@@ -170,7 +169,7 @@ class GrowlNotifier(object):
 		"""Add optional Origin headers to message"""
 		packet.add_header('Origin-Machine-Name', platform.node())
 		packet.add_header('Origin-Software-Name', 'gntp.py')
-		packet.add_header('Origin-Software-Version', __version__)
+		packet.add_header('Origin-Software-Version', version.__version__)
 		packet.add_header('Origin-Platform-Name', platform.system())
 		packet.add_header('Origin-Platform-Version', platform.platform())
 
