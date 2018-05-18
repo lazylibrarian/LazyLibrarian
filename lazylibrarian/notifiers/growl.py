@@ -64,13 +64,12 @@ class Growl_Notifier:
 
         try:
             growl.register()
-
         except gntp_notifier.errors.NetworkError:
-            logger.warning(u'Growl notification failed: network error')
+            logger.warn(u'Growl notification failed: network error')
             return False
 
         except gntp_notifier.errors.AuthError:
-            logger.warning(u'Growl notification failed: authentication error')
+            logger.warn(u'Growl notification failed: authentication error')
             return False
 
         # Send it, including an image if available
@@ -89,7 +88,7 @@ class Growl_Notifier:
                 icon=image
             )
         except gntp_notifier.errors.NetworkError:
-            logger.warning(u'Growl notification failed: network error')
+            logger.warn(u'Growl notification failed: network error')
             return False
 
         logger.info(u"Growl notification sent.")
