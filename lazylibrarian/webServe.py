@@ -1402,13 +1402,13 @@ class WebInterface(object):
     # BOOKS #############################################################
 
     @cherrypy.expose
-    def booksearch(self, author=None, title=None, bookid=None, action=None):
+    def booksearch(self, author=None, title=None, bookid=None, action=''):
         self.label_thread('BOOKSEARCH')
         if '_title' in action:
             searchterm = title
         elif '_author' in action:
             searchterm = author
-        else:  # if '_full' in action:
+        else:  # if '_full' in action: or legacy interface
             searchterm = '%s %s' % (author, title)
             searchterm = searchterm.strip()
 
@@ -1416,8 +1416,10 @@ class WebInterface(object):
             cat = 'book'
         elif action == 'a_full':
             cat = 'audio'
-        else:
+        elif action:
             cat = 'general'
+        else:  # legacy interface
+            cat = 'book'
 
         results = searchItem(searchterm, bookid, cat)
         library = 'eBook'
@@ -3784,6 +3786,22 @@ class WebInterface(object):
             return "Test Prowl notice sent successfully"
         else:
             return "Test Prowl notice failed"
+
+    @cherrypy.expose
+    def testGrowl(self, **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        threading.currentThread().name = "WEBSERVER"
+        if 'apikey' in kwargs:
+            lazylibrarian.CONFIG['GROWL_HOST'] = kwargs['host']
+        if 'priority' in kwargs:
+            lazylibrarian.CONFIG['GROWL_PASSWORD'] = check_int(kwargs['password'], 0)
+
+        result = notifiers.growl_notifier.test_notify()
+        if result:
+            lazylibrarian.config_write('Growl')
+            return "Test Growl notice sent successfully"
+        else:
+            return "Test Growl notice failed"
 
     @cherrypy.expose
     def testNMA(self, **kwargs):

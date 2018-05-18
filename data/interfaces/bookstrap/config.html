@@ -2202,6 +2202,55 @@
                     </div>
                   </fieldset>
                 </div>
+                <div class="checkbox">
+                  <%
+                    if lazylibrarian.CONFIG['USE_GROWL'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                  <label for="use_growl" class="control-label">
+                    <input type="checkbox" name="use_growl" id="use_growl" value="1" ${checked} />
+                    Enable Growl</label>
+                </div>
+                <div id="growloptions">
+                  <fieldset>
+                    <legend>Growl</legend>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['GROWL_ONSNATCH'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                      <label for="growl_onsnatch" class="control-label">
+                        <input type="checkbox" id="growl_onsnatch" name="growl_onsnatch" value="1" ${checked} />
+                        Notify on snatch?</label>
+                    </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['GROWL_ONDOWNLOAD'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                      <label for="growl_ondownload" class="control-label">
+                        <input type="checkbox" id="growl_ondownload" name="growl_ondownload" value="1" ${checked} />
+                        Notify on download?</label>
+                    </div>
+                    <div class="form-group">
+                      <label for="growl_host="control-label">Growl Host</label>
+                      <input type="text" id="growl_host" name="growl_host" value="${lazylibrarian.CONFIG['GROWL_HOST']}" class="form-control" placeholder="eg localhost:23053">
+                    </div>
+                    <div class="form-group">
+                      <label for="growl_password="control-label">Growl Password</label>
+                      <input type="text" id="growl_password" name="growl_password" value="${lazylibrarian.CONFIG['GROWL_PASSWORD']}" class="form-control" placeholder="none">
+                    </div>
+                    <div class="form-group">
+                      <input type="button" value="Test Growl" id="testGrowl" class="btn btn-default" />
+                    </div>
+                  </fieldset>
+                </div>
               </div>
               <div class="col-md-6">
                 <div class="checkbox">
@@ -3534,6 +3583,26 @@
                             $("#prowloptions").hide();
                     }
 
+            $("#use_growl").click(function(){
+                    if ($("#use_growl").is(":checked"))
+                    {
+                            $("#growloptions").slideDown();
+                    }
+                    else
+                    {
+                            $("#growloptions").slideUp();
+                    }
+            });
+
+            if ($("#use_growl").is(":checked"))
+                    {
+                            $("#growloptions").show();
+                    }
+            else
+                    {
+                            $("#growloptions").hide();
+                    }
+
             $("#use_telegram").click(function(){
                     if ($("#use_telegram").is(":checked"))
                     {
@@ -3818,6 +3887,24 @@
                 function (data) {
                     bootbox.dialog({
                         title: 'Prowl Notifier',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+        });
+
+        $('#testGrowl').click(function () {
+            var host = $.trim($("#growl_host").val());
+            var password = $.trim($("#growl_password").val());
+            $.get("testGrowl", {'host': host, 'password': password},
+                function (data) {
+                    bootbox.dialog({
+                        title: 'Growl Notifier',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {
