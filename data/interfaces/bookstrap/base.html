@@ -28,25 +28,18 @@
     <script type="text/javascript">
       // Allow the user to reset the filter box
       $(document).ready(function () {
-          $.fn.dataTableExt.oApi.clearSearch = function ( oSettings ) {
-              var table = this;
-              var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Filter"></i>');
+          // Setup DataTable Defaults
+            $.extend( $.fn.dataTable.defaults, {
+             fnInitComplete: function(oSettings, json) {
 
-              $(clearSearch).click( function ()
-                      {
-                              table.fnFilter('');
-                              $('input[type=search]').val('');
-                      });
-              $(oSettings.nTableWrapper).find('div.dataTables_filter').append(clearSearch);
-              $(oSettings.nTableWrapper).find('div.dataTables_filter label').css('margin-right', '-16px');//16px the image width
-              $(oSettings.nTableWrapper).find('div.dataTables_filter input').css('padding-right', '16px');
-          }
-
-          //auto-execute, no code needs to be added
-          $.fn.dataTable.models.oSettings['aoInitComplete'].push( {
-              "fn": $.fn.dataTableExt.oApi.clearSearch,
-              "sName": 'whatever'
-          });
+              // Add "Clear Filter" button to Filter
+              var btnClear = $('<button class="btn btn-sm btn-primary btnClearDataTableFilter" data-toggle="tooltip" data-placement="bottom" title="Clear filter"><i class="fa fa-times" aria-hidden="true"></i></button>');
+              btnClear.appendTo($('#' + oSettings.sTableId).parents('.dataTables_wrapper').find('.dataTables_filter'));
+              $('#' + oSettings.sTableId + '_wrapper .btnClearDataTableFilter').click(function () {
+               $('#' + oSettings.sTableId).dataTable().fnFilter('');
+              });
+             }
+            });
       });
     </script>
     ${next.javascriptIncludes()}
