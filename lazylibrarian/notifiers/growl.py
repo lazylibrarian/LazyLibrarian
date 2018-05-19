@@ -38,14 +38,15 @@ class Growl_Notifier:
         logger.debug(u"Growl: message: " + message)
 
         # Split host and port
-        if growl_host and ':' in growl_host:
+        try:
             host, port = growl_host.split(':', 1)
             port = int(port)
-        else:
+        except ValueError:
+            logger.debug("Invalid growl host, using default")
             host, port = 'localhost', 23053
 
         # If password is empty, assume none
-        if growl_password == "":
+        if not growl_password:
             growl_password = None
 
         try:
@@ -110,5 +111,6 @@ class Growl_Notifier:
     def test_notify(self, title="Test"):
         return self._sendGrowl(growl_host=None, growl_password=None, event="Test",
                                message="Testing Growl settings from LazyLibrarian", force=True)
+
 
 notifier = Growl_Notifier
