@@ -293,6 +293,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
     try:
         # keep statistics of full library scans
         if startdir == destdir:
+            lazylibrarian.AUTHORS_UPDATE = 1
             if library == 'eBook':
                 lazylibrarian.EBOOK_UPDATE = 1
             elif library == 'Audio':
@@ -982,6 +983,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                 lazylibrarian.EBOOK_UPDATE = 0
             elif library == 'Audio':
                 lazylibrarian.AUDIO_UPDATE = 0
+            lazylibrarian.AUTHORS_UPDATE = 0
             # On full scan, update bookcounts for all authors, not just new ones - refresh may have located
             # new books for existing authors especially if switched provider gb/gr or changed wanted languages
             authors = myDB.select('select AuthorID from authors')
