@@ -14,6 +14,7 @@
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import smtplib
+import cherrypy
 from email.utils import formatdate, formataddr
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -23,7 +24,7 @@ import lazylibrarian
 import os
 from lazylibrarian import logger, database
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, getList
 
 
 class EmailNotifier:
@@ -123,10 +124,44 @@ class EmailNotifier:
                 if not bookid:
                     logger.debug('Email request to attach book, but no bookid')
                 else:
+                    filename = None
+                    preftype = None
+                    typelist = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+                        preftype = typelist[0]
+                        logger.debug('Preferred filetype = %s' % preftype)
+                    else:
+                        myDB = database.DBConnection()
+                        cookie = cherrypy.request.cookie
+                        if cookie and 'll_uid' in list(cookie.keys()):
+                            res = myDB.match('SELECT BookType from users where UserID=?', (cookie['ll_uid'].value,))
+                            if res and res['BookType']:
+                                preftype = res['BookType']
+                                logger.debug('User preferred filetype = %s' % preftype)
+                        if not preftype:
+                            logger.debug('Default preferred filetype = %s' % preftype)
+                            preftype = typelist[0]
+
                     myDB = database.DBConnection()
                     data = myDB.match('SELECT BookFile,BookName from books where BookID=?', (bookid,))
                     if data:
-                        filename = data['BookFile']
+                        bookfile = data['BookFile']
+                        types = []
+                        if bookfile and os.path.isfile(bookfile):
+                            basename, extn = os.path.splitext(bookfile)
+                            for item in typelist:
+                                target = basename + '.' + item
+                                if os.path.isfile(target):
+                                    types.append(item)
+
+                            logger.debug('Available filetypes: %s' % str(types))
+
+                            if preftype in types:
+                                filename = basename + '.' + preftype
+                            else:
+                                filename = basename + '.' + types[0]
+
                         title = data['BookName']
                         logger.debug('Found %s for bookid %s' % (filename, bookid))
                     else:
