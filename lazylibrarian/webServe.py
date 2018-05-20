@@ -1947,10 +1947,10 @@ class WebInterface(object):
             authdata = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
             if authdata:
                 edited = ""
-                if authorborn == 'None':
-                    authorborn = ''
-                if authordeath == 'None':
-                    authordeath = ''
+                if not authorborn or authorborn == 'None':
+                    authorborn = None
+                if not authordeath or authordeath == 'None':
+                    authordeath = None
                 if authorimg == 'None':
                     authorimg = ''
                 manual = bool(check_int(manual, 0))
@@ -1973,40 +1973,46 @@ class WebInterface(object):
                         edited += "Name "
 
                 if edited:
-                    # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
-                    ab = authorborn
-                    authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
-                    if ab:
-                        rejected = True
-                        if len(ab) == 10:
-                            try:
-                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                authorborn = ab
-                                rejected = False
-                            except ValueError:
-                                authorborn = authdata["AuthorBorn"]
-                        if rejected:
-                            logger.warn("Author Born date [%s] rejected" % ab)
-                            edited = edited.replace('Born ', '')
+                    # Check dates in format yyyy/mm/dd, or None to clear date
+                    # Leave unchanged if fails datecheck
+                    if authorborn is not None:
+                        ab = authorborn
+                        authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
+                        if ab:
+                            rejected = True
+                            if len(ab) == 10:
+                                try:
+                                    _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                    authorborn = ab
+                                    rejected = False
+                                except ValueError:
+                                    authorborn = authdata["AuthorBorn"]
+                            if rejected:
+                                logger.warn("Author Born date [%s] rejected" % ab)
+                                edited = edited.replace('Born ', '')
 
-                    ab = authordeath
-                    authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
-                    if ab:
-                        rejected = True
-                        if len(ab) == 10:
-                            try:
-                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                authordeath = ab
-                                rejected = False
-                            except ValueError:
-                                authordeath = authdata["AuthorDeath"]
-                        if rejected:
-                            logger.warn("Author Died date [%s] rejected" % ab)
-                            edited = edited.replace('Died ', '')
+                    if authordeath is not None:
+                        ab = authordeath
+                        authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
+                        if ab:
+                            rejected = True
+                            if len(ab) == 10:
+                                try:
+                                    _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                    authordeath = ab
+                                    rejected = False
+                                except ValueError:
+                                    authordeath = authdata["AuthorDeath"]
+                            if rejected:
+                                logger.warn("Author Died date [%s] rejected" % ab)
+                                edited = edited.replace('Died ', '')
 
                     if not authorimg:
                         authorimg = authdata["AuthorImg"]
                     else:
+                        if authorimg == 'none':
+                            authorimg = os.path.join(lazylibrarian.PROG_DIR, 'data', 'images', 'nophoto.png')
+
                         rejected = True
                         # Cache file image
                         if os.path.isfile(authorimg):
