@@ -750,8 +750,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             # Only delete torrents if we don't want to keep seeding
                             if lazylibrarian.CONFIG['KEEP_SEEDING']:
                                 logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
-                                if not pp_path.endswith('.unpack'):  # even if seeding we can delete our unpacked files
-                                    to_delete = False
+                                to_delete = False
 
                         if ignoreclient is False and to_delete:
                             # ask downloader to delete the torrent, but not the files
@@ -765,7 +764,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
                                 delete_task(book['Source'], book['DownloadID'], False)
 
-                        if to_delete:
+                        if to_delete or pp_path.endswith('.unpack'):
                             # only delete the files if not in download root dir and DESTINATION_COPY not set
                             # always delete files we unpacked from an archive
                             if lazylibrarian.CONFIG['DESTINATION_COPY']:
@@ -779,7 +778,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     # calibre might have already deleted it?
                                     try:
                                         shutil.rmtree(pp_path)
-                                        logger.debug('Deleted %s, %s from %s' %
+                                        logger.debug('Deleted files for %s, %s from %s' %
                                                      (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                     except Exception as why:
                                         logger.warn("Unable to remove %s, %s %s" %
