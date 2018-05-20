@@ -19,7 +19,9 @@
 <%def name="body()">
   <h1>${title}</h1>
     %if lazylibrarian.MAG_UPDATE == True:
-        <p class="alert alert-info"><i class="fas fa-circle-notch fa-spin"></i> Library scan in progress ...</p>
+    <p>
+    <button onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Libraryscan in progress ...</button>
+    </p>
     %endif
     <form name="markIssues" id="markIssues" action="markIssues" method="get" class="form-inline" onsubmit="return false;">
       <div class="form-group">

@@ -36,7 +36,9 @@
 <%def name="body()">
 <h1>${title}</h1>
   %if lazylibrarian.AUTHORS_UPDATE == True:
-    <p class="alert alert-info"><i class="fa fa-circle-notch fa-spin"></i> Author Refresh in progress ...</p>
+    <p>
+    <button onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Author Refresh in progress ...</button>
+    </p>
   %endif
 
 <form name="markAuthors" id="markAuthors" action="markAuthors" method="get" class="form-inline" onsubmit="return false;">

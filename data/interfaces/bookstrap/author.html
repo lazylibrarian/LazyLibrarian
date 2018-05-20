@@ -99,7 +99,9 @@
                 %endif
             %endif
             %if author['Status'] == 'Loading':
-            <p class="alert alert-info"><i class="fas fa-circle-notch fa-spin"></i> Fetching information for this author ...</p>
+            <p>
+            <button onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Fetching information for this author ...</button>
+            </p>
             %endif
             <p><b>Totalbooks:</b> ${author['TotalBooks']}</p>
 

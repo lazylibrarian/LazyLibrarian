@@ -27,6 +27,9 @@
 <%def name="body()">
 
 <h1>${title}</h1>
+<p>
+<button onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Author Loading ...</button>
+</p>
 
 <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="book_table">
@@ -177,8 +180,12 @@
 
         var c = (document.querySelectorAll('a.hidden').length);
         if ( c > 0 ) {
-            setInterval( function () { table.ajax.reload( null, false ); }, 2000 );
-        };
+            //setInterval( function () { table.ajax.reload( null, false );
+            setInterval( function () { window.location.reload( false ); }, 5000 );
+            document.getElementById("myAlert").style.display = "block";
+            } else {
+            document.getElementById("myAlert").style.display = "none";
+            }
     });
   </script>
 </%def>
