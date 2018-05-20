@@ -1464,8 +1464,8 @@ class WebInterface(object):
                 snatch = NZBDownloadMethod(bookid, bookname, url, library)
             if snatch:
                 logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
-                notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 custom_notify_snatch("%s %s" % (bookid, library))
+                notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 scheduleJob(action='Start', target='processDir')
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
@@ -2982,8 +2982,8 @@ class WebInterface(object):
                 if snatch:  # if snatch fails, downloadmethods already report it
                     myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', ("Snatched", items['nzburl']))
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
-                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     custom_notify_snatch("%s %s" % (items['bookid'], 'Magazine'))
+                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
 
@@ -3004,6 +3004,43 @@ class WebInterface(object):
                     if action == "Remove" or action == "Delete":
                         myDB.action('DELETE from issues WHERE IssueID=?', (item,))
                         logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
+                        # Set magazine_issuedate to issuedate of most recent issue we have
+                        # Set latestcover to most recent issue cover
+                        # Set magazine_lastacquired to acquired date of most recent issue we have
+                        # Set magazine_added to acquired date of earliest issue we have
+                        cmd = 'select IssueDate,IssueAcquired,IssueFile from issues where title=?'
+                        cmd += ' order by IssueDate '
+                        newest = myDB.match(cmd + 'DESC', (title,))
+                        oldest = myDB.match(cmd + 'ASC', (title,))
+                        controlValueDict = {'Title': title}
+                        if newest and oldest:
+                            old_acquired = ''
+                            new_acquired = ''
+                            cover = ''
+                            issuefile = newest['IssueFile']
+                            if os.path.exists(issuefile):
+                                cover = os.path.splitext(issuefile)[0] + '.jpg'
+                                mtime = os.path.getmtime(issuefile)
+                                new_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+                            issuefile = oldest['IssueFile']
+                            if os.path.exists(issuefile):
+                                mtime = os.path.getmtime(issuefile)
+                                old_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+                            newValueDict = {
+                                'IssueDate': newest['IssueDate'],
+                                'LatestCover': cover,
+                                'LastAcquired': new_acquired,
+                                'MagazineAdded': old_acquired
+                            }
+                        else:
+                            newValueDict = {
+                                'IssueDate': '',
+                                'LastAcquired': '',
+                                'LatestCover': '',
+                                'MagazineAdded': ''
+                            }
+                        myDB.upsert("magazines", newValueDict, controlValueDict)
         if title:
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
         else:
