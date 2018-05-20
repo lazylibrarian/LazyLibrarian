@@ -24,7 +24,7 @@ class Growl_Notifier:
         if not lazylibrarian.CONFIG['USE_GROWL'] and not force:
             return False
 
-        if growl_host is None:
+        if not growl_host:
             growl_host = lazylibrarian.CONFIG['GROWL_HOST']
 
         if growl_password is None:
@@ -82,6 +82,7 @@ class Growl_Notifier:
             image = None
 
         try:
+            # noinspection PyTypeChecker
             growl.notify(
                 noteType='New Event',
                 title=event,
@@ -101,15 +102,15 @@ class Growl_Notifier:
 
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['GROWL_ONSNATCH']:
-            self._sendGrowl(growl_host=None, growl_password=None, event=notifyStrings[NOTIFY_SNATCH], message=title)
+            self._sendGrowl(growl_host='', growl_password=None, event=notifyStrings[NOTIFY_SNATCH], message=title)
 
     def notify_download(self, title):
         if lazylibrarian.CONFIG['GROWL_ONDOWNLOAD']:
-            self._sendGrowl(growl_host=None, growl_password=None, event=notifyStrings[NOTIFY_DOWNLOAD], message=title)
+            self._sendGrowl(growl_host='', growl_password=None, event=notifyStrings[NOTIFY_DOWNLOAD], message=title)
 
     # noinspection PyUnusedLocal
     def test_notify(self, title="Test"):
-        return self._sendGrowl(growl_host=None, growl_password=None, event="Test",
+        return self._sendGrowl(growl_host='', growl_password=None, event="Test",
                                message="Testing Growl settings from LazyLibrarian", force=True)
 
 
