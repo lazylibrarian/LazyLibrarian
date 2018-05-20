@@ -887,6 +887,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 def check_residual(download_dir):
     # Import any books in download that weren't marked as snatched, but have a LL.(bookid)
     # don't process any we've already got as we might not want to delete originals
+    # NOTE: we currently only import ebook OR audiobook from a single folder, not both
     myDB = database.DBConnection()
     skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
     ppcount = 0
@@ -1029,6 +1030,14 @@ def getDownloadProgress(source, downloadid):
     try:
         if source == 'TRANSMISSION':
             progress = transmission.getTorrentProgress(downloadid)
+        elif source == 'DIRECT':
+            myDB = database.DBConnection()
+            cmd = 'SELECT * from wanted WHERE DownloadID=? and Source=?'
+            data = myDB.match(cmd, (downloadid, "DIRECT"))
+            if data:
+                progress = 100
+            else:
+                progress = 0
         elif source == 'SABNZBD':
             res = sabnzbd.SABnzbd(nzburl='queue')
             found = False

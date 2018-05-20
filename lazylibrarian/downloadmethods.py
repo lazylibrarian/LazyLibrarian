@@ -134,12 +134,17 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
         if not os.path.isdir(destdir):
             _ = mymakedirs(destdir)
 
+        try:
+            hashid = tor_url.split("md5=")[1].split("&")[0]
+        except IndexError:
+            hashid = sha1(encode(tor_url)).hexdigest()
+
         destfile = os.path.join(destdir, bookname)
         try:
             with open(destfile, 'wb') as bookfile:
                 bookfile.write(r.content)
             setperm(destfile)
-            downloadID = True
+            downloadID = hashid
         except Exception as e:
             logger.error("%s writing book to %s, %s" % (type(e).__name__, destfile, e))
 

@@ -194,16 +194,10 @@ def GEN(book=None, prov=None, test=False):
 
                         bookresult, success = fetchURL(url)
                         if not success:
-                            # may return 404 if no results, not really an error
-                            if '404' in bookresult:
-                                logger.debug("No results found from %s for %s" % (provider, sterm))
-                            else:
-                                logger.debug(url)
-                                logger.debug('Error fetching link data from %s: %s' % (provider, bookresult))
-                                errmsg = bookresult
-                            bookresult = False
-
-                        if bookresult:
+                            logger.debug('Error fetching link data from %s: %s' % (provider, bookresult))
+                            logger.debug(url)
+                            url = None
+                        else:
                             url = None
                             try:
                                 new_soup = BeautifulSoup(bookresult, 'html5lib')
