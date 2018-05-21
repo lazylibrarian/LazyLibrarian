@@ -1464,8 +1464,8 @@ class WebInterface(object):
                 snatch = NZBDownloadMethod(bookid, bookname, url, library)
             if snatch:
                 logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
-                notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 custom_notify_snatch("%s %s" % (bookid, library))
+                notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 scheduleJob(action='Start', target='processDir')
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
@@ -1949,10 +1949,10 @@ class WebInterface(object):
             authdata = myDB.match('SELECT * from authors WHERE AuthorID=?', (authorid,))
             if authdata:
                 edited = ""
-                if authorborn == 'None':
-                    authorborn = ''
-                if authordeath == 'None':
-                    authordeath = ''
+                if not authorborn or authorborn == 'None':
+                    authorborn = None
+                if not authordeath or authordeath == 'None':
+                    authordeath = None
                 if authorimg == 'None':
                     authorimg = ''
                 manual = bool(check_int(manual, 0))
@@ -1975,40 +1975,46 @@ class WebInterface(object):
                         edited += "Name "
 
                 if edited:
-                    # Check dates in format yyyy/mm/dd, or unchanged if fails datecheck
-                    ab = authorborn
-                    authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
-                    if ab:
-                        rejected = True
-                        if len(ab) == 10:
-                            try:
-                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                authorborn = ab
-                                rejected = False
-                            except ValueError:
-                                authorborn = authdata["AuthorBorn"]
-                        if rejected:
-                            logger.warn("Author Born date [%s] rejected" % ab)
-                            edited = edited.replace('Born ', '')
+                    # Check dates in format yyyy/mm/dd, or None to clear date
+                    # Leave unchanged if fails datecheck
+                    if authorborn is not None:
+                        ab = authorborn
+                        authorborn = authdata["AuthorBorn"]  # assume fail, leave unchanged
+                        if ab:
+                            rejected = True
+                            if len(ab) == 10:
+                                try:
+                                    _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                    authorborn = ab
+                                    rejected = False
+                                except ValueError:
+                                    authorborn = authdata["AuthorBorn"]
+                            if rejected:
+                                logger.warn("Author Born date [%s] rejected" % ab)
+                                edited = edited.replace('Born ', '')
 
-                    ab = authordeath
-                    authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
-                    if ab:
-                        rejected = True
-                        if len(ab) == 10:
-                            try:
-                                _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
-                                authordeath = ab
-                                rejected = False
-                            except ValueError:
-                                authordeath = authdata["AuthorDeath"]
-                        if rejected:
-                            logger.warn("Author Died date [%s] rejected" % ab)
-                            edited = edited.replace('Died ', '')
+                    if authordeath is not None:
+                        ab = authordeath
+                        authordeath = authdata["AuthorDeath"]  # assume fail, leave unchanged
+                        if ab:
+                            rejected = True
+                            if len(ab) == 10:
+                                try:
+                                    _ = datetime.date(int(ab[:4]), int(ab[5:7]), int(ab[8:]))
+                                    authordeath = ab
+                                    rejected = False
+                                except ValueError:
+                                    authordeath = authdata["AuthorDeath"]
+                            if rejected:
+                                logger.warn("Author Died date [%s] rejected" % ab)
+                                edited = edited.replace('Died ', '')
 
                     if not authorimg:
                         authorimg = authdata["AuthorImg"]
                     else:
+                        if authorimg == 'none':
+                            authorimg = os.path.join(lazylibrarian.PROG_DIR, 'data', 'images', 'nophoto.png')
+
                         rejected = True
                         # Cache file image
                         if os.path.isfile(authorimg):
@@ -2978,8 +2984,8 @@ class WebInterface(object):
                 if snatch:  # if snatch fails, downloadmethods already report it
                     myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', ("Snatched", items['nzburl']))
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
-                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     custom_notify_snatch("%s %s" % (items['bookid'], 'Magazine'))
+                    notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     scheduleJob(action='Start', target='processDir')
         raise cherrypy.HTTPRedirect("pastIssues")
 
@@ -3000,6 +3006,43 @@ class WebInterface(object):
                     if action == "Remove" or action == "Delete":
                         myDB.action('DELETE from issues WHERE IssueID=?', (item,))
                         logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
+                        # Set magazine_issuedate to issuedate of most recent issue we have
+                        # Set latestcover to most recent issue cover
+                        # Set magazine_lastacquired to acquired date of most recent issue we have
+                        # Set magazine_added to acquired date of earliest issue we have
+                        cmd = 'select IssueDate,IssueAcquired,IssueFile from issues where title=?'
+                        cmd += ' order by IssueDate '
+                        newest = myDB.match(cmd + 'DESC', (title,))
+                        oldest = myDB.match(cmd + 'ASC', (title,))
+                        controlValueDict = {'Title': title}
+                        if newest and oldest:
+                            old_acquired = ''
+                            new_acquired = ''
+                            cover = ''
+                            issuefile = newest['IssueFile']
+                            if os.path.exists(issuefile):
+                                cover = os.path.splitext(issuefile)[0] + '.jpg'
+                                mtime = os.path.getmtime(issuefile)
+                                new_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+                            issuefile = oldest['IssueFile']
+                            if os.path.exists(issuefile):
+                                mtime = os.path.getmtime(issuefile)
+                                old_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+                            newValueDict = {
+                                'IssueDate': newest['IssueDate'],
+                                'LatestCover': cover,
+                                'LastAcquired': new_acquired,
+                                'MagazineAdded': old_acquired
+                            }
+                        else:
+                            newValueDict = {
+                                'IssueDate': '',
+                                'LastAcquired': '',
+                                'LatestCover': '',
+                                'MagazineAdded': ''
+                            }
+                        myDB.upsert("magazines", newValueDict, controlValueDict)
         if title:
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
         else:

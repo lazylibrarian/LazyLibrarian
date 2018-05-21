@@ -196,8 +196,7 @@ def removeTorrent(torrentid, remove_data=False):
             _ = torrentAction(method, arguments)
             return True
         else:
-            logger.debug('%s has not finished seeding yet, torrent will not be removed, \
-                        will try again on next run' % name)
+            logger.debug('%s has not finished seeding yet, torrent will not be removed' % name)
     except IndexError:
         # no torrents, already removed?
         return True

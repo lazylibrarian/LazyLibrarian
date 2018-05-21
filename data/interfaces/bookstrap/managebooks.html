@@ -6,7 +6,7 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
       <form id="subhead_menu" action="search" method="get">
-        <div class="form-group">
+        <div class="col-xs-10">
           %if library != 'AudioBook':
             %if perm&lazylibrarian.perm_force:
               <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
@@ -25,10 +25,11 @@
               %endif
             %endif
           %endif
-          <div class="pull-right">
+          </div>
             %if len(types) > 1:
               %if  perm&lazylibrarian.perm_audio:
-                <!--label for="chooselib"><small>&nbsp;Library</small></label-->
+                <div class="form-group pull-right">
+                <!--label for="chooselib"><small>Library</small></label-->
                 <select class="form-control input-sm" name="chooselib" id="chooselib">
                   %for item in types:
                     <option value="${item}"
@@ -38,10 +39,9 @@
                     >${item}</option>
                   %endfor
                 </select>
+                </div>
               %endif
             %endif
-          </div>
-        </div>
       </form>
     </div>
 </%def>

@@ -165,13 +165,13 @@ def processAlternate(source_dir=None):
 
                 bookid = find_book_in_db(authorname, bookname, ignored=False)
                 if bookid:
-                    return import_book(source_dir, bookid)
+                    return process_book(source_dir, bookid)
                 else:
                     bookid = find_book_in_db(authorname, bookname, ignored=True)
                     if bookid:
                         logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
                                     (bookname, authorname))
-                        return import_book(source_dir, bookid)
+                        return process_book(source_dir, bookid)
                     logger.warn("Book %s by %s not found in database" % (bookname, authorname))
             else:
                 logger.warn('Book %s has no metadata, unable to import' % new_book)
@@ -750,8 +750,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             # Only delete torrents if we don't want to keep seeding
                             if lazylibrarian.CONFIG['KEEP_SEEDING']:
                                 logger.warn('%s is seeding %s %s' % (book['Source'], book['NZBmode'], book['NZBtitle']))
-                                if not pp_path.endswith('.unpack'):  # even if seeding we can delete our unpacked files
-                                    to_delete = False
+                                to_delete = False
 
                         if ignoreclient is False and to_delete:
                             # ask downloader to delete the torrent, but not the files
@@ -765,7 +764,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 logger.debug('Removing %s from %s' % (book['NZBtitle'], book['Source'].lower()))
                                 delete_task(book['Source'], book['DownloadID'], False)
 
-                        if to_delete:
+                        if to_delete or pp_path.endswith('.unpack'):
                             # only delete the files if not in download root dir and DESTINATION_COPY not set
                             # always delete files we unpacked from an archive
                             if lazylibrarian.CONFIG['DESTINATION_COPY']:
@@ -779,7 +778,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     # calibre might have already deleted it?
                                     try:
                                         shutil.rmtree(pp_path)
-                                        logger.debug('Deleted %s, %s from %s' %
+                                        logger.debug('Deleted files for %s, %s from %s' %
                                                      (book['NZBtitle'], book['NZBmode'], book['Source'].lower()))
                                     except Exception as why:
                                         logger.warn("Unable to remove %s, %s %s" %
@@ -887,6 +886,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 def check_residual(download_dir):
     # Import any books in download that weren't marked as snatched, but have a LL.(bookid)
     # don't process any we've already got as we might not want to delete originals
+    # NOTE: we currently only import ebook OR audiobook from a single folder, not both
     myDB = database.DBConnection()
     skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
     ppcount = 0
@@ -900,12 +900,37 @@ def check_residual(download_dir):
             if not extn or extn.strip('.') not in skipped_extensions:
                 bookID = entry.split("LL.(")[1].split(")")[0]
                 logger.debug("Book with id: %s found in download directory" % bookID)
-                data = myDB.match('SELECT BookFile from books WHERE BookID=?', (bookID,))
+                pp_path = os.path.join(download_dir, entry)
+                # At this point we don't know if we want audio or ebook or both since it wasn't snatched
+                is_audio = False
+                is_ebook = False
+                if os.path.isdir(pp_path):
+                    if book_file(pp_path, "audiobook"):
+                        is_audio = True
+                    if book_file(pp_path, "ebook"):
+                        is_ebook = True
+                logger.debug("Contains ebook=%s audio=%s" % (is_ebook, is_audio))
+                data = myDB.match('SELECT BookFile,AudioFile from books WHERE BookID=?', (bookID,))
                 if data and data['BookFile'] and os.path.isfile(data['BookFile']):
+                    have_ebook = True
+                else:
+                    have_ebook = False
+                if data and data['AudioFile'] and os.path.isfile(data['AudioFile']):
+                    have_audio = True
+                else:
+                    have_audio = False
+                logger.debug("Already have ebook=%s audio=%s" % (have_ebook, have_audio))
+
+                if have_ebook and have_audio:
+                    exists = True
+                elif have_ebook and not lazylibrarian.SHOW_AUDIO:
+                    exists = True
+                else:
+                    exists = False
+
+                if exists:
                     logger.debug('Skipping BookID %s, already exists' % bookID)
                 else:
-                    pp_path = os.path.join(download_dir, entry)
-
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                         logger.debug("Checking type of %s" % pp_path)
 
@@ -917,7 +942,7 @@ def check_residual(download_dir):
                     if os.path.isdir(pp_path):
                         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                             logger.debug("%s is a dir" % pp_path)
-                        if import_book(pp_path, bookID):
+                        if process_book(pp_path, bookID):
                             if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                 logger.debug("Imported %s" % pp_path)
                             ppcount += 1
@@ -1004,6 +1029,14 @@ def getDownloadProgress(source, downloadid):
     try:
         if source == 'TRANSMISSION':
             progress = transmission.getTorrentProgress(downloadid)
+        elif source == 'DIRECT':
+            myDB = database.DBConnection()
+            cmd = 'SELECT * from wanted WHERE DownloadID=? and Source=?'
+            data = myDB.match(cmd, (downloadid, "DIRECT"))
+            if data:
+                progress = 100
+            else:
+                progress = 0
         elif source == 'SABNZBD':
             res = sabnzbd.SABnzbd(nzburl='queue')
             found = False
@@ -1107,22 +1140,19 @@ def delete_task(Source, DownloadID, remove_data):
         return False
 
 
-def import_book(pp_path=None, bookID=None):
+def process_book(pp_path=None, bookID=None):
     # noinspection PyBroadException
     try:
         # Move a book into LL folder structure given just the folder and bookID, returns True or False
         # Called from "import_alternate" or if we find a "LL.(xxx)" folder that doesn't match a snatched book/mag
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
-            logger.debug("import_book %s" % pp_path)
+            logger.debug("process_book %s" % pp_path)
+        is_audio = False
+        is_ebook = False
         if book_file(pp_path, "audiobook"):
-            book_type = "AudioBook"
-            dest_dir = lazylibrarian.DIRECTORY('Audio')
-        elif book_file(pp_path, "ebook"):
-            book_type = "eBook"
-            dest_dir = lazylibrarian.DIRECTORY('eBook')
-        else:
-            logger.warn("Failed to find an ebook or audiobook in [%s]" % pp_path)
-            return False
+            is_audio = True
+        if book_file(pp_path, "ebook"):
+            is_ebook = True
 
         myDB = database.DBConnection()
         cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
@@ -1133,23 +1163,38 @@ def import_book(pp_path=None, bookID=None):
             was_snatched = myDB.select(cmd, (bookID,))
             want_audio = False
             want_ebook = False
+            book_type = None
             for item in was_snatched:
                 if item['AuxInfo'] == 'AudioBook':
                     want_audio = True
                 elif item['AuxInfo'] == 'eBook' or item['AuxInfo'] == '':
                     want_ebook = True
 
-            match = False
-            if want_audio and book_type == "AudioBook":
-                match = True
-            elif want_ebook and book_type == "eBook":
-                match = True
+            if not is_audio and not is_ebook:
+                logger.debug('Bookid %s, failed to find valid booktype' % bookID)
+            elif want_audio and is_audio:
+                book_type = "AudioBook"
+            elif want_ebook and is_ebook:
+                book_type = "eBook"
             elif not was_snatched:
-                logger.debug('Bookid %s was not snatched so cannot check type, contains %s' % (bookID, book_type))
-                match = True
-            if not match:
-                logger.debug('Bookid %s, failed to find valid %s' % (bookID, book_type))
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
+                    logger.debug('Bookid %s was not snatched so cannot check type, contains ebook:%s audio:%s' %
+                                 (bookID, is_ebook, is_audio))
+                if is_audio and not lazylibrarian.SHOW_AUDIO:
+                    is_audio = False
+                if is_audio:
+                    book_type = "AudioBook"
+                elif is_ebook:
+                    book_type = "eBook"
+            if not book_type:
+                logger.debug('Bookid %s, failed to find valid booktype, contains ebook:%s audio:%s' %
+                             (bookID, is_ebook, is_audio))
                 return False
+
+            if book_type == "AudioBook":
+                dest_dir = lazylibrarian.DIRECTORY('Audio')
+            else:
+                dest_dir = lazylibrarian.DIRECTORY('eBook')
 
             authorname = data['AuthorName']
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
