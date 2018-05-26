@@ -20,6 +20,8 @@ import cherrypy
 from lib.six import PY2, string_types
 # noinspection PyUnresolvedReferences
 from lib.six.moves import configparser, queue
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_parse import urlsplit, urlunsplit
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -42,9 +44,10 @@ from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate, processOPF
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines, get_issue_date
-from lazylibrarian.searchrss import search_rss_book
+from lazylibrarian.searchrss import search_rss_book, search_wishlist
 from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.providers import get_capabilities
+from lazylibrarian.rssfeed import genFeed
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -78,7 +81,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
-            'forceRSSSearch': '[&wait] search all entries in rss wishlists',
+            'forceRSSSearch': '[&wait] search all entries in rss feeds',
+            'getRSSFeed': '&feed= [&limit=] show rss feed entries',
+            'forceWishlistSearch': '[&wait] search all entries in wishlists',
             'forceProcess': '[&dir] [ignorekeepseeding] process books/mags in download or named dir',
             'pauseAuthor': '&id= pause author by AuthorID',
             'resumeAuthor': '&id= resume author by AuthorID',
@@ -216,6 +221,7 @@ class Api(object):
             logger.debug('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
+
             if 'callback' not in self.kwargs:
                 if isinstance(self.data, string_types):
                     return self.data
@@ -242,6 +248,27 @@ class Api(object):
             rows_as_dic.append(row_as_dic)
 
         return rows_as_dic
+
+    def getRSSFeed(self, **kwargs):
+        if 'feed' in kwargs:
+            ftype = kwargs['feed']
+        else:
+            ftype = 'book'
+
+        if 'limit' in kwargs:
+            limit = kwargs['limit']
+        else:
+            limit = '10'
+
+        userid = 0
+        scheme, netloc, path, qs, anchor = urlsplit(cherrypy.url())
+        try:
+            netloc = cherrypy.request.headers['X-Forwarded-Host']
+        except KeyError:
+            pass
+        path = path.replace('rssFeed', '').rstrip('/')
+        baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
+        self.data = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
 
     def _syncCalibreList(self, **kwargs):
         col1 = None
@@ -547,7 +574,7 @@ class Api(object):
                 title = os.path.basename(dirname)
                 if '$Title' in lazylibrarian.CONFIG['MAG_DEST_FILE']:
                     fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate).replace(
-                            '$Title', title)
+                        '$Title', title)
                 else:
                     fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate)
                 self.data = os.path.join(dirname, fname + '.' + name_exploded[-1])
@@ -722,7 +749,16 @@ class Api(object):
             else:
                 threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[]).start()
         else:
-            self.data = 'No rss wishlists set, check config'
+            self.data = 'No rss feeds set, check config'
+
+    def _forceWishlistSearch(self, **kwargs):
+        if lazylibrarian.USE_RSS():
+            if 'wait' in kwargs:
+                search_wishlist()
+            else:
+                threading.Thread(target=search_wishlist, name='API-SEARCHWISHLIST', args=[]).start()
+        else:
+            self.data = 'No rss feeds set, check config'
 
     def _forceBookSearch(self, **kwargs):
         if 'type' in kwargs:

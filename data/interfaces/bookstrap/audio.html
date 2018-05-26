@@ -12,6 +12,9 @@
         <a href="libraryScan?library=Audio" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-bolt"></i> Library Scan</a>
         %endif
         <a href="audioWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-check"></i> Recent AudioBooks</a>
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
+        <a href="rssFeed?user=${user}&type=AudioBook&limit=10" class="button btn btn-sm btn-primary" data-toggle="tooltip" title="RSS feed of recent additions"><i class="fa fa-rss"></i></a>
+        %endif
       </div>
       <div class="col-xs-2">
         %if len(languages) > 1:
