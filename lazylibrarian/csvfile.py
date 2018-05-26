@@ -243,12 +243,10 @@ def finditem(item, preferred_authorname):
             fullcmd = cmd + 'and BookIsbn=?'
             bookmatch = myDB.match(fullcmd, (isbn13,))
     if not bookmatch:
-        bookid = find_book_in_db(preferred_authorname, bookname, ignored=False)
-        if not bookid:
-            bookid = find_book_in_db(preferred_authorname, bookname, ignored=True)
-            if bookid:
-                logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
-                            (bookname, preferred_authorname))
+        bookid, mtype = find_book_in_db(preferred_authorname, bookname, ignored=False)
+        if bookid and mtype == "Ignored":
+            logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
+                        (bookname, preferred_authorname))
         if bookid:
             fullcmd = cmd + 'and BookID=?'
             bookmatch = myDB.match(fullcmd, (bookid,))
