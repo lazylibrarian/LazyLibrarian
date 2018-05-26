@@ -45,10 +45,6 @@ def magazineScan(title=None):
 
         if lazylibrarian.CONFIG['MAG_RELATIVE']:
             mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
-        else:
-            ignorefile = os.path.join(mag_path, '.ll_ignore')
-            with open(ignorefile, 'a'):
-                os.utime(ignorefile, None)
         if PY2:
             mag_path = mag_path.encode(lazylibrarian.SYS_ENCODING)
 
@@ -261,6 +257,10 @@ def magazineScan(title=None):
                             "IssueFile": issuefile
                         }
                         myDB.upsert("Issues", newValueDict, controlValueDict)
+
+                    ignorefile = os.path.join(os.path.dirname(issuefile), '.ll_ignore')
+                    with open(ignorefile, 'a'):
+                        os.utime(ignorefile, None)
 
                     createMagCover(issuefile)
                     lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id, overwrite=new_opf)
