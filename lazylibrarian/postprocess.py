@@ -376,7 +376,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # may have been changed once magnet resolved, or download started or completed
                 # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
                 matchtitle = unaccented_str(book['NZBtitle'])
-                torrentname = getTorrentName(matchtitle, book['Source'], book['DownloadID'])
+                torrentname = getDownloadName(matchtitle, book['Source'], book['DownloadID'])
 
                 if torrentname and torrentname != matchtitle:
                     logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
@@ -407,7 +407,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # If downloader says it hasn't completed, no need to look for it.
                 rejected = False
                 if book['Source'] in ['TRANSMISSION', 'QBITTORRENT', 'DELUGEWEBUI', 'DELUGERPC']:
-                    torrentfiles = getTorrentFiles(book['Source'], book['DownloadID'])
+                    torrentfiles = getDownloadFiles(book['Source'], book['DownloadID'])
                     # Downloaders return varying amounts of info using varying names
                     if not torrentfiles:  # empty
                         logger.debug("No files returned by %s for %s" % (book['Source'], matchtitle))
@@ -958,10 +958,10 @@ def check_residual(download_dir):
     return ppcount
 
 
-def getTorrentName(title, source, downloadid):
+def getDownloadName(title, source, downloadid):
     torrentname = None
     try:
-        logger.debug("getTorrentName: %s was sent to %s" % (title, source))
+        logger.debug("%s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
             torrentname = transmission.getTorrentFolder(downloadid)
         elif source == 'QBITTORRENT':
@@ -994,7 +994,7 @@ def getTorrentName(title, source, downloadid):
         return None
 
 
-def getTorrentFiles(source, downloadid):
+def getDownloadFiles(source, downloadid):
     torrentfiles = None
     try:
         if source == 'TRANSMISSION':
