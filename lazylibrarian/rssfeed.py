@@ -23,11 +23,14 @@ def genFeed(ftype, limit=10, user=0, baseurl=''):
     if ftype == 'eBook':
         cmd = "select AuthorName,BookName,BookDesc,BookLibrary,BookID,BookLink from books,authors where"
         cmd += " BookLibrary != '' and books.AuthorID = authors.AuthorID order by BookLibrary desc limit %s" % limit
+        baselink = baseurl + 'bookWall'
     elif ftype == 'AudioBook':
         cmd = "select AuthorName,BookName,BookDesc,AudioLibrary,BookID,BookLink from books,authors where"
         cmd += " AudioLibrary != '' and books.AuthorID = authors.AuthorID order by AudioLibrary desc limit %s" % limit
+        baselink = baseurl + 'audioWall'
     elif ftype == 'Magazine':
         cmd = "select Title,IssueDate,IssueAcquired,IssueID from issues order by IssueAcquired desc limit %s" % limit
+        baselink = baseurl + 'magWall'
     else:
         logger.debug("Invalid feed type")
         return None
@@ -79,7 +82,7 @@ def genFeed(ftype, limit=10, user=0, baseurl=''):
     title = "%s Recent Downloads" % ftype
     feed = Feed(
         title=title,
-        link="http://www.example.com/rss",
+        link=baselink,
         description="LazyLibrarian %s" % title,
         language="en-US",
         lastBuildDate=datetime.datetime.now(),
