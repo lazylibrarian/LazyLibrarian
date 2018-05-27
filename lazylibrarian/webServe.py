@@ -3649,6 +3649,7 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             for row in rows:
+                row.append(row[4])  # keep full datetime for tooltip
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:

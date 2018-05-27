@@ -78,6 +78,8 @@
                         if ( ftype == 'None' ) {ftype = 'eBook'}
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
+                    { targets: [4], 'render': function(data, type, row) {
+                        return '<a data-toggle="tooltip" title="' + row[10] + '">' + row[4] + '</a>';} },
                     { targets: [6], 'render': function(data, type, row) {
                         if ( row[9] <= 0 ) { bar = data }
                         else {
