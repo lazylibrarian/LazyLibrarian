@@ -79,7 +79,7 @@
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
                     { targets: [6], 'render': function(data, type, row) {
-                        if ( row[9] < 0 ) { bar = data }
+                        if ( row[9] <= 0 ) { bar = data }
                         else {
                             if ( row[9] <= 25 ) { css = 'danger' }
                             else if ( row[9] <= 50 ) { css = 'warning' }
