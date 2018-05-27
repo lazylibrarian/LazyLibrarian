@@ -249,11 +249,11 @@ class Api(object):
 
         return rows_as_dic
 
-    def getRSSFeed(self, **kwargs):
+    def _getRSSFeed(self, **kwargs):
         if 'feed' in kwargs:
             ftype = kwargs['feed']
         else:
-            ftype = 'book'
+            ftype = 'eBook'
 
         if 'limit' in kwargs:
             limit = kwargs['limit']
