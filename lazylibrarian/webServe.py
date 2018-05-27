@@ -18,10 +18,11 @@ import random
 import re
 import threading
 import time
+import tempfile
 from shutil import copyfile, rmtree
 
 # noinspection PyUnresolvedReferences
-from lib.six.moves.urllib_parse import quote_plus, unquote_plus
+from lib.six.moves.urllib_parse import quote_plus, unquote_plus, urlsplit, urlunsplit
 
 import cherrypy
 import lazylibrarian
@@ -50,10 +51,19 @@ from lazylibrarian.postprocess import processAlternate, processDir, delete_task,
 from lazylibrarian.providers import test_provider
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.rssfeed import genFeed
 from lib.deluge_client import DelugeRPCClient
 from lib.six import PY2
 from mako import exceptions
 from mako.lookup import TemplateLookup
+
+try:
+    import zipfile
+except ImportError:
+    if PY2:
+        import lib.zipfile as zipfile
+    else:
+        import lib3.zipfile as zipfile
 
 
 def serve_template(templatename, **kwargs):
@@ -792,49 +802,48 @@ class WebInterface(object):
     @cherrypy.expose
     def markSeries(self, action=None, **args):
         myDB = database.DBConnection()
+        args.pop('book_table_length', None)
         if action:
             for seriesid in args:
-                # ouch dirty workaround...
-                if not seriesid == 'book_table_length':
-                    if action in ["Wanted", "Active", "Skipped", "Ignored"]:
-                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
-                        if match:
-                            myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
-                            logger.debug('Status set to "%s" for "%s"' % (action, match['SeriesName']))
-                            if action in ['Wanted', 'Active']:
-                                threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
-                    elif action in ["Unread", "Read", "ToRead"]:
-                        cookie = cherrypy.request.cookie
-                        if cookie and 'll_uid' in list(cookie.keys()):
-                            res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
-                                             (cookie['ll_uid'].value,))
-                            if res:
-                                ToRead = getList(res['ToRead'])
-                                HaveRead = getList(res['HaveRead'])
-                                members = myDB.select('SELECT bookid from member where seriesid=?', (seriesid,))
-                                if members:
-                                    for item in members:
-                                        bookid = item['bookid']
-                                        if action == "Unread":
-                                            if bookid in ToRead:
-                                                ToRead.remove(bookid)
-                                            if bookid in HaveRead:
-                                                HaveRead.remove(bookid)
-                                            logger.debug('Status set to "unread" for "%s"' % bookid)
-                                        elif action == "Read":
-                                            if bookid in ToRead:
-                                                ToRead.remove(bookid)
-                                            if bookid not in HaveRead:
-                                                HaveRead.append(bookid)
-                                            logger.debug('Status set to "read" for "%s"' % bookid)
-                                        elif action == "ToRead":
-                                            if bookid not in ToRead:
-                                                ToRead.append(bookid)
-                                            if bookid in HaveRead:
-                                                HaveRead.remove(bookid)
-                                            logger.debug('Status set to "to read" for "%s"' % bookid)
-                                    myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
-                                                (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
+                if action in ["Wanted", "Active", "Skipped", "Ignored"]:
+                    match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
+                    if match:
+                        myDB.upsert("series", {'Status': action}, {'SeriesID': seriesid})
+                        logger.debug('Status set to "%s" for "%s"' % (action, match['SeriesName']))
+                        if action in ['Wanted', 'Active']:
+                            threading.Thread(target=getSeriesAuthors, name='SERIESAUTHORS', args=[seriesid]).start()
+                elif action in ["Unread", "Read", "ToRead"]:
+                    cookie = cherrypy.request.cookie
+                    if cookie and 'll_uid' in list(cookie.keys()):
+                        res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
+                                         (cookie['ll_uid'].value,))
+                        if res:
+                            ToRead = getList(res['ToRead'])
+                            HaveRead = getList(res['HaveRead'])
+                            members = myDB.select('SELECT bookid from member where seriesid=?', (seriesid,))
+                            if members:
+                                for item in members:
+                                    bookid = item['bookid']
+                                    if action == "Unread":
+                                        if bookid in ToRead:
+                                            ToRead.remove(bookid)
+                                        if bookid in HaveRead:
+                                            HaveRead.remove(bookid)
+                                        logger.debug('Status set to "unread" for "%s"' % bookid)
+                                    elif action == "Read":
+                                        if bookid in ToRead:
+                                            ToRead.remove(bookid)
+                                        if bookid not in HaveRead:
+                                            HaveRead.append(bookid)
+                                        logger.debug('Status set to "read" for "%s"' % bookid)
+                                    elif action == "ToRead":
+                                        if bookid not in ToRead:
+                                            ToRead.append(bookid)
+                                        if bookid in HaveRead:
+                                            HaveRead.remove(bookid)
+                                        logger.debug('Status set to "to read" for "%s"' % bookid)
+                                myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
+                                            (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
             if "redirect" in args:
                 if not args['redirect'] == 'None':
                     raise cherrypy.HTTPRedirect("series?AuthorID=%s" % args['redirect'])
@@ -1155,38 +1164,38 @@ class WebInterface(object):
     @cherrypy.expose
     def markAuthors(self, action=None, redirect=None, **args):
         myDB = database.DBConnection()
+        for arg in ['author_table_length', 'ignored']:
+            args.pop(arg, None)
         if not redirect:
             redirect = "home"
         if action:
             for authorid in args:
-                # ouch dirty workaround...
-                if authorid not in ['author_table_length', 'ignored']:
-                    check = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (authorid,))
-                    if not check:
-                        logger.warn('Unable to set Status to "%s" for "%s"' % (action, authorid))
-                    elif action in ["Active", "Wanted", "Paused"]:
-                        myDB.upsert("authors", {'Status': action}, {'AuthorID': authorid})
-                        logger.info('Status set to "%s" for "%s"' % (action, check['AuthorName']))
-                    elif action == "Delete":
-                        logger.info("Removing author and books: %s" % check['AuthorName'])
-                        books = myDB.select("SELECT BookFile from books WHERE AuthorID=? AND BookFile is not null",
-                                            (authorid,))
-                        for book in books:
-                            if os.path.exists(book['BookFile']):
-                                try:
-                                    rmtree(os.path.dirname(book['BookFile']), ignore_errors=True)
-                                except Exception as e:
-                                    logger.warn('rmtree failed on %s, %s %s' %
-                                                (book['BookFile'], type(e).__name__, str(e)))
+                check = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (authorid,))
+                if not check:
+                    logger.warn('Unable to set Status to "%s" for "%s"' % (action, authorid))
+                elif action in ["Active", "Wanted", "Paused", "Ignore"]:
+                    myDB.upsert("authors", {'Status': action}, {'AuthorID': authorid})
+                    logger.info('Status set to "%s" for "%s"' % (action, check['AuthorName']))
+                elif action == "Delete":
+                    logger.info("Removing author and books: %s" % check['AuthorName'])
+                    books = myDB.select("SELECT BookFile from books WHERE AuthorID=? AND BookFile is not null",
+                                        (authorid,))
+                    for book in books:
+                        if os.path.exists(book['BookFile']):
+                            try:
+                                rmtree(os.path.dirname(book['BookFile']), ignore_errors=True)
+                            except Exception as e:
+                                logger.warn('rmtree failed on %s, %s %s' %
+                                            (book['BookFile'], type(e).__name__, str(e)))
 
-                        myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
-                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
-                        myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
-                    elif action == "Remove":
-                        logger.info("Removing author: %s" % check['AuthorName'])
-                        myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
-                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
-                        myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+                    myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                    myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
+                    myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+                elif action == "Remove":
+                    logger.info("Removing author: %s" % check['AuthorName'])
+                    myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                    myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
+                    myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
 
         raise cherrypy.HTTPRedirect(redirect)
 
@@ -1474,22 +1483,32 @@ class WebInterface(object):
 
     @cherrypy.expose
     def audio(self, BookLang=None):
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in list(cookie.keys()):
+            user = cookie['ll_uid'].value
+        else:
+            user = 0
         myDB = database.DBConnection()
         if not BookLang or BookLang == 'None':
             BookLang = None
         languages = myDB.select(
             'SELECT DISTINCT BookLang from books WHERE AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"')
         return serve_template(templatename="audio.html", title='AudioBooks', books=[],
-                              languages=languages, booklang=BookLang)
+                              languages=languages, booklang=BookLang, user=user)
 
     @cherrypy.expose
     def books(self, BookLang=None):
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in list(cookie.keys()):
+            user = cookie['ll_uid'].value
+        else:
+            user = 0
         myDB = database.DBConnection()
         if not BookLang or BookLang == 'None':
             BookLang = None
         languages = myDB.select('SELECT DISTINCT BookLang from books WHERE STATUS !="Skipped" AND STATUS !="Ignored"')
         return serve_template(templatename="books.html", title='Books', books=[],
-                              languages=languages, booklang=BookLang)
+                              languages=languages, booklang=BookLang, user=user)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -1848,6 +1867,89 @@ class WebInterface(object):
             timer = 0
         return serve_template(templatename="response.html", prefix=prefix,
                               title=title, message=msg, timer=timer)
+
+    @cherrypy.expose
+    def serveBook(self, feedid=None):
+        logger.debug("Serve Book [%s]" % feedid)
+        return self.serveItem(feedid, "book")
+
+    @cherrypy.expose
+    def serveAudio(self, feedid=None):
+        logger.debug("Serve Audio [%s]" % feedid)
+        return self.serveItem(feedid, "audio")
+
+    @cherrypy.expose
+    def serveIssue(self, feedid=None):
+        logger.debug("Serve Issue [%s]" % feedid)
+        return self.serveItem(feedid, "issue")
+
+    @cherrypy.expose
+    def serveItem(self, feedid, ftype):
+        userid = feedid[:10]
+        itemid = feedid[10:]
+        if len(userid) != 10:
+            logger.debug("Invalid userID [%s]" % userid)
+            return
+
+        myDB = database.DBConnection()
+        res = myDB.match('SELECT UserName,Perms,BookType from users where UserID=?', (userid,))
+        if res:
+            perm = check_int(res['Perms'], 0)
+            preftype = res['BookType']
+        else:
+            logger.debug("Invalid userID [%s]" % userid)
+            return
+
+        if not perm & lazylibrarian.perm_download:
+            logger.debug("Insufficient permissions for userID [%s]" % userid)
+            return
+
+        if ftype == 'audio':
+            res = myDB.match('SELECT AudioFile,BookName from books WHERE BookID=?', (itemid,))
+            if res:
+                basefile = res['AudioFile']
+                # zip up all the audiobook parts in a temporary file
+                if basefile and os.path.isfile(basefile):
+                    parentdir = os.path.dirname(basefile)
+                    with tempfile.NamedTemporaryFile() as tmp:
+                        with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as myzip:
+                            for root, dirs, files in os.walk(parentdir):
+                                for fname in files:
+                                    myzip.write(os.path.join(root, fname), fname)
+                        # Reset file pointer
+                        tmp.seek(0)
+                        return serve_file(tmp.name, 'application/x-zip-compressed', 'attachment',
+                                          name=res['BookName'] + '.zip')
+
+        basefile = None
+        if ftype == 'book':
+            res = myDB.match('SELECT BookFile from books WHERE BookID=?', (itemid,))
+            if res:
+                basefile = res['BookFile']
+                basename, extn = os.path.splitext(basefile)
+                types = []
+                for item in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
+                    target = basename + '.' + item
+                    if os.path.isfile(target):
+                        types.append(item)
+
+                # serve user preferred type if available, or system preferred type
+                if preftype and preftype in types:
+                    basefile = basename + '.' + preftype
+                else:
+                    basefile = basename + '.' + types[0]
+
+        elif ftype == 'issue':
+            res = myDB.match('SELECT IssueFile from issues WHERE IssueID=?', (itemid,))
+            if res:
+                basefile = res['IssueFile']
+
+        if basefile and os.path.isfile(basefile):
+            logger.debug('Opening %s %s' % (ftype, basefile))
+            return serve_file(basefile, self.mimetype(basefile), "attachment")
+
+        else:
+            logger.warn("No file found for %s %s" % (ftype, itemid))
 
     @cherrypy.expose
     def openBook(self, bookid=None, library=None, redirect=None, booktype=None):
@@ -2258,6 +2360,9 @@ class WebInterface(object):
         if 'marktype' in args:
             library = args['marktype']
 
+        for arg in ['book_table_length', 'ignored', 'library', 'booklang']:
+            args.pop(arg, None)
+
         myDB = database.DBConnection()
         if not redirect:
             redirect = "books"
@@ -2266,123 +2371,121 @@ class WebInterface(object):
             check_totals = [AuthorID]
         if action:
             for bookid in args:
-                # ouch dirty workaround...
-                if bookid not in ['book_table_length', 'ignored', 'library', 'booklang']:
-                    if action in ["Unread", "Read", "ToRead"]:
-                        cookie = cherrypy.request.cookie
-                        if cookie and 'll_uid' in list(cookie.keys()):
-                            res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
-                                             (cookie['ll_uid'].value,))
-                            if res:
-                                ToRead = getList(res['ToRead'])
-                                HaveRead = getList(res['HaveRead'])
-                                if action == "Unread":
-                                    if bookid in ToRead:
-                                        ToRead.remove(bookid)
-                                    if bookid in HaveRead:
-                                        HaveRead.remove(bookid)
-                                    logger.debug('Status set to "unread" for "%s"' % bookid)
-                                elif action == "Read":
-                                    if bookid in ToRead:
-                                        ToRead.remove(bookid)
-                                    if bookid not in HaveRead:
-                                        HaveRead.append(bookid)
-                                    logger.debug('Status set to "read" for "%s"' % bookid)
-                                elif action == "ToRead":
-                                    if bookid not in ToRead:
-                                        ToRead.append(bookid)
-                                    if bookid in HaveRead:
-                                        HaveRead.remove(bookid)
-                                    logger.debug('Status set to "to read" for "%s"' % bookid)
+                if action in ["Unread", "Read", "ToRead"]:
+                    cookie = cherrypy.request.cookie
+                    if cookie and 'll_uid' in list(cookie.keys()):
+                        res = myDB.match('SELECT ToRead,HaveRead from users where UserID=?',
+                                         (cookie['ll_uid'].value,))
+                        if res:
+                            ToRead = getList(res['ToRead'])
+                            HaveRead = getList(res['HaveRead'])
+                            if action == "Unread":
+                                if bookid in ToRead:
+                                    ToRead.remove(bookid)
+                                if bookid in HaveRead:
+                                    HaveRead.remove(bookid)
+                                logger.debug('Status set to "unread" for "%s"' % bookid)
+                            elif action == "Read":
+                                if bookid in ToRead:
+                                    ToRead.remove(bookid)
+                                if bookid not in HaveRead:
+                                    HaveRead.append(bookid)
+                                logger.debug('Status set to "read" for "%s"' % bookid)
+                            elif action == "ToRead":
+                                if bookid not in ToRead:
+                                    ToRead.append(bookid)
+                                if bookid in HaveRead:
+                                    HaveRead.remove(bookid)
+                                logger.debug('Status set to "to read" for "%s"' % bookid)
 
-                                ToRead = list(set(ToRead))
-                                HaveRead = list(set(HaveRead))
-                                myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
-                                            (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
+                            ToRead = list(set(ToRead))
+                            HaveRead = list(set(HaveRead))
+                            myDB.action('UPDATE users SET ToRead=?,HaveRead=? WHERE UserID=?',
+                                        (', '.join(ToRead), ', '.join(HaveRead), cookie['ll_uid'].value))
 
-                    elif action in ["Wanted", "Have", "Ignored", "Skipped"]:
-                        bookdata = myDB.match('SELECT AuthorID,BookName from books WHERE BookID=?', (bookid,))
-                        if bookdata:
-                            authorid = bookdata['AuthorID']
-                            bookname = bookdata['BookName']
-                            if authorid not in check_totals:
-                                check_totals.append(authorid)
-                            if 'eBook' in library:
-                                myDB.upsert("books", {'Status': action}, {'BookID': bookid})
-                                logger.debug('Status set to "%s" for "%s"' % (action, bookname))
+                elif action in ["Wanted", "Have", "Ignored", "Skipped"]:
+                    bookdata = myDB.match('SELECT AuthorID,BookName from books WHERE BookID=?', (bookid,))
+                    if bookdata:
+                        authorid = bookdata['AuthorID']
+                        bookname = bookdata['BookName']
+                        if authorid not in check_totals:
+                            check_totals.append(authorid)
+                        if 'eBook' in library:
+                            myDB.upsert("books", {'Status': action}, {'BookID': bookid})
+                            logger.debug('Status set to "%s" for "%s"' % (action, bookname))
+                        if 'Audio' in library:
+                            myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
+                            logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
+                elif action in ["Remove", "Delete"]:
+                    bookdata = myDB.match(
+                        'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
+                    if bookdata:
+                        authorid = bookdata['AuthorID']
+                        bookname = bookdata['BookName']
+                        if authorid not in check_totals:
+                            check_totals.append(authorid)
+                        if action == "Delete":
                             if 'Audio' in library:
-                                myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
-                                logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
-                    elif action in ["Remove", "Delete"]:
-                        bookdata = myDB.match(
-                            'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
-                        if bookdata:
-                            authorid = bookdata['AuthorID']
-                            bookname = bookdata['BookName']
-                            if authorid not in check_totals:
-                                check_totals.append(authorid)
-                            if action == "Delete":
-                                if 'Audio' in library:
-                                    bookfile = bookdata['AudioFile']
-                                    if bookfile and os.path.isfile(bookfile):
-                                        try:
-                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
-                                            logger.info('AudioBook %s deleted from disc' % bookname)
-                                        except Exception as e:
-                                            logger.warn('rmtree failed on %s, %s %s' %
-                                                        (bookfile, type(e).__name__, str(e)))
+                                bookfile = bookdata['AudioFile']
+                                if bookfile and os.path.isfile(bookfile):
+                                    try:
+                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                        logger.info('AudioBook %s deleted from disc' % bookname)
+                                    except Exception as e:
+                                        logger.warn('rmtree failed on %s, %s %s' %
+                                                    (bookfile, type(e).__name__, str(e)))
 
-                                if 'eBook' in library:
-                                    bookfile = bookdata['BookFile']
-                                    if bookfile and os.path.isfile(bookfile):
-                                        try:
-                                            rmtree(os.path.dirname(bookfile), ignore_errors=True)
-                                            deleted = True
-                                        except Exception as e:
-                                            logger.warn('rmtree failed on %s, %s %s' %
-                                                        (bookfile, type(e).__name__, str(e)))
-                                            deleted = False
+                            if 'eBook' in library:
+                                bookfile = bookdata['BookFile']
+                                if bookfile and os.path.isfile(bookfile):
+                                    try:
+                                        rmtree(os.path.dirname(bookfile), ignore_errors=True)
+                                        deleted = True
+                                    except Exception as e:
+                                        logger.warn('rmtree failed on %s, %s %s' %
+                                                    (bookfile, type(e).__name__, str(e)))
+                                        deleted = False
 
-                                        if deleted:
-                                            logger.info('eBook %s deleted from disc' % bookname)
-                                            try:
-                                                calibreid = os.path.dirname(bookfile)
-                                                if calibreid.endswith(')'):
-                                                    # noinspection PyTypeChecker
-                                                    calibreid = calibreid.rsplit('(', 1)[1].split(')')[0]
-                                                    if not calibreid or not calibreid.isdigit():
-                                                        calibreid = None
-                                                else:
+                                    if deleted:
+                                        logger.info('eBook %s deleted from disc' % bookname)
+                                        try:
+                                            calibreid = os.path.dirname(bookfile)
+                                            if calibreid.endswith(')'):
+                                                # noinspection PyTypeChecker
+                                                calibreid = calibreid.rsplit('(', 1)[1].split(')')[0]
+                                                if not calibreid or not calibreid.isdigit():
                                                     calibreid = None
-                                            except IndexError:
+                                            else:
                                                 calibreid = None
+                                        except IndexError:
+                                            calibreid = None
 
-                                            if calibreid:
-                                                res, err, rc = calibredb('remove', [calibreid], None)
-                                                if res and not rc:
-                                                    logger.debug('%s reports: %s' %
-                                                                 (lazylibrarian.CONFIG['IMP_CALIBREDB'],
-                                                                  unaccented_str(res)))
-                                                else:
-                                                    logger.debug('No response from %s' %
-                                                                 lazylibrarian.CONFIG['IMP_CALIBREDB'])
+                                        if calibreid:
+                                            res, err, rc = calibredb('remove', [calibreid], None)
+                                            if res and not rc:
+                                                logger.debug('%s reports: %s' %
+                                                             (lazylibrarian.CONFIG['IMP_CALIBREDB'],
+                                                              unaccented_str(res)))
+                                            else:
+                                                logger.debug('No response from %s' %
+                                                             lazylibrarian.CONFIG['IMP_CALIBREDB'])
 
-                            authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (authorid,))
-                            if authorcheck:
-                                if authorcheck['Status'] not in ['Active', 'Wanted']:
-                                    myDB.action('delete from books where bookid=?', (bookid,))
-                                    myDB.action('delete from wanted where bookid=?', (bookid,))
-                                    logger.info('Removed "%s" from database' % bookname)
-                                elif 'eBook' in library:
-                                    myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
-                                    logger.debug('Status set to Ignored for "%s"' % bookname)
-                                elif 'Audio' in library:
-                                    myDB.upsert("books", {"AudioStatus": "Ignored"}, {"BookID": bookid})
-                                    logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
-                            else:
+                        authorcheck = myDB.match('SELECT Status from authors WHERE AuthorID=?', (authorid,))
+                        if authorcheck:
+                            if authorcheck['Status'] not in ['Active', 'Wanted']:
                                 myDB.action('delete from books where bookid=?', (bookid,))
                                 myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
+                            elif 'eBook' in library:
+                                myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
+                                logger.debug('Status set to Ignored for "%s"' % bookname)
+                            elif 'Audio' in library:
+                                myDB.upsert("books", {"AudioStatus": "Ignored"}, {"BookID": bookid})
+                                logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
+                        else:
+                            myDB.action('delete from books where bookid=?', (bookid,))
+                            myDB.action('delete from wanted where bookid=?', (bookid,))
+                            logger.info('Removed "%s" from database' % bookname)
 
         if check_totals:
             for author in check_totals:
@@ -2391,10 +2494,10 @@ class WebInterface(object):
         # start searchthreads
         if action == 'Wanted':
             books = []
+            for arg in ['booklang', 'library', 'ignored', 'book_table_length']:
+                args.pop(arg, None)
             for arg in args:
-                # ouch dirty workaround...
-                if arg not in ['booklang', 'library', 'ignored', 'book_table_length']:
-                    books.append({"bookid": arg})
+                books.append({"bookid": arg})
 
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
@@ -2618,11 +2721,17 @@ class WebInterface(object):
     @cherrypy.expose
     def magazines(self):
         if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in list(cookie.keys()):
+                user = cookie['ll_uid'].value
+            else:
+                user = 0
             # use server-side processing
             covers = 1
             if not lazylibrarian.CONFIG['TOGGLES'] and not lazylibrarian.CONFIG['MAG_IMG']:
                 covers = 0
-            return serve_template(templatename="magazines.html", title="Magazines", magazines=[], covercount=covers)
+            return serve_template(templatename="magazines.html", title="Magazines", magazines=[],
+                                  covercount=covers, user=user)
 
         myDB = database.DBConnection()
 
@@ -2897,61 +3006,61 @@ class WebInterface(object):
     def markPastIssues(self, action=None, **args):
         myDB = database.DBConnection()
         maglist = []
+        args.pop('book_table_length', None)
+
         for nzburl in args:
             nzburl = makeUnicode(nzburl)
-            # ouch dirty workaround...
-            if not nzburl == 'book_table_length':
-                # some NZBurl have &amp;  some have just & so need to try both forms
-                if '&' in nzburl and '&amp;' not in nzburl:
-                    nzburl2 = nzburl.replace('&', '&amp;')
-                elif '&amp;' in nzburl:
-                    nzburl2 = nzburl.replace('&amp;', '&')
-                else:
-                    nzburl2 = ''
+            # some NZBurl have &amp;  some have just & so need to try both forms
+            if '&' in nzburl and '&amp;' not in nzburl:
+                nzburl2 = nzburl.replace('&', '&amp;')
+            elif '&amp;' in nzburl:
+                nzburl2 = nzburl.replace('&amp;', '&')
+            else:
+                nzburl2 = ''
 
-                if not nzburl2:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl=?', (nzburl,))
-                else:
-                    title = myDB.select('SELECT * from pastissues WHERE NZBurl=? OR NZBurl=?', (nzburl, nzburl2))
+            if not nzburl2:
+                title = myDB.select('SELECT * from pastissues WHERE NZBurl=?', (nzburl,))
+            else:
+                title = myDB.select('SELECT * from pastissues WHERE NZBurl=? OR NZBurl=?', (nzburl, nzburl2))
 
-                for item in title:
-                    nzburl = item['NZBurl']
-                    if action == 'Remove':
-                        myDB.action('DELETE from pastissues WHERE NZBurl=?', (nzburl,))
-                        logger.debug('Item %s removed from past issues' % item['NZBtitle'])
-                        maglist.append({'nzburl': nzburl})
-                    elif action == 'Wanted':
-                        bookid = item['BookID']
-                        nzbprov = item['NZBprov']
-                        nzbtitle = item['NZBtitle']
-                        nzbmode = item['NZBmode']
-                        nzbsize = item['NZBsize']
-                        auxinfo = item['AuxInfo']
-                        maglist.append({
-                            'bookid': bookid,
-                            'nzbprov': nzbprov,
-                            'nzbtitle': nzbtitle,
-                            'nzburl': nzburl,
-                            'nzbmode': nzbmode
-                        })
-                        # copy into wanted table
-                        controlValueDict = {'NZBurl': nzburl}
-                        newValueDict = {
-                            'BookID': bookid,
-                            'NZBtitle': nzbtitle,
-                            'NZBdate': now(),
-                            'NZBprov': nzbprov,
-                            'Status': action,
-                            'NZBsize': nzbsize,
-                            'AuxInfo': auxinfo,
-                            'NZBmode': nzbmode
-                        }
-                        myDB.upsert("wanted", newValueDict, controlValueDict)
+            for item in title:
+                nzburl = item['NZBurl']
+                if action == 'Remove':
+                    myDB.action('DELETE from pastissues WHERE NZBurl=?', (nzburl,))
+                    logger.debug('Item %s removed from past issues' % item['NZBtitle'])
+                    maglist.append({'nzburl': nzburl})
+                elif action == 'Wanted':
+                    bookid = item['BookID']
+                    nzbprov = item['NZBprov']
+                    nzbtitle = item['NZBtitle']
+                    nzbmode = item['NZBmode']
+                    nzbsize = item['NZBsize']
+                    auxinfo = item['AuxInfo']
+                    maglist.append({
+                        'bookid': bookid,
+                        'nzbprov': nzbprov,
+                        'nzbtitle': nzbtitle,
+                        'nzburl': nzburl,
+                        'nzbmode': nzbmode
+                    })
+                    # copy into wanted table
+                    controlValueDict = {'NZBurl': nzburl}
+                    newValueDict = {
+                        'BookID': bookid,
+                        'NZBtitle': nzbtitle,
+                        'NZBdate': now(),
+                        'NZBprov': nzbprov,
+                        'Status': action,
+                        'NZBsize': nzbsize,
+                        'AuxInfo': auxinfo,
+                        'NZBmode': nzbmode
+                    }
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
 
-                    elif action in ['Ignored', 'Skipped']:
-                        myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
-                        logger.debug('Item %s marked %s in past issues' % (item['NZBtitle'], action))
-                        maglist.append({'nzburl': nzburl})
+                elif action in ['Ignored', 'Skipped']:
+                    myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, nzburl))
+                    logger.debug('Item %s marked %s in past issues' % (item['NZBtitle'], action))
+                    maglist.append({'nzburl': nzburl})
 
         if action == 'Remove':
             logger.info('Removed %s item%s from past issues' % (len(maglist), plural(len(maglist))))
@@ -2993,56 +3102,56 @@ class WebInterface(object):
     def markIssues(self, action=None, **args):
         myDB = database.DBConnection()
         title = ''
-        for item in args:
-            # ouch dirty workaround...
-            if not item == 'book_table_length':
-                issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
-                if issue:
-                    title = issue['Title']
-                    if action == "Delete":
-                        result = self.deleteIssue(issue['IssueFile'])
-                        if result:
-                            logger.info('Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
-                    if action == "Remove" or action == "Delete":
-                        myDB.action('DELETE from issues WHERE IssueID=?', (item,))
-                        logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
-                        # Set magazine_issuedate to issuedate of most recent issue we have
-                        # Set latestcover to most recent issue cover
-                        # Set magazine_lastacquired to acquired date of most recent issue we have
-                        # Set magazine_added to acquired date of earliest issue we have
-                        cmd = 'select IssueDate,IssueAcquired,IssueFile from issues where title=?'
-                        cmd += ' order by IssueDate '
-                        newest = myDB.match(cmd + 'DESC', (title,))
-                        oldest = myDB.match(cmd + 'ASC', (title,))
-                        controlValueDict = {'Title': title}
-                        if newest and oldest:
-                            old_acquired = ''
-                            new_acquired = ''
-                            cover = ''
-                            issuefile = newest['IssueFile']
-                            if os.path.exists(issuefile):
-                                cover = os.path.splitext(issuefile)[0] + '.jpg'
-                                mtime = os.path.getmtime(issuefile)
-                                new_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
-                            issuefile = oldest['IssueFile']
-                            if os.path.exists(issuefile):
-                                mtime = os.path.getmtime(issuefile)
-                                old_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+        args.pop('book_table_length', None)
 
-                            newValueDict = {
-                                'IssueDate': newest['IssueDate'],
-                                'LatestCover': cover,
-                                'LastAcquired': new_acquired,
-                                'MagazineAdded': old_acquired
-                            }
-                        else:
-                            newValueDict = {
-                                'IssueDate': '',
-                                'LastAcquired': '',
-                                'LatestCover': '',
-                                'MagazineAdded': ''
-                            }
-                        myDB.upsert("magazines", newValueDict, controlValueDict)
+        for item in args:
+            issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
+            if issue:
+                title = issue['Title']
+                if action == "Delete":
+                    result = self.deleteIssue(issue['IssueFile'])
+                    if result:
+                        logger.info('Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
+                if action == "Remove" or action == "Delete":
+                    myDB.action('DELETE from issues WHERE IssueID=?', (item,))
+                    logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
+                    # Set magazine_issuedate to issuedate of most recent issue we have
+                    # Set latestcover to most recent issue cover
+                    # Set magazine_lastacquired to acquired date of most recent issue we have
+                    # Set magazine_added to acquired date of earliest issue we have
+                    cmd = 'select IssueDate,IssueAcquired,IssueFile from issues where title=?'
+                    cmd += ' order by IssueDate '
+                    newest = myDB.match(cmd + 'DESC', (title,))
+                    oldest = myDB.match(cmd + 'ASC', (title,))
+                    controlValueDict = {'Title': title}
+                    if newest and oldest:
+                        old_acquired = ''
+                        new_acquired = ''
+                        cover = ''
+                        issuefile = newest['IssueFile']
+                        if os.path.exists(issuefile):
+                            cover = os.path.splitext(issuefile)[0] + '.jpg'
+                            mtime = os.path.getmtime(issuefile)
+                            new_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+                        issuefile = oldest['IssueFile']
+                        if os.path.exists(issuefile):
+                            mtime = os.path.getmtime(issuefile)
+                            old_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+
+                        newValueDict = {
+                            'IssueDate': newest['IssueDate'],
+                            'LatestCover': cover,
+                            'LastAcquired': new_acquired,
+                            'MagazineAdded': old_acquired
+                        }
+                    else:
+                        newValueDict = {
+                            'IssueDate': '',
+                            'LastAcquired': '',
+                            'LatestCover': '',
+                            'MagazineAdded': ''
+                        }
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
         if title:
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
         else:
@@ -3073,52 +3182,52 @@ class WebInterface(object):
     @cherrypy.expose
     def markMagazines(self, action=None, **args):
         myDB = database.DBConnection()
+        args.pop('book_table_length', None)
+
         for item in args:
             item = makeUnicode(item)
             title = unquote_plus(item)
-            # ouch dirty workaround...
-            if not item == 'book_table_length':
-                if action == "Paused" or action == "Active":
-                    controlValueDict = {"Title": title}
-                    newValueDict = {"Status": action}
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info('Status of magazine %s changed to %s' % (title, action))
-                if action == "Delete":
-                    issues = myDB.select('SELECT IssueFile from issues WHERE Title=?', (title,))
-                    logger.debug('Deleting magazine %s from disc' % title)
-                    issuedir = ''
-                    for issue in issues:  # delete all issues of this magazine
-                        result = self.deleteIssue(issue['IssueFile'])
-                        if result:
-                            logger.debug('Issue %s deleted from disc' % issue['IssueFile'])
-                            issuedir = os.path.dirname(issue['IssueFile'])
-                        else:
-                            logger.debug('Failed to delete %s' % (issue['IssueFile']))
-                    if issuedir:
-                        magdir = os.path.dirname(issuedir)
-                        # delete this magazines directory if now empty
-                        try:
-                            os.rmdir(magdir)
-                            logger.debug('Magazine directory %s deleted from disc' % magdir)
-                        except OSError:
-                            logger.debug('Magazine directory %s is not empty' % magdir)
-                    logger.info('Magazine %s deleted from disc' % item)
-                if action == "Remove" or action == "Delete":
-                    myDB.action('DELETE from magazines WHERE Title=?', (title,))
-                    myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
-                    myDB.action('DELETE from issues WHERE Title=?', (title,))
-                    myDB.action('DELETE from wanted where BookID=?', (title,))
-                    logger.info('Magazine %s removed from database' % title)
-                if action == "Reset":
-                    controlValueDict = {"Title": title}
-                    newValueDict = {
-                        "LastAcquired": None,
-                        "IssueDate": None,
-                        "LatestCover": None,
-                        "IssueStatus": "Wanted"
-                    }
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
-                    logger.info('Magazine %s details reset' % title)
+            if action == "Paused" or action == "Active":
+                controlValueDict = {"Title": title}
+                newValueDict = {"Status": action}
+                myDB.upsert("magazines", newValueDict, controlValueDict)
+                logger.info('Status of magazine %s changed to %s' % (title, action))
+            if action == "Delete":
+                issues = myDB.select('SELECT IssueFile from issues WHERE Title=?', (title,))
+                logger.debug('Deleting magazine %s from disc' % title)
+                issuedir = ''
+                for issue in issues:  # delete all issues of this magazine
+                    result = self.deleteIssue(issue['IssueFile'])
+                    if result:
+                        logger.debug('Issue %s deleted from disc' % issue['IssueFile'])
+                        issuedir = os.path.dirname(issue['IssueFile'])
+                    else:
+                        logger.debug('Failed to delete %s' % (issue['IssueFile']))
+                if issuedir:
+                    magdir = os.path.dirname(issuedir)
+                    # delete this magazines directory if now empty
+                    try:
+                        os.rmdir(magdir)
+                        logger.debug('Magazine directory %s deleted from disc' % magdir)
+                    except OSError:
+                        logger.debug('Magazine directory %s is not empty' % magdir)
+                logger.info('Magazine %s deleted from disc' % item)
+            if action == "Remove" or action == "Delete":
+                myDB.action('DELETE from magazines WHERE Title=?', (title,))
+                myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
+                myDB.action('DELETE from issues WHERE Title=?', (title,))
+                myDB.action('DELETE from wanted where BookID=?', (title,))
+                logger.info('Magazine %s removed from database' % title)
+            if action == "Reset":
+                controlValueDict = {"Title": title}
+                newValueDict = {
+                    "LastAcquired": None,
+                    "IssueDate": None,
+                    "LatestCover": None,
+                    "IssueStatus": "Wanted"
+                }
+                myDB.upsert("magazines", newValueDict, controlValueDict)
+                logger.info('Magazine %s details reset' % title)
 
         raise cherrypy.HTTPRedirect("magazines")
 
@@ -3295,6 +3404,35 @@ class WebInterface(object):
         else:
             logger.debug('IMPORTALT already running')
         raise cherrypy.HTTPRedirect("manage")
+
+    @cherrypy.expose
+    def rssFeed(self, **kwargs):
+        if 'type' in kwargs:
+            ftype = kwargs['type']
+        else:
+            return
+
+        if 'limit' in kwargs:
+            limit = kwargs['limit']
+        else:
+            limit = '10'
+
+        userid = 0
+        if 'user' in kwargs:
+            userid = kwargs['user']
+        else:
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in list(cookie.keys()):
+                userid = cookie['ll_uid'].value
+
+        scheme, netloc, path, qs, anchor = urlsplit(cherrypy.url())
+        try:
+            netloc = cherrypy.request.headers['X-Forwarded-Host']
+        except KeyError:
+            pass
+        path = path.replace('rssFeed', '').rstrip('/')
+        baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
+        return genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
 
     @cherrypy.expose
     def importCSV(self):
@@ -3955,6 +4093,7 @@ class WebInterface(object):
     def forceProcess(self, source=None):
         if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
             threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
+            scheduleJob(action='Restart', target='processDir')
         else:
             logger.debug('POSTPROCESS already running')
         raise cherrypy.HTTPRedirect(source)
@@ -3969,11 +4108,15 @@ class WebInterface(object):
                     self.searchForMag(bookid=title)
                 elif 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
+                    scheduleJob(action='Restart', target='search_magazines')
         elif source in ["books", "audio"]:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 if 'SEARCHALLBOOKS' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_book, name='SEARCHALLBOOKS', args=[]).start()
+                    scheduleJob(action='Restart', target='search_book')
+                    if lazylibrarian.USE_RSS():
+                        scheduleJob(action='Restart', target='search_rss_book')
             else:
                 logger.debug('forceSearch called but no download methods set')
         else:

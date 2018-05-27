@@ -1162,7 +1162,7 @@
               <div class="rss_providers">
                 <fieldset>
                   <div class="col-md-12">
-                  <legend>RSS Providers</legend>
+                  <legend>RSS/Wishlist Providers</legend>
                   </div>
                   %for provider in lazylibrarian.RSS_PROV:
                   <%
@@ -1410,6 +1410,13 @@
                     <div class="input-group">
                       <input type="text" id="searchrss_interval" name="searchrss_interval" value="${lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']}" class="form-control" placeholder="RSS search interval (mins)">
                       <span class="input-group-addon">Minutes</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="wishlist_interval" class="control-label">Wishlist Search Interval:</label>
+                    <div class="input-group">
+                      <input type="text" id="wishlist_interval" name="wishlist_interval" value="${lazylibrarian.CONFIG['WISHLIST_INTERVAL']}" class="form-control" placeholder="Wishlist search interval (hours)">
+                      <span class="input-group-addon">Hours</span>
                     </div>
                   </div>
                   <div class="form-group">

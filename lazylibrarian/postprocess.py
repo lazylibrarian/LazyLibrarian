@@ -163,15 +163,13 @@ def processAlternate(source_dir=None):
                     else:
                         addAuthorNameToDB(author=authorname)
 
-                bookid = find_book_in_db(authorname, bookname, ignored=False)
+                bookid, mtype = find_book_in_db(authorname, bookname, ignored=False)
                 if bookid:
-                    return process_book(source_dir, bookid)
-                else:
-                    bookid = find_book_in_db(authorname, bookname, ignored=True)
-                    if bookid:
+                    if mtype == "Ignored":
                         logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
                                     (bookname, authorname))
-                        return process_book(source_dir, bookid)
+                    return process_book(source_dir, bookid)
+                else:
                     logger.warn("Book %s by %s not found in database" % (bookname, authorname))
             else:
                 logger.warn('Book %s has no metadata, unable to import' % new_book)
@@ -672,11 +670,16 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 if lazylibrarian.CONFIG['MAG_RELATIVE']:
                                     dest_dir = lazylibrarian.DIRECTORY('eBook')
                                     dest_path = os.path.join(dest_dir, dest_path)
-                                else:
-                                    ignorefile = os.path.join(dest_path, '.ll_ignore')
-                                    with open(ignorefile, 'a'):
-                                        os.utime(ignorefile, None)
-                                if PY2:
+                                    if PY2:
+                                        dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
+                                    res = mymakedirs(dest_path)
+                                    if not res:
+                                        logger.warn('Unable to create directory %s' % dest_path)
+                                    else:
+                                        ignorefile = os.path.join(dest_path, '.ll_ignore')
+                                        with open(ignorefile, 'a'):
+                                            os.utime(ignorefile, None)
+                                elif PY2:
                                     dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
                                 global_name = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace(
                                     '$IssueDate', book['AuxInfo']).replace('$Title', mag_name)

@@ -175,7 +175,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
                      'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
-                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED']
+                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -385,6 +385,7 @@ CONFIG_DEFINITIONS = {
     'SEARCH_INTERVAL': ('int', 'SearchScan', '360'),
     'SCAN_INTERVAL': ('int', 'SearchScan', '10'),
     'SEARCHRSS_INTERVAL': ('int', 'SearchScan', '20'),
+    'WISHLIST_INTERVAL': ('int', 'SearchScan', '24'),
     'VERSIONCHECK_INTERVAL': ('int', 'SearchScan', '24'),
     'GOODREADS_INTERVAL': ('int', 'SearchScan', '48'),
     'FULL_SCAN': ('bool', 'LibraryScan', 0),
@@ -936,7 +937,7 @@ def config_write(part=None):
                 value = unaccented_str(value)
 
         if key in ['SEARCH_INTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL', 'SEARCHRSS_INTERVAL',
-                   'GOODREADS_INTERVAL']:
+                   'GOODREADS_INTERVAL', 'WISHLIST_INTERAL']:
             oldvalue = CFG.get(section, key.lower())
             if value != oldvalue:
                 if key == 'SEARCH_INTERVAL':
@@ -944,6 +945,8 @@ def config_write(part=None):
                     scheduleJob('Restart', 'search_magazine')
                 elif key == 'SEARCHRSS_INTERVAL':
                     scheduleJob('Restart', 'search_rss_book')
+                elif key == 'WISHLIST_INTERVAL':
+                    scheduleJob('Restart', 'search_wishlist')
                 elif key == 'SCAN_INTERVAL':
                     scheduleJob('Restart', 'processDir')
                 elif key == 'VERSIONCHECK_INTERVAL':
@@ -1204,7 +1207,7 @@ def add_rss_slot():
 
 
 def USE_RSS():
-    if not check_int(CONFIG['SEARCHRSS_INTERVAL'], 0):
+    if not check_int(CONFIG['SEARCHRSS_INTERVAL'], 0) and not check_int(CONFIG['WISHLIST_INTERVAL'], 0):
         return 0
     count = 0
     for provider in RSS_PROV:

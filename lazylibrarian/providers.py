@@ -805,6 +805,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 result = result.decode('utf-8')
             except UnicodeDecodeError:
                 result = result.decode('latin-1')
+            except AttributeError:
+                pass
 
             if result.startswith('<') and result.endswith('/>') and "error code" in result:
                 result = result[1:-2]
@@ -824,6 +826,8 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 result = result.decode('utf-8')
             except UnicodeDecodeError:
                 result = result.decode('latin-1')
+            except AttributeError:
+                pass
 
             if not result or result == "''":
                 result = "Got an empty response"
