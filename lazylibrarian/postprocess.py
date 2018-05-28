@@ -833,13 +833,13 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
-            if downloads:
-                ppcount += check_residual(download_dir)
+            ppcount += check_residual(download_dir)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+
         if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched):
             for book in snatched:
                 book_type = bookType(book)
@@ -869,6 +869,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             myDB.action(cmd, (book['BookID'],))
                         myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
+                else:
+                    logger.debug('%s was sent to %s %s hours ago' % (book['NZBtitle'], book['Source'].lower(), hours))
 
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
