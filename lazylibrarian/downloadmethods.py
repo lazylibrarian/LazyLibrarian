@@ -136,11 +136,12 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     elif len(r.content) < 1000:
         logger.debug("Only got %s bytes for %s/%s, rejecting" % (len(r.content), tor_title, bookname))
     else:
-        _, extn = bookname.rsplit(' ', 1)  # last word is often the extension - but not always...
-        if extn in getList(lazylibrarian.CONFIG('EBOOK_TYPE')):
+        extn = ''
+        if ' ' in bookname:
+            _, extn = bookname.rsplit(' ', 1)  # last word is often the extension - but not always...
+        if extn and extn in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
             bookname = '.'.join(bookname.rsplit(' ', 1))
         elif magic:
-            extn = ''
             mtype = magic.from_buffer(r.content)
             if 'EPUB' in mtype:
                 extn = '.epub'

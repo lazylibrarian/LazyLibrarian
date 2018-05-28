@@ -776,6 +776,23 @@ def logHeader():
         except ImportError:
             header += "cryptography: module missing\n"
 
+    try:
+        import magic
+    except ImportError:
+        try:
+            import lib.magic as magic
+        except ImportError:
+            magic = None
+
+    if magic:
+        try:
+            ver = magic.libmagic._name
+        except AttributeError:
+            ver = 'missing'
+        header += "magic library %s\n" % ver
+    else:
+        header += "magic module missing\n"
+
     return header
 
 
