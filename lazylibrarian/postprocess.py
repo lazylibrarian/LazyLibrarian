@@ -853,6 +853,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 except ValueError:
                     diff = 0
                 hours = int(diff / 3600)
+                mins = int(diff / 60)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
                     if book['Source'] and book['Source'] != 'DIRECT':
                         logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
@@ -870,7 +871,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
                 else:
-                    logger.debug('%s was sent to %s %s hours ago' % (book['NZBtitle'], book['Source'].lower(), hours))
+                    logger.debug('%s was sent to %s %s minutes ago' % (book['NZBtitle'], book['Source'].lower(), mins))
 
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
