@@ -818,10 +818,10 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                             check_status = myDB.match(cmd, (bookid,))
                                                             if check_status:
                                                                 logger.debug("%s matched on rescan for %s" %
-                                                                            (bookid, booktitle))
+                                                                             (bookid, booktitle))
                                                             else:
                                                                 logger.debug("Adding %s on rescan for %s" %
-                                                                            (bookid, booktitle))
+                                                                             (bookid, booktitle))
                                                                 GR_ID = GoodReads(bookid)
                                                                 GR_ID.find_book(bookid)
                                                                 if language and language != "Unknown":
