@@ -23,7 +23,7 @@ def genFeed(ftype, limit=10, user=0, baseurl=''):
     if ftype == 'eBook':
         cmd = "select AuthorName,BookName,BookDesc,BookLibrary,BookID,BookLink from books,authors where"
         cmd += " BookLibrary != '' and books.AuthorID = authors.AuthorID order by BookLibrary desc limit %s" % limit
-        baselink = baseurl + 'bookWall'
+        baselink = baseurl + 'bookWall&have=1'
     elif ftype == 'AudioBook':
         cmd = "select AuthorName,BookName,BookDesc,AudioLibrary,BookID,BookLink from books,authors where"
         cmd += " AudioLibrary != '' and books.AuthorID = authors.AuthorID order by AudioLibrary desc limit %s" % limit
