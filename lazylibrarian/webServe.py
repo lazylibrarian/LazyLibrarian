@@ -3069,7 +3069,7 @@ class WebInterface(object):
             for items in maglist:
                 logger.debug('Snatching %s, %s from %s' % (items['nzbtitle'], items['nzbmode'], items['nzbprov']))
                 myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, items['nzburl']))
-                if 'libgen' in items['nzbprov']:
+                if items['nzbmode'] == 'direct':
                     snatch = DirectDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],

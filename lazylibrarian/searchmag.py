@@ -469,7 +469,7 @@ def search_magazines(mags=None, reset=False):
                             magazine['nzbtitle'],
                             magazine['nzburl'],
                             'magazine')
-                    elif 'libgen' in magazine['nzbprov']:
+                    elif magazine['nzbmode'] == 'direct':
                         snatch = DirectDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
