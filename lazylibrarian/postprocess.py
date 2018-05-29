@@ -248,11 +248,8 @@ def unpack_archive(pp_path, download_dir, title):
                     res = mymakedirs(targetdir)
                     if not res:
                         return ''
-                if PY2:
-                    fmode = 'wb'
-                else:
-                    fmode = 'w'
-                with open(os.path.join(targetdir, item), fmode) as f:
+
+                with open(os.path.join(targetdir, item), "wb") as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.read(item))
             else:
@@ -277,11 +274,8 @@ def unpack_archive(pp_path, download_dir, title):
                     res = mymakedirs(targetdir)
                     if not res:
                         return ''
-                if PY2:
-                    fmode = 'wb'
-                else:
-                    fmode = 'w'
-                with open(os.path.join(targetdir, item), fmode) as f:
+
+                with open(os.path.join(targetdir, item), "wb") as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.extractfile(item).read())
             else:
@@ -306,11 +300,8 @@ def unpack_archive(pp_path, download_dir, title):
                     res = mymakedirs(targetdir)
                     if not res:
                         return ''
-                if PY2:
-                    fmode = 'wb'
-                else:
-                    fmode = 'w'
-                with open(os.path.join(targetdir, item), fmode) as f:
+
+                with open(os.path.join(targetdir, item), "wb") as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.read(item))
             else:
