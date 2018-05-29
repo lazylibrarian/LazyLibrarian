@@ -786,6 +786,7 @@ def logHeader():
 
     if magic:
         try:
+            # noinspection PyProtectedMember
             ver = magic.libmagic._name
         except AttributeError:
             ver = 'missing'

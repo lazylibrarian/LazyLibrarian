@@ -332,7 +332,8 @@ def search_magazines(mags=None, reset=False):
                             comp_date = 0
                             if datetype_ok:
                                 control_date = results['IssueDate']
-                                if control_date is None:  # we haven't got any copies of this magazine yet
+                                logger.debug("Control date: [%s]" % control_date)
+                                if not control_date:  # we haven't got any copies of this magazine yet
                                     # get a rough time just over MAX_AGE days ago to compare to, in format yyyy-mm-dd
                                     # could perhaps calc differently for weekly, biweekly etc
                                     # For magazines with only an issue number use zero as we can't tell age
