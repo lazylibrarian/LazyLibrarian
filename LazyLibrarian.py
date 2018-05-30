@@ -85,6 +85,9 @@ def main():
     p.add_option('-p', '--pidfile',
                  dest='pidfile', default=None,
                  help="Store the process id in the given file")
+    p.add_option('--loglevel',
+                 dest='loglevel', default=None,
+                 help="Debug loglevel")
 
     options, args = p.parse_args()
 
@@ -119,6 +122,12 @@ def main():
             print('Cannot update, not a git or source installation')
         else:
             lazylibrarian.shutdown(restart=True, update=True)
+
+    if options.loglevel:
+        try:
+            lazylibrarian.LOGLEVEL = int(options.loglevel)
+        except:
+            pass
 
     if options.datadir:
         lazylibrarian.DATADIR = str(options.datadir)
