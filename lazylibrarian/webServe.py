@@ -4172,20 +4172,29 @@ class WebInterface(object):
                                          lazylibrarian.CONFIG['DELUGE_USER'],
                                          lazylibrarian.CONFIG['DELUGE_PASS'])
                 client.connect()
-                msg = "Deluge: Daemon connection Successful"
+                msg = "Deluge: Daemon connection Successful\n"
                 if lazylibrarian.CONFIG['DELUGE_LABEL']:
                     labels = client.call('label.get_labels')
-                    if lazylibrarian.CONFIG['DELUGE_LABEL'] not in labels:
-                        msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.CONFIG['DELUGE_LABEL']
-                        if labels:
-                            msg += "Valid labels:\n"
-                            for label in labels:
-                                msg += '%s\n' % label
-                        else:
-                            msg += "Deluge daemon seems to have no labels set"
-                        return msg
+                    if labels:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                            logger.debug("Valid labels: %s" % str(labels))
                     else:
-                        msg += ', label [%s] is valid' % lazylibrarian.CONFIG['DELUGE_LABEL']
+                        msg += "Deluge daemon seems to have no labels set\n"
+
+                    mylabel = lazylibrarian.CONFIG['DELUGE_LABEL'].lower()
+                    if mylabel != lazylibrarian.CONFIG['DELUGE_LABEL']:
+                        lazylibrarian.CONFIG['DELUGE_LABEL'] = mylabel
+
+                    if not PY2:
+                        labels = [makeUnicode(s) for s in labels]
+                    if mylabel not in labels:
+                        res = client.call('label.add', mylabel)
+                        if not res:
+                            msg += "Label [%s] was added" % lazylibrarian.CONFIG['DELUGE_LABEL']
+                        else:
+                            msg = str(res)
+                    else:
+                        msg += 'Label [%s] is valid' % lazylibrarian.CONFIG['DELUGE_LABEL']
             # success, save settings
             lazylibrarian.config_write('DELUGE')
             return msg

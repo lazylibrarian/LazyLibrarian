@@ -390,7 +390,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:
                     if lazylibrarian.CONFIG['DELUGE_LABEL']:
-                        _ = client.call('label.set_torrent', downloadID, lazylibrarian.CONFIG['DELUGE_LABEL'])
+                        _ = client.call('label.set_torrent', downloadID, lazylibrarian.CONFIG['DELUGE_LABEL'].lower())
                     result = client.call('core.get_torrent_status', downloadID, {})
                     # for item in result:
                     #    logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))

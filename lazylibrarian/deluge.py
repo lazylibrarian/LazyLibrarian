@@ -489,12 +489,13 @@ def setTorrentLabel(result):
     if not any(delugeweb_auth):
         _get_auth()
 
-    if ' ' in label:
-        logger.error('Deluge: Invalid label. Label can\'t contain spaces - replacing with underscores')
-        label = label.replace(' ', '_')
     if not label:
         logger.debug('Deluge: No Label set')
         return True
+
+    if ' ' in label:
+        logger.error('Deluge: Invalid label. Label can\'t contain spaces - replacing with underscores')
+        label = label.replace(' ', '_')
 
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     try:
@@ -508,10 +509,12 @@ def setTorrentLabel(result):
             logger.debug(response.text)
 
         labels = response.json()['result']
+
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug("Valid labels: %s" % str(labels))
 
-        if labels:
+        if response.json()['error'] is None:
+            label = label.lower()  # deluge lowercases labels
             if label not in labels:
                 try:
                     logger.debug('Deluge: %s label doesn\'t exist in Deluge, let\'s add it' % label)
