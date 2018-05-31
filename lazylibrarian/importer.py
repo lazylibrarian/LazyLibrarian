@@ -222,6 +222,25 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                     "DateAdded": today(),
                     "Status": "Loading"
                 }
+                if dbauthor:
+                    if authorname != dbauthor['authorname']:
+                        # name change might be users preference
+                        logger.warn("Conflicting authorname for %s [%s][%s] Ignoring change" %
+                                    (author['authorid'], authorname, dbauthor['authorname']))
+                        authorname = dbauthor['authorname']
+                        # cmd = 'UPDATE authors SET AuthorName=? WHERE AuthorName=?'
+                        # myDB.action(cmd, (author['authorname'], dbauthor['authorname']))
+                    if author['authorid'] != dbauthor['authorid']:
+                        # GoodReads may have altered authorid?
+                        logger.warn("Conflicting authorid for %s (%s:%s) Moving to new authorid" %
+                                    (authorname, author['authorid'], dbauthor['authorid']))
+                        cmd = 'UPDATE books SET AuthorID=? WHERE AuthorID=?'
+                        myDB.action(cmd, (author['authorid'], dbauthor['authorid']))
+                        myDB.action('DELETE from authors WHERE AuthorID=?', (dbauthor['authorid'],))
+                        myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (dbauthor['authorid'],))
+                        update_totals(author['authorid'])
+                        dbauthor = None
+
                 if not dbauthor or (dbauthor and not dbauthor['manual']):
                     newValueDict["AuthorImg"] = author['authorimg']
                     newValueDict["AuthorBorn"] = author['authorborn']
