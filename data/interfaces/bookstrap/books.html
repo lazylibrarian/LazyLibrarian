@@ -14,7 +14,7 @@
         <a href="bookWall?have=0" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-plus"></i> Additions</a>
         <a href="bookWall?have=1" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-alt"></i> Downloads</a>
         %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
-        <a href="rssFeed?user=${user}&type=eBook&limit=10" class="button btn btn-sm btn-primary" data-toggle="tooltip" title="RSS feed of recent downloads"><i class="fa fa-rss"></i></a>
+        <a href="rssFeed?user=${user}&type=eBook&limit=10.xml" class="button btn btn-sm btn-primary" data-toggle="tooltip" title="RSS feed of recent downloads"><i class="fa fa-rss"></i></a>
         %endif
       </div>
         %if len(languages) > 1:

@@ -258,7 +258,14 @@ class Api(object):
         if 'limit' in kwargs:
             limit = kwargs['limit']
         else:
-            limit = '10'
+            limit = 10
+
+        # url might end in .xml
+        if not limit.isdigit():
+            try:
+                limit = int(limit.split('.')[0])
+            except (IndexError, ValueError):
+                limit = 10
 
         userid = 0
         scheme, netloc, path, qs, anchor = urlsplit(cherrypy.url())
