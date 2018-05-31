@@ -120,7 +120,7 @@ class qbittorrentclient(object):
 
             # some commands return json
             if contentType == 'application/json':
-                return json.loads(response.read())
+                return response.json()
             else:
                 # some commands return plain text
                 resp = response.read()
