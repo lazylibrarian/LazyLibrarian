@@ -238,7 +238,6 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                         myDB.action(cmd, (author['authorid'], dbauthor['authorid']))
                         myDB.action('DELETE from authors WHERE AuthorID=?', (dbauthor['authorid'],))
                         myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (dbauthor['authorid'],))
-                        update_totals(author['authorid'])
                         dbauthor = None
 
                 if not dbauthor or (dbauthor and not dbauthor['manual']):
