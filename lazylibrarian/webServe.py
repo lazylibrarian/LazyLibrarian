@@ -1807,6 +1807,8 @@ class WebInterface(object):
             return 'application/pdf'
         elif name.endswith('.mp3'):
             return 'audio/mpeg3'
+        elif name.endswith('.xml'):
+            return 'application/rss+xml'
         return "application/x-download"
 
     @cherrypy.expose
@@ -3437,10 +3439,12 @@ class WebInterface(object):
             netloc = cherrypy.request.headers['X-Forwarded-Host']
         except KeyError:
             pass
+        filename = 'LazyLibrarian_' + ftype + '.xml'
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
-        remote_ip = cherrypy.request.remote.ip
-        logger.info("RSS Feed request %s %s%s for %s" % (limit, ftype, plural(limit), remote_ip))
+        logger.info("RSS Feed request %s %s%s" % (limit, ftype, plural(limit)))
+        cherrypy.response.headers["Content-Type"] = 'application/rss+xml'
+        cherrypy.response.headers["Content-Disposition"] = 'attachment; filename="%s"' % filename
         return genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
 
     @cherrypy.expose
