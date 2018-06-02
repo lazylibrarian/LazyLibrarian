@@ -111,7 +111,7 @@ def next_run(when_run):
         td = when_run - timenow
         diff = td.seconds  # time difference in seconds
     except ValueError as e:
-        logger.error("Error getting next run for [%s] %s" % (when_run, str(e)))
+        lazylibrarian.logger.error("Error getting next run for [%s] %s" % (when_run, str(e)))
         diff = 0
 
     # calculate whole units, plus round up by adding 1(true) if remainder >= half

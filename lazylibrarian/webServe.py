@@ -3406,6 +3406,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def rssFeed(self, **kwargs):
+        self.label_thread('RSSFEED')
         if 'type' in kwargs:
             ftype = kwargs['type']
         else:
@@ -3438,6 +3439,8 @@ class WebInterface(object):
             pass
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
+        remote_ip = cherrypy.request.remote.ip
+        logger.info("RSS Feed request %s %s%s for %s" % (limit, ftype, plural(limit), remote_ip))
         return genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
 
     @cherrypy.expose

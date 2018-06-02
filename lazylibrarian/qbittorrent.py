@@ -11,7 +11,6 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import json
 import mimetypes
 import os
 import platform
@@ -19,18 +18,19 @@ import random
 import string
 import time
 
-import lazylibrarian
-from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
-from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
 # noinspection PyUnresolvedReferences
 from lib.six.moves import http_cookiejar
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_error import URLError
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_request import HTTPCookieProcessor, build_opener, Request
-# noinspection PyUnresolvedReferences
-from lib.six.moves.urllib_error import URLError
+
+import lazylibrarian
+from lazylibrarian import logger
+from lazylibrarian.common import USER_AGENT
+from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
 
 
 class qbittorrentclient(object):
