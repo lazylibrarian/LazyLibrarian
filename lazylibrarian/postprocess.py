@@ -248,11 +248,8 @@ def unpack_archive(pp_path, download_dir, title):
                     res = mymakedirs(targetdir)
                     if not res:
                         return ''
-                if PY2:
-                    fmode = 'wb'
-                else:
-                    fmode = 'w'
-                with open(os.path.join(targetdir, item), fmode) as f:
+
+                with open(os.path.join(targetdir, item), "wb") as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.read(item))
             else:
@@ -277,11 +274,8 @@ def unpack_archive(pp_path, download_dir, title):
                     res = mymakedirs(targetdir)
                     if not res:
                         return ''
-                if PY2:
-                    fmode = 'wb'
-                else:
-                    fmode = 'w'
-                with open(os.path.join(targetdir, item), fmode) as f:
+
+                with open(os.path.join(targetdir, item), "wb") as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.extractfile(item).read())
             else:
@@ -306,11 +300,8 @@ def unpack_archive(pp_path, download_dir, title):
                     res = mymakedirs(targetdir)
                     if not res:
                         return ''
-                if PY2:
-                    fmode = 'wb'
-                else:
-                    fmode = 'w'
-                with open(os.path.join(targetdir, item), fmode) as f:
+
+                with open(os.path.join(targetdir, item), "wb") as f:
                     logger.debug('Extracting %s to %s' % (item, targetdir))
                     f.write(z.read(item))
             else:
@@ -376,7 +367,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # may have been changed once magnet resolved, or download started or completed
                 # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
                 matchtitle = unaccented_str(book['NZBtitle'])
-                torrentname = getTorrentName(matchtitle, book['Source'], book['DownloadID'])
+                torrentname = getDownloadName(matchtitle, book['Source'], book['DownloadID'])
 
                 if torrentname and torrentname != matchtitle:
                     logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
@@ -407,7 +398,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 # If downloader says it hasn't completed, no need to look for it.
                 rejected = False
                 if book['Source'] in ['TRANSMISSION', 'QBITTORRENT', 'DELUGEWEBUI', 'DELUGERPC']:
-                    torrentfiles = getTorrentFiles(book['Source'], book['DownloadID'])
+                    torrentfiles = getDownloadFiles(book['Source'], book['DownloadID'])
                     # Downloaders return varying amounts of info using varying names
                     if not torrentfiles:  # empty
                         logger.debug("No files returned by %s for %s" % (book['Source'], matchtitle))
@@ -833,13 +824,13 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                          (pp_path, type(why).__name__, str(why)))
                             logger.warn('Residual files remain in %s' % pp_path)
 
-            if downloads:
-                ppcount += check_residual(download_dir)
+            ppcount += check_residual(download_dir)
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
         # Now check for any that are still marked snatched...
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+
         if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched):
             for book in snatched:
                 book_type = bookType(book)
@@ -853,6 +844,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 except ValueError:
                     diff = 0
                 hours = int(diff / 3600)
+                mins = int(diff / 60)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
                     if book['Source'] and book['Source'] != 'DIRECT':
                         logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
@@ -869,6 +861,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             myDB.action(cmd, (book['BookID'],))
                         myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
                         delete_task(book['Source'], book['DownloadID'], True)
+                else:
+                    logger.debug('%s was sent to %s %s minutes ago' % (book['NZBtitle'], book['Source'].lower(), mins))
 
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
@@ -958,10 +952,10 @@ def check_residual(download_dir):
     return ppcount
 
 
-def getTorrentName(title, source, downloadid):
+def getDownloadName(title, source, downloadid):
     torrentname = None
     try:
-        logger.debug("getTorrentName: %s was sent to %s" % (title, source))
+        logger.debug("%s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
             torrentname = transmission.getTorrentFolder(downloadid)
         elif source == 'QBITTORRENT':
@@ -994,7 +988,7 @@ def getTorrentName(title, source, downloadid):
         return None
 
 
-def getTorrentFiles(source, downloadid):
+def getDownloadFiles(source, downloadid):
     torrentfiles = None
     try:
         if source == 'TRANSMISSION':

@@ -15,14 +15,13 @@ from __future__ import with_statement
 import datetime
 import os
 import shutil
-import threading
 import time
 import traceback
 
 import lazylibrarian
-from lazylibrarian import logger, database, magazinescan, bookwork
+from lazylibrarian import logger, database
 from lazylibrarian.common import restartJobs, pwd_generator
-from lazylibrarian.formatter import plural, bookSeries, makeUnicode, makeBytestr, md5_utf8
+from lazylibrarian.formatter import plural, makeUnicode, makeBytestr, md5_utf8
 from lazylibrarian.importer import addAuthorToDB
 
 
@@ -126,217 +125,70 @@ def dbupgrade(db_current_version):
                     logger.info(lazylibrarian.UPDATE_MSG)
                     upgradelog.write("%s v0: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                 else:
-                    if not has_column(myDB, "authors", "AuthorID"):
-                        # it's a new database. Create tables but no need for any upgrading
-                        db_version = db_current_version
-                        lazylibrarian.UPDATE_MSG = 'Creating new database, version %s' % db_version
-                        upgradelog.write("%s v0: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        logger.info(lazylibrarian.UPDATE_MSG)
+                    # it's a new database. Create tables but no need for any upgrading
+                    db_version = db_current_version
+                    lazylibrarian.UPDATE_MSG = 'Creating new database, version %s' % db_version
+                    upgradelog.write("%s v0: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+                    logger.info(lazylibrarian.UPDATE_MSG)
+                    # sanity check for incomplete initialisations
+                    res = myDB.select("select name from sqlite_master where type is 'table'")
+                    for item in res:
+                        myDB.action("DROP TABLE IF EXISTS %s" % item['name'])
 
-                    myDB.action('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, \
-                AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastBookImg TEXT, \
-                LastLink Text, LastDate TEXT,  HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, \
-                AuthorDeath TEXT, UnignoredBooks INTEGER, Manual TEXT, GRfollow TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, \
-                BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-                BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
-                Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, AudioLibrary TEXT, \
-                AudioStatus TEXT, WorkID TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, \
-                NZBdate TEXT, NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, Source TEXT, \
-                DownloadID TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS pastissues AS SELECT * FROM wanted WHERE 0')  # same columns
-                    myDB.action('CREATE TABLE IF NOT EXISTS magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, \
-                MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, Reject TEXT, \
-                LatestCover TEXT, DateType TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS languages (isbn TEXT, lang TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT UNIQUE, \
-                IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS stats (authorname text, GR_book_hits int, \
-                GR_lang_hits int, LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, \
-                uncached int, duplicates int)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS series (SeriesID INTEGER UNIQUE, SeriesName TEXT, \
-                Status TEXT, Have TEXT, Total TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, \
-                                 SeriesNum TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS seriesauthors (SeriesID INTEGER, AuthorID TEXT, \
-                UNIQUE (SeriesID,AuthorID))')
-                    myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
-                    myDB.action('CREATE TABLE IF NOT EXISTS users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, \
-                                Password TEXT, Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, \
-                                CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT)')
+                    # new set of database tables
+                    myDB.action('CREATE TABLE authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, ' +
+                                'AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, ' +
+                                'LastBookImg TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER, ' +
+                                'TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER, ' +
+                                'Manual TEXT, GRfollow TEXT)')
+                    myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
+                                'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, ' +
+                                'BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
+                                'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
+                                'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
+                                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT)')
+                    myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
+                                'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
+                                'Source TEXT, DownloadID TEXT)')
+                    myDB.action('CREATE TABLE magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, ' +
+                                'MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, ' +
+                                'Reject TEXT, LatestCover TEXT, DateType TEXT)')
+                    myDB.action('CREATE TABLE languages (isbn TEXT, lang TEXT)')
+                    myDB.action('CREATE TABLE issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, ' +
+                                'IssueDate TEXT, IssueFile TEXT)')
+                    myDB.action('CREATE TABLE stats (authorname text, GR_book_hits int, GR_lang_hits int, ' +
+                                'LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, ' +
+                                'uncached int, duplicates int)')
+                    myDB.action('CREATE TABLE series (SeriesID INTEGER UNIQUE, SeriesName TEXT, Status TEXT, ' +
+                                'Have TEXT, Total TEXT)')
+                    myDB.action('CREATE TABLE member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, SeriesNum TEXT)')
+                    myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, ' +
+                                'UNIQUE (SeriesID,AuthorID))')
+                    myDB.action('CREATE TABLE downloads (Count INTEGER, Provider TEXT)')
+                    myDB.action('CREATE TABLE users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, Password TEXT, ' +
+                                'Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, ' +
+                                'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT)')
+                    myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
+
+                    # pastissues table has same layout as wanted table, code below is to save typos if columns change
+                    res = myDB.match("SELECT sql FROM sqlite_master WHERE type='table' AND name='wanted'")
+                    myDB.action(res['sql'].replace('wanted', 'pastissues'))
+
                     cmd = 'INSERT into users (UserID, UserName, Name, Password, Perms) VALUES (?, ?, ?, ?, ?)'
                     myDB.action(cmd, (pwd_generator(), 'admin', 'admin', md5_utf8('admin'), 65535))
                     logger.debug('Added admin user')
-                    myDB.action('CREATE INDEX IF NOT EXISTS issues_Title_index ON issues (Title)')
-                    myDB.action('CREATE INDEX IF NOT EXISTS books_index_authorid ON books(AuthorID)')
 
-                    myDB.action('CREATE TABLE IF NOT EXISTS sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
-                    myDB.action('CREATE INDEX IF NOT EXISTS books_index_status ON books(Status)')
-                    myDB.action('CREATE INDEX IF NOT EXISTS authors_index_status ON authors(Status)')
-                    myDB.action('CREATE INDEX IF NOT EXISTS wanted_index_status ON wanted(Status)')
-
-                # These are the incremental changes before database versioning was introduced.
-                # Old database tables might already have these incorporated depending on version, so we need to check...
-                if db_version < 1:
-                    lazylibrarian.UPDATE_MSG = 'Updating database to version %s, current version is %s' % (
-                        db_current_version, db_version)
-                    logger.info(lazylibrarian.UPDATE_MSG)
-                    upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-
-                    if not has_column(myDB, "books", "BookSub"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold book subtitles.'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE books ADD COLUMN BookSub TEXT')
-
-                    if not has_column(myDB, "books", "BookSub"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold book publisher'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE books ADD COLUMN BookPub TEXT')
-
-                    if not has_column(myDB, "books", "BookGenre"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold bookgenre'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE books ADD COLUMN BookGenre TEXT')
-
-                    if not has_column(myDB, "books", "BookFile"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold book filename'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE books ADD COLUMN BookFile TEXT')
-
-                    if not has_column(myDB, "wanted", "AuxInfo"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold AuxInfo'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
-
-                    if not has_column(myDB, "wanted", "NZBsize"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBsize'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
-
-                    if not has_column(myDB, "wanted", "NZBmode"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold NZBmode'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
-
-                    if not has_column(myDB, "authors", "UnignoredBooks"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold UnignoredBooks'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
-
-                    if not has_column(myDB, "magazines", "IssueStatus"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold IssueStatus'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
-
-                    addedWorkPage = False
-                    if not has_column(myDB, "books", "WorkPage"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold WorkPage'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE books ADD COLUMN WorkPage TEXT')
-                        addedWorkPage = True
-
-                    addedSeries = False
-                    if not has_column(myDB, "series", "SeriesID") and not has_column(myDB, "books", "Series"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold Series'
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        myDB.action('ALTER TABLE books ADD COLUMN Series TEXT')
-                        addedSeries = True
-
-                    # SeriesOrder shouldn't be an integer, some later written books
-                    # and novellas logically go inbetween books of the main series,
-                    # and their SeriesOrder is not an integer, eg 1.5
-                    # so we need to update SeriesOrder to store as text.
-                    # Because sqlite can't drop columns we create a new column SeriesNum,
-                    # inherit the old column values, and use SeriesNum instead
-                    if not has_column(myDB, "books", "SeriesNum") and has_column(myDB, "books", "SeriesOrder"):
-                        # no SeriesNum column, so create one
-                        lazylibrarian.UPDATE_MSG = 'Updating books to hold SeriesNum'
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        myDB.action('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
-                        myDB.action('UPDATE books SET SeriesNum = SeriesOrder')
-                        myDB.action('UPDATE books SET SeriesOrder = Null')
-
-                    addedIssues = False
-                    if not has_column(myDB, "issues", "Title"):
-                        lazylibrarian.UPDATE_MSG = 'Updating database to hold Issues table'
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        myDB.action('CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, \
-                                    IssueDate TEXT, IssueFile TEXT)')
-                        addedIssues = True
-
-                    if not has_column(myDB, "issues", "IssueID"):
-                        lazylibrarian.UPDATE_MSG = 'Updating Issues table to hold IssueID'
-                        upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        logger.debug(lazylibrarian.UPDATE_MSG)
-                        myDB.action('ALTER TABLE issues ADD COLUMN IssueID TEXT')
-                        addedIssues = True
-
-                    myDB.action('DROP TABLE if exists capabilities')
-
-                    if addedIssues:
-                        try:
-                            magazinescan.magazineScan()
-                        except Exception as e:
-                            msg = "Failed to scan magazines, %s %s" % (type(e).__name__, str(e))
-                            logger.error(msg)
-                            upgradelog.write("%s v1: %s\n" % (time.ctime(), msg))
-
-                    if addedWorkPage:
-                        try:
-                            lazylibrarian.UPDATE_MSG = 'Adding WorkPage to existing books'
-                            logger.debug(lazylibrarian.UPDATE_MSG)
-                            threading.Thread(target=bookwork.setWorkPages, name="ADDWORKPAGE", args=[]).start()
-                        except Exception as e:
-                            msg = "Failed to update WorkPages, %s %s" % (type(e).__name__, str(e))
-                            logger.error(msg)
-                            upgradelog.write("%s v1: %s\n" % (time.ctime(), msg))
-
-                    if addedSeries:
-                        try:
-                            books = myDB.select('SELECT BookID, BookName FROM books')
-                            if books:
-                                lazylibrarian.UPDATE_MSG = 'Adding series to existing books'
-                                upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                                logger.debug(lazylibrarian.UPDATE_MSG)
-                                tot = len(books)
-                                cnt = 0
-                                for book in books:
-                                    cnt += 1
-                                    lazylibrarian.UPDATE_MSG = 'Adding series to existing books: %s of %s' % (cnt, tot)
-                                    series, seriesNum = bookSeries(book["BookName"])
-                                    if series:
-                                        controlValueDict = {"BookID": book["BookID"]}
-                                        newValueDict = {
-                                            "series": series,
-                                            "seriesNum": seriesNum
-                                        }
-                                        myDB.upsert("books", newValueDict, controlValueDict)
-                                upgradelog.write("%s v1: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-                        except Exception as e:
-                            msg = 'Error adding series to books: %s %s' % (type(e).__name__, str(e))
-                            logger.error(msg)
-                            upgradelog.write("%s v1: %s\n" % (time.ctime(), msg))
-                    upgradelog.write("%s v1: complete\n" % time.ctime())
+                    myDB.action('CREATE INDEX issues_Title_index ON issues (Title)')
+                    myDB.action('CREATE INDEX books_index_authorid ON books(AuthorID)')
+                    myDB.action('CREATE INDEX books_index_status ON books(Status)')
+                    myDB.action('CREATE INDEX authors_index_status ON authors(Status)')
+                    myDB.action('CREATE INDEX wanted_index_status ON wanted(Status)')
 
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
                                     db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29,
                                     db_v30, db_v31, db_v32]
+
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index + 2 > db_version:
                         upgrade_function(myDB, upgradelog)
@@ -361,7 +213,7 @@ def dbupgrade(db_current_version):
                 lazylibrarian.UPDATE_MSG = 'Cleaning Database'
                 upgradelog.write("%s: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
                 myDB.action('vacuum')
-                lazylibrarian.UPDATE_MSG = 'Database upgraded to version %s' % db_current_version
+                lazylibrarian.UPDATE_MSG = 'Database updated to version %s' % db_current_version
                 logger.info(lazylibrarian.UPDATE_MSG)
                 upgradelog.write("%s: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
 

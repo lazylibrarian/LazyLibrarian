@@ -110,8 +110,10 @@ def next_run(when_run):
         timenow = datetime.datetime.now()
         td = when_run - timenow
         diff = td.seconds  # time difference in seconds
-    except ValueError:
+    except ValueError as e:
+        lazylibrarian.logger.error("Error getting next run for [%s] %s" % (when_run, str(e)))
         diff = 0
+
     # calculate whole units, plus round up by adding 1(true) if remainder >= half
     days = int(diff / 86400) + (diff % 86400 >= 43200)
     hours = int(diff / 3600) + (diff % 3600 >= 1800)

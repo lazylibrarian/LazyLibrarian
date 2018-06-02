@@ -22,6 +22,14 @@ try:
 except ImportError:
     import lib.requests as requests
 
+try:
+    import magic
+except ImportError:
+    try:
+        import lib.magic as magic
+    except ImportError:
+        magic = None
+
 import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology
@@ -128,7 +136,25 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
     elif len(r.content) < 1000:
         logger.debug("Only got %s bytes for %s/%s, rejecting" % (len(r.content), tor_title, bookname))
     else:
-        bookname = '.'.join(bookname.rsplit(' ', 1))  # last word is the extension
+        extn = ''
+        if ' ' in bookname:
+            _, extn = bookname.rsplit(' ', 1)  # last word is often the extension - but not always...
+        if extn and extn in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
+            bookname = '.'.join(bookname.rsplit(' ', 1))
+        elif magic:
+            mtype = magic.from_buffer(r.content)
+            if 'EPUB' in mtype:
+                extn = '.epub'
+            elif 'Mobipocket' in mtype:  # also true for azw and azw3, does it matter?
+                extn = '.mobi'
+            elif 'PDF' in mtype:
+                extn = '.pdf'
+            else:
+                logger.debug("magic reports %s" % mtype)
+            bookname = bookname + extn
+        else:
+            logger.warn("Don't know the filetype for %s/%s" % (tor_title, bookname))
+
         logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
         destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
         if not os.path.isdir(destdir):
@@ -364,7 +390,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:
                     if lazylibrarian.CONFIG['DELUGE_LABEL']:
-                        _ = client.call('label.set_torrent', downloadID, lazylibrarian.CONFIG['DELUGE_LABEL'])
+                        _ = client.call('label.set_torrent', downloadID, lazylibrarian.CONFIG['DELUGE_LABEL'].lower())
                     result = client.call('core.get_torrent_status', downloadID, {})
                     # for item in result:
                     #    logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))

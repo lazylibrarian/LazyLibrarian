@@ -2191,6 +2191,7 @@ class WebInterface(object):
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='', bookdate='',
                    manual='0', authorname='', cover='', newid='', **kwargs):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         myDB = database.DBConnection()
 
         if bookid:
@@ -3071,7 +3072,7 @@ class WebInterface(object):
             for items in maglist:
                 logger.debug('Snatching %s, %s from %s' % (items['nzbtitle'], items['nzbmode'], items['nzbprov']))
                 myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, items['nzburl']))
-                if 'libgen' in items['nzbprov']:
+                if items['nzbmode'] == 'direct':
                     snatch = DirectDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
@@ -3407,6 +3408,7 @@ class WebInterface(object):
 
     @cherrypy.expose
     def rssFeed(self, **kwargs):
+        self.label_thread('RSSFEED')
         if 'type' in kwargs:
             ftype = kwargs['type']
         else:
@@ -3415,7 +3417,14 @@ class WebInterface(object):
         if 'limit' in kwargs:
             limit = kwargs['limit']
         else:
-            limit = '10'
+            limit = 10
+
+        # url might end in .xml
+        if not limit.isdigit():
+            try:
+                limit = int(limit.split('.')[0])
+            except (IndexError, ValueError):
+                limit = 10
 
         userid = 0
         if 'user' in kwargs:
@@ -3432,6 +3441,8 @@ class WebInterface(object):
             pass
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
+        remote_ip = cherrypy.request.remote.ip
+        logger.info("RSS Feed request %s %s%s for %s" % (limit, ftype, plural(limit), remote_ip))
         return genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
 
     @cherrypy.expose
@@ -3651,6 +3662,7 @@ class WebInterface(object):
                 rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
             for row in rows:
+                row.append(row[4])  # keep full datetime for tooltip
                 row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
@@ -4172,20 +4184,29 @@ class WebInterface(object):
                                          lazylibrarian.CONFIG['DELUGE_USER'],
                                          lazylibrarian.CONFIG['DELUGE_PASS'])
                 client.connect()
-                msg = "Deluge: Daemon connection Successful"
+                msg = "Deluge: Daemon connection Successful\n"
                 if lazylibrarian.CONFIG['DELUGE_LABEL']:
                     labels = client.call('label.get_labels')
-                    if lazylibrarian.CONFIG['DELUGE_LABEL'] not in labels:
-                        msg = "Deluge: Unknown label [%s]\n" % lazylibrarian.CONFIG['DELUGE_LABEL']
-                        if labels:
-                            msg += "Valid labels:\n"
-                            for label in labels:
-                                msg += '%s\n' % label
-                        else:
-                            msg += "Deluge daemon seems to have no labels set"
-                        return msg
+                    if labels:
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                            logger.debug("Valid labels: %s" % str(labels))
                     else:
-                        msg += ', label [%s] is valid' % lazylibrarian.CONFIG['DELUGE_LABEL']
+                        msg += "Deluge daemon seems to have no labels set\n"
+
+                    mylabel = lazylibrarian.CONFIG['DELUGE_LABEL'].lower()
+                    if mylabel != lazylibrarian.CONFIG['DELUGE_LABEL']:
+                        lazylibrarian.CONFIG['DELUGE_LABEL'] = mylabel
+
+                    if not PY2:
+                        labels = [makeUnicode(s) for s in labels]
+                    if mylabel not in labels:
+                        res = client.call('label.add', mylabel)
+                        if not res:
+                            msg += "Label [%s] was added" % lazylibrarian.CONFIG['DELUGE_LABEL']
+                        else:
+                            msg = str(res)
+                    else:
+                        msg += 'Label [%s] is valid' % lazylibrarian.CONFIG['DELUGE_LABEL']
             # success, save settings
             lazylibrarian.config_write('DELUGE')
             return msg

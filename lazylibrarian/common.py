@@ -478,7 +478,8 @@ def scheduleJob(action='Start', target=None):
             if not authcount:
                 minutes = 60
             else:
-                minutes = int(minutes / authcount)
+                # Allow a few minutes per task - interval starts from END of previous task
+                minutes = int(minutes / authcount) - 5
 
             if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
                 minutes = 10
@@ -633,7 +634,7 @@ def showJobs():
             jobname = job.split(' ')[0].split('.')[2]
 
         # jobinterval = job.split('[')[1].split(']')[0]
-        jobtime = job.split('at: ')[1].split('.')[0]
+        jobtime = job.split('at: ')[1].split('.')[0].strip(')')
         jobtime = next_run(jobtime)
         timeparts = jobtime.split(' ')
         if timeparts[0] == '1' and timeparts[1].endswith('s'):
@@ -775,6 +776,24 @@ def logHeader():
             header += "cryptography: %s\n" % getattr(cryptography, '__version__', None)
         except ImportError:
             header += "cryptography: module missing\n"
+
+    try:
+        import magic
+    except ImportError:
+        try:
+            import lib.magic as magic
+        except ImportError:
+            magic = None
+
+    if magic:
+        try:
+            # noinspection PyProtectedMember
+            ver = magic.libmagic._name
+        except AttributeError:
+            ver = 'missing'
+        header += "magic library %s\n" % ver
+    else:
+        header += "magic module missing\n"
 
     return header
 

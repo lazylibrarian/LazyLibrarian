@@ -306,19 +306,20 @@ def find_book_in_db(author, book, ignored=None):
                 partname_id = a_book['BookID']
 
         if best_ratio > 90:
-            logger.debug("Fuzz match ratio [%d] [%s] [%s]" % (best_ratio, book, ratio_name))
+            logger.debug("Fuzz match ratio [%d] [%s] [%s] %s" % (best_ratio, book, ratio_name, ratio_id))
             return ratio_id, best_type
         if best_partial > 90:
-            logger.debug("Fuzz match partial [%d] [%s] [%s]" % (best_partial, book, partial_name))
+            logger.debug("Fuzz match partial [%d] [%s] [%s] %s" % (best_partial, book, partial_name, partial_id))
             return partial_id, partial_type
         if best_partname > 95:
-            logger.debug("Fuzz match partname [%d] [%s] [%s]" % (best_partname, book, partname_name))
+            logger.debug("Fuzz match partname [%d] [%s] [%s] %s" % (best_partname, book, partname_name, partname_id))
             return partname_id, partname_type
 
         if books:
             logger.debug(
-                'Fuzz failed [%s - %s] ratio [%d,%s], partial [%d,%s], partname [%d,%s]' %
-                (author, book, best_ratio, ratio_name, best_partial, partial_name, best_partname, partname_name))
+                'Fuzz failed [%s - %s] ratio [%d,%s,%s], partial [%d,%s,%s], partname [%d,%s,%s]' %
+                (author, book, best_ratio, ratio_name, ratio_id, best_partial, partial_name, partial_id,
+                 best_partname, partname_name, partname_id))
         return 0, ''
 
 
@@ -759,7 +760,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 if not bookid:
                                     if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                                         # Either goodreads doesn't have the book or it didn't match language prefs
-                                        # Since we have the book anyway, try and reload it ignoring language prefs
+                                        # or it's under a different author (pseudonym)
+                                        # Since we have the book anyway, try and reload it
                                         rescan_count += 1
                                         base_url = 'https://www.goodreads.com/search.xml?q='
                                         params = {"key": lazylibrarian.CONFIG['GR_API']}
@@ -803,23 +805,33 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                         booktitle = ""
                                                     book_fuzz = fuzz.token_set_ratio(booktitle, book)
                                                     if book_fuzz >= 98:
-                                                        logger.debug("Rescan found %s : %s" % (booktitle, language))
                                                         rescan_hits += 1
                                                         try:
                                                             bookid = item.find('./best_book/id').text
                                                         except (KeyError, AttributeError):
                                                             bookid = ""
+                                                        logger.debug("Rescan found %s : %s: %s" %
+                                                                     (booktitle, language, bookid))
+
                                                         if bookid:
-                                                            GR_ID = GoodReads(bookid)
-                                                            GR_ID.find_book(bookid)
-                                                            if language and language != "Unknown":
-                                                                # set language from book metadata
-                                                                logger.debug(
-                                                                    "Setting language from metadata %s : %s" % (
-                                                                        booktitle, language))
-                                                                myDB.action(
-                                                                    'UPDATE books SET BookLang=? WHERE BookID=?',
-                                                                    (language, bookid))
+                                                            cmd = 'SELECT * from books WHERE BookID=?'
+                                                            check_status = myDB.match(cmd, (bookid,))
+                                                            if check_status:
+                                                                logger.debug("%s matched on rescan for %s" %
+                                                                             (bookid, booktitle))
+                                                            else:
+                                                                logger.debug("Adding %s on rescan for %s" %
+                                                                             (bookid, booktitle))
+                                                                GR_ID = GoodReads(bookid)
+                                                                GR_ID.find_book(bookid)
+                                                                if language and language != "Unknown":
+                                                                    # set language from book metadata
+                                                                    logger.debug(
+                                                                        "Setting language from metadata %s : %s" % (
+                                                                            booktitle, language))
+                                                                    myDB.action(
+                                                                        'UPDATE books SET BookLang=? WHERE BookID=?',
+                                                                        (language, bookid))
                                                             break
                                                 if not bookid:
                                                     logger.warn("GoodReads doesn't know about %s" % book)

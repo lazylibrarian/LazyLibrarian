@@ -57,14 +57,16 @@ class DelugeRPCClient(object):
         Connects to the Deluge instance
         """
         self._connect()
-        logger.debug('Connected to Deluge, detecting daemon version')
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Connected to Deluge, detecting daemon version')
         self._detect_deluge_version()
-        logger.debug('Daemon version {} detected, logging in'.format(self.deluge_version))
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Daemon version {} detected, logging in'.format(self.deluge_version))
         if self.deluge_version == 2:
             result = self.call('daemon.login', self.username, self.password, client_version='deluge-client')
         else:
             result = self.call('daemon.login', self.username, self.password)
-        logger.debug('Logged in with value %r' % result)
+        logger.debug('Logged into Deluge with value %r' % result)
         self.connected = True
 
     def _connect(self):
@@ -106,7 +108,9 @@ class DelugeRPCClient(object):
 
     def _send_call(self, deluge_version, method, *args, **kwargs):
         self.request_id += 1
-        logger.debug('Calling reqid %s method %r with args:%r kwargs:%r' % (self.request_id, method, args, kwargs))
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Calling reqid %s method %r with args:%r kwargs:%r' % 
+                         (self.request_id, method, args, kwargs))
 
         req = ((self.request_id, method, args, kwargs), )
         req = zlib.compress(dumps(req))
