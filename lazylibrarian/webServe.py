@@ -39,7 +39,8 @@ from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, c
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
-    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, md5_utf8, dateFormat, check_year
+    safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, makeBytestr, md5_utf8, dateFormat, \
+    check_year
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.images import getBookCover
@@ -1809,6 +1810,8 @@ class WebInterface(object):
             return 'application/pdf'
         elif name.endswith('.mp3'):
             return 'audio/mpeg3'
+        elif name.endswith('.xml'):
+            return 'application/rss+xml'
         return "application/x-download"
 
     @cherrypy.expose
@@ -3439,11 +3442,14 @@ class WebInterface(object):
             netloc = cherrypy.request.headers['X-Forwarded-Host']
         except KeyError:
             pass
+        filename = 'LazyLibrarian_RSS_' + ftype + '.xml'
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
-        remote_ip = cherrypy.request.remote.ip
-        logger.info("RSS Feed request %s %s%s for %s" % (limit, ftype, plural(limit), remote_ip))
-        return genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
+        logger.info("RSS Feed request %s %s%s" % (limit, ftype, plural(limit)))
+        cherrypy.response.headers["Content-Type"] = 'application/rss+xml'
+        cherrypy.response.headers["Content-Disposition"] = 'attachment; filename="%s"' % filename
+        res = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
+        return makeBytestr(res)
 
     @cherrypy.expose
     def importCSV(self):
