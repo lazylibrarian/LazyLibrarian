@@ -11,6 +11,7 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import json
 import mimetypes
 import os
 import platform
@@ -120,7 +121,7 @@ class qbittorrentclient(object):
 
             # some commands return json
             if contentType == 'application/json':
-                return response.json()
+                return json.loads(response.read())
             else:
                 # some commands return plain text
                 resp = response.read()
