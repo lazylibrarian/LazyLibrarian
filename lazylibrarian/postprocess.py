@@ -870,7 +870,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
             logger.info('Nothing marked as snatched. Stopping postprocessor.')
             scheduleJob(action='Stop', target='processDir')
 
-        if reset:
+        elif reset:
             scheduleJob(action='Restart', target='processDir')
 
     except Exception:
