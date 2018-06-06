@@ -3,6 +3,7 @@
     import lazylibrarian
 %>
 <%def name="headerIncludes()">
+    <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Searching ...</button>
     <div id="subhead_container" class="row">
           <form action="booksearch" method="get" class="form-inline">
             <div class="indented">
@@ -26,7 +27,7 @@
                 % endif
               </select>
             </div>
-            <input type="submit" class="booksearch btn btn-sm btn-primary" id="go" value="Go">
+            <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
       </form>
     </div>
 </%def>
@@ -141,6 +142,10 @@
     $(document).ready(function() {
         initThisPage();
     });
+
+    function validateForm() {
+        $("#myAlert").removeClass('hidden');
+        document.getElementById("markBooks").submit(); }
   </script>
 </%def>
 <html><head></head><body></body></html>
