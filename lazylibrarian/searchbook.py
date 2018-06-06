@@ -296,7 +296,7 @@ def search_book(books=None, library=None):
                 highest = max(matches, key=lambda s: (s[0], s[4]))  # sort on percentage and priority
                 logger.info("Requesting %s download: %s%% %s: %s" %
                             (book['library'], highest[0], highest[2]['NZBprov'], highest[1]))
-                if downloadResult(highest, book) > True:
+                if downloadResult(highest, book) > 1:
                     book_count += 1  # we found it
 
         logger.info("Search for Wanted items complete, found %s book%s" % (book_count, plural(book_count)))

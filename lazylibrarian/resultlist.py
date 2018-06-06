@@ -32,6 +32,7 @@ def processResultList(resultlist, book, searchtype, source):
         2. if over match threshold, send it to downloader
         This lets us try several searchtypes and stop at the first successful one
         and we can combine results from tor/nzb searches in one task
+        Return 0 if not found, 1 if already snatched, 2 if we found it
     """
     match = findBestResult(resultlist, book, searchtype, source)
     if match:
@@ -42,9 +43,9 @@ def processResultList(resultlist, book, searchtype, source):
         # dlpriority = match[4]
 
         if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
-            return False
+            return 0
         return downloadResult(match, book)
-    return False
+    return 0
 
 
 def findBestResult(resultlist, book, searchtype, source):
@@ -96,8 +97,9 @@ def findBestResult(resultlist, book, searchtype, source):
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
             Author_match = fuzz.token_set_ratio(author, resultTitle)
             Book_match = fuzz.token_set_ratio(title, resultTitle)
-            logger.debug("%s author/book Match: %s/%s %s at %s" %
-                         (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
+                logger.debug("%s author/book Match: %s/%s %s at %s" %
+                             (source.upper(), Author_match, Book_match, resultTitle, res[prefix + 'prov']))
 
             rejected = False
 
@@ -143,7 +145,8 @@ def findBestResult(resultlist, book, searchtype, source):
 
             if not rejected:
                 bookid = book['bookid']
-                newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+                # newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
+                newTitle = resultTitle + ' LL.(' + book['bookid'] + ')'
 
                 if source == 'nzb':
                     mode = res['nzbmode']  # nzb, torznab
@@ -189,7 +192,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     for item in booktypes:
                         for i in [i for i, x in enumerate(typelist) if x == item]:
                             score += i + 1
-                # score += len(booktypes)
+
                 matches.append([score, resultTitle, newValueDict, controlValueDict, res['priority']])
 
         if matches:
@@ -217,7 +220,9 @@ def findBestResult(resultlist, book, searchtype, source):
 def downloadResult(match, book):
     """ match:  best result from search providers
         book:   book we are downloading (needed for reporting author name)
-        return: True if already snatched, False if failed to snatch, >True if we snatched it
+        return: 0 if failed to snatch
+                1 if already snatched
+                2 if we snatched it
     """
     # noinspection PyBroadException
     try:
@@ -235,7 +240,7 @@ def downloadResult(match, book):
         if snatched:
             logger.debug('%s %s %s already marked snatched in wanted table' %
                          (newValueDict["AuxInfo"], book['authorName'], book['bookName']))
-            return True  # someone else already found it
+            return 1  # someone else already found it
 
         if newValueDict["AuxInfo"] == 'eBook':
             snatched = myDB.match('SELECT BookID from books WHERE BookID=? and Status="Snatched"',
@@ -246,7 +251,7 @@ def downloadResult(match, book):
         if snatched:
             logger.debug('%s %s %s already marked snatched in book table' %
                          (newValueDict["AuxInfo"], book['authorName'], book['bookName']))
-            return True  # someone else already found it
+            return 1  # someone else already found it
 
         myDB.upsert("wanted", newValueDict, controlValueDict)
         if 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
@@ -260,7 +265,7 @@ def downloadResult(match, book):
                                        controlValueDict["NZBurl"], newValueDict["AuxInfo"])
         else:
             logger.error('Unhandled NZBmode [%s] for %s' % (newValueDict['NZBmode'], controlValueDict["NZBurl"]))
-            snatch = False
+            snatch = 0
 
         if snatch:
             logger.info('Downloading %s %s from %s' %
@@ -273,8 +278,8 @@ def downloadResult(match, book):
             # If number of active providers == number blocklisted, so no unblocked providers are left,
             # either sleep for a while, or unblock the one with the lowest counter.
             scheduleJob(action='Start', target='processDir')
-            return True + True  # we found it
-        return False
+            return 2  # we found it
+        return 0
     except Exception:
         logger.error('Unhandled exception in downloadResult: %s' % traceback.format_exc())
-        return False
+        return 0
