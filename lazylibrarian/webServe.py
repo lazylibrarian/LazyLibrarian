@@ -1465,7 +1465,7 @@ class WebInterface(object):
             }
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
-            #bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
+            # bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if mode == 'direct':
                 snatch = DirectDownloadMethod(bookid, bookdata["BookName"], url, library)
             elif mode in ["torznab", "torrent", "magnet"]:

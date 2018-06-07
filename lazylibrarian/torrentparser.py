@@ -609,6 +609,11 @@ def LIME(book=None, test=False):
                     except ValueError:
                         size = 0
 
+                    try:
+                        pubdate = item['pubDate']
+                    except (IndexError, ValueError):
+                        pubdate = None
+
                     url = None
                     for link in item['links']:
                         if 'x-bittorrent' in link['type']:
@@ -617,7 +622,7 @@ def LIME(book=None, test=False):
                     if not url or not title:
                         logger.debug('No url or title found')
                     elif minimumseeders < int(seeders):
-                        results.append({
+                        res = {
                             'bookid': book['bookid'],
                             'tor_prov': provider,
                             'tor_title': title,
@@ -625,7 +630,10 @@ def LIME(book=None, test=False):
                             'tor_size': str(size),
                             'tor_type': 'torrent',
                             'priority': lazylibrarian.CONFIG['LIME_DLPRIORITY']
-                        })
+                        }
+                        if pubdate:
+                            res['tor_date'] = pubdate
+                        results.append(res)
                         logger.debug('Found %s. Size: %s' % (title, size))
                     else:
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
@@ -691,6 +699,11 @@ def TDL(book=None, test=False):
                     size = int(item['size'])
                     url = None
 
+                    try:
+                        pubdate = item['pubDate']
+                    except (IndexError, ValueError):
+                        pubdate = None
+
                     if link and minimumseeders < int(seeders):
                         # no point requesting the magnet link if not enough seeders
                         # TDL gives us a relative link
@@ -706,7 +719,7 @@ def TDL(book=None, test=False):
                         if not url or not title:
                             logger.debug('Missing url or title')
                         else:
-                            results.append({
+                            res = {
                                 'bookid': book['bookid'],
                                 'tor_prov': provider,
                                 'tor_title': title,
@@ -714,8 +727,11 @@ def TDL(book=None, test=False):
                                 'tor_size': str(size),
                                 'tor_type': 'magnet',
                                 'priority': lazylibrarian.CONFIG['TDL_DLPRIORITY']
-                            })
+                            }
+                            if pubdate:
+                                res['tor_date'] = pubdate
                             logger.debug('Found %s. Size: %s' % (title, size))
+                            results.append(res)
                     else:
                         logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
 

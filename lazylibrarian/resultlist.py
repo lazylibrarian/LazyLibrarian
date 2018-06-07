@@ -229,7 +229,6 @@ def downloadResult(match, book):
 
         newValueDict = match[1]
         controlValueDict = match[2]
-        resultTitle = newValueDict['NZBTitle']
 
         # It's possible to get book and wanted tables "Snatched" status out of sync
         # for example if a user marks a book as "Wanted" after a search task snatches it and before postprocessor runs
