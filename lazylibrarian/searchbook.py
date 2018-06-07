@@ -289,13 +289,13 @@ def search_book(books=None, library=None):
                                 (mode.upper(), book['library'], book['searchterm']))
                 else:
                     logger.info("Found %s result: %s %s%%, %s priority %s" %
-                                (mode.upper(), searchtype, match[0], match[2]['NZBprov'], match[4]))
+                                (mode.upper(), searchtype, match[0], match[1]['NZBprov'], match[3]))
                     matches.append(match)
 
             if matches:
-                highest = max(matches, key=lambda s: (s[0], s[4]))  # sort on percentage and priority
+                highest = max(matches, key=lambda s: (s[0], s[3]))  # sort on percentage and priority
                 logger.info("Requesting %s download: %s%% %s: %s" %
-                            (book['library'], highest[0], highest[2]['NZBprov'], highest[1]))
+                            (book['library'], highest[0], highest[1]['NZBprov'], highest[1]['NZBTitle']))
                 if downloadResult(highest, book) > 1:
                     book_count += 1  # we found it
 

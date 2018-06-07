@@ -146,7 +146,7 @@ def findBestResult(resultlist, book, searchtype, source):
             if not rejected:
                 bookid = book['bookid']
                 # newTitle = (author + ' - ' + title + ' LL.(' + book['bookid'] + ')').strip()
-                newTitle = resultTitle + ' LL.(' + book['bookid'] + ')'
+                # newTitle = resultTitle + ' LL.(' + book['bookid'] + ')'
 
                 if source == 'nzb':
                     mode = res['nzbmode']  # nzb, torznab
@@ -159,7 +159,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     "BookID": bookid,
                     "NZBdate": now(),  # when we asked for it
                     "NZBsize": size,
-                    "NZBtitle": newTitle,
+                    "NZBtitle": resultTitle,
                     "NZBmode": mode,
                     "AuxInfo": auxinfo,
                     "Status": "Skipped"
@@ -193,22 +193,21 @@ def findBestResult(resultlist, book, searchtype, source):
                         for i in [i for i, x in enumerate(typelist) if x == item]:
                             score += i + 1
 
-                matches.append([score, resultTitle, newValueDict, controlValueDict, res['priority']])
+                matches.append([score, newValueDict, controlValueDict, res['priority']])
 
         if matches:
-            highest = max(matches, key=lambda s: (s[0], s[4]))
+            highest = max(matches, key=lambda s: (s[0], s[3]))
             score = highest[0]
-            resultTitle = highest[1]
-            newValueDict = highest[2]
-            # controlValueDict = highest[3]
-            dlpriority = highest[4]
+            newValueDict = highest[1]
+            # controlValueDict = highest[2]
+            dlpriority = highest[3]
 
             if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
                 logger.info('Nearest match (%s%%): %s using %s search for %s %s' %
-                            (score, resultTitle, searchtype, book['authorName'], book['bookName']))
+                            (score, newValueDict['NZBTitle'], searchtype, book['authorName'], book['bookName']))
             else:
                 logger.info('Best match (%s%%): %s using %s search, %s priority %s' %
-                            (score, resultTitle, searchtype, newValueDict['NZBprov'], dlpriority))
+                            (score, newValueDict['NZBTitle'], searchtype, newValueDict['NZBprov'], dlpriority))
             return highest
         else:
             logger.debug("No %s found for [%s] using searchtype %s" % (source, book["searchterm"], searchtype))
@@ -228,9 +227,9 @@ def downloadResult(match, book):
     try:
         myDB = database.DBConnection()
 
-        resultTitle = match[1]
-        newValueDict = match[2]
-        controlValueDict = match[3]
+        newValueDict = match[1]
+        controlValueDict = match[2]
+        resultTitle = newValueDict['NZBTitle']
 
         # It's possible to get book and wanted tables "Snatched" status out of sync
         # for example if a user marks a book as "Wanted" after a search task snatches it and before postprocessor runs
@@ -254,9 +253,9 @@ def downloadResult(match, book):
             return 1  # someone else already found it
 
         myDB.upsert("wanted", newValueDict, controlValueDict)
-        if 'libgen' in newValueDict["NZBprov"]:  # for libgen we use direct download links
+        if newValueDict['NZBmode'] == 'direct':
             snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                          controlValueDict["NZBurl"], resultTitle, newValueDict["AuxInfo"])
+                                          controlValueDict["NZBurl"], newValueDict["AuxInfo"])
         elif newValueDict['NZBmode'] in ["torznab", "torrent", "magnet"]:
             snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
                                        controlValueDict["NZBurl"], newValueDict["AuxInfo"])
