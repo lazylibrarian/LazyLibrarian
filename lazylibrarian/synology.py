@@ -330,6 +330,23 @@ def getName(download_id):
     return ""
 
 
+def getFiles(download_id):
+    # get the name of a download from it's download_id
+    # return "" if not found
+    hosturl = _hostURL()
+    if hosturl:
+        auth_cgi, task_cgi, sid = _login(hosturl)
+        if sid:
+            result = _getInfo(task_cgi, sid, download_id)  # type: dict
+            _logout(auth_cgi, sid)
+            if result and 'additional' in result:
+                try:
+                    return result['additional']['file']
+                except KeyError:
+                    return ""
+    return ""
+
+
 def addTorrent(tor_url):
     # add a torrent/magnet/nzb to synology downloadstation
     # return it's id, or return False if error

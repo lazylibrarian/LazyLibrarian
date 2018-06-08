@@ -218,6 +218,15 @@ def nameTorrent(hashid):
     return False
 
 
+def listTorrent(hashid):
+    uTorrentClient = utorrentclient()
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if torrent[0].lower() == hashid:
+            return uTorrentClient.getfiles(hashid)
+    return False
+
+
 def removeTorrent(hashid, remove_data=False):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
