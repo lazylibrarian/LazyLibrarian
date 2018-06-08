@@ -965,9 +965,9 @@ def getDownloadName(title, source, downloadid):
         elif source == 'QBITTORRENT':
             torrentname = qbittorrent.getName(downloadid)
         elif source == 'UTORRENT':
-           torrentname = utorrent.nameTorrent(downloadid)
+            torrentname = utorrent.nameTorrent(downloadid)
         elif source == 'RTORRENT':
-          torrentname = rtorrent.getName(downloadid)
+            torrentname = rtorrent.getName(downloadid)
         elif source == 'SYNOLOGY_TOR':
             torrentname = synology.getName(downloadid)
         elif source == 'DELUGEWEBUI':
