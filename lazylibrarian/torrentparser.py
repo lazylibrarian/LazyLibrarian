@@ -610,8 +610,8 @@ def LIME(book=None, test=False):
                         size = 0
 
                     try:
-                        pubdate = item['pubDate']
-                    except (IndexError, ValueError):
+                        pubdate = item['published']
+                    except KeyError:
                         pubdate = None
 
                     url = None
@@ -700,8 +700,8 @@ def TDL(book=None, test=False):
                     url = None
 
                     try:
-                        pubdate = item['pubDate']
-                    except (IndexError, ValueError):
+                        pubdate = item['published']
+                    except KeyError:
                         pubdate = None
 
                     if link and minimumseeders < int(seeders):
