@@ -80,6 +80,8 @@
                         return ftype;} },
                     { targets: [4], 'render': function(data, type, row) {
                         return '<a data-toggle="tooltip" title="' + row[10] + '">' + row[4] + '</a>';} },
+                    { targets: [5], 'render': function(data, type, row) {
+                        return '<div class="text-right">' + data + '</div>';} },
                     { targets: [6], 'render': function(data, type, row) {
                         if ( row[9] <= 0 ) { bar = data }
                         else {
