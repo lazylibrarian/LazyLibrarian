@@ -1465,13 +1465,13 @@ class WebInterface(object):
             }
             myDB.upsert("wanted", newValueDict, controlValueDict)
             AuthorID = bookdata["AuthorID"]
-            bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
+            # bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if mode == 'direct':
-                snatch = DirectDownloadMethod(bookid, bookname, url, bookdata["BookName"], library)
+                snatch = DirectDownloadMethod(bookid, bookdata["BookName"], url, library)
             elif mode in ["torznab", "torrent", "magnet"]:
-                snatch = TORDownloadMethod(bookid, bookname, url, library)
+                snatch = TORDownloadMethod(bookid, bookdata["BookName"], url, library)
             else:
-                snatch = NZBDownloadMethod(bookid, bookname, url, library)
+                snatch = NZBDownloadMethod(bookid, bookdata["BookName"], url, library)
             if snatch:
                 logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
                 custom_notify_snatch("%s %s" % (bookid, library))
@@ -3080,7 +3080,6 @@ class WebInterface(object):
                         items['bookid'],
                         items['nzbtitle'],
                         items['nzburl'],
-                        items['nzbtitle'],
                         'magazine')
                 elif items['nzbmode'] in ['torznab', 'torrent', 'magnet']:
                     snatch = TORDownloadMethod(

@@ -47,6 +47,9 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
+    # if library in ['eBook', 'AudioBook']:
+    #     nzbtitle = '%s LL.(%s)' % (nzbtitle, bookid)
+
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] and lazylibrarian.CONFIG['SAB_HOST']:
         Source = "SABNZBD"
         downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
@@ -111,36 +114,37 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
         return False
 
 
-def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=None, library='eBook'):
+def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook'):
     myDB = database.DBConnection()
     downloadID = False
     Source = "DIRECT"
 
-    logger.debug("Starting Direct Download for [%s]" % bookname)
+    logger.debug("Starting Direct Download for [%s]" % dl_title)
     proxies = proxyList()
     headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
     try:
-        r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
+        r = requests.get(dl_url, headers=headers, timeout=90, proxies=proxies)
     except requests.exceptions.Timeout:
-        logger.warn('Timeout fetching file from url: %s' % tor_url)
+        logger.warn('Timeout fetching file from url: %s' % dl_url)
         return False
     except Exception as e:
         if hasattr(e, 'reason'):
-            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, dl_url, e.reason))
         else:
-            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
+            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, dl_url, str(e)))
         return False
 
     if not str(r.status_code).startswith('2'):
-        logger.debug("Got a %s response for %s" % (r.status_code, tor_url))
+        logger.debug("Got a %s response for %s" % (r.status_code, dl_url))
     elif len(r.content) < 1000:
-        logger.debug("Only got %s bytes for %s/%s, rejecting" % (len(r.content), tor_title, bookname))
+        logger.debug("Only got %s bytes for %s, rejecting" % (len(r.content), dl_title))
     else:
         extn = ''
-        if ' ' in bookname:
-            _, extn = bookname.rsplit(' ', 1)  # last word is often the extension - but not always...
+        basename = ''
+        if ' ' in dl_title:
+            basename, extn = dl_title.rsplit(' ', 1)  # last word is often the extension - but not always...
         if extn and extn in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
-            bookname = '.'.join(bookname.rsplit(' ', 1))
+            dl_title = '.'.join(dl_title.rsplit(' ', 1))
         elif magic:
             mtype = magic.from_buffer(r.content)
             if 'EPUB' in mtype:
@@ -151,21 +155,23 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
                 extn = '.pdf'
             else:
                 logger.debug("magic reports %s" % mtype)
-            bookname = bookname + extn
+            basename = dl_title
         else:
-            logger.warn("Don't know the filetype for %s/%s" % (tor_title, bookname))
+            logger.warn("Don't know the filetype for %s" % dl_title)
+            basename = dl_title
 
-        logger.debug("File download got %s bytes for %s/%s" % (len(r.content), tor_title, bookname))
-        destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), tor_title)
+        logger.debug("File download got %s bytes for %s" % (len(r.content), dl_title))
+        destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), basename)
+        # destdir = os.path.join(lazylibrarian.DIRECTORY('Download'), '%s LL.(%s)' % (basename, bookid))
         if not os.path.isdir(destdir):
             _ = mymakedirs(destdir)
 
         try:
-            hashid = tor_url.split("md5=")[1].split("&")[0]
+            hashid = dl_url.split("md5=")[1].split("&")[0]
         except IndexError:
-            hashid = sha1(encode(tor_url)).hexdigest()
+            hashid = sha1(encode(dl_url)).hexdigest()
 
-        destfile = os.path.join(destdir, bookname)
+        destfile = os.path.join(destdir, basename + extn)
         try:
             with open(destfile, 'wb') as bookfile:
                 bookfile.write(r.content)
@@ -175,17 +181,17 @@ def DirectDownloadMethod(bookid=None, tor_title=None, tor_url=None, bookname=Non
             logger.error("%s writing book to %s, %s" % (type(e).__name__, destfile, e))
 
     if downloadID:
-        logger.debug('File %s has been downloaded from %s' % (tor_title, tor_url))
+        logger.debug('File %s has been downloaded from %s' % (dl_title, dl_url))
         if library == 'eBook':
             myDB.action('UPDATE books SET status="Snatched" WHERE BookID=?', (bookid,))
         elif library == 'AudioBook':
             myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
         myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
-                    (Source, downloadID, tor_url))
+                    (Source, downloadID, dl_url))
         return True
     else:
-        logger.error('Failed to download file @ <a href="%s">%s</a>' % (tor_url, tor_url))
-        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (tor_url,))
+        logger.error('Failed to download file @ <a href="%s">%s</a>' % (dl_url, dl_url))
+        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (dl_url,))
         return False
 
 

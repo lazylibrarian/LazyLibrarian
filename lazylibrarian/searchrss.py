@@ -252,7 +252,7 @@ def search_rss_book(books=None, library=None):
 
             if not found:
                 logger.info("NZB Searches for %s %s returned no results." % (book['library'], book['searchterm']))
-            if found > True:
+            if found > 1:
                 rss_count += 1
 
         logger.info("RSS Search for Wanted items complete, found %s book%s" % (rss_count, plural(rss_count)))

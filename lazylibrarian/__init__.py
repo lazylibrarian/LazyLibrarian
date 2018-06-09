@@ -1377,6 +1377,12 @@ def daemonize():
     """
     Fork off as a daemon
     """
+    threadcount = threading.activeCount()
+    if threadcount != 1:
+        logger.warn('There are %d active threads. Daemonizing may cause strange behavior.' % threadcount)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     # Make a non-session-leader child process
     try:
@@ -1384,8 +1390,7 @@ def daemonize():
         if pid != 0:
             sys.exit(0)
     except OSError as e:
-        raise RuntimeError("1st fork failed: %s [%d]" %
-                           (e.strerror, e.errno))
+        raise RuntimeError("1st fork failed: %s [%d]" % (e.strerror, e.errno))
 
     os.setsid()  # @UndefinedVariable - only available in UNIX
 
@@ -1399,15 +1404,24 @@ def daemonize():
         if pid != 0:
             sys.exit(0)
     except OSError as e:
-        raise RuntimeError("2st fork failed: %s [%d]" %
-                           (e.strerror, e.errno))
+        raise RuntimeError("2nd fork failed: %s [%d]" % (e.strerror, e.errno))
 
     dev_null = open('/dev/null', 'r')
     os.dup2(dev_null.fileno(), sys.stdin.fileno())
 
+    si = open('/dev/null', "r")
+    so = open('/dev/null', "a+")
+    se = open('/dev/null', "a+")
+
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
+    pid = os.getpid()
+    logger.debug("Daemonized to PID %d" % pid)
+
     if PIDFILE:
-        pid = str(os.getpid())
-        logger.debug("Writing PID " + pid + " to " + str(PIDFILE))
+        logger.debug("Writing PID %d to %s" % (pid, PIDFILE))
         with open(PIDFILE, 'w') as pidfile:
             pidfile.write("%s\n" % pid)
 
@@ -1416,8 +1430,13 @@ def launch_browser(host, port, root):
     if host == '0.0.0.0':
         host = 'localhost'
 
+    if CONFIG['HTTPS_ENABLED']:
+        protocol = 'https'
+    else:
+        protocol = 'http'
+
     try:
-        webbrowser.open('http://%s:%i%s' % (host, port, root))
+        webbrowser.open('%s://%s:%i%s' % (protocol, host, port, root))
     except Exception as e:
         logger.error('Could not launch browser:%s  %s' % (type(e).__name__, str(e)))
 

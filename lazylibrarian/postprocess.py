@@ -409,12 +409,16 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             fsize = 0
                             if 'path' in entry:  # deluge
                                 fname = entry['path']
-                            if 'size' in entry:  # deluge, qbittorrent
-                                fsize = entry['size']
-                            if 'length' in entry:  # transmission
-                                fsize = entry['length']
                             if 'name' in entry:  # transmission, qbittorrent
                                 fname = entry['name']
+                            if 'filename' in entry:  # utorrent, synology
+                                fname = entry['filename']
+                            if 'size' in entry:  # deluge, qbittorrent, synology
+                                fsize = entry['size']
+                            if 'filesize' in entry:  # utorrent
+                                fsize = entry['filesize']
+                            if 'length' in entry:  # transmission
+                                fsize = entry['length']
                             extn = os.path.splitext(fname)[1].lstrip('.').lower()
                             if extn and extn in banned_extensions:
                                 logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
@@ -870,7 +874,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
             logger.info('Nothing marked as snatched. Stopping postprocessor.')
             scheduleJob(action='Stop', target='processDir')
 
-        if reset:
+        elif reset:
             scheduleJob(action='Restart', target='processDir')
 
     except Exception:
@@ -960,12 +964,12 @@ def getDownloadName(title, source, downloadid):
             torrentname = transmission.getTorrentFolder(downloadid)
         elif source == 'QBITTORRENT':
             torrentname = qbittorrent.getName(downloadid)
-        # elif source == 'UTORRENT':
-        #    torrentname = utorrent.nameTorrent(downloadid)
-        # elif source == 'RTORRENT':
-        #    torrentname = rtorrent.getName(downloadid)
-        # elif source == 'SYNOLOGY_TOR':
-        #    torrentname = synology.getName(downloadid)
+        elif source == 'UTORRENT':
+            torrentname = utorrent.nameTorrent(downloadid)
+        elif source == 'RTORRENT':
+            torrentname = rtorrent.getName(downloadid)
+        elif source == 'SYNOLOGY_TOR':
+            torrentname = synology.getName(downloadid)
         elif source == 'DELUGEWEBUI':
             torrentname = deluge.getTorrentFolder(downloadid)
         elif source == 'DELUGERPC':
@@ -993,14 +997,14 @@ def getDownloadFiles(source, downloadid):
     try:
         if source == 'TRANSMISSION':
             torrentfiles = transmission.getTorrentFiles(downloadid)
-        # elif source == 'UTORRENT':
-        #     torrentname = utorrent.nameTorrent(downloadid)
+        elif source == 'UTORRENT':
+            torrentfiles = utorrent.listTorrent(downloadid)
         # elif source == 'RTORRENT':
-        #     torrentname = rtorrent.getName(downloadid)
+        #     torrentname = rtorrent.getFiles(downloadid)
+        elif source == 'SYNOLOGY_TOR':
+            torrentfiles = synology.getFiles(downloadid)
         elif source == 'QBITTORRENT':
             torrentfiles = qbittorrent.getFiles(downloadid)
-        # elif source == 'SYNOLOGY_TOR':
-        #     torrentname = synology.getName(downloadid)
         elif source == 'DELUGEWEBUI':
             torrentfiles = deluge.getTorrentFiles(downloadid)
         elif source == 'DELUGERPC':

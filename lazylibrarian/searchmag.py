@@ -244,9 +244,13 @@ def search_magazines(mags=None, reset=False):
                                 rejected = False
                                 wlist = []
                                 for word in nzbtitle_exploded:
-                                    wlist.append(unaccented(word).lower())
+                                    word = unaccented(word).lower()
+                                    if word:
+                                        wlist.append(word)
                                 for word in bookid_exploded:
-                                    if unaccented(word).lower() not in wlist:
+                                    word = unaccented(word).lower()
+                                    if word and word not in wlist:
+                                        logger.debug("Rejecting %s, missing %s" % (nzbtitle, word))
                                         rejected = True
                                         break
 
@@ -475,7 +479,6 @@ def search_magazines(mags=None, reset=False):
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            bookid,
                             'magazine')
                     else:
                         snatch = NZBDownloadMethod(
