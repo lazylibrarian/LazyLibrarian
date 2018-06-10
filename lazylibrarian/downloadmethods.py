@@ -109,8 +109,9 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
                     (Source, downloadID, nzburl))
         return True
     else:
-        logger.error('Failed to download nzb @ <a href="%s">%s</a>' % (nzburl, Source))
-        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (nzburl,))
+        logger.error('Failed to send nzb to @ <a href="%s">%s</a>' % (nzburl, Source))
+        dlresult = "Failed to send nzb to %s" % Source
+        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, nzburl))
         return False
 
 
@@ -191,7 +192,8 @@ def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook
         return True
     else:
         logger.error('Failed to download file @ <a href="%s">%s</a>' % (dl_url, dl_url))
-        myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (dl_url,))
+        dlresult = "Failed to download file from %s" % Source
+        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, dl_url))
         return False
 
 
@@ -434,11 +436,12 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 lower_title = tor_title.lower()
                 for word in reject_list:
                     if word in lower_title:
-                        rejected = True
-                        logger.debug("Rejecting torrent name %s, contains %s" % (tor_title, word))
+                        rejected = "Rejecting torrent name %s, contains %s" % (tor_title, word)
+                        logger.debug(rejected)
                         break
                 if rejected:
-                    myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
+                    myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
+                                (rejected, full_url))
                     delete_task(Source, downloadID, True)
                     return False
                 else:
@@ -453,8 +456,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     (Source, downloadID, full_url))
         return True
 
-    logger.error('Failed to download torrent from %s, %s' % (Source, tor_url))
-    myDB.action('UPDATE wanted SET status="Failed" WHERE NZBurl=?', (full_url,))
+    logger.error('Failed to send torrent to %s, %s' % (Source, tor_url))
+    dlresult = "Failed to send torrent to %s" % Source
+    myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, full_url))
     return False
 
 

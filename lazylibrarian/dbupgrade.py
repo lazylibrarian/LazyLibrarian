@@ -77,8 +77,9 @@ def upgrade_needed():
     # 30 add BookType to users table
     # 31 add DateType to magazines table
     # 32 add counters to series table
+    # 33 add DLResult to wanted table
 
-    db_current_version = 32
+    db_current_version = 33
 
     if db_version < db_current_version:
         return db_current_version
@@ -149,7 +150,7 @@ def dbupgrade(db_current_version):
                                 'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT)')
                     myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
                                 'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
-                                'Source TEXT, DownloadID TEXT)')
+                                'Source TEXT, DownloadID TEXT, DLResult TEXT)')
                     myDB.action('CREATE TABLE magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, ' +
                                 'MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, ' +
                                 'Reject TEXT, LatestCover TEXT, DateType TEXT)')
@@ -187,7 +188,7 @@ def dbupgrade(db_current_version):
                 upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
                                     db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
                                     db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29,
-                                    db_v30, db_v31, db_v32]
+                                    db_v30, db_v31, db_v32, db_v33]
 
                 for index, upgrade_function in enumerate(upgradefunctions):
                     if index + 2 > db_version:
@@ -930,3 +931,12 @@ def db_v32(myDB, upgradelog):
             myDB.action('UPDATE series SET Have=?, Total=? WHERE SeriesID=?',
                         (entry['Have'], entry['Total'], entry['Series']))
     upgradelog.write("%s v32: complete\n" % time.ctime())
+
+
+def db_v33(myDB, upgradelog):
+    if not has_column(myDB, "wanted", "DLResult"):
+        lazylibrarian.UPDATE_MSG = 'Adding DLResult to wanted table'
+        upgradelog.write("%s v33: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE wanted ADD COLUMN DLResult TEXT')
+        myDB.action('ALTER TABLE pastissues ADD COLUMN DLResult TEXT')
+    upgradelog.write("%s v33: complete\n" % time.ctime())

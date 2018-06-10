@@ -134,31 +134,36 @@ def getTorrentFiles(torrentid):  # uses hashid
 
 def getTorrentProgress(torrentid):  # uses hashid
     method = 'torrent-get'
-    arguments = {'ids': [torrentid], 'fields': ['id', 'percentDone']}
+    arguments = {'ids': [torrentid], 'fields': ['id', 'percentDone', 'errorString']}
     retries = 3
     while retries:
         response = torrentAction(method, arguments)  # type: dict
         if response:
             try:
                 if len(response['arguments']['torrents'][0]):
+                    err = response['arguments']['torrents'][0]['errorString']
                     res = response['arguments']['torrents'][0]['percentDone']
                     try:
                         res = int(float(res) * 100)
-                        return res
+                        return res, err
                     except ValueError:
                         continue
             except IndexError:
-                logger.debug('getTorrentProgress: %s not found at transmission' % torrentid)
-                return 0
+                msg = '%s not found at transmission' % torrentid
+                logger.debug(msg)
+                return -1, msg
         else:
-            logger.debug('getTorrentProgress: No response from transmission')
-            return 0
+            msg = 'No response from transmission'
+            logger.debug(msg)
+            return 0, msg
 
         retries -= 1
         if retries:
             time.sleep(1)
 
-    return 0
+    msg = '%s not found at transmission' % torrentid
+    logger.debug(msg)
+    return -1, msg
 
 
 def setSeedRatio(torrentid, ratio):

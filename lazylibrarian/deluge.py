@@ -158,17 +158,26 @@ def addTorrent(link, data=None):
 
 def getTorrentFolder(torrentid):
     logger.debug('Deluge: Get torrent folder name')
-    return getTorrentStatus(torrentid, "name")
+    res = getTorrentStatus(torrentid, "name")  # type: dict
+    if res:
+        return res['result']['name']
+    return ''
 
 
 def getTorrentFiles(torrentid):
     logger.debug('Deluge: Get torrent files')
-    return getTorrentStatus(torrentid, "files")
+    res = getTorrentStatus(torrentid, "files")  # type: dict
+    if res:
+        return res['result']['files']
+    return ''
 
 
 def getTorrentProgress(torrentid):
     logger.debug('Deluge: Get torrent progress')
-    return getTorrentStatus(torrentid, "progress")
+    res = getTorrentStatus(torrentid, ["progress", "message"])  # type: dict
+    if res:
+        return res['result']['progress'], res['result']['message']
+    return ''
 
 
 def getTorrentStatus(torrentid, data):
@@ -177,7 +186,9 @@ def getTorrentStatus(torrentid, data):
 
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
     try:
-        post_json = {"method": "web.get_torrent_status", "params": [torrentid, ["total_done"]], "id": 22}
+        post_json = {"method": "web.get_torrent_status",
+                     "params": [torrentid, ["total_done", "message", "state"]],
+                     "id": 22}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers, timeout=timeout)
@@ -206,6 +217,7 @@ def getTorrentStatus(torrentid, data):
                      "params": [torrentid,
                                 [
                                     data
+                                    # "progress",
                                     # "save_path",
                                     # "total_size",
                                     # "num_files",
@@ -222,10 +234,8 @@ def getTorrentStatus(torrentid, data):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug('Status code: %s' % response.status_code)
             logger.debug(response.text)
+        return response.json()
 
-        res = response.json()['result'][data]
-
-        return res
     except Exception as err:
         logger.debug('Deluge %s: Could not get torrent info %s: %s' % (data, type(err).__name__, str(err)))
         return False

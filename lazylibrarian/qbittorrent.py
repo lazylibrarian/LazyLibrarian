@@ -201,12 +201,19 @@ def getProgress(hashid):
     if torrentList:
         for torrent in torrentList:
             if torrent['hash'].upper() == hashid.upper():
+                if 'status' in torrent:
+                    status = torrent['status']
+                else:
+                    status = ''
                 if 'progress' in torrent:
                     try:
-                        return int(100 * float(torrent['progress']))
+                        progress = int(100 * float(torrent['progress']))
                     except ValueError:
-                        return 0
-    return 0
+                        progress = 0
+                else:
+                    progress = 0
+                return progress, status
+    return -1, ''
 
 
 def removeTorrent(hashid, remove_data=False):

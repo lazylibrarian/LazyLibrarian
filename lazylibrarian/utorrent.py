@@ -218,6 +218,15 @@ def nameTorrent(hashid):
     return False
 
 
+def progressTorrent(hashid):
+    uTorrentClient = utorrentclient()
+    torrentList = uTorrentClient.list()
+    for torrent in torrentList[1].get('torrents'):
+        if torrent[0].lower() == hashid:
+            return torrent[4], torrent[1]
+    return -1, ''
+
+
 def listTorrent(hashid):
     uTorrentClient = utorrentclient()
     torrentList = uTorrentClient.list()
