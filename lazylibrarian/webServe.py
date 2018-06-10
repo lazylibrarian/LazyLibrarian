@@ -19,6 +19,7 @@ import re
 import threading
 import time
 import tempfile
+import traceback
 from shutil import copyfile, rmtree
 
 # noinspection PyUnresolvedReferences
@@ -186,87 +187,96 @@ class WebInterface(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def getIndex(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        # kwargs is used by datatables to pass params
-        # for arg in kwargs:
-        #     print arg, kwargs[arg]
-        myDB = database.DBConnection()
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
-        cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
-        cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID from authors '
-        if lazylibrarian.IGNORED_AUTHORS:
-            cmd += 'where Status == "Ignored" '
-        else:
-            cmd += 'where Status != "Ignored" '
-        cmd += 'order by AuthorName COLLATE NOCASE'
-        rowlist = myDB.select(cmd)
-        # At his point we want to sort and filter _before_ adding the html as it's much quicker
-        # turn the sqlite rowlist into a list of lists
         rows = []
         filtered = []
-        if len(rowlist):
-            for row in rowlist:  # iterate through the sqlite3.Row objects
-                arow = list(row)
-                if lazylibrarian.CONFIG['SORT_SURNAME']:
-                    arow[1] = surnameFirst(arow[1])
-                if lazylibrarian.CONFIG['SORT_DEFINITE']:
-                    arow[2] = sortDefinite(arow[2])
-                nrow = arow[:4]
-                havebooks = check_int(arow[7], 0)
-                totalbooks = check_int(arow[8], 0)
-                if totalbooks:
-                    percent = int((havebooks * 100.0) / totalbooks)
-                else:
-                    percent = 0
-                if percent > 100:
-                    percent = 100
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            # kwargs is used by datatables to pass params
+            # for arg in kwargs:
+            #     print arg, kwargs[arg]
+            myDB = database.DBConnection()
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-                if percent <= 25:
-                    css = 'danger'
-                elif percent <= 50:
-                    css = 'warning'
-                elif percent <= 75:
-                    css = 'info'
-                else:
-                    css = 'success'
+            cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
+            cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID from authors '
+            if lazylibrarian.IGNORED_AUTHORS:
+                cmd += 'where Status == "Ignored" '
+            else:
+                cmd += 'where Status != "Ignored" '
+            cmd += 'order by AuthorName COLLATE NOCASE'
+            rowlist = myDB.select(cmd)
+            # At his point we want to sort and filter _before_ adding the html as it's much quicker
+            # turn the sqlite rowlist into a list of lists
+            if len(rowlist):
+                for row in rowlist:  # iterate through the sqlite3.Row objects
+                    arow = list(row)
+                    if lazylibrarian.CONFIG['SORT_SURNAME']:
+                        arow[1] = surnameFirst(arow[1])
+                    if lazylibrarian.CONFIG['SORT_DEFINITE']:
+                        arow[2] = sortDefinite(arow[2])
+                    nrow = arow[:4]
+                    havebooks = check_int(arow[7], 0)
+                    totalbooks = check_int(arow[8], 0)
+                    if totalbooks:
+                        percent = int((havebooks * 100.0) / totalbooks)
+                    else:
+                        percent = 0
+                    if percent > 100:
+                        percent = 100
 
-                nrow.append(percent)
-                nrow.extend(arow[4:])
+                    if percent <= 25:
+                        css = 'danger'
+                    elif percent <= 50:
+                        css = 'warning'
+                    elif percent <= 75:
+                        css = 'info'
+                    else:
+                        css = 'success'
+
+                    nrow.append(percent)
+                    nrow.extend(arow[4:])
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
+                        bar = '<div class="progress-container %s">' % css
+                        bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
+                        bar += '%s/%s</span></div>' % (havebooks, totalbooks)
+                    else:
+                        bar = ''
+                    nrow.append(bar)
+                    rows.append(nrow)  # add each rowlist to the masterlist
+                if sSearch:
+                    filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
+                else:
+                    filtered = rows
+
                 if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
-                    bar = '<div class="progress-container %s">' % css
-                    bar += '<div style="width:%s%%"><span class="progressbar-front-text">' % percent
-                    bar += '%s/%s</span></div>' % (havebooks, totalbooks)
+                    sortcolumn = int(iSortCol_0)
                 else:
-                    bar = ''
-                nrow.append(bar)
-                rows.append(nrow)  # add each rowlist to the masterlist
-            if sSearch:
-                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
-            else:
-                filtered = rows
+                    sortcolumn = int(iSortCol_0) - 1
 
-            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
-                sortcolumn = int(iSortCol_0)
-            else:
-                sortcolumn = int(iSortCol_0) - 1
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
-            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getIndex returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getIndex filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getIndex: %s' % traceback.format_exc())
+            rows = []
+            rowlist = []
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @staticmethod
     def label_thread(name=None):
@@ -633,100 +643,108 @@ class WebInterface(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def getSeries(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-        # kwargs is used by datatables to pass params
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
-        whichStatus = 'All'
-        if kwargs['whichStatus']:
-            whichStatus = kwargs['whichStatus']
-
-        AuthorID = ''
-        if kwargs['AuthorID']:
-            AuthorID = kwargs['AuthorID']
-
-        if not AuthorID or AuthorID == 'None':
-            AuthorID = ''
-
-        myDB = database.DBConnection()
-        # We pass series.SeriesID twice for datatables as the render function modifies it
-        # and we need it in two columns. There is probably a better way...
-        cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
-        cmd += 'Have,Total from series,authors,seriesauthors'
-        cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
-        args = []
-        if whichStatus not in ['All', 'None']:
-            cmd += ' and series.Status=?'
-            args.append(whichStatus)
-        if AuthorID:
-            cmd += ' and seriesauthors.AuthorID=?'
-            args.append(AuthorID)
-        cmd += ' GROUP BY series.seriesID'
-        cmd += ' order by AuthorName,SeriesName'
-        if args:
-            rowlist = myDB.select(cmd, tuple(args))
-        else:
-            rowlist = myDB.select(cmd)
-
-        # turn the sqlite rowlist into a list of lists
-        filtered = []
         rows = []
+        filtered = []
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            # kwargs is used by datatables to pass params
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        if len(rowlist):
-            # the masterlist to be filled with the row data
-            for row in rowlist:  # iterate through the sqlite3.Row objects
-                entry = list(row)
-                if lazylibrarian.CONFIG['SORT_SURNAME']:
-                    entry[1] = surnameFirst(entry[1])
-                rows.append(entry)  # add the rowlist to the masterlist
+            whichStatus = 'All'
+            if kwargs['whichStatus']:
+                whichStatus = kwargs['whichStatus']
 
-            if sSearch:
-                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
+            AuthorID = ''
+            if kwargs['AuthorID']:
+                AuthorID = kwargs['AuthorID']
+
+            if not AuthorID or AuthorID == 'None':
+                AuthorID = ''
+
+            myDB = database.DBConnection()
+            # We pass series.SeriesID twice for datatables as the render function modifies it
+            # and we need it in two columns. There is probably a better way...
+            cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
+            cmd += 'Have,Total from series,authors,seriesauthors'
+            cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+            args = []
+            if whichStatus not in ['All', 'None']:
+                cmd += ' and series.Status=?'
+                args.append(whichStatus)
+            if AuthorID:
+                cmd += ' and seriesauthors.AuthorID=?'
+                args.append(AuthorID)
+            cmd += ' GROUP BY series.seriesID'
+            cmd += ' order by AuthorName,SeriesName'
+            if args:
+                rowlist = myDB.select(cmd, tuple(args))
             else:
-                filtered = rows
+                rowlist = myDB.select(cmd)
 
-            sortcolumn = int(iSortCol_0)
+            # turn the sqlite rowlist into a list of lists
+            if len(rowlist):
+                # the masterlist to be filled with the row data
+                for row in rowlist:  # iterate through the sqlite3.Row objects
+                    entry = list(row)
+                    if lazylibrarian.CONFIG['SORT_SURNAME']:
+                        entry[1] = surnameFirst(entry[1])
+                    rows.append(entry)  # add the rowlist to the masterlist
 
-            for row in filtered:
-                have = check_int(row[6], 0)
-                total = check_int(row[7], 0)
-                if total:
-                    percent = int((have * 100.0) / total)
+                if sSearch:
+                    filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
                 else:
-                    percent = 0
+                    filtered = rows
 
-                if percent > 100:
-                    percent = 100
+                sortcolumn = int(iSortCol_0)
 
-                row.append(percent)
+                for row in filtered:
+                    have = check_int(row[6], 0)
+                    total = check_int(row[7], 0)
+                    if total:
+                        percent = int((have * 100.0) / total)
+                    else:
+                        percent = 0
 
-                if sortcolumn == 4:  # status
-                    sortcolumn = 3
-                elif sortcolumn == 3:  # percent
-                    sortcolumn = 8
+                    if percent > 100:
+                        percent = 100
 
-            if sortcolumn == 8:  # sort on percent,-total
-                if sSortDir_0 == "desc":
-                    filtered.sort(key=lambda y: (-int(y[8]), int(y[7])))
+                    row.append(percent)
+
+                    if sortcolumn == 4:  # status
+                        sortcolumn = 3
+                    elif sortcolumn == 3:  # percent
+                        sortcolumn = 8
+
+                if sortcolumn == 8:  # sort on percent,-total
+                    if sSortDir_0 == "desc":
+                        filtered.sort(key=lambda y: (-int(y[8]), int(y[7])))
+                    else:
+                        filtered.sort(key=lambda y: (int(y[8]), -int(y[7])))
                 else:
-                    filtered.sort(key=lambda y: (int(y[8]), -int(y[7])))
-            else:
-                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+                    filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getSeries returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getSeries filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getSeries: %s' % traceback.format_exc())
+            rows = []
+            rowlist = []
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @cherrypy.expose
     def series(self, AuthorID=None, whichStatus=None):
@@ -1517,213 +1535,221 @@ class WebInterface(object):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
         #     print arg, kwargs[arg]
-
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
-        myDB = database.DBConnection()
-        ToRead = []
-        HaveRead = []
-        flagTo = 0
-        flagHave = 0
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
-            perm = lazylibrarian.perm_admin
-        else:
-            perm = 0
-            cookie = cherrypy.request.cookie
-            if cookie and 'll_uid' in list(cookie.keys()):
-                res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
-                                 (cookie['ll_uid'].value,))
-                if res:
-                    perm = check_int(res['Perms'], 0)
-                    ToRead = getList(res['ToRead'])
-                    HaveRead = getList(res['HaveRead'])
-
-                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-                        logger.debug("getBooks userid %s read %s,%s" % (
-                            cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
-
-        # group_concat needs sqlite3 >= 3.5.4, we check version in __init__
-        if lazylibrarian.GROUP_CONCAT:
-            cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,books.bookid,booklang,'
-            cmd += ' booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary,'
-            cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
-            cmd += ' FROM books, authors'
-            cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
-            cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
-            cmd += ' WHERE books.AuthorID = authors.AuthorID'
-        else:
-            cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-            cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
-            cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
-
-        library = 'eBook'
-        status_type = 'books.status'
-        if 'library' in kwargs:
-            library = kwargs['library']
-        if library == 'AudioBook':
-            status_type = 'audiostatus'
-        args = []
-        if kwargs['source'] == "Manage":
-            if kwargs['whichStatus'] == 'ToRead':
-                cmd += ' and books.bookID in (' + ', '.join(ToRead) + ')'
-            elif kwargs['whichStatus'] == 'Read':
-                cmd += ' and books.bookID in (' + ', '.join(HaveRead) + ')'
-            else:
-                cmd += ' and ' + status_type + '="' + kwargs['whichStatus'] + '"'
-
-        elif kwargs['source'] == "Books":
-            cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
-        elif kwargs['source'] == "Audio":
-            cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
-        elif kwargs['source'] == "Author":
-            cmd += ' and books.AuthorID=?'
-            args.append(kwargs['AuthorID'])
-            if 'ignored' in kwargs and kwargs['ignored'] == "True":
-                cmd += ' and %s="Ignored"' % status_type
-            else:
-                cmd += ' and %s != "Ignored"' % status_type
-
-        if kwargs['source'] in ["Books", "Author", "Audio"]:
-            # for these we need to check and filter on BookLang if set
-            if 'booklang' in kwargs and kwargs['booklang'] != '' and kwargs['booklang'] != 'None':
-                cmd += ' and BOOKLANG=?'
-                args.append(kwargs['booklang'])
-
-        if lazylibrarian.GROUP_CONCAT:
-            cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid, booklang,'
-            cmd += ' booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, audiostatus, audiolibrary'
-        rowlist = myDB.select(cmd, tuple(args))
-
-        # At his point we want to sort and filter _before_ adding the html as it's much quicker
-        # turn the sqlite rowlist into a list of lists
         rows = []
         filtered = []
-        if len(rowlist):
-            for row in rowlist:  # iterate through the sqlite3.Row objects
-                entry = list(row)
-                if lazylibrarian.CONFIG['SORT_SURNAME']:
-                    entry[1] = surnameFirst(entry[1])
-                if lazylibrarian.CONFIG['SORT_DEFINITE']:
-                    entry[2] = sortDefinite(entry[2])
-                rows.append(entry)  # add each rowlist to the masterlist
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-            if sSearch:
-                if library is not None:
-                    if library == 'AudioBook':
-                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'AudioStatus',
-                                        'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
-                    else:
-                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'Status',
-                                        'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
-                    filtered = list()
-                    sSearch_lower = sSearch.lower()
-                    for row in rowlist:
-                        _dict = dict(row)
-                        for key in searchFields:
-                            if _dict[key] and sSearch_lower in _dict[key].lower():
-                                filtered.append(list(row))
-                                break
-                else:
-                    filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
-
+            myDB = database.DBConnection()
+            ToRead = []
+            HaveRead = []
+            flagTo = 0
+            flagHave = 0
+            if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+                perm = lazylibrarian.perm_admin
             else:
-                filtered = rows
+                perm = 0
+                cookie = cherrypy.request.cookie
+                if cookie and 'll_uid' in list(cookie.keys()):
+                    res = myDB.match('SELECT UserName,ToRead,HaveRead,Perms from users where UserID=?',
+                                     (cookie['ll_uid'].value,))
+                    if res:
+                        perm = check_int(res['Perms'], 0)
+                        ToRead = getList(res['ToRead'])
+                        HaveRead = getList(res['HaveRead'])
 
-            # table headers and column headers do not match at this point
-            sortcolumn = int(iSortCol_0)
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                            logger.debug("getBooks userid %s read %s,%s" % (
+                                cookie['ll_uid'].value, len(ToRead), len(HaveRead)))
 
-            if sortcolumn < 4:  # author, title
-                sortcolumn -= 1
-            elif sortcolumn == 4:  # series
-                sortcolumn = 12
-            elif sortcolumn == 8:  # status
-                if status_type == 'audiostatus':
-                    sortcolumn = 14
+            # group_concat needs sqlite3 >= 3.5.4, we check version in __init__
+            if lazylibrarian.GROUP_CONCAT:
+                cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,books.bookid,booklang,'
+                cmd += ' booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary,'
+                cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
+                cmd += ' FROM books, authors'
+                cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
+                cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
+                cmd += ' WHERE books.AuthorID = authors.AuthorID'
+            else:
+                cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
+                cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
+                cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
+
+            library = 'eBook'
+            status_type = 'books.status'
+            if 'library' in kwargs:
+                library = kwargs['library']
+            if library == 'AudioBook':
+                status_type = 'audiostatus'
+            args = []
+            if kwargs['source'] == "Manage":
+                if kwargs['whichStatus'] == 'ToRead':
+                    cmd += ' and books.bookID in (' + ', '.join(ToRead) + ')'
+                elif kwargs['whichStatus'] == 'Read':
+                    cmd += ' and books.bookID in (' + ', '.join(HaveRead) + ')'
                 else:
-                    sortcolumn = 5
-            elif sortcolumn == 7:  # added
-                if status_type == 'audiostatus':
-                    sortcolumn = 15
+                    cmd += ' and ' + status_type + '="' + kwargs['whichStatus'] + '"'
+
+            elif kwargs['source'] == "Books":
+                cmd += ' and books.STATUS !="Skipped" AND books.STATUS !="Ignored"'
+            elif kwargs['source'] == "Audio":
+                cmd += ' and AUDIOSTATUS !="Skipped" AND AUDIOSTATUS !="Ignored"'
+            elif kwargs['source'] == "Author":
+                cmd += ' and books.AuthorID=?'
+                args.append(kwargs['AuthorID'])
+                if 'ignored' in kwargs and kwargs['ignored'] == "True":
+                    cmd += ' and %s="Ignored"' % status_type
                 else:
-                    sortcolumn = 13
-            else:  # rating, date
-                sortcolumn -= 2
+                    cmd += ' and %s != "Ignored"' % status_type
+
+            if kwargs['source'] in ["Books", "Author", "Audio"]:
+                # for these we need to check and filter on BookLang if set
+                if 'booklang' in kwargs and kwargs['booklang'] != '' and kwargs['booklang'] != 'None':
+                    cmd += ' and BOOKLANG=?'
+                    args.append(kwargs['booklang'])
+
+            if lazylibrarian.GROUP_CONCAT:
+                cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid,'
+                cmd += ' booklang, booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, '
+                cmd += ' audiostatus, audiolibrary'
+            rowlist = myDB.select(cmd, tuple(args))
+
+            # At his point we want to sort and filter _before_ adding the html as it's much quicker
+            # turn the sqlite rowlist into a list of lists
+            if len(rowlist):
+                for row in rowlist:  # iterate through the sqlite3.Row objects
+                    entry = list(row)
+                    if lazylibrarian.CONFIG['SORT_SURNAME']:
+                        entry[1] = surnameFirst(entry[1])
+                    if lazylibrarian.CONFIG['SORT_DEFINITE']:
+                        entry[2] = sortDefinite(entry[2])
+                    rows.append(entry)  # add each rowlist to the masterlist
+
+                if sSearch:
+                    if library is not None:
+                        if library == 'AudioBook':
+                            searchFields = ['AuthorName', 'BookName', 'BookDate', 'AudioStatus',
+                                            'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
+                        else:
+                            searchFields = ['AuthorName', 'BookName', 'BookDate', 'Status',
+                                            'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
+                        filtered = list()
+                        sSearch_lower = sSearch.lower()
+                        for row in rowlist:
+                            _dict = dict(row)
+                            for key in searchFields:
+                                if _dict[key] and sSearch_lower in _dict[key].lower():
+                                    filtered.append(list(row))
+                                    break
+                    else:
+                        filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
+                else:
+                    filtered = rows
+
+                # table headers and column headers do not match at this point
+                sortcolumn = int(iSortCol_0)
+
+                if sortcolumn < 4:  # author, title
+                    sortcolumn -= 1
+                elif sortcolumn == 4:  # series
+                    sortcolumn = 12
+                elif sortcolumn == 8:  # status
+                    if status_type == 'audiostatus':
+                        sortcolumn = 14
+                    else:
+                        sortcolumn = 5
+                elif sortcolumn == 7:  # added
+                    if status_type == 'audiostatus':
+                        sortcolumn = 15
+                    else:
+                        sortcolumn = 13
+                else:  # rating, date
+                    sortcolumn -= 2
+
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("Sortcolumn %s" % sortcolumn)
+
+                if sortcolumn in [12, 13, 15]:  # series, date
+                    self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
+                                      reverse=sSortDir_0 == "desc")
+                elif sortcolumn in [2]:  # title
+                    filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
+                else:
+                    filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+                # now add html to the ones we want to display
+                d = []  # the masterlist to be filled with the html data
+                for row in rows:
+                    worklink = ''
+                    sitelink = ''
+                    bookrate = int(round(float(row[3])))
+                    if bookrate > 5:
+                        bookrate = 5
+
+                    if row[10] and len(row[10]) > 4:  # is there a workpage link
+                        worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
+
+                    editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
+
+                    if 'goodreads' in row[9]:
+                        sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
+                    elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
+                        sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
+                    title = row[2]
+                    if row[8]:  # is there a sub-title
+                        title = '%s<br><small><i>%s</i></small>' % (title, row[8])
+                    title = title + '<br>' + sitelink + '&nbsp;' + worklink
+                    if perm & lazylibrarian.perm_edit:
+                        title = title + '&nbsp;' + editpage
+
+                    if not lazylibrarian.GROUP_CONCAT:
+                        row.append('')  # empty string for series links as no group_concat
+
+                    if row[6] in ToRead:
+                        flag = '&nbsp;<i class="far fa-bookmark"></i>'
+                        flagTo += 1
+                    elif row[6] in HaveRead:
+                        flag = '&nbsp;<i class="fas fa-bookmark"></i>'
+                        flagHave += 1
+                    else:
+                        flag = ''
+
+                    # Need to pass bookid and status twice as datatables modifies first one
+                    if status_type == 'audiostatus':
+                        d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
+                                  row[6], dateFormat(row[15], lazylibrarian.CONFIG['DATE_FORMAT']),
+                                  row[14], row[16], flag])
+                    else:
+                        d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
+                                  row[6], dateFormat(row[13], lazylibrarian.CONFIG['DATE_FORMAT']),
+                                  row[5], row[16], flag])
+                rows = d
 
             if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-                logger.debug("Sortcolumn %s" % sortcolumn)
-
-            if sortcolumn in [12, 13, 15]:  # series, date
-                self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
-                                  reverse=sSortDir_0 == "desc")
-            elif sortcolumn in [2]:  # title
-                filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
-            else:
-                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-            # now add html to the ones we want to display
-            d = []  # the masterlist to be filled with the html data
-            for row in rows:
-                worklink = ''
-                sitelink = ''
-                bookrate = int(round(float(row[3])))
-                if bookrate > 5:
-                    bookrate = 5
-
-                if row[10] and len(row[10]) > 4:  # is there a workpage link
-                    worklink = '<a href="' + row[10] + '" target="_new"><small><i>LibraryThing</i></small></a>'
-
-                editpage = '<a href="editBook?bookid=' + row[6] + '" target="_new"><small><i>Manual</i></a>'
-
-                if 'goodreads' in row[9]:
-                    sitelink = '<a href="%s" target="_new"><small><i>GoodReads</i></small></a>' % row[9]
-                elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
-                    sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
-                title = row[2]
-                if row[8]:  # is there a sub-title
-                    title = '%s<br><small><i>%s</i></small>' % (title, row[8])
-                title = title + '<br>' + sitelink + '&nbsp;' + worklink
-                if perm & lazylibrarian.perm_edit:
-                    title = title + '&nbsp;' + editpage
-
-                if not lazylibrarian.GROUP_CONCAT:
-                    row.append('')  # empty string for series links as no group_concat
-
-                if row[6] in ToRead:
-                    flag = '&nbsp;<i class="far fa-bookmark"></i>'
-                    flagTo += 1
-                elif row[6] in HaveRead:
-                    flag = '&nbsp;<i class="fas fa-bookmark"></i>'
-                    flagHave += 1
-                else:
-                    flag = ''
-
-                # Need to pass bookid and status twice as datatables modifies first one
-                if status_type == 'audiostatus':
-                    d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
-                              row[6], dateFormat(row[15], lazylibrarian.CONFIG['DATE_FORMAT']),
-                              row[14], row[16], flag])
-                else:
-                    d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                              row[6], dateFormat(row[13], lazylibrarian.CONFIG['DATE_FORMAT']),
-                              row[5], row[16], flag])
-            rows = d
-
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
-                kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
-            logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+                logger.debug("getBooks %s returning %s to %s, flagged %s,%s" % (
+                    kwargs['source'], iDisplayStart, iDisplayStart + iDisplayLength, flagTo, flagHave))
+                logger.debug("getBooks filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getBooks: %s' % traceback.format_exc())
+            rows = []
+            rowlist = []
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @staticmethod
     def natural_sort(lst, key=lambda s: s, reverse=False):
@@ -2636,89 +2662,96 @@ class WebInterface(object):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
         #     print arg, kwargs[arg]
-
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
-        myDB = database.DBConnection()
-        cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
-        cmd += ' as Iss_Cnt from magazines order by Title'
-        rowlist = myDB.select(cmd)
-        mags = []
         rows = []
         filtered = []
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+            mags = []
+            myDB = database.DBConnection()
+            cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
+            cmd += ' as Iss_Cnt from magazines order by Title'
+            rowlist = myDB.select(cmd)
 
-        if len(rowlist):
-            for mag in rowlist:
-                magimg = mag['LatestCover']
-                # special flag to say "no covers required"
-                if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
-                    magimg = 'images/nocover.jpg'
+            if len(rowlist):
+                for mag in rowlist:
+                    magimg = mag['LatestCover']
+                    # special flag to say "no covers required"
+                    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
+                        magimg = 'images/nocover.jpg'
+                    else:
+                        myhash = md5_utf8(magimg)
+                        hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
+                        if not os.path.isfile(hashname):
+                            copyfile(magimg, hashname)
+                            setperm(hashname)
+                        magimg = 'cache/magazine/' + myhash + '.jpg'
+
+                    this_mag = dict(mag)
+                    this_mag['Cover'] = magimg
+                    temp_title = mag['Title']
+                    if PY2:
+                        temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
+                    this_mag['safetitle'] = quote_plus(temp_title)
+                    mags.append(this_mag)
+
+                rowlist = []
+                if len(mags):
+                    for mag in mags:
+                        entry = [mag['safetitle'], mag['Cover'], mag['Title'], mag['Iss_Cnt'], mag['LastAcquired'],
+                                 mag['IssueDate'], mag['Status'], mag['IssueStatus']]
+                        rowlist.append(entry)  # add each rowlist to the masterlist
+
+                if sSearch:
+                    filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
                 else:
-                    myhash = md5_utf8(magimg)
-                    hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
-                    if not os.path.isfile(hashname):
-                        copyfile(magimg, hashname)
-                        setperm(hashname)
-                    magimg = 'cache/magazine/' + myhash + '.jpg'
+                    filtered = rowlist
 
-                this_mag = dict(mag)
-                this_mag['Cover'] = magimg
-                temp_title = mag['Title']
-                if PY2:
-                    temp_title = temp_title.encode(lazylibrarian.SYS_ENCODING)
-                this_mag['safetitle'] = quote_plus(temp_title)
-                mags.append(this_mag)
+                sortcolumn = int(iSortCol_0)
 
+                if sortcolumn in [4, 5]:  # dates
+                    self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
+                                      reverse=sSortDir_0 == "desc")
+                elif sortcolumn == 2:  # title
+                    filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
+                else:
+                    filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+                for row in rows:
+                    row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
+                    if row[5] and row[5].isdigit():
+                        if len(row[5]) == 8:
+                            if check_year(row[5][:4]):
+                                row[5] = 'Issue %d %s' % (int(row[5][4:]), row[5][:4])
+                            else:
+                                row[5] = 'Vol %d #%d' % (int(row[5][:4]), int(row[5][4:]))
+                        elif len(row[5]) == 12:
+                            row[5] = 'Vol %d #%d %s' % (int(row[5][4:8]), int(row[5][8:]), row[5][:4])
+                    else:
+                        row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
+
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getMags returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getMags filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getMags: %s' % traceback.format_exc())
+            rows = []
             rowlist = []
-            if len(mags):
-                for mag in mags:
-                    entry = [mag['safetitle'], mag['Cover'], mag['Title'], mag['Iss_Cnt'], mag['LastAcquired'],
-                             mag['IssueDate'], mag['Status'], mag['IssueStatus']]
-                    rowlist.append(entry)  # add each rowlist to the masterlist
-
-            if sSearch:
-                filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
-            else:
-                filtered = rowlist
-
-            sortcolumn = int(iSortCol_0)
-
-            if sortcolumn in [4, 5]:  # dates
-                self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
-                                  reverse=sSortDir_0 == "desc")
-            elif sortcolumn == 2:  # title
-                filtered.sort(key=lambda y: y[sortcolumn].lower(), reverse=sSortDir_0 == "desc")
-            else:
-                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-            for row in rows:
-                row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
-                if row[5] and row[5].isdigit():
-                    if len(row[5]) == 8:
-                        if check_year(row[5][:4]):
-                            row[5] = 'Issue %d %s' % (int(row[5][4:]), row[5][:4])
-                        else:
-                            row[5] = 'Vol %d #%d' % (int(row[5][:4]), int(row[5][4:]))
-                    elif len(row[5]) == 12:
-                        row[5] = 'Vol %d #%d %s' % (int(row[5][4:8]), int(row[5][8:]), row[5][:4])
-                else:
-                    row[5] = dateFormat(row[5], lazylibrarian.CONFIG['ISS_FORMAT'])
-
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getMags returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getMags filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @cherrypy.expose
     def magazines(self):
@@ -2773,89 +2806,97 @@ class WebInterface(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def getIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
-
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-
+        rows = []
         filtered = []
-        rows = filtered
-        title = kwargs['title'].replace('&amp;', '&')
-        myDB = database.DBConnection()
-        rowlist = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
-        if len(rowlist):
-            mod_issues = []
-            covercount = 0
-            for issue in rowlist:
-                magfile = issue['IssueFile']
-                extn = os.path.splitext(magfile)[1]
-                if extn:
-                    magimg = magfile.replace(extn, '.jpg')
-                    if not magimg or not os.path.isfile(magimg):
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+
+            title = kwargs['title'].replace('&amp;', '&')
+            myDB = database.DBConnection()
+            rowlist = myDB.select('SELECT * from issues WHERE Title=? order by IssueDate DESC', (title,))
+            if len(rowlist):
+                mod_issues = []
+                covercount = 0
+                for issue in rowlist:
+                    magfile = issue['IssueFile']
+                    extn = os.path.splitext(magfile)[1]
+                    if extn:
+                        magimg = magfile.replace(extn, '.jpg')
+                        if not magimg or not os.path.isfile(magimg):
+                            magimg = 'images/nocover.jpg'
+                        else:
+                            myhash = md5_utf8(magimg)
+                            hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
+                            if not os.path.isfile(hashname):
+                                copyfile(magimg, hashname)
+                                setperm(hashname)
+                            magimg = 'cache/magazine/' + myhash + '.jpg'
+                            covercount += 1
+                    else:
+                        logger.debug('No extension found on %s' % magfile)
                         magimg = 'images/nocover.jpg'
-                    else:
-                        myhash = md5_utf8(magimg)
-                        hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', myhash + ".jpg")
-                        if not os.path.isfile(hashname):
-                            copyfile(magimg, hashname)
-                            setperm(hashname)
-                        magimg = 'cache/magazine/' + myhash + '.jpg'
-                        covercount += 1
+
+                    this_issue = dict(issue)
+                    this_issue['Cover'] = magimg
+                    mod_issues.append(this_issue)
+
+                rowlist = []
+                if len(mod_issues):
+                    for mag in mod_issues:
+                        entry = [mag['Title'], mag['Cover'], mag['IssueDate'], mag['IssueAcquired'],
+                                 mag['IssueID']]
+                        rowlist.append(entry)  # add each rowlist to the masterlist
+
+                if sSearch:
+                    filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
                 else:
-                    logger.debug('No extension found on %s' % magfile)
-                    magimg = 'images/nocover.jpg'
+                    filtered = rowlist
 
-                this_issue = dict(issue)
-                this_issue['Cover'] = magimg
-                mod_issues.append(this_issue)
+                sortcolumn = int(iSortCol_0)
 
+                if sortcolumn in [2, 3]:  # dates
+                    self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
+                                      reverse=sSortDir_0 == "desc")
+                else:
+                    filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+
+            for row in rows:
+                row[3] = dateFormat(row[3], lazylibrarian.CONFIG['DATE_FORMAT'])
+                if row[2] and row[2].isdigit():
+                    if len(row[2]) == 8:
+                        # Year/Issue or Volume/Issue with no year
+                        if check_year(row[2][:4]):
+                            row[2] = 'Issue %d %s' % (int(row[2][4:]), row[2][:4])
+                        else:
+                            row[2] = 'Vol %d #%d' % (int(row[2][:4]), int(row[2][4:]))
+                    elif len(row[2]) == 12:
+                        row[2] = 'Vol %d #%d %s' % (int(row[2][4:8]), int(row[2][8:]), row[2][:4])
+                else:
+                    row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
+
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getIssues: %s' % traceback.format_exc())
+            rows = []
             rowlist = []
-            if len(mod_issues):
-                for mag in mod_issues:
-                    entry = [mag['Title'], mag['Cover'], mag['IssueDate'], mag['IssueAcquired'],
-                             mag['IssueID']]
-                    rowlist.append(entry)  # add each rowlist to the masterlist
-
-            if sSearch:
-                filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
-            else:
-                filtered = rowlist
-
-            sortcolumn = int(iSortCol_0)
-
-            if sortcolumn in [2, 3]:  # dates
-                self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
-                                  reverse=sSortDir_0 == "desc")
-            else:
-                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
-
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-
-        for row in rows:
-            row[3] = dateFormat(row[3], lazylibrarian.CONFIG['DATE_FORMAT'])
-            if row[2] and row[2].isdigit():
-                if len(row[2]) == 8:
-                    # Year/Issue or Volume/Issue with no year
-                    if check_year(row[2][:4]):
-                        row[2] = 'Issue %d %s' % (int(row[2][4:]), row[2][:4])
-                    else:
-                        row[2] = 'Vol %d #%d' % (int(row[2][:4]), int(row[2][4:]))
-                elif len(row[2]) == 12:
-                    row[2] = 'Vol %d #%d %s' % (int(row[2][4:8]), int(row[2][8:]), row[2][:4])
-            else:
-                row[2] = dateFormat(row[2], lazylibrarian.CONFIG['ISS_FORMAT'])
-
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @cherrypy.expose
     def issuePage(self, title):
@@ -2925,57 +2966,66 @@ class WebInterface(object):
     @cherrypy.tools.json_out()
     def getPastIssues(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        myDB = database.DBConnection()
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-        # need to filter on whichStatus and optional mag title
-        cmd = 'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=?'
-        args = [kwargs['whichStatus']]
-        if 'mag' in kwargs and kwargs['mag'] != 'None':
-            cmd += ' AND BookID=?'
-            args.append(kwargs['mag'].replace('&amp;', '&'))
-        rowlist = myDB.select(cmd, tuple(args))
         rows = []
         filtered = []
-        if len(rowlist):
-            for row in rowlist:  # iterate through the sqlite3.Row objects
-                thisrow = list(row)
-                # title needs spaces for column resizing
-                title = thisrow[1]
-                title = title.replace('.', ' ')
-                title = title.replace('LL (', 'LL.(')
-                thisrow[1] = title
-                # make this shorter and with spaces for column resizing
-                provider = thisrow[4]
-                if len(provider) > 20:
-                    while len(provider) > 20 and '/' in provider:
-                        provider = provider.split('/', 1)[1]
-                    provider = provider.replace('/', ' ')
-                    thisrow[4] = provider
-                rows.append(thisrow)  # add each rowlist to the masterlist
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            myDB = database.DBConnection()
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+            # need to filter on whichStatus and optional mag title
+            cmd = 'SELECT NZBurl, NZBtitle, NZBdate, Auxinfo, NZBprov from pastissues WHERE Status=?'
+            args = [kwargs['whichStatus']]
+            if 'mag' in kwargs and kwargs['mag'] != 'None':
+                cmd += ' AND BookID=?'
+                args.append(kwargs['mag'].replace('&amp;', '&'))
+            rowlist = myDB.select(cmd, tuple(args))
+            if len(rowlist):
+                for row in rowlist:  # iterate through the sqlite3.Row objects
+                    thisrow = list(row)
+                    # title needs spaces for column resizing
+                    title = thisrow[1]
+                    title = title.replace('.', ' ')
+                    title = title.replace('LL (', 'LL.(')
+                    thisrow[1] = title
+                    # make this shorter and with spaces for column resizing
+                    provider = thisrow[4]
+                    if len(provider) > 20:
+                        while len(provider) > 20 and '/' in provider:
+                            provider = provider.split('/', 1)[1]
+                        provider = provider.replace('/', ' ')
+                        thisrow[4] = provider
+                    rows.append(thisrow)  # add each rowlist to the masterlist
 
-            if sSearch:
-                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
-            else:
-                filtered = rows
+                if sSearch:
+                    filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
+                else:
+                    filtered = rows
 
-            sortcolumn = int(iSortCol_0)
-            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+                sortcolumn = int(iSortCol_0)
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getPastIssues returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getPastIssues filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getPastIssues: %s' % traceback.format_exc())
+            rows = []
+            rowlist = []
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @cherrypy.expose
     def openMag(self, bookid=None):
@@ -3573,29 +3623,38 @@ class WebInterface(object):
     @cherrypy.tools.json_out()
     def getLog(self, iDisplayStart=0, iDisplayLength=100, iSortCol_0=0, sSortDir_0="desc", sSearch="", **kwargs):
         # kwargs is used by datatables to pass params
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+        rows = []
+        filtered = []
+        # noinspection PyBroadException
+        try:
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-        if sSearch:
-            filtered = [x for x in lazylibrarian.LOGLIST[::] if sSearch.lower() in str(x).lower()]
-        else:
-            filtered = lazylibrarian.LOGLIST[::]
+            if sSearch:
+                filtered = [x for x in lazylibrarian.LOGLIST[::] if sSearch.lower() in str(x).lower()]
+            else:
+                filtered = lazylibrarian.LOGLIST[::]
 
-        sortcolumn = int(iSortCol_0)
-        filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
-        if iDisplayLength < 0:  # display = all
-            rows = filtered
-        else:
-            rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(lazylibrarian.LOGLIST),
-                  'aaData': rows,
-                  }
-        return mydict
+            sortcolumn = int(iSortCol_0)
+            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+            if iDisplayLength < 0:  # display = all
+                rows = filtered
+            else:
+                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getLog returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getLog filtered %s from %s:%s" % (len(filtered), len(lazylibrarian.LOGLIST), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getLog: %s' % traceback.format_exc())
+            rows = []
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(lazylibrarian.LOGLIST),
+                      'aaData': rows,
+                      }
+            return mydict
 
     # HISTORY ###########################################################
 
@@ -3610,72 +3669,81 @@ class WebInterface(object):
         # kwargs is used by datatables to pass params
         # for arg in kwargs:
         #     print arg, kwargs[arg]
-        myDB = database.DBConnection()
-        iDisplayStart = int(iDisplayStart)
-        iDisplayLength = int(iDisplayLength)
-        lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
-        myDB = database.DBConnection()
-        cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID from wanted"
-        rowlist = myDB.select(cmd)
-        # turn the sqlite rowlist into a list of dicts
         rows = []
         filtered = []
-        lazylibrarian.HIST_REFRESH = 0
-        if len(rowlist):
-            # the masterlist to be filled with the row data
-            for row in rowlist:  # iterate through the sqlite3.Row objects
-                nrow = list(row)
-                # title needs spaces, not dots, for column resizing
-                title = nrow[0]  # type: str
-                if title:
-                    title = title.replace('.', ' ')
-                    title = title.replace('LL (', 'LL.(')
-                    nrow[0] = title
-                # provider needs to be shorter and with spaces for column resizing
-                provider = nrow[3]
-                if provider:
-                    # noinspection PyTypeChecker
-                    if len(provider) > 20:
-                        while len(provider) > 20 and '/' in provider:
-                            provider = provider.split('/', 1)[1]
-                        provider = provider.replace('/', ' ')
-                        nrow[3] = provider
-                if title and provider:
-                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
-                        lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
-                        nrow.append(getDownloadProgress(nrow[7], nrow[8]))
-                    else:
-                        nrow.append(-1)
-                    rows.append(nrow)  # add the rowlist to the masterlist
+        rowlist = []
+        # noinspection PyBroadException
+        try:
+            myDB = database.DBConnection()
+            iDisplayStart = int(iDisplayStart)
+            iDisplayLength = int(iDisplayLength)
+            lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
+            myDB = database.DBConnection()
+            cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID from wanted"
+            rowlist = myDB.select(cmd)
+            # turn the sqlite rowlist into a list of dicts
+            lazylibrarian.HIST_REFRESH = 0
+            if len(rowlist):
+                # the masterlist to be filled with the row data
+                for row in rowlist:  # iterate through the sqlite3.Row objects
+                    nrow = list(row)
+                    # title needs spaces, not dots, for column resizing
+                    title = nrow[0]  # type: str
+                    if title:
+                        title = title.replace('.', ' ')
+                        title = title.replace('LL (', 'LL.(')
+                        nrow[0] = title
+                    # provider needs to be shorter and with spaces for column resizing
+                    provider = nrow[3]
+                    if provider:
+                        # noinspection PyTypeChecker
+                        if len(provider) > 20:
+                            while len(provider) > 20 and '/' in provider:
+                                provider = provider.split('/', 1)[1]
+                            provider = provider.replace('/', ' ')
+                            nrow[3] = provider
+                    if title and provider:
+                        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
+                            lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
+                            nrow.append(getDownloadProgress(nrow[7], nrow[8]))
+                        else:
+                            nrow.append(-1)
+                        rows.append(nrow)  # add the rowlist to the masterlist
 
-            if sSearch:
-                filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
-            else:
-                filtered = rows
+                if sSearch:
+                    filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
+                else:
+                    filtered = rows
 
-            sortcolumn = int(iSortCol_0)
-            if sortcolumn == 6:
-                sortcolumn = 9
+                sortcolumn = int(iSortCol_0)
+                if sortcolumn == 6:
+                    sortcolumn = 9
 
-            filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
+                filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
-            if iDisplayLength < 0:  # display = all
-                rows = filtered
-            else:
-                rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                if iDisplayLength < 0:  # display = all
+                    rows = filtered
+                else:
+                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-            for row in rows:
-                row.append(row[4])  # keep full datetime for tooltip
-                row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
+                for row in rows:
+                    row.append(row[4])  # keep full datetime for tooltip
+                    row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
-        if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-            logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
-            logger.debug("getHistory filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
-        mydict = {'iTotalDisplayRecords': len(filtered),
-                  'iTotalRecords': len(rowlist),
-                  'aaData': rows,
-                  }
-        return mydict
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))
+                logger.debug("getHistory filtered %s from %s:%s" % (len(filtered), len(rowlist), len(rows)))
+        except Exception:
+            logger.error('Unhandled exception in getHistory: %s' % traceback.format_exc())
+            rows = []
+            rowlist = []
+            filtered = []
+        finally:
+            mydict = {'iTotalDisplayRecords': len(filtered),
+                      'iTotalRecords': len(rowlist),
+                      'aaData': rows,
+                      }
+            return mydict
 
     @cherrypy.expose
     def clearhistory(self, status=None):
