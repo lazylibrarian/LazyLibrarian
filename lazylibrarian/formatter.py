@@ -114,6 +114,10 @@ def next_run(when_run):
         lazylibrarian.logger.error("Error getting next run for [%s] %s" % (when_run, str(e)))
         diff = 0
 
+    td = str(td)
+    if 's,' in td:
+        return td.split('s,')[0] + 's'
+
     # calculate whole units, plus round up by adding 1(true) if remainder >= half
     days = int(diff / 86400) + (diff % 86400 >= 43200)
     hours = int(diff / 3600) + (diff % 3600 >= 1800)
