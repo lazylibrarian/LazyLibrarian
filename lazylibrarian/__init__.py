@@ -382,7 +382,8 @@ CONFIG_DEFINITIONS = {
     'REJECT_MAGSIZE': ('int', 'General', 0),
     'REJECT_MAGMIN': ('int', 'General', 0),
     'MAG_AGE': ('int', 'General', 31),
-    'SEARCH_INTERVAL': ('int', 'SearchScan', '360'),
+    'SEARCH_BOOKINTERVAL': ('int', 'SearchScan', '360'),
+    'SEARCH_MAGINTERVAL': ('int', 'SearchScan', '360'),
     'SCAN_INTERVAL': ('int', 'SearchScan', '10'),
     'SEARCHRSS_INTERVAL': ('int', 'SearchScan', '20'),
     'WISHLIST_INTERVAL': ('int', 'SearchScan', '24'),
@@ -936,12 +937,13 @@ def config_write(part=None):
                 logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
                 value = unaccented_str(value)
 
-        if key in ['SEARCH_INTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL', 'SEARCHRSS_INTERVAL',
+        if key in ['SEARCH_BOOKINTERVAL', 'SEARCH_MAGINTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL', 'SEARCHRSS_INTERVAL',
                    'GOODREADS_INTERVAL', 'WISHLIST_INTERAL']:
             oldvalue = CFG.get(section, key.lower())
             if value != oldvalue:
-                if key == 'SEARCH_INTERVAL':
+                if key == 'SEARCH_BOOKINTERVAL':
                     scheduleJob('Restart', 'search_book')
+                elif key == 'SEARCH_MAGINTERVAL':
                     scheduleJob('Restart', 'search_magazine')
                 elif key == 'SEARCHRSS_INTERVAL':
                     scheduleJob('Restart', 'search_rss_book')
@@ -1217,7 +1219,7 @@ def USE_RSS():
 
 
 def USE_NZB():
-    if not check_int(CONFIG['SEARCH_INTERVAL'], 0):
+    if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
         return 0
     # Count how many nzb providers are active
     count = 0
@@ -1231,7 +1233,7 @@ def USE_NZB():
 
 
 def USE_TOR():
-    if not check_int(CONFIG['SEARCH_INTERVAL'], 0):
+    if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
         return 0
     count = 0
     for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
@@ -1241,7 +1243,7 @@ def USE_TOR():
 
 
 def USE_DIRECT():
-    if not check_int(CONFIG['SEARCH_INTERVAL'], 0):
+    if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
         return 0
     count = 0
     for provider in [CONFIG['GEN'], CONFIG['GEN2']]:
