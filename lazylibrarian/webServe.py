@@ -3679,7 +3679,7 @@ class WebInterface(object):
             iDisplayLength = int(iDisplayLength)
             lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
             myDB = database.DBConnection()
-            cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID from wanted"
+            cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID,rowid from wanted"
             rowlist = myDB.select(cmd)
             # turn the sqlite rowlist into a list of dicts
             lazylibrarian.HIST_REFRESH = 0
@@ -3687,6 +3687,9 @@ class WebInterface(object):
                 # the masterlist to be filled with the row data
                 for row in rowlist:  # iterate through the sqlite3.Row objects
                     nrow = list(row)
+                    # separate out rowid so we don't break legacy interface
+                    rowid = nrow[9]
+                    nrow = nrow[:9]
                     # title needs spaces, not dots, for column resizing
                     title = nrow[0]  # type: str
                     if title:
@@ -3702,12 +3705,14 @@ class WebInterface(object):
                                 provider = provider.split('/', 1)[1]
                             provider = provider.replace('/', ' ')
                             nrow[3] = provider
+
                     if title and provider:
                         if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
                             lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
                             nrow.append(getDownloadProgress(nrow[7], nrow[8]))
                         else:
                             nrow.append(-1)
+                        nrow.append(rowid)
                         rows.append(nrow)  # add the rowlist to the masterlist
 
                 if sSearch:
@@ -3744,6 +3749,64 @@ class WebInterface(object):
                       'aaData': rows,
                       }
             return mydict
+
+    @cherrypy.expose
+    def dlinfo(self, target=None):
+        myDB = database.DBConnection()
+        if '^' not in target:
+            return ''
+        status, rowid = target.split('^')
+        cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult '
+        cmd += 'from wanted where rowid=?'
+        match = myDB.match(cmd, (rowid,))
+        dltype = match['AuxInfo']
+        if dltype not in ['eBook', 'AudioBook']:
+            if not dltype:
+                dltype = 'eBook'
+            else:
+                dltype = 'Magazine'
+        message = "<br>Title: %s<br>" % match['NZBtitle']
+        message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
+        message += "Date: %s<br>" % match['NZBdate']
+        message += "Size: %s Mb<br>" % match['NZBsize']
+        message += "Provider: %s<br>" % match['NZBprov']
+        message += "URL: %s<br>" % match['NZBurl']
+        if status == 'Processed':
+            message += "File: %s<br>" % match['DLResult']
+        else:
+            message += "Error: %s<br>" % match['DLResult']
+
+        return serve_template(templatename="dlresult.html", title="Download Result", prefix=status,
+                              message=message, rowid=rowid)
+
+    @cherrypy.expose
+    def deletehistory(self, rowid=None):
+        myDB = database.DBConnection()
+        if not rowid:
+            return
+        match = myDB.match('SELECT NZBtitle,Status from wanted WHERE rowid=?', (rowid,))
+        if match:
+            logger.debug('Deleting %s history item %s' % (match['Status'], match['NZBtitle']))
+            myDB.action('DELETE from wanted WHERE rowid=?', (rowid,))
+
+    @cherrypy.expose
+    def markhistory(self, rowid=None):
+        myDB = database.DBConnection()
+        if not rowid:
+            return
+        match = myDB.match('SELECT NZBtitle,Status,BookID,AuxInfo from wanted WHERE rowid=?', (rowid,))
+        logger.debug('Marking %s history item %s as Failed' % (match['Status'], match['NZBtitle']))
+        myDB.action('UPDATE wanted SET Status="Failed" WHERE rowid=?', (rowid,))
+        book_type = match['AuxInfo']
+        if book_type not in ['AudioBook', 'eBook']:
+            if not book_type:
+                book_type = 'eBook'
+            else:
+                book_type = 'Magazine'
+        if book_type == 'AudioBook':
+            myDB.action('UPDATE books SET audiostatus="Wanted" WHERE BookID=?', (match['BookID'],))
+        else:
+            myDB.action('UPDATE books SET status="Wanted" WHERE BookID=?', (match['BookID'],))
 
     @cherrypy.expose
     def clearhistory(self, status=None):

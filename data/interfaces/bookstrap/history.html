@@ -46,7 +46,7 @@
 
     $(document).ready(function()
     {
-        $('#showdownloads').on('click', function(e) {
+       $('#showdownloads').on('click', function(e) {
             $.get('showdownloads', function(data) {
                 bootbox.dialog({
                     title: 'Successful Downloads',
@@ -79,11 +79,13 @@
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
                     { targets: [4], 'render': function(data, type, row) {
-                        return '<a data-toggle="tooltip" title="' + row[10] + '">' + row[4] + '</a>';} },
+                        return '<a data-toggle="tooltip" title="' + row[11] + '">' + row[4] + '</a>';} },
                     { targets: [5], 'render': function(data, type, row) {
                         return '<div class="text-right">' + data + '</div>';} },
                     { targets: [6], 'render': function(data, type, row) {
-                        if ( row[9] <= 0 ) { bar = data }
+                        if ( row[9] <= 0 ) {
+                            bar = '<a href="dlinfo?target=' + data + '^' + row[10] + '">' + data + '</a>'
+                        }
                         else {
                             if ( row[9] <= 25 ) { css = 'danger' }
                             else if ( row[9] <= 50 ) { css = 'warning' }

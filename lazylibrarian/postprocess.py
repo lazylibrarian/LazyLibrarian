@@ -227,6 +227,7 @@ def unpack_archive(pp_path, download_dir, title):
         rarfile = None
 
     targetdir = ''
+    pp_path = makeUnicode(pp_path)
     if not os.path.isfile(pp_path):  # regular files only
         targetdir = ''
     elif zipfile.is_zipfile(pp_path):
@@ -318,8 +319,8 @@ def cron_processDir():
 
 def bookType(book):
     book_type = book['AuxInfo']
-    if book_type != 'AudioBook' and book_type != 'eBook':
-        if book_type is None or book_type == '':
+    if book_type not in ['AudioBook', 'eBook']:
+        if not book_type:
             book_type = 'eBook'
         else:
             book_type = 'Magazine'
@@ -877,11 +878,14 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         cmd = 'UPDATE books SET audiostatus="Wanted" WHERE audiostatus="Snatched" and BookID=?'
                     if cmd:
                         myDB.action(cmd, (book['BookID'],))
+
+                    # use url and status for identifier because magazine id isn't unique
                     if book['Status'] == "Snatched":
-                        myDB.action('UPDATE wanted SET Status="Failed",DLResult=? WHERE BookID=?',
-                                    (dlresult, book['BookID']))
+                        q = 'UPDATE wanted SET Status="Failed",DLResult=? WHERE NZBurl=? and Status="Snatched"'
+                        myDB.action(q, (dlresult, book['NZBurl']))
                     else:  # don't overwrite dlresult reason for the abort
-                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', book['BookID'])
+                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="ed"'
+                        myDB.action(q, (book['NZBurl']))
 
                     delete_task(book['Source'], book['DownloadID'], True)
             else:
