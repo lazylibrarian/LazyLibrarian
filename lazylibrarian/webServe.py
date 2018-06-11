@@ -3756,7 +3756,7 @@ class WebInterface(object):
         if '^' not in target:
             return ''
         status, rowid = target.split('^')
-        cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult '
+        cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult,Source,DownloadID '
         cmd += 'from wanted where rowid=?'
         match = myDB.match(cmd, (rowid,))
         dltype = match['AuxInfo']
@@ -3770,6 +3770,8 @@ class WebInterface(object):
         message += "Date: %s<br>" % match['NZBdate']
         message += "Size: %s Mb<br>" % match['NZBsize']
         message += "Provider: %s<br>" % match['NZBprov']
+        message += "Downloader: %s<br>" % match['Source']
+        message += "DownloadID: %s<br>" % match['DownloadID']
         message += "URL: %s<br>" % match['NZBurl']
         if status == 'Processed':
             message += "File: %s<br>" % match['DLResult']
