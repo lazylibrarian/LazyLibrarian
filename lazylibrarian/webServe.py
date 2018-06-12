@@ -3351,26 +3351,22 @@ class WebInterface(object):
                 message = message + '<br><small>' + messages
             else:
                 message = "up to date"
-            return serve_template(templatename="response.html", prefix='LazyLibrarian is ',
-                                  title="Version Check", message=message, timer=5)
-
         elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 0:
             message = "behind by %s commit%s" % (lazylibrarian.CONFIG['COMMITS_BEHIND'],
                                                  plural(lazylibrarian.CONFIG['COMMITS_BEHIND']))
             messages = lazylibrarian.COMMIT_LIST.replace('\n', '<br>')
             message = message + '<br><small>' + messages
-            return serve_template(templatename="shutdown.html", title="Commits", prefix='LazyLibrarian is ',
-                                  message=message, timer=15)
-
         else:
             message = "unknown version"
             messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
                 lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
-            return serve_template(templatename="response.html", title="Commits", prefix='LazyLibrarian is ',
-                                  message=message, timer=15)
 
-            # raise cherrypy.HTTPRedirect("config")
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
+            return serve_template(templatename="response.html", prefix='LazyLibrarian is ',
+                                  title="Version Check", message=message, timer=5)
+        else:
+            return "LazyLibrarian is %s" % message
 
     @cherrypy.expose
     def forceUpdate(self):
@@ -3765,7 +3761,7 @@ class WebInterface(object):
                 dltype = 'eBook'
             else:
                 dltype = 'Magazine'
-        message = "<br>Title: %s<br>" % match['NZBtitle']
+        message = "Title: %s<br>" % match['NZBtitle']
         message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
         message += "Date: %s<br>" % match['NZBdate']
         message += "Size: %s Mb<br>" % match['NZBsize']
@@ -3777,9 +3773,7 @@ class WebInterface(object):
             message += "File: %s<br>" % match['DLResult']
         else:
             message += "Error: %s<br>" % match['DLResult']
-
-        return serve_template(templatename="dlresult.html", title="Download Result", prefix=status,
-                              message=message, rowid=rowid)
+        return message
 
     @cherrypy.expose
     def deletehistory(self, rowid=None):

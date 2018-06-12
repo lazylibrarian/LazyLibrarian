@@ -25,13 +25,13 @@
             buttons: {
                 bt1: {
                     label: "Mark Failed",
-                    className: 'btn-info',
+                    className: 'btn-warning',
                     callback: function(result){ $.get("markhistory", { 'rowid': rowid }, function (data) {});
                                                 window.history.back(); }
                 },
                 bt2: {
                     label: "Delete",
-                    className: 'btn-info',
+                    className: 'btn-danger',
                     callback: function(result){ $.get("deletehistory", { 'rowid': rowid }, function (data) {});
                                                 window.history.back(); }
                 },
