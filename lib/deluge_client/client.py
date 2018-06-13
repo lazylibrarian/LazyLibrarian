@@ -14,6 +14,7 @@ MESSAGE_HEADER_SIZE = 5
 READ_SIZE = 10
 
 #logger = logging.getLogger(__name__)
+import lazylibrarian
 from lazylibrarian import logger
 
 
@@ -109,7 +110,7 @@ class DelugeRPCClient(object):
     def _send_call(self, deluge_version, method, *args, **kwargs):
         self.request_id += 1
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
-            logger.debug('Calling reqid %s method %r with args:%r kwargs:%r' % 
+            logger.debug('Calling reqid %s method %r with args:%r kwargs:%r' %
                          (self.request_id, method, args, kwargs))
 
         req = ((self.request_id, method, args, kwargs), )
