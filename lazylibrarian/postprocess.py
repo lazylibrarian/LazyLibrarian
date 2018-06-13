@@ -227,6 +227,7 @@ def unpack_archive(pp_path, download_dir, title):
         rarfile = None
 
     targetdir = ''
+    pp_path = makeUnicode(pp_path)
     if not os.path.isfile(pp_path):  # regular files only
         targetdir = ''
     elif zipfile.is_zipfile(pp_path):
@@ -318,8 +319,8 @@ def cron_processDir():
 
 def bookType(book):
     book_type = book['AuxInfo']
-    if book_type != 'AudioBook' and book_type != 'eBook':
-        if book_type is None or book_type == '':
+    if book_type not in ['AudioBook', 'eBook']:
+        if not book_type:
             book_type = 'eBook'
         else:
             book_type = 'Magazine'
@@ -421,8 +422,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 fsize = entry['length']
                             extn = os.path.splitext(fname)[1].lstrip('.').lower()
                             if extn and extn in banned_extensions:
-                                logger.warn("%s contains %s. Deleting torrent" % (matchtitle, extn))
-                                rejected = True
+                                rejected = "%s contains %s" % (matchtitle, extn)
+                                logger.warn("%s. Deleting torrent" % rejected)
                                 break
                             # only check size on right types of file
                             # eg dont reject cos jpg is smaller than min file size
@@ -438,12 +439,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     fsize = 0
                                 if fsize:
                                     if maxsize and fsize > maxsize:
-                                        logger.warn("%s is too large (%sMb). Deleting torrent" % (fname, fsize))
-                                        rejected = True
+                                        rejected = "%s is too large (%sMb)" % (fname, fsize)
+                                        logger.warn("%s. Deleting torrent" % rejected)
                                         break
                                     if minsize and fsize < minsize:
-                                        logger.warn("%s is too small (%sMb). Deleting torrent" % (fname, fsize))
-                                        rejected = True
+                                        rejected = "%s is too small (%sMb)" % (fname, fsize)
+                                        logger.warn("%s. Deleting torrent" % rejected)
                                         break
                             if not rejected:
                                 logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
@@ -458,7 +459,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             cmd = 'UPDATE books SET audiostatus="Wanted" WHERE audiostatus="Snatched" and BookID=?'
                         if cmd:
                             myDB.action(cmd, (book['BookID'],))
-                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
+                        myDB.action('UPDATE wanted SET Status="Failed",DLResult=? WHERE BookID=?',
+                                    (rejected, book['BookID']))
                         delete_task(book['Source'], book['DownloadID'], True)
 
         for download_dir in dirlist:
@@ -610,7 +612,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         book = highest[2]  # type: dict
                     if match and match >= lazylibrarian.CONFIG['DLOAD_RATIO']:
                         logger.debug('Found match (%s%%): %s for %s %s' % (
-                                     match, pp_path, book_type, book['NZBtitle']))
+                            match, pp_path, book_type, book['NZBtitle']))
 
                         cmd = 'SELECT AuthorName,BookName from books,authors WHERE BookID=?'
                         cmd += ' and books.AuthorID = authors.AuthorID'
@@ -702,7 +704,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         logger.debug("Processed %s: %s, %s" % (book['NZBmode'], global_name, book['NZBurl']))
                         # only update the snatched ones in case some already marked failed/processed in history
                         controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
-                        newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
+                        newValueDict = {"Status": "Processed", "NZBDate": now(), "DLResult": dest_file}
                         myDB.upsert("wanted", newValueDict, controlValueDict)
 
                         if bookname:  # it's ebook or audiobook
@@ -803,7 +805,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                     else:
                         logger.error('Postprocessing for %s has failed: %s' % (global_name, dest_file))
                         controlValueDict = {"NZBurl": book['NZBurl'], "Status": "Snatched"}
-                        newValueDict = {"Status": "Failed", "NZBDate": now()}
+                        newValueDict = {"Status": "Failed", "DLResult": dest_file, "NZBDate": now()}
                         myDB.upsert("wanted", newValueDict, controlValueDict)
                         # if it's a book, reset status so we try for a different version
                         # if it's a magazine, user can select a different one from pastissues table
@@ -832,12 +834,17 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
         logger.info('%s book%s/mag%s processed.' % (ppcount, plural(ppcount), plural(ppcount)))
 
-        # Now check for any that are still marked snatched...
-        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
+        # Now check for any that are still marked snatched, or any aborted...
+        snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched" or Status="Aborted"')
 
-        if lazylibrarian.CONFIG['TASK_AGE'] and len(snatched):
-            for book in snatched:
-                book_type = bookType(book)
+        for book in snatched:
+            book_type = bookType(book)
+            abort = False
+            hours = 0
+            mins = 0
+            if book['Status'] == "Aborted":
+                abort = True
+            elif book['Status'] == "Snatched" and lazylibrarian.CONFIG['TASK_AGE']:
                 # FUTURE: we could check percentage downloaded or eta?
                 # if percentage is increasing, it's just slow
                 try:
@@ -850,23 +857,39 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 hours = int(diff / 3600)
                 mins = int(diff / 60)
                 if hours >= lazylibrarian.CONFIG['TASK_AGE']:
-                    if book['Source'] and book['Source'] != 'DIRECT':
-                        logger.warn('%s was sent to %s %s hours ago, deleting failed task' %
-                                    (book['NZBtitle'], book['Source'].lower(), hours))
-                    # change status to "Failed", and ask downloader to delete task and files
-                    # Only reset book status to wanted if still snatched in case another download task succeeded
-                    if book['BookID'] != 'unknown':
-                        cmd = ''
-                        if book_type == 'eBook':
-                            cmd = 'UPDATE books SET status="Wanted" WHERE status="Snatched" and BookID=?'
-                        elif book_type == 'AudioBook':
-                            cmd = 'UPDATE books SET audiostatus="Wanted" WHERE audiostatus="Snatched" and BookID=?'
-                        if cmd:
-                            myDB.action(cmd, (book['BookID'],))
-                        myDB.action('UPDATE wanted SET Status="Failed" WHERE BookID=?', (book['BookID'],))
-                        delete_task(book['Source'], book['DownloadID'], True)
-                else:
-                    logger.debug('%s was sent to %s %s minutes ago' % (book['NZBtitle'], book['Source'].lower(), mins))
+                    abort = True
+
+            if abort:
+                dlresult = ''
+                if book['Source'] and book['Source'] != 'DIRECT':
+                    if book['Status'] == "Snatched":
+                        dlresult = '%s was sent to %s %s hours ago' % (book['NZBtitle'],
+                                                                       book['Source'].lower(), hours)
+                    else:
+                        dlresult = '%s was aborted by %s' % (book['NZBtitle'], book['Source'].lower())
+                    logger.warn('%s, deleting failed task' % dlresult)
+                # change status to "Failed", and ask downloader to delete task and files
+                # Only reset book status to wanted if still snatched in case another download task succeeded
+                if book['BookID'] != 'unknown':
+                    cmd = ''
+                    if book_type == 'eBook':
+                        cmd = 'UPDATE books SET status="Wanted" WHERE status="Snatched" and BookID=?'
+                    elif book_type == 'AudioBook':
+                        cmd = 'UPDATE books SET audiostatus="Wanted" WHERE audiostatus="Snatched" and BookID=?'
+                    if cmd:
+                        myDB.action(cmd, (book['BookID'],))
+
+                    # use url and status for identifier because magazine id isn't unique
+                    if book['Status'] == "Snatched":
+                        q = 'UPDATE wanted SET Status="Failed",DLResult=? WHERE NZBurl=? and Status="Snatched"'
+                        myDB.action(q, (dlresult, book['NZBurl']))
+                    else:  # don't overwrite dlresult reason for the abort
+                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="ed"'
+                        myDB.action(q, (book['NZBurl']))
+
+                    delete_task(book['Source'], book['DownloadID'], True)
+            else:
+                logger.debug('%s was sent to %s %s minutes ago' % (book['NZBtitle'], book['Source'].lower(), mins))
 
         # Check if postprocessor needs to run again
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
@@ -1020,7 +1043,7 @@ def getDownloadFiles(source, downloadid):
         return torrentfiles
 
     except Exception as e:
-        logger.error("Failed to get torrent files from %s for %s: %s %s" %
+        logger.error("Failed to get list of files from %s for %s: %s %s" %
                      (source, downloadid, type(e).__name__, str(e)))
         return None
 
@@ -1029,7 +1052,13 @@ def getDownloadProgress(source, downloadid):
     progress = 0
     try:
         if source == 'TRANSMISSION':
-            progress = transmission.getTorrentProgress(downloadid)
+            progress, errorstring = transmission.getTorrentProgress(downloadid)
+            if errorstring:
+                myDB = database.DBConnection()
+                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                myDB.action(cmd, (errorstring, downloadid, source))
+                progress = -1
+
         elif source == 'DIRECT':
             myDB = database.DBConnection()
             cmd = 'SELECT * from wanted WHERE DownloadID=? and Source=?'
@@ -1038,6 +1067,7 @@ def getDownloadProgress(source, downloadid):
                 progress = 100
             else:
                 progress = 0
+
         elif source == 'SABNZBD':
             res = sabnzbd.SABnzbd(nzburl='queue')
             found = False
@@ -1047,38 +1077,97 @@ def getDownloadProgress(source, downloadid):
                         found = True
                         progress = item['percentage']
                         break
-            if not found:  # not in queue, try history in case already completed
+            if not found:  # not in queue, try history in case completed or error
                 res = sabnzbd.SABnzbd(nzburl='history')
                 if res and 'history' in res:
                     for item in res['history']['slots']:
                         if item['nzo_id'] == downloadid:
-                            # 100% if completed, 99% if still extracting, 0% if not found
-                            if item['status'] == 'Completed':
+                            found = True
+                            # 100% if completed, 99% if still extracting, 0% if not found, -1 if failed
+                            if item['status'] == 'Completed' and not item['fail_message']:
                                 progress = 100
                             elif item['status'] == 'Extracting':
                                 progress = 99
-                            elif item['status'] == 'Failed':
+                            elif item['status'] == 'Failed' or item['fail_message']:
+                                myDB = database.DBConnection()
+                                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                                myDB.action(cmd, (item['fail_message'], downloadid, source))
                                 progress = -1
                             break
+            if not found:
+                logger.debug('%s not found at %s' % (downloadid, source))
+
         elif source == 'NZBGET':
             res = nzbget.sendNZB(cmd='listgroups', nzbID=downloadid)
+            found = False
             for item in res:
                 if item['NZBID'] == downloadid:
+                    found = True
                     total = item['FileSizeHi'] << 32 + item['FileSizeLo']
                     remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
                     done = total - remaining
                     progress = done * 100 / total
                     break
-        # elif source == 'UTORRENT':
-        #     torrentname = utorrent.nameTorrent(downloadid)
+            if not found:
+                res = nzbget.sendNZB(cmd='history', nzbID=downloadid)
+                for item in res:
+                    if item['NZBID'] == downloadid:
+                        found = True
+                        if str(item['Status']).startswith('SUCCESS'):
+                            total = item['FileSizeHi'] << 32 + item['FileSizeLo']
+                            remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
+                            done = total - remaining
+                            progress = done * 100 / total
+                        else:
+                            myDB = database.DBConnection()
+                            cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                            myDB.action(cmd, (item['Status'], downloadid, source))
+                            progress = -1
+                        break
+            if not found:
+                logger.debug('%s not found at %s' % (downloadid, source))
+
+        elif source == 'QBITTORRENT':
+            progress, status = qbittorrent.getProgress(downloadid)
+            if progress == -1:
+                logger.debug('%s not found at %s' % (downloadid, source))
+            if status == 'error':
+                myDB = database.DBConnection()
+                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                myDB.action(cmd, ("QBITTORRENT returned error", downloadid, source))
+                progress = -1
+
+        elif source == 'UTORRENT':
+            progress, status = utorrent.progressTorrent(downloadid)
+            if progress == -1:
+                logger.debug('%s not found at %s' % (downloadid, source))
+            if status & 16:  # Error
+                myDB = database.DBConnection()
+                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                myDB.action(cmd, ("UTORRENT returned error status %d" % status, downloadid, source))
+                progress = -1
+
         # elif source == 'RTORRENT':
         #     torrentname = rtorrent.getName(downloadid)
-        elif source == 'QBITTORRENT':
-            progress = qbittorrent.getProgress(downloadid)
-        # elif source == 'SYNOLOGY_TOR':
-        #     torrentname = synology.getName(downloadid)
+
+        elif source == 'SYNOLOGY_TOR':
+            progress, status = synology.getProgress(downloadid)
+            if status == 'finished':
+                progress = 100
+            elif status == 'error':
+                myDB = database.DBConnection()
+                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                myDB.action(cmd, ("Synology returned error", downloadid, source))
+                progress = -1
+
         elif source == 'DELUGEWEBUI':
-            progress = deluge.getTorrentProgress(downloadid)
+            progress, message = deluge.getTorrentProgress(downloadid)
+            if message:
+                myDB = database.DBConnection()
+                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                myDB.action(cmd, (message, downloadid, source))
+                progress = -1
+
         elif source == 'DELUGERPC':
             client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
                                      lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
@@ -1086,7 +1175,12 @@ def getDownloadProgress(source, downloadid):
                 client.connect()
                 result = client.call('core.get_torrent_status', downloadid, {})
                 if 'percentDone' in result:
-                    progress = result['percentDone']
+                    progress = result['progress']
+                if 'message' in result:
+                    myDB = database.DBConnection()
+                    cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                    myDB.action(cmd, (result['message'], downloadid, source))
+                    progress = -1
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
 
@@ -1236,7 +1330,7 @@ def process_book(pp_path=None, bookID=None):
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                         logger.debug("%s was snatched from %s" % (global_name, snatched_from))
                     controlValueDict = {"BookID": bookID}
-                    newValueDict = {"Status": "Processed", "NZBDate": now()}  # say when we processed it
+                    newValueDict = {"Status": "Processed", "NZBDate": now(), "DLResult": dest_file}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                 else:
                     snatched_from = "manually added"

@@ -34,7 +34,6 @@
                     <th class="hidden">percent</th>
                 </tr>
             </thead>
-
 </table>
 </div>
 
@@ -44,23 +43,54 @@
 <%def name="javascriptIncludes()">
   <script type="text/javascript">
 
+    function dlinfo(target) {
+        var res = target.split('^');
+        var status = res[0]
+        var rowid = res[1]
+        $.get('dlinfo', {'target': target},
+        function(data) {
+            bootbox.dialog({
+                title: 'Download '+ status,
+                message: '<pre>'+data+'</pre>',
+                buttons: {
+                    bt1: {
+                        label: "Mark Failed",
+                        className: 'btn-warning',
+                        callback: function(result){ $.get("markhistory", { 'rowid': rowid }, function (data) {});
+                                                    location.reload(true); }
+                    },
+                    bt2: {
+                        label: "Delete",
+                        className: 'btn-danger',
+                        callback: function(result){ $.get("deletehistory", { 'rowid': rowid }, function (data) {});
+                                                    location.reload(true); }
+                    },
+                    primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            });
+        });
+    };
+
     $(document).ready(function()
     {
-        $('#showdownloads').on('click', function(e) {
+       $('#showdownloads').on('click', function(e) {
             $.get('showdownloads', function(data) {
                 bootbox.dialog({
                     title: 'Successful Downloads',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
+                        prompt: {
+                            label: "Clear Counters",
+                            className: 'btn-danger',
+                            callback: function(result){ $.get("cleardownloads", function(e) {}); }
+                        },
                         primary: {
                             label: "Close",
                             className: 'btn-primary'
                         },
-                        prompt: {
-                            label: "Clear Counters",
-                            className: 'btn-primary',
-                            callback: function(result){ $.get("cleardownloads", function(e) {}); }
-                        }
                     }
                 });
             });
@@ -79,11 +109,14 @@
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
                     { targets: [4], 'render': function(data, type, row) {
-                        return '<a data-toggle="tooltip" title="' + row[10] + '">' + row[4] + '</a>';} },
+                        return '<a data-toggle="tooltip" title="' + row[11] + '">' + row[4] + '</a>';} },
                     { targets: [5], 'render': function(data, type, row) {
                         return '<div class="text-right">' + data + '</div>';} },
                     { targets: [6], 'render': function(data, type, row) {
-                        if ( row[9] <= 0 ) { bar = data }
+                        if ( row[9] <= 0 ) {
+                            bar = '<button onclick="dlinfo(\'' + data + '^' + row[10] +
+                            '\')" class="button btn btn-xs btn-primary" type="button">' + data + '</button>'
+                        }
                         else {
                             if ( row[9] <= 25 ) { css = 'danger' }
                             else if ( row[9] <= 50 ) { css = 'warning' }
@@ -128,6 +161,10 @@
             if ( ${lazylibrarian.HIST_REFRESH} > 0 ) {
                 setInterval( function () { table.ajax.reload( null, false ); }, ${lazylibrarian.HIST_REFRESH} );
             };
+
+        //enable datatables console logging
+        //table.on(function ( e ) {
+        //   console.log( e ); } );
     });
   </script>
 

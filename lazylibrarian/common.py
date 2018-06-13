@@ -431,15 +431,15 @@ def scheduleJob(action='Start', target=None):
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir, minutes=minutes)
             logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
-        elif 'search_magazines' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
-            minutes = check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0)
+        elif 'search_magazines' in target and check_int(lazylibrarian.CONFIG['SEARCH_MAGINTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SEARCH_MAGINTERVAL'], 0)
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchmag.cron_search_magazines, minutes=minutes)
                 logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
-        elif 'search_book' in target and check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0):
-            minutes = check_int(lazylibrarian.CONFIG['SEARCH_INTERVAL'], 0)
+        elif 'search_book' in target and check_int(lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL'], 0):
+            minutes = check_int(lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL'], 0)
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
                 lazylibrarian.SCHED.add_interval_job(
                     lazylibrarian.searchbook.cron_search_book, minutes=minutes)

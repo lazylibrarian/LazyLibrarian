@@ -173,7 +173,7 @@ def _getInfo(task_cgi, sid, download_id):
         "version": "1",
         "method": "getinfo",
         "id": download_id,
-        "additional": "detail",
+        "additional": "detail,files",
         "session": "LazyLibrarian",
         "_sid": sid
     }
@@ -330,8 +330,44 @@ def getName(download_id):
     return ""
 
 
+def getProgress(download_id):
+    # get the progress/status of a download from it's download_id
+    # return "" if not found
+    hosturl = _hostURL()
+    if hosturl:
+        auth_cgi, task_cgi, sid = _login(hosturl)
+        if sid:
+            result = _getInfo(task_cgi, sid, download_id)  # type: dict
+            _logout(auth_cgi, sid)
+            if result:
+                if 'status' in result:
+                    status = result['status']
+                else:
+                    status = ''
+                # can't see how to get a % from synology, so have to work it out ourselves...
+                if 'additional' in result:
+                    try:
+                        files = result['additional']['file']
+                    except KeyError:
+                        files = []
+                else:
+                    files = []
+                tot_size = 0
+                got_size = 0
+                for item in files:
+                    tot_size += check_int(item['size'], 0)
+                    got_size += check_int(item['size_downloaded'], 0)
+
+                if tot_size:
+                    pc = int((got_size * 100) / tot_size)
+                else:
+                    pc = 0
+                return pc, status
+    return -1, ""
+
+
 def getFiles(download_id):
-    # get the name of a download from it's download_id
+    # get the files in a download from it's download_id
     # return "" if not found
     hosturl = _hostURL()
     if hosturl:

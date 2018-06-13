@@ -7,7 +7,7 @@
     <div id="subhead_menu">
       <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
       <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-sync"></i> Restart</a>
-      <a class="button btn btn-sm btn-primary" href="checkForUpdates" id="checkversion" data-toggle="tooltip" data-placement="bottom" title="Check for the latest release"><i class="far fa-check-square"></i> Check Version</a>
+      <button class="button btn btn-sm btn-primary" type="button" value="checkforupdates" id="checkforupdates"><i class="fa fa-list-ol"></i> Check Version</button>
       %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
       <a class="button btn btn-sm btn-primary" href="userAdmin" data-toggle="tooltip" data-placement="bottom" title="Manage user accounts"><i class="fa fa-user"></i> User Admin</a>
       %endif
@@ -1399,9 +1399,16 @@
                 <fieldset>
                   <legend>Intervals</legend>
                   <div class="form-group">
-                    <label for="search_interval" class="control-label">NZB/Tor Search Interval:</label>
+                    <label for="search_bookinterval" class="control-label">Book Search Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="search_interval" name="search_interval" value="${lazylibrarian.CONFIG['SEARCH_INTERVAL']}" class="form-control" placeholder="NZB search interval (mins)">
+                      <input type="text" id="search_bookinterval" name="search_bookinterval" value="${lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL']}" class="form-control" placeholder="Book search interval (mins)">
+                      <span class="input-group-addon">Minutes</span>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="search_maginterval" class="control-label">Magazine Search Interval:</label>
+                    <div class="input-group">
+                      <input type="text" id="search_maginterval" name="search_maginterval" value="${lazylibrarian.CONFIG['SEARCH_MAGINTERVAL']}" class="form-control" placeholder="Magazine search interval (mins)">
                       <span class="input-group-addon">Minutes</span>
                     </div>
                   </div>
@@ -3135,7 +3142,6 @@
         $('#generateAPI').click(function () {
             $.get("generateAPI",
                 function (data) { });
-
         });
 
         $('#showblocked').on('click', function(e) {
@@ -3144,14 +3150,14 @@
                     title: 'Provider Status',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
-                        primary: {
-                            label: "Ok",
-                            className: 'btn-primary'
-                        },
                         prompt: {
                             label: "Clear Blocklist",
-                            className: 'btn-primary',
+                            className: 'btn-danger',
                             callback: function(result){ $.get("clearblocked", function(e) {}); }
+                        },
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
                         }
                     }
                 });
@@ -4086,6 +4092,21 @@
             $("#current_tab").val(tabnum);
         });
 
+
+       $('#checkforupdates').on('click', function(e) {
+            $.get('checkForUpdates', function(data) {
+                bootbox.dialog({
+                    title: 'Check Version',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+            });
+        });
 
     } // End Init
 
