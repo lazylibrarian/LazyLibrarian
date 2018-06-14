@@ -3190,7 +3190,7 @@
             var prov = $(this).val();
             var host = ""
             var api = ""
-            if ( 'KAT TPB ZOO TDL LIME GEN GEN2'.indexOf(prov) >= 0 ) {
+            if ( 'KAT TPB WWT ZOO TDL LIME GEN GEN2'.indexOf(prov) >= 0 ) {
                 var host = $("#" + prov.toLowerCase() + "_host").val();
             }
             if ( 'GEN GEN2'.indexOf(prov) >= 0 ) {
@@ -3267,8 +3267,6 @@
                 });
             });
         });
-
-        $('#checkversion').on('click', function(e) { eraseCookie("ignoreUpdate");} );
 
         $('#testSABnzbd').on('click', function() {
             var host = $.trim($("#sab_host").val());
@@ -4116,6 +4114,7 @@
 
 
        $('#checkforupdates').on('click', function(e) {
+            eraseCookie("ignoreUpdate");
             $.get('checkForUpdates', function(data) {
                 bootbox.dialog({
                     title: 'Check Version',
@@ -4123,7 +4122,8 @@
                     buttons: {
                         primary: {
                             label: "Close",
-                            className: 'btn-primary'
+                            className: 'btn-primary',
+                            callback: function(){ location.reload(true); }
                         },
                     }
                 });
