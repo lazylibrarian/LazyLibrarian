@@ -421,7 +421,9 @@ class Api(object):
                 "SELECT toread from users WHERE userid='%s'" % userid)
 
     def _vacuum(self):
-        self.data = self._dic_from_query("vacuum; pragma integrity_check")
+        msg1 = self._dic_from_query("vacuum")
+        msg2 =self._dic_from_query("pragma integrity_check")
+        self.data = str(msg1) + str(msg2)
 
     def _getSnatched(self):
         self.data = self._dic_from_query(

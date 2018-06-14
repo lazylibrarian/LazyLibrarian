@@ -1250,6 +1250,28 @@
                         </span>
                       </div>
                     </div>
+                   <%
+                      if lazylibrarian.CONFIG['WWT'] == True:
+                        checked = 'checked="checked"'
+                      else:
+                        checked = ''
+                    %>
+                    <div class="col-md-4 form-group">
+                      <label for="wwt_host" class="sr-only">WWT Host</label>
+                      <div class="input-group">
+                        <input type="text" placeholder="WWT Host" id="wwt_host" name="wwt_host" value="${lazylibrarian.CONFIG['WWT_HOST']}" class="form-control">
+                        <span class="input-group-addon">
+                          <input type="checkbox" id="wwt" name="wwt" value="1" ${checked} />
+                        </span>
+                      </div>
+                      <div class="input-group">
+                      <span class="input-group-addon">Priority</span>
+                        <input type="text" id="wwt_dlpriority" name="wwt_dlpriority" value="${lazylibrarian.CONFIG['WWT_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">
+                        <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="WWT"> Test</button>
+                        </span>
+                      </div>
+                    </div>
                     <%
                       if lazylibrarian.CONFIG['ZOO'] == True:
                         checked = 'checked="checked"'

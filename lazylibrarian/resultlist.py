@@ -111,13 +111,15 @@ def findBestResult(resultlist, book, searchtype, source):
             if not rejected and lazylibrarian.CONFIG['BLACKLIST_FAILED']:
                 already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (url,))
                 if already_failed:
-                    logger.debug("Rejecting %s, blacklisted (Failed) at %s" % (resultTitle, already_failed['NZBprov']))
+                    logger.debug("Rejecting %s, blacklisted (Failed) at %s" %
+                                 (resultTitle, already_failed['NZBprov']))
                     rejected = True
 
             if not rejected and lazylibrarian.CONFIG['BLACKLIST_PROCESSED']:
                 already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=?', (url,))
                 if already_failed:
-                    logger.debug("Rejecting %s, blacklisted (Processed) at %s" % (resultTitle, already_failed['NZBprov']))
+                    logger.debug("Rejecting %s, blacklisted (Processed) at %s" %
+                                 (resultTitle, already_failed['NZBprov']))
                     rejected = True
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):

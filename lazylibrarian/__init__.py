@@ -340,9 +340,9 @@ CONFIG_DEFINITIONS = {
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
     'KAT_DLPRIORITY': ('int', 'KAT', 0),
-    #  'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.eu'),
-    #  'WWT': ('bool', 'WWT', 0),
-    #  'WWT_DLPRIORITY': ('int', 'WWT', 0),
+    'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.me'),
+    'WWT': ('bool', 'WWT', 0),
+    'WWT_DLPRIORITY': ('int', 'WWT', 0),
     'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
     'TPB': ('bool', 'TPB', 0),
     'TPB_DLPRIORITY': ('int', 'TPB', 0),
@@ -937,8 +937,8 @@ def config_write(part=None):
                 logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
                 value = unaccented_str(value)
 
-        if key in ['SEARCH_BOOKINTERVAL', 'SEARCH_MAGINTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL', 'SEARCHRSS_INTERVAL',
-                   'GOODREADS_INTERVAL', 'WISHLIST_INTERAL']:
+        if key in ['SEARCH_BOOKINTERVAL', 'SEARCH_MAGINTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL',
+                   'SEARCHRSS_INTERVAL', 'GOODREADS_INTERVAL', 'WISHLIST_INTERAL']:
             oldvalue = CFG.get(section, key.lower())
             if value != oldvalue:
                 if key == 'SEARCH_BOOKINTERVAL':
@@ -1236,7 +1236,7 @@ def USE_TOR():
     if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
         return 0
     count = 0
-    for provider in [CONFIG['KAT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
+    for provider in [CONFIG['KAT'], CONFIG['WWT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
         if bool(provider):
             count += 1
     return count
