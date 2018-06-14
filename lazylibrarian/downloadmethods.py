@@ -199,7 +199,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     myDB = database.DBConnection()
     downloadID = False
     Source = ''
-    torrent = None
+    torrent = ''
 
     full_url = tor_url  # keep the url as stored in "wanted" table
     if 'magnet:?' in tor_url:
@@ -225,29 +225,49 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             tor_url = url + '&file=' + value
 
         # strip url back to the .torrent as some sites add extra parameters
-        if not tor_url.endswith('.torrent'):
-            if '.torrent' in tor_url:
-                tor_url = tor_url.split('.torrent')[0] + '.torrent'
+        if not tor_url.endswith('.torrent') and '.torrent' in tor_url:
+            tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
         headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
         proxies = proxyList()
+        r = None
         try:
+            logger.debug("Fetching %s" % tor_url)
             r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
-            torrent = r.content
+            logger.debug("Got status %s" % r.status_code)
         except requests.exceptions.Timeout:
             logger.warn('Timeout fetching file from url: %s' % tor_url)
             return False
         except Exception as e:
             # some jackett providers redirect internally using http 301 to a magnet link
             # which requests can't handle, so throws an exception
+            logger.debug("Got exception %s" % str(e))
             if "magnet:?" in str(e):
                 tor_url = 'magnet:?' + str(e).split('magnet:?')[1]. strip("'")
+                logger.debug("Redirected to %s" % tor_url)
             else:
                 if hasattr(e, 'reason'):
                     logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
                 else:
                     logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
                 return False
+
+        if r:
+            if not str(r.status_code).startswith('2'):
+                logger.warn("Got a %s response for %s" % (r.status_code, tor_url))
+                return False
+
+            torrent = r.content
+            if not len(torrent):
+                logger.warn("Got empty response for %s, rejecting" % tor_url)
+                return False
+            elif len(torrent) < 100:
+                logger.warn("Only got %s bytes for %s, rejecting" % (len(torrent), tor_url))
+                return False
+            else:
+                logger.debug("Got %s bytes for %s" % (len(torrent), tor_url))
+        else:
+            logger.debug("Got no response from requests")
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
@@ -256,6 +276,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         if tor_url and tor_url.startswith('magnet'):
             if lazylibrarian.CONFIG['TOR_CONVERT_MAGNET']:
                 hashid = calculate_torrent_hash(tor_url)
+                if not hashid:
+                    hashid = tor_name
                 tor_name = 'meta-' + hashid + '.torrent'
                 tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
                 result = magnet2torrent(tor_url, tor_path)
@@ -306,6 +328,13 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 return False
 
     hashid = calculate_torrent_hash(tor_url, torrent)
+    if not hashid:
+        logger.error("Unable to calculate torrent hash from url/data")
+        logger.debug("url: %s" % tor_url)
+
+        logger.debug("data: %s" % makeUnicode(str(torrent[:50])))
+        return False
+
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] and lazylibrarian.CONFIG['UTORRENT_HOST']:
         logger.debug("Sending %s to Utorrent" % tor_title)
         Source = "UTORRENT"
@@ -450,7 +479,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
 def calculate_torrent_hash(link, data=None):
     """
-    Calculate the torrent hash from a magnet link or data. Raises a ValueError
+    Calculate the torrent hash from a magnet link or data. Returns empty string
     when it cannot create a torrent hash given the input data.
     """
 
@@ -463,7 +492,8 @@ def calculate_torrent_hash(link, data=None):
         info = bdecode(data)["info"]
         torrent_hash = sha1(bencode(info)).hexdigest()
     else:
-        raise ValueError("Cannot calculate torrent hash without magnet link or data")
+        logger.error("Cannot calculate torrent hash without magnet link or data")
+        return ''
 
     logger.debug('Torrent Hash: ' + torrent_hash)
     return torrent_hash
