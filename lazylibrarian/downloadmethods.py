@@ -230,21 +230,34 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
         headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
         proxies = proxyList()
-        r = None
+
         try:
             logger.debug("Fetching %s" % tor_url)
             r = requests.get(tor_url, headers=headers, timeout=90, proxies=proxies)
-            logger.debug("Got status %s" % r.status_code)
+            if str(r.status_code).startswith('2'):
+                torrent = r.content
+                if not len(torrent):
+                    logger.warn("Got empty response for %s, rejecting" % tor_url)
+                    return False
+                elif len(torrent) < 100:
+                    logger.warn("Only got %s bytes for %s, rejecting" % (len(torrent), tor_url))
+                    return False
+                else:
+                    logger.debug("Got %s bytes for %s" % (len(torrent), tor_url))
+            else:
+                logger.warn("Got a %s response for %s, rejecting" % (r.status_code, tor_url))
+                return False
+
         except requests.exceptions.Timeout:
             logger.warn('Timeout fetching file from url: %s' % tor_url)
             return False
         except Exception as e:
             # some jackett providers redirect internally using http 301 to a magnet link
             # which requests can't handle, so throws an exception
-            logger.debug("Got exception %s" % str(e))
+            logger.debug("Requests exception: %s" % str(e))
             if "magnet:?" in str(e):
                 tor_url = 'magnet:?' + str(e).split('magnet:?')[1]. strip("'")
-                logger.debug("Redirected to %s" % tor_url)
+                logger.debug("Redirecting to %s" % tor_url)
             else:
                 if hasattr(e, 'reason'):
                     logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
@@ -252,22 +265,9 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
                 return False
 
-        if r:
-            if not str(r.status_code).startswith('2'):
-                logger.warn("Got a %s response for %s" % (r.status_code, tor_url))
-                return False
-
-            torrent = r.content
-            if not len(torrent):
-                logger.warn("Got empty response for %s, rejecting" % tor_url)
-                return False
-            elif len(torrent) < 100:
-                logger.warn("Only got %s bytes for %s, rejecting" % (len(torrent), tor_url))
-                return False
-            else:
-                logger.debug("Got %s bytes for %s" % (len(torrent), tor_url))
-        else:
-            logger.debug("Got no response from requests")
+    if not torrent and not tor_url.startswith('magnet:?'):
+        logger.warn("No magnet or data, cannot continue")
+        return False
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
@@ -376,7 +376,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and \
             lazylibrarian.CONFIG['SYNOLOGY_HOST']:
-        logger.debug("Sending %s to Synology" % tor_title)
+        logger.debug("Sending %s url to Synology" % tor_title)
         Source = "SYNOLOGY_TOR"
         downloadID = synology.addTorrent(tor_url)  # returns id or False
         if downloadID:

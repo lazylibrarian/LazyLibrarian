@@ -422,7 +422,7 @@ class Api(object):
 
     def _vacuum(self):
         msg1 = self._dic_from_query("vacuum")
-        msg2 =self._dic_from_query("pragma integrity_check")
+        msg2 = self._dic_from_query("pragma integrity_check")
         self.data = str(msg1) + str(msg2)
 
     def _getSnatched(self):
