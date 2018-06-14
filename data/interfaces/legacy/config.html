@@ -775,6 +775,15 @@
               <input type="text" placeholder="Enter URL Here" id="tpb_host" name="tpb_host" value="${lazylibrarian.CONFIG['TPB_HOST']}" size="26">
               <br>
               <%
+                if lazylibrarian.CONFIG['WWT'] == True:
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+              %>
+              <input type="checkbox" id="wwt" name="wwt" value=1 ${checked} style="margin-bottom:4px;" /> worldwidetorrents
+              <input type="text" placeholder="Enter URL Here" id="wwt_host" name="wwt_host" value="${lazylibrarian.CONFIG['WWT_HOST']}" size="26">
+              <br>
+              <%
                 if lazylibrarian.CONFIG['ZOO'] == True:
                     checked = 'checked="checked"'
                 else:
