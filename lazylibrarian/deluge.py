@@ -152,7 +152,7 @@ def addTorrent(link, data=None):
         logger.error(str(err))
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             formatted_lines = traceback.format_exc().splitlines()
-            logger.error('; '.join(formatted_lines))
+            logger.debug('; '.join(formatted_lines))
         return False
 
 
@@ -313,13 +313,13 @@ def _get_auth():
             logger.error('Deluge: Authentication failed: %s' % str(e))
             if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
                 formatted_lines = traceback.format_exc().splitlines()
-                logger.error('; '.join(formatted_lines))
+                logger.debug('; '.join(formatted_lines))
             return None
     except Exception as err:
         logger.error('Deluge %s: auth.login returned %s' % (type(err).__name__, str(err)))
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             formatted_lines = traceback.format_exc().splitlines()
-            logger.error('; '.join(formatted_lines))
+            logger.debug('; '.join(formatted_lines))
         return None
 
     auth = response.json()["result"]
@@ -489,7 +489,7 @@ def _add_torrent_file(result):
         logger.error('Deluge %s: Adding torrent file failed: %s' % (type(err).__name__, str(err)))
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             formatted_lines = traceback.format_exc().splitlines()
-            logger.error('; '.join(formatted_lines))
+            logger.debug('; '.join(formatted_lines))
         return False
 
 
@@ -540,7 +540,7 @@ def setTorrentLabel(result):
                     logger.error('Deluge %s: Setting label failed: %s' % (type(err).__name__, str(err)))
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
                         formatted_lines = traceback.format_exc().splitlines()
-                        logger.error('; '.join(formatted_lines))
+                        logger.debug('; '.join(formatted_lines))
                     if not result:
                         return False
             else:

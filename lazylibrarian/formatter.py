@@ -113,6 +113,7 @@ def next_run(when_run):
     except ValueError as e:
         lazylibrarian.logger.error("Error getting next run for [%s] %s" % (when_run, str(e)))
         diff = 0
+        td = ''
 
     td = str(td)
     if 's,' in td:
