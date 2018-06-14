@@ -3268,8 +3268,6 @@
             });
         });
 
-        $('#checkversion').on('click', function(e) { eraseCookie("ignoreUpdate");} );
-
         $('#testSABnzbd').on('click', function() {
             var host = $.trim($("#sab_host").val());
             var port = $.trim($("#sab_port").val());
@@ -4116,6 +4114,7 @@
 
 
        $('#checkforupdates').on('click', function(e) {
+            eraseCookie("ignoreUpdate");
             $.get('checkForUpdates', function(data) {
                 bootbox.dialog({
                     title: 'Check Version',
@@ -4123,7 +4122,8 @@
                     buttons: {
                         primary: {
                             label: "Close",
-                            className: 'btn-primary'
+                            className: 'btn-primary',
+                            callback: function(){ location.reload(true); }
                         },
                     }
                 });
