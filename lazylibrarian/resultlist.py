@@ -121,6 +121,16 @@ def findBestResult(resultlist, book, searchtype, source):
                     logger.debug("Rejecting %s, blacklisted (Processed) at %s" %
                                  (resultTitle, already_failed['NZBprov']))
                     rejected = True
+            #
+            # Extra check of failed status...
+            if not rejected and lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
+                already_failed = myDB.select('SELECT * from wanted WHERE Status="Failed"')
+                if len(already_failed):
+                    logger.debug("There are %s items marked failed" % len(already_failed))
+                    logger.debug("Looking for %s" % url)
+                    for failed in already_failed:
+                        ratio = fuzz.ratio(url, failed['NZBurl'])
+                        logger.debug("%s%% %s" % (ratio, failed['NZBurl']))
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                 rejected = True

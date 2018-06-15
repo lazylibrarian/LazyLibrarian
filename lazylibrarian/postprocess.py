@@ -884,8 +884,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         q = 'UPDATE wanted SET Status="Failed",DLResult=? WHERE NZBurl=? and Status="Snatched"'
                         myDB.action(q, (dlresult, book['NZBurl']))
                     else:  # don't overwrite dlresult reason for the abort
-                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="ed"'
-                        myDB.action(q, (book['NZBurl']))
+                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="Snatched"'
+                        myDB.action(q, (book['NZBurl'],))
 
                     delete_task(book['Source'], book['DownloadID'], True)
             else:
@@ -1162,7 +1162,7 @@ def getDownloadProgress(source, downloadid):
 
         elif source == 'DELUGEWEBUI':
             progress, message = deluge.getTorrentProgress(downloadid)
-            if message:
+            if message and message != 'OK':
                 myDB = database.DBConnection()
                 cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
                 myDB.action(cmd, (message, downloadid, source))
@@ -1176,7 +1176,7 @@ def getDownloadProgress(source, downloadid):
                 result = client.call('core.get_torrent_status', downloadid, {})
                 if 'percentDone' in result:
                     progress = result['progress']
-                if 'message' in result:
+                if 'message' in result and result['message'] != 'OK':
                     myDB = database.DBConnection()
                     cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
                     myDB.action(cmd, (result['message'], downloadid, source))

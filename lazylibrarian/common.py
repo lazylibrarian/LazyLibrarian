@@ -777,10 +777,10 @@ def logHeader():
 
     try:
         import magic
-    except ImportError:
+    except (ImportError, TypeError):
         try:
             import lib.magic as magic
-        except ImportError:
+        except (ImportError, TypeError):
             magic = None
 
     if magic:
