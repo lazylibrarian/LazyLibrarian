@@ -1192,7 +1192,7 @@ class WebInterface(object):
                 check = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (authorid,))
                 if not check:
                     logger.warn('Unable to set Status to "%s" for "%s"' % (action, authorid))
-                elif action in ["Active", "Wanted", "Paused", "Ignore"]:
+                elif action in ["Active", "Wanted", "Paused", "Ignored"]:
                     myDB.upsert("authors", {'Status': action}, {'AuthorID': authorid})
                     logger.info('Status set to "%s" for "%s"' % (action, check['AuthorName']))
                 elif action == "Delete":
