@@ -52,7 +52,7 @@ CONFIG = {}
 CFG = ''
 DBFILE = None
 COMMIT_LIST = None
-AUTOLOGIN = False
+SHOWLOGOUT = 1
 
 # These are only used in startup
 SCHED = Scheduler()
