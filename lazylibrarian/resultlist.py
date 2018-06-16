@@ -125,8 +125,8 @@ def findBestResult(resultlist, book, searchtype, source):
             # Extra check of failed status...
             if not rejected and lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                 already_failed = myDB.select('SELECT * from wanted WHERE Status="Failed"')
+                logger.debug("There are %s items marked failed" % len(already_failed))
                 if len(already_failed):
-                    logger.debug("There are %s items marked failed" % len(already_failed))
                     logger.debug("Looking for %s" % url)
                     for failed in already_failed:
                         ratio = fuzz.ratio(url, failed['NZBurl'])

@@ -3716,12 +3716,31 @@ class WebInterface(object):
                     # provider needs to be shorter and with spaces for column resizing
                     provider = nrow[3]
                     if provider:
-                        # noinspection PyTypeChecker
-                        if len(provider) > 20:
-                            while len(provider) > 20 and '/' in provider:
-                                provider = provider.split('/', 1)[1]
-                            provider = provider.replace('/', ' ')
-                            nrow[3] = provider
+                        provider = provider.strip('/')
+                        provname = ''
+                        for item in lazylibrarian.NEWZNAB_PROV:
+                            if item['HOST'].strip('/') == provider:
+                                provname = item['DISPNAME']
+                                break
+                        if not provname:
+                            for item in lazylibrarian.TORZNAB_PROV:
+                                if item['HOST'].strip('/') == provider:
+                                    provname = item['DISPNAME']
+                                    break
+
+                        if not provname:
+                            for item in lazylibrarian.RSS_PROV:
+                                if item['HOST'].strip('/') == provider:
+                                    provname = item['DISPNAME']
+                                    break
+                        if not provname:
+                            provname = provider
+
+                        if len(provname) > 20:
+                            while len(provname) > 20 and '/' in provname:
+                                provname = provname.split('/', 1)[1]
+                            provname = provname.replace('/', ' ')
+                        nrow[3] = provname
 
                     if title and provider:
                         if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
@@ -3935,7 +3954,26 @@ class WebInterface(object):
         result = ''
         downloads = myDB.select('SELECT Count,Provider FROM downloads ORDER BY Count DESC')
         for line in downloads:
-            new_entry = "%4d - %s\n" % (line['Count'], line['Provider'])
+            provider = line['Provider'].strip('/')
+            provname = ''
+            for item in lazylibrarian.NEWZNAB_PROV:
+                if item['HOST'].strip('/') == provider:
+                    provname = item['DISPNAME']
+                    break
+            if not provname:
+                for item in lazylibrarian.TORZNAB_PROV:
+                    if item['HOST'].strip('/') == provider:
+                        provname = item['DISPNAME']
+                        break
+            if not provname:
+                for item in lazylibrarian.RSS_PROV:
+                    if item['HOST'].strip('/') == provider:
+                        provname = item['DISPNAME']
+                        break
+            if not provname:
+                provname = provider
+
+            new_entry = "%4d - %s\n" % (line['Count'], provname)
             result = result + new_entry
 
         if result == '':
