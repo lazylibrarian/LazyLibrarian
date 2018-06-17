@@ -35,111 +35,113 @@
 <form accept-charset="UTF-8" action="bookUpdate" method="post">
     <div class="configtable">
         <input name="utf8" type="hidden" value="&#x2713;" />
-        <fieldset>
-            <legend>${title}</legend>
-            <div class="form-group">
-                <label for="moveBook" class="control-label">Change author to: </label>
-                <select id="moveBook" class="moveBook form-control input" name="authorname">
-                %for item in authors:
-                    <option value="${item['AuthorName']}"
-                    %if config['AuthorName'] == item['AuthorName']:
-                        selected = "selected"
-                    %endif
-                    >${item['AuthorName']}</option>
-                %endfor
-                </select>
-            </div>
-
-            <div class="form-group">
-                <input type="text" id="bookid" name="bookid" value="${config['BookID']}" class="hidden">
-            </div>
-            <div class="form-group">
-                <label for="bookname" class="control-label">Book Title:</label>
-                <input type="text" id="bookname" name="bookname" value="${config['BookName']}" class="form-control" placeholder="Book Title">
-            </div>
-            <div class="form-group">
-                <label for="booksub" class="control-label">Subtitle:</label>
-                <input type="text" id="booksub" name="booksub" value="${config['BookSub']}" class="form-control" placeholder="Subtitle">
-            </div>
-            <div class="form-group">
-                <label for="bookgenre" class="control-label">Genre:</label>
-                <input type="text" id="bookgenre" name="bookgenre" value="${config['BookGenre']}" class="form-control" placeholder="Genre">
-            </div>
-            <fieldset  class="form-group">
-              <div class="form-group col-md-6">
-                <label for="booklang" class="control-label">Language:</label>
-                <input type="text" id="booklang" name="booklang" value="${config['BookLang']}" class="form-control" placeholder="Language">
-              </div>
-              <div class="form-group col-md-6">
-                <label for="bookdate" class="control-label">Publication Date:</label>
-                <input type="text" id="bookdate" name="bookdate" value="${config['BookDate']}" class="form-control" placeholder="Publication Date (YYYY or YYYY-MM-DD)">
-              </div>
-            </fieldset>
-            <div class="form-group">
-                %for item in seriesdict:
-                  <div class="form-group col-md-6">
-                    <label for="series[${loop.index}]" class="control-label">
-                    Book Series ${loop.index}</label>
-                    <input type="text" id="series[${loop.index}][name]" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" placeholder="Series Name">
-                  </div>
-                  <div class="form-group col-md-6">
-                    <label for="series[${loop.index}][number]" class="control-label">&nbsp;</label>
-                    <input type="text" id="series[${loop.index}][number]" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" placeholder="Number">
-                  </div>
-                %endfor
-                <div class="form-group col-md-6">
-                <label for="series[new][name]" class="control-label">
-                New Series </label>
-                <input type="text" id="series[new][name]" name="series[new][name]" value="" class="form-control" placeholder="Series Name">
-                </div>
-                <div class="form-group col-md-6">
-                <label for="series[new][name]" class="control-label">&nbsp;</label>
-                <input type="text" id="series[new][number]" name="series[new][number]" value="" class="form-control" placeholder="Number">
-                </div>
-            </div>
-        <div class="table-responsive">
-          <table class="display table table-bordered" id="book_table">
-            <thead>
-              <tr>
-              </tr>
-            </thead>
-            <tbody>
-            <tr>
-            %for item in covers:
-                <td class="bookart text-center"><a href="${item[1]}" target="_blank" rel="noreferrer"><img src="${item[1]}" alt="cover" class="bookcover-sm"></a><br>${item[0]}</td>
+        <legend>${title}</legend>
+        <div class="form-group">
+            <label for="moveBook" class="control-label">Change author to: </label>
+            <select id="moveBook" class="moveBook form-control input" name="authorname">
+            %for item in authors:
+                <option value="${item['AuthorName']}"
+                %if config['AuthorName'] == item['AuthorName']:
+                    selected = "selected"
+                %endif
+                >${item['AuthorName']}</option>
             %endfor
-            </tr>
-            </tbody>
-          </table>
-            <div class="form-group">
-                <label for="changeCover" class="control-label">Change cover to: </label>
-                <select id="changeCover" class="changeCover form-control input" name="cover">
-                %for item in covers:
-                    <option value="${item[0]}"
-                    %if item[0] == 'current':
-                        selected = "selected"
-                    %endif
-                    >${item[0]}</option>
-                %endfor
-                </select>
-            </div>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="bookid" name="bookid" value="${config['BookID']}" class="hidden">
+        </div>
+        <div class="form-group">
+            <label for="bookname" class="control-label">Book Title:</label>
+            <input type="text" id="bookname" name="bookname" value="${config['BookName']}" class="form-control" placeholder="Book Title">
+        </div>
+        <div class="form-group">
+            <label for="booksub" class="control-label">Subtitle:</label>
+            <input type="text" id="booksub" name="booksub" value="${config['BookSub']}" class="form-control" placeholder="Subtitle">
+        </div>
+        <div class="form-group">
+            <label for="bookgenre" class="control-label">Genre:</label>
+            <input type="text" id="bookgenre" name="bookgenre" value="${config['BookGenre']}" class="form-control" placeholder="Genre">
+        </div>
+        <fieldset  class="form-group">
+          <div class="form-group col-md-6">
+            <label for="booklang" class="control-label">Language:</label>
+            <input type="text" id="booklang" name="booklang" value="${config['BookLang']}" class="form-control" placeholder="Language">
+          </div>
+          <div class="form-group col-md-6">
+            <label for="bookdate" class="control-label">Publication Date:</label>
+            <input type="text" id="bookdate" name="bookdate" value="${config['BookDate']}" class="form-control" placeholder="Publication Date (YYYY or YYYY-MM-DD)">
+          </div>
         </fieldset>
-            <div class="checkbox">
-                <%
-                    if config['Manual'] == "1":
-                        checked = 'checked="checked"'
-                    else:
-                        checked = ''
-                %>
-<label for="manual" class="control-label">
-  <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
-  Lock settings</label>
-</div>
-<div class="table_wrapper_button">
-  <input type="submit" value="Save changes" id="add" class="btn btn-primary">
-</div>
-<p>&nbsp;</p>
-</div>
+        <div class="form-group">
+            %for item in seriesdict:
+              <div class="form-group col-md-6">
+                <label for="series[${loop.index}]" class="control-label">
+                Book Series ${loop.index}</label>
+                <input type="text" id="series[${loop.index}][name]" name="series[${loop.index}][name]" value="${item['SeriesName']}" class="form-control" placeholder="Series Name">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="series[${loop.index}][number]" class="control-label">&nbsp;</label>
+                <input type="text" id="series[${loop.index}][number]" name="series[${loop.index}][number]" value="${item['SeriesNum']}" class="form-control" placeholder="Number">
+              </div>
+            %endfor
+            <div class="form-group col-md-6">
+            <label for="series[new][name]" class="control-label">
+            New Series </label>
+            <input type="text" id="series[new][name]" name="series[new][name]" value="" class="form-control" placeholder="Series Name">
+            </div>
+            <div class="form-group col-md-6">
+            <label for="series[new][name]" class="control-label">&nbsp;</label>
+            <input type="text" id="series[new][number]" name="series[new][number]" value="" class="form-control" placeholder="Number">
+            </div>
+        </div>
+        <div class="form-group">
+            <table class="display table table-bordered" id="book_table">
+              <thead>
+                <tr>
+                %for item in covers:
+                  <th class="bookart text-center no-sort">${item[0]}</th>
+                %endfor
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                %for item in covers:
+                  <td class="bookart text-center"><a href="${item[1]}" target="_blank" rel="noreferrer"><img src="${item[1]}" alt="cover" class="bookcover-sm"></a><br></td>
+                %endfor
+                </tr>
+              </tbody>
+            </table>
+        </div>
+        <div class="form-group">
+            <label for="changeCover" class="control-label">Change cover to: </label>
+            <select id="changeCover" class="changeCover form-control input" name="cover">
+            %for item in covers:
+                <option value="${item[0]}"
+                %if item[0] == 'current':
+                    selected = "selected"
+                %endif
+                >${item[0]}</option>
+            %endfor
+            </select>
+        </div>
+        <div class="checkbox">
+            <%
+                if config['Manual'] == "1":
+                    checked = 'checked="checked"'
+                else:
+                    checked = ''
+            %>
+            <label for="manual" class="control-label">
+            <input type="checkbox" id="manual" name="manual" value="1" ${checked} />
+            Lock settings</label>
+        </div>
+        <div class="table_wrapper_button">
+          <input type="submit" value="Save changes" id="add" class="btn btn-primary">
+        </div>
+        <p>&nbsp;</p>
+    </div>
 </form>
 </%def>
 <%def name="javascriptIncludes()">
