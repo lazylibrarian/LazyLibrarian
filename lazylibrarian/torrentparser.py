@@ -300,6 +300,10 @@ def WWT(book=None, test=False):
             if '404' in result:
                 logger.debug("No results found from %s for %s" % (provider, sterm))
                 success = True
+            elif '503' in result:
+                logger.warn("Cloudflare bot detection? %s: %s" % (provider, result))
+                logger.warn("Try unblocking %s from a browser" % providerurl)
+                success = True
             else:
                 logger.debug(searchURL)
                 logger.debug('Error fetching data from %s: %s' % (provider, result))
