@@ -118,19 +118,30 @@ def findBestResult(resultlist, book, searchtype, source):
             if not rejected and lazylibrarian.CONFIG['BLACKLIST_PROCESSED']:
                 already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=?', (url,))
                 if already_failed:
-                    logger.debug("Rejecting %s, blacklisted (Processed) at %s" %
-                                 (resultTitle, already_failed['NZBprov']))
+                    logger.debug("Rejecting %s, blacklisted (%s) at %s" %
+                                 (resultTitle, already_failed['Status'], already_failed['NZBprov']))
                     rejected = True
             #
-            # Extra check of failed status...
+            # Extra debugging check of history entries, but only fairly close matches...
             if not rejected and lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
-                already_failed = myDB.select('SELECT * from wanted WHERE Status="Failed"')
-                logger.debug("There are %s items marked failed" % len(already_failed))
-                if len(already_failed):
-                    logger.debug("Looking for %s" % url)
-                    for failed in already_failed:
-                        ratio = fuzz.ratio(url, failed['NZBurl'])
-                        logger.debug("%s%% %s" % (ratio, failed['NZBurl']))
+                score = (Book_match + Author_match) / 2
+                if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
+                    logger.debug("No extended history check, only %s%% match" % score)
+                else:
+                    history = myDB.select('SELECT * from wanted')
+                    logger.debug("There are %s items in history" % len(history))
+                    if len(history):
+                        logger.debug("Looking for %s: %s" % (resultTitle, url))
+                        cnt = 1
+                        for item in history:
+                            ratio = fuzz.ratio(url, item['NZBurl'])
+                            logger.debug("%s: %s%% %s: %s" % (cnt, ratio, item['NZBtitle'], item['NZBurl']))
+                            cnt += 1
+                            if ratio == 100:
+                                logger.debug("Found ratio 100 %s, (%s) at %s" %
+                                             (resultTitle, history['Status'], history['NZBprov']))
+                                # rejected = True
+                                # break
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                 rejected = True
