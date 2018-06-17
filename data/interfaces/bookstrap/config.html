@@ -11,7 +11,7 @@
       %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
       <a class="button btn btn-sm btn-primary" href="userAdmin" data-toggle="tooltip" data-placement="bottom" title="Manage user accounts"><i class="fa fa-user"></i> User Admin</a>
       %endif
-     <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Testing, please wait...</button>
+     <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Checking, please wait...</button>
   </div>
 </%def>
 <%def name="body()">
@@ -4116,7 +4116,9 @@
 
        $('#checkforupdates').on('click', function(e) {
             eraseCookie("ignoreUpdate");
+            $("#myAlert").removeClass('hidden');
             $.get('checkForUpdates', function(data) {
+                $("#myAlert").addClass('hidden');
                 bootbox.dialog({
                     title: 'Check Version',
                     message: '<pre>'+data+'</pre>',
