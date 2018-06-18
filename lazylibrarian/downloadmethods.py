@@ -108,8 +108,6 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
         return True
     else:
         logger.error('Failed to send nzb to @ <a href="%s">%s</a>' % (nzburl, Source))
-        dlresult = "Failed to send nzb to %s" % Source
-        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, nzburl))
         return False
 
 

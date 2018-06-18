@@ -1516,6 +1516,9 @@ class WebInterface(object):
                 custom_notify_snatch("%s %s" % (bookid, library))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 scheduleJob(action='Start', target='processDir')
+            else:
+                myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
+                            ("%s DownloadMethod failed, see log" % mode, url))
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
             logger.debug('snatchBook Invalid bookid [%s]' % bookid)
@@ -3506,10 +3509,14 @@ class WebInterface(object):
             netloc = cherrypy.request.headers['X-Forwarded-Host']
         except KeyError:
             pass
+        try:
+            reqfor = cherrypy.request.headers['X-Forwarded-For']
+        except KeyError:
+            reqfor = '???'
         filename = 'LazyLibrarian_RSS_' + ftype + '.xml'
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
-        logger.info("RSS Feed request %s %s%s" % (limit, ftype, plural(limit)))
+        logger.debug("RSS Feed request %s %s%s: %s %s" % (limit, ftype, plural(limit), reqfor, userid))
         cherrypy.response.headers["Content-Type"] = 'application/rss+xml'
         cherrypy.response.headers["Content-Disposition"] = 'attachment; filename="%s"' % filename
         res = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)

@@ -185,7 +185,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     "NZBtitle": resultTitle,
                     "NZBmode": mode,
                     "AuxInfo": auxinfo,
-                    "Status": "Skipped"
+                    "Status": "Matched"
                 }
 
                 score = (Book_match + Author_match) / 2  # as a percentage
@@ -300,6 +300,9 @@ def downloadResult(match, book):
             # either sleep for a while, or unblock the one with the lowest counter.
             scheduleJob(action='Start', target='processDir')
             return 2  # we found it
+        else:
+            myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
+                        ("%s DownloadMethod failed, see log" % newValueDict['NZBmode'], controlValueDict["NZBurl"]))
         return 0
     except Exception:
         logger.error('Unhandled exception in downloadResult: %s' % traceback.format_exc())
