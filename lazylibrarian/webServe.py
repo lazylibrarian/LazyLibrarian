@@ -3509,14 +3509,20 @@ class WebInterface(object):
             netloc = cherrypy.request.headers['X-Forwarded-Host']
         except KeyError:
             pass
-        try:
-            reqfor = cherrypy.request.headers['X-Forwarded-For']
-        except KeyError:
-            reqfor = '???'
+        
+        if 'X-Forwarded-For' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
+        elif 'X-Host' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
+        elif 'Host' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['Host']  # nginx
+        else:
+            remote_ip = cherrypy.request.remote.ip
+        
         filename = 'LazyLibrarian_RSS_' + ftype + '.xml'
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
-        logger.debug("RSS Feed request %s %s%s: %s %s" % (limit, ftype, plural(limit), reqfor, userid))
+        logger.debug("RSS Feed request %s %s%s: %s %s" % (limit, ftype, plural(limit), remote_ip, userid))
         cherrypy.response.headers["Content-Type"] = 'application/rss+xml'
         cherrypy.response.headers["Content-Disposition"] = 'attachment; filename="%s"' % filename
         res = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
