@@ -449,6 +449,8 @@ def calibredb(cmd=None, prelib=None, postlib=None):
                 logger.warn("calibredb returned Errno 13: Permission denied")
             elif cmd == 'list_categories' and len(res):
                 rc = 0  # false error return of 1 on v2.xx calibredb
+        if 'already exist' in err:
+            dest_url = err
     except Exception as e:
         logger.error("calibredb exception: %s %s" % (type(e).__name__, str(e)))
         rc = 1

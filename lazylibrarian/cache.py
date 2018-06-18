@@ -46,7 +46,13 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
         headers = {'User-Agent': USER_AGENT}
     proxies = proxyList()
     try:
-        timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+        # jackett query all indexers needs a longer timeout
+        # /torznab/all/api?q=  or v2.0/indexers/all/results/torznab/api?q=
+        if '/torznab/' in URL and ('/all/' in URL or '/aggregate/' in URL):
+            timeout = check_int(lazylibrarian.CONFIG['HTTP_EXT_TIMEOUT'], 90)
+        else:
+            timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
+
         r = requests.get(URL, headers=headers, timeout=timeout, proxies=proxies)
 
         if str(r.status_code).startswith('2'):  # (200 OK etc)

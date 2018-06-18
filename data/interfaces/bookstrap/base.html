@@ -127,7 +127,7 @@
                 <!--li><a href="home" class="navbarele">Authors</a></li-->
                 %if perm > 0:
                   %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
-                    %if lazylibrarian.AUTOLOGIN != True:
+                    %if lazylibrarian.SHOWLOGOUT == 1:
                       <li><a href="logout" class="navbarele" id="logout">Logout</a></li>
                     %endif
                     %if perm&lazylibrarian.perm_config == 0:

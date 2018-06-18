@@ -103,7 +103,9 @@ def serve_template(templatename, **kwargs):
                 res = myDB.match('SELECT UserName,Perms,UserID from users')
                 cherrypy.response.cookie['ll_uid'] = res['UserID']
                 logger.debug("Auto-login for %s" % res['UserName'])
-                lazylibrarian.AUTOLOGIN = True
+                lazylibrarian.SHOWLOGOUT = 0
+            else:
+                lazylibrarian.SHOWLOGOUT = 1
         if res:
             perm = check_int(res['Perms'], 0)
             username = res['UserName']
@@ -399,6 +401,7 @@ class WebInterface(object):
             # successfully logged in, clear any failed attempts
             lazylibrarian.USER_BLOCKLIST[:] = [x for x in lazylibrarian.USER_BLOCKLIST if not x[0] == username]
             logger.debug("User %s logged in" % username)
+            lazylibrarian.SHOWLOGOUT = 1
             return ''
         elif res:
             # anti-phishing. Block user if 3 failed passwords in a row.
@@ -540,6 +543,9 @@ class WebInterface(object):
                                   md5_utf8(kwargs['password']), kwargs['email'], perms))
                 msg = "New user added: %s: %s" % (kwargs['username'], perm_msg)
                 msg += "<br>Email sent to %s" % kwargs['email']
+                cnt = myDB.match("select count(*) as counter from users")
+                if cnt['counter'] > 1:
+                    lazylibrarian.SHOWLOGOUT = 1
             else:
                 msg = "New user NOT added"
                 msg += "<br>Failed to send email to %s" % kwargs['email']
@@ -591,6 +597,21 @@ class WebInterface(object):
                 if details['BookType'] != kwargs['booktype']:
                     changes += ' BookType'
                     myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
+
+                if details['Perms'] != kwargs['perms']:
+                    oldperm = check_int(details['Perms'], 0)
+                    newperm = check_int(kwargs['perms'], 0)
+                    if oldperm & 1 and not newperm & 1:
+                        count = 0
+                        perms = myDB.select('SELECT Perms from users')
+                        for item in perms:
+                            val = check_int(item['Perms'], 0)
+                            if val & 1:
+                                count += 1
+                        if count < 2:
+                            return "Unable to remove last administrator"
+                    changes += ' Perms'
+                    myDB.action('UPDATE users SET Perms=? WHERE UserID=?', (kwargs['perms'], userid))
 
                 if changes:
                     return 'Updated user details:%s' % changes
@@ -1495,6 +1516,9 @@ class WebInterface(object):
                 custom_notify_snatch("%s %s" % (bookid, library))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 scheduleJob(action='Start', target='processDir')
+            else:
+                myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
+                            ("%s DownloadMethod failed, see log" % mode, url))
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
             logger.debug('snatchBook Invalid bookid [%s]' % bookid)
@@ -3487,10 +3511,20 @@ class WebInterface(object):
             netloc = cherrypy.request.headers['X-Forwarded-Host']
         except KeyError:
             pass
+        
+        if 'X-Forwarded-For' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
+        elif 'X-Host' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
+        elif 'Host' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['Host']  # nginx
+        else:
+            remote_ip = cherrypy.request.remote.ip
+        
         filename = 'LazyLibrarian_RSS_' + ftype + '.xml'
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
-        logger.info("RSS Feed request %s %s%s" % (limit, ftype, plural(limit)))
+        logger.debug("RSS Feed request %s %s%s: %s %s" % (limit, ftype, plural(limit), remote_ip, userid))
         cherrypy.response.headers["Content-Type"] = 'application/rss+xml'
         cherrypy.response.headers["Content-Disposition"] = 'attachment; filename="%s"' % filename
         res = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
@@ -3697,12 +3731,31 @@ class WebInterface(object):
                     # provider needs to be shorter and with spaces for column resizing
                     provider = nrow[3]
                     if provider:
-                        # noinspection PyTypeChecker
-                        if len(provider) > 20:
-                            while len(provider) > 20 and '/' in provider:
-                                provider = provider.split('/', 1)[1]
-                            provider = provider.replace('/', ' ')
-                            nrow[3] = provider
+                        provider = provider.strip('/')
+                        provname = ''
+                        for item in lazylibrarian.NEWZNAB_PROV:
+                            if item['HOST'].strip('/') == provider:
+                                provname = item['DISPNAME']
+                                break
+                        if not provname:
+                            for item in lazylibrarian.TORZNAB_PROV:
+                                if item['HOST'].strip('/') == provider:
+                                    provname = item['DISPNAME']
+                                    break
+
+                        if not provname:
+                            for item in lazylibrarian.RSS_PROV:
+                                if item['HOST'].strip('/') == provider:
+                                    provname = item['DISPNAME']
+                                    break
+                        if not provname:
+                            provname = provider
+
+                        if len(provname) > 20:
+                            while len(provname) > 20 and '/' in provname:
+                                provname = provname.split('/', 1)[1]
+                            provname = provname.replace('/', ' ')
+                        nrow[3] = provname
 
                     if title and provider:
                         if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
@@ -3916,7 +3969,26 @@ class WebInterface(object):
         result = ''
         downloads = myDB.select('SELECT Count,Provider FROM downloads ORDER BY Count DESC')
         for line in downloads:
-            new_entry = "%4d - %s\n" % (line['Count'], line['Provider'])
+            provider = line['Provider'].strip('/')
+            provname = ''
+            for item in lazylibrarian.NEWZNAB_PROV:
+                if item['HOST'].strip('/') == provider:
+                    provname = item['DISPNAME']
+                    break
+            if not provname:
+                for item in lazylibrarian.TORZNAB_PROV:
+                    if item['HOST'].strip('/') == provider:
+                        provname = item['DISPNAME']
+                        break
+            if not provname:
+                for item in lazylibrarian.RSS_PROV:
+                    if item['HOST'].strip('/') == provider:
+                        provname = item['DISPNAME']
+                        break
+            if not provname:
+                provname = provider
+
+            new_entry = "%4d - %s\n" % (line['Count'], provname)
             result = result + new_entry
 
         if result == '':

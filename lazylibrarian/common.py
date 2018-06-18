@@ -37,6 +37,7 @@ except ImportError:
 import re
 import ssl
 import sqlite3
+import cherrypy
 
 try:
     import requests
@@ -729,6 +730,7 @@ def logHeader():
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
     header += "requests: %s\n" % getattr(requests, '__version__', None)
+    header += "cherrypy: %s\n" % getattr(cherrypy, '__version__', None)
     if not lazylibrarian.GROUP_CONCAT:
         # 3.5.4 is the earliest version with GROUP_CONCAT which we use, but is not essential
         header += 'sqlite3: missing required functionality. Try upgrading to v3.5.4 or newer. You have '

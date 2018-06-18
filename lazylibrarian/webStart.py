@@ -19,7 +19,9 @@ import lib.cherrypy_cors as cherrypy_cors
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
-
+cp_ver = getattr(cherrypy, '__version__', None)
+if cp_ver and int(cp_ver.split('.')[0]) >= 10:
+    import portend
 
 def initialize(options=None):
     if options is None:
@@ -121,9 +123,13 @@ def initialize(options=None):
     cherrypy.engine.autoreload.subscribe()
 
     try:
-        cherrypy.process.servers.check_port(str(options['http_host']), options['http_port'])
+        if cp_ver and int(cp_ver.split('.')[0]) >= 10:
+            portend.Checker().assert_free(str(options['http_host']), options['http_port'])
+        else:
+            cherrypy.process.servers.check_port(str(options['http_host']), options['http_port'])
         cherrypy.server.start()
-    except IOError:
+    except Exception as e:
+        print(str(e))
         print('Failed to start on port: %i. Is something else running?' % (options['http_port']))
         sys.exit(1)
 

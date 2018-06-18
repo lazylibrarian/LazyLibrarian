@@ -78,12 +78,13 @@
 
 <%def name="body()">
 <div class="row">
+    %if lazylibrarian.CONFIG['AUTHOR_IMG']:
     <div id="authorart_container" class="col-md-3">
         <div id="authorart_menu">
             <img src="${author['AuthorImg']}" class="box-shadow img-responsive" alt="${author['AuthorName']}" title="${author['AuthorName']}">
         </div>
     </div>
-
+    %endif
     <div id="authorhead_container" class="col-md-9">
         <div id="authorhead_menu">
             <h1><a href="${author['AuthorLink']}" target="_blank" rel="noreferrer">${author['AuthorName']}</a>

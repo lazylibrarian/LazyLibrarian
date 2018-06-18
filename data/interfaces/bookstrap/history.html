@@ -5,10 +5,12 @@
 <%def name="headerIncludes()">
     <div id="subhead_container">
         <div id="subhead_menu">
+          %if perm&lazylibrarian.perm_status:
             <a href="clearhistory?status=all" class="button btn btn-sm btn-primary"><i class="far fa-square"></i> Clear All History</a>
             <a href="clearhistory?status=Processed" class="button btn btn-sm btn-primary"><i class="fa fa-check-square"></i> Clear Processed</a>
             <a href="clearhistory?status=Snatched" class="button btn btn-sm btn-primary"><i class="fa fa-plus-square"></i> Clear Snatched</a>
             <a href="clearhistory?status=Failed" class="button btn btn-sm btn-primary"><i class="fa fa-minus-square"></i> Clear Failed</a>
+          %endif
             <button class="button btn btn-sm btn-primary" type="button" value="showdownloads" id="showdownloads"><i class="fa fa-list-ol"></i> Download Count</button>
         </div>
     </div>
@@ -82,11 +84,13 @@
                     title: 'Successful Downloads',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
+                        %if perm&lazylibrarian.perm_status:
                         prompt: {
                             label: "Clear Counters",
                             className: 'btn-danger',
                             callback: function(){ $.get("cleardownloads", function(e) {}); }
                         },
+                        %endif
                         primary: {
                             label: "Close",
                             className: 'btn-primary'
@@ -114,8 +118,12 @@
                         return '<div class="text-right">' + data + '</div>';} },
                     { targets: [6], 'render': function(data, type, row) {
                         if ( row[9] <= 0 ) {
+                          %if perm&lazylibrarian.perm_status:
                             bar = '<button onclick="dlinfo(\'' + data + '^' + row[10] +
                             '\')" class="button btn btn-xs btn-primary" type="button">' + data + '</button>'
+                          %else:
+                            bar = data;
+                          %endif
                         }
                         else {
                             if ( row[9] <= 25 ) { css = 'danger' }

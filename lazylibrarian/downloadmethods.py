@@ -108,8 +108,6 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
         return True
     else:
         logger.error('Failed to send nzb to @ <a href="%s">%s</a>' % (nzburl, Source))
-        dlresult = "Failed to send nzb to %s" % Source
-        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, nzburl))
         return False
 
 
@@ -365,7 +363,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         Source = "TRANSMISSION"
         if torrent:
             logger.debug("Sending %s data to Transmission" % tor_title)
-            downloadID = transmission.addTorrent(None, metainfo=b64encode(torrent))
+            # transmission needs b64encoded metainfo to be unicode, not bytes
+            downloadID = transmission.addTorrent(None, metainfo=makeUnicode(b64encode(torrent)))
         else:
             logger.debug("Sending %s url to Transmission" % tor_title)
             downloadID = transmission.addTorrent(tor_url)  # returns id or False

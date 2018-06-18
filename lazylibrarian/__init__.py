@@ -52,7 +52,7 @@ CONFIG = {}
 CFG = ''
 DBFILE = None
 COMMIT_LIST = None
-AUTOLOGIN = False
+SHOWLOGOUT = 1
 
 # These are only used in startup
 SCHED = Scheduler()
@@ -165,7 +165,7 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
-                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH']
+                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES',
@@ -210,6 +210,7 @@ CONFIG_DEFINITIONS = {
     'HTTPS_CERT': ('str', 'General', ''),
     'HTTPS_KEY': ('str', 'General', ''),
     'HTTP_TIMEOUT': ('int', 'General', 30),
+    'HTTP_EXT_TIMEOUT': ('int', 'General', 90),
     'BOOKSTRAP_THEME': ('str', 'General', 'slate'),
     'MAG_SINGLE': ('bool', 'General', 1),
     'AUTHOR_IMG': ('bool', 'General', 1),

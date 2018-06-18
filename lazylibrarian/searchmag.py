@@ -492,6 +492,10 @@ def search_magazines(mags=None, reset=False):
                         notify_snatch("Magazine %s from %s at %s" %
                                       (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                         scheduleJob(action='Start', target='processDir')
+                    else:
+                        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', 
+                                    ("%s DownloadMethod failed, see log" % magazine['nzbmode'], 
+                                     magazine["nzburl"]))
 
         if reset:
             scheduleJob(action='Restart', target='search_magazines')
