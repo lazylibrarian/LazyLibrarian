@@ -272,7 +272,7 @@ def addTorrent(link, hashid):
 
     # noinspection PyProtectedMember
     if qbclient._command('command/download', args, 'multipart/form-data'):
-        return True
+        return True, ''
     # sometimes returns "Fails." when it hasn't failed, so look if hashid was added correctly
     logger.debug("qBittorrent: addTorrent thinks it failed")
     time.sleep(2)
@@ -280,9 +280,10 @@ def addTorrent(link, hashid):
     torrents = qbclient._get_list()
     if hashid.upper() in str(torrents).upper():
         logger.debug("qBittorrent: hashid found in torrent list, assume success")
-        return True
-    logger.debug("qBittorrent: hashid not found in torrent list, addTorrent failed")
-    return False
+        return True, ''
+    res = "qBittorrent: hashid not found in torrent list, addTorrent failed"
+    logger.debug(res)
+    return False, res
 
 
 def addFile(data):

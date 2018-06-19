@@ -26,11 +26,11 @@ from lib.six.moves.urllib_parse import urlencode
 
 def checkLink():
     # connection test, check host/port
-    auth = SABnzbd(nzburl='auth')
+    auth, _ = SABnzbd(nzburl='auth')
     if not auth:
         return "Unable to talk to SABnzbd, check HOST/PORT/SUBDIR"
     # check apikey is valid
-    cats = SABnzbd(nzburl='get_cats')  # type: dict
+    cats, _ = SABnzbd(nzburl='get_cats')  # type: dict
     if not cats:
         return "Unable to talk to SABnzbd, check APIKEY"
     # check category exists
@@ -46,14 +46,16 @@ def checkLink():
 def SABnzbd(title=None, nzburl=None, remove_data=False):
 
     if nzburl in ['delete', 'delhistory'] and title == 'unknown':
-        logger.debug('%s function unavailable in this version of sabnzbd, no nzo_ids' % nzburl)
-        return False
+        res = '%s function unavailable in this version of sabnzbd, no nzo_ids' % nzburl
+        logger.debug(res)
+        return False, res
 
     hostname = lazylibrarian.CONFIG['SAB_HOST']
     port = check_int(lazylibrarian.CONFIG['SAB_PORT'], 0)
     if not hostname or not port:
-        logger.error('Invalid sabnzbd host or port, check your config')
-        return False
+        res = 'Invalid sabnzbd host or port, check your config'
+        logger.error(res)
+        return False, res
 
     if hostname.endswith('/'):
         hostname = hostname[:-1]
@@ -157,8 +159,9 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         r = requests.get(URL, timeout=timeout, proxies=proxies)
         result = r.json()
     except requests.exceptions.Timeout:
-        logger.error("Timeout connecting to SAB with URL: %s" % URL)
-        return False
+        res = "Timeout connecting to SAB with URL: %s" % URL
+        logger.error(res)
+        return False, res
     except Exception as e:
         if hasattr(e, 'reason'):
             errmsg = e.reason
@@ -167,25 +170,28 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         else:
             errmsg = str(e)
 
-        logger.error("Unable to connect to SAB with URL: %s, %s" % (URL, errmsg))
-        return False
+        res = "Unable to connect to SAB with URL: %s, %s" % (URL, errmsg)
+        logger.error(res)
+        return False, res
     if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
         logger.debug("Result text from SAB: " + str(result))
 
     if title:
         title = unaccented_str(title)
         if title.startswith('LL.('):
-            return result
+            return result, ''
     if result['status'] is True:
         logger.info("%s sent to SAB successfully." % title)
         # sab versions earlier than 0.8.0 don't return nzo_ids
         if 'nzo_ids' in result:
             if result['nzo_ids']:  # check its not empty
-                return result['nzo_ids'][0]
+                return result['nzo_ids'][0], ''
         return 'unknown'
     elif result['status'] is False:
-        logger.error("SAB returned Error: %s" % result['error'])
-        return False
+        res = "SAB returned Error: %s" % result['error']
+        logger.error(res)
+        return False, res
     else:
-        logger.error("Unknown error: " + str(result))
-        return False
+        res = "Unknown error: %s" % str(result)
+        logger.error(res)
+        return False, res

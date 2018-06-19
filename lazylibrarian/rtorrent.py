@@ -57,7 +57,7 @@ def getServer():
 def addTorrent(tor_url, hashID):
     server = getServer()
     if server is False:
-        return False
+        return False, 'rTorrent unable to connect to server'
 
     directory = lazylibrarian.CONFIG['RTORRENT_DIR']
 
@@ -98,8 +98,9 @@ def addTorrent(tor_url, hashID):
 
     except Exception as e:
         # socket.setdefaulttimeout(None)  # reset timeout if failed
-        logger.error("rTorrent Error: %s: %s" % (type(e).__name__, str(e)))
-        return False
+        res = "rTorrent Error: %s: %s" % (type(e).__name__, str(e))
+        logger.error(res)
+        return False, res
 
     # For each torrent in the main view
     mainview = server.download_list("", "main")
@@ -121,8 +122,8 @@ def addTorrent(tor_url, hashID):
                 logger.debug('rtorrent downloading %s to %s with label %s' % (name, directory, label))
             else:
                 logger.debug('rtorrent downloading %s to %s' % (name, directory))
-            return hashID
-    return False  # not found
+            return hashID, ''
+    return False, 'rTorrent hashid not found'
 
 
 def getName(hashID):

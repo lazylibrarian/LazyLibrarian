@@ -44,10 +44,10 @@ def addTorrent(link, directory=None, metainfo=None):
         arguments['download-dir'] = directory
 
     logger.debug('addTorrent args(%s)' % arguments)
-    response = torrentAction(method, arguments)  # type: dict
+    response, res = torrentAction(method, arguments)  # type: dict
 
     if not response:
-        return False
+        return False, res
 
     if response['result'] == 'success':
         if 'torrent-added' in response['arguments']:
@@ -56,13 +56,13 @@ def addTorrent(link, directory=None, metainfo=None):
             retid = response['arguments']['torrent-duplicate']['id']
         else:
             retid = False
+        if retid:
+            logger.debug("Torrent sent to Transmission successfully")
+            return retid, ''
 
-        logger.debug("Torrent sent to Transmission successfully")
-        return retid
-
-    else:
-        logger.debug('Transmission returned status %s' % response['result'])
-        return False
+    res = 'Transmission returned status %s' % response['result']
+    logger.debug(res)
+    return False, res
 
 
 def getTorrentFolder(torrentid):  # uses hashid
@@ -70,7 +70,7 @@ def getTorrentFolder(torrentid):  # uses hashid
     arguments = {'ids': [torrentid], 'fields': ['name', 'percentDone']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)  # type: dict
+        response, _ = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
             percentdone = response['arguments']['torrents'][0]['percentDone']
             if percentdone:
@@ -91,7 +91,7 @@ def getTorrentFolderbyID(torrentid):  # uses transmission id
     arguments = {'fields': ['name', 'percentDone', 'id']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)  # type: dict
+        response, _ = torrentAction(method, arguments)  # type: dict
         if response and len(response['arguments']['torrents']):
             tor = 0
             while tor < len(response['arguments']['torrents']):
@@ -117,7 +117,7 @@ def getTorrentFiles(torrentid):  # uses hashid
     arguments = {'ids': [torrentid], 'fields': ['id', 'files']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)  # type: dict
+        response, _ = torrentAction(method, arguments)  # type: dict
         if response:
             if len(response['arguments']['torrents'][0]['files']):
                 return response['arguments']['torrents'][0]['files']
@@ -137,7 +137,7 @@ def getTorrentProgress(torrentid):  # uses hashid
     arguments = {'ids': [torrentid], 'fields': ['id', 'percentDone', 'errorString']}
     retries = 3
     while retries:
-        response = torrentAction(method, arguments)  # type: dict
+        response, _ = torrentAction(method, arguments)  # type: dict
         if response:
             try:
                 if len(response['arguments']['torrents'][0]):
@@ -173,7 +173,7 @@ def setSeedRatio(torrentid, ratio):
     else:
         arguments = {'seedRatioMode': 2, 'ids': [torrentid]}
 
-    response = torrentAction(method, arguments)  # type: dict
+    response, _ = torrentAction(method, arguments)  # type: dict
     if not response:
         return False
 
@@ -183,7 +183,7 @@ def removeTorrent(torrentid, remove_data=False):
     method = 'torrent-get'
     arguments = {'ids': [torrentid], 'fields': ['isFinished', 'name']}
 
-    response = torrentAction(method, arguments)  # type: dict
+    response, _ = torrentAction(method, arguments)  # type: dict
     if not response:
         return False
 
@@ -198,7 +198,7 @@ def removeTorrent(torrentid, remove_data=False):
                 arguments = {'delete-local-data': True, 'ids': [torrentid]}
             else:
                 arguments = {'ids': [torrentid]}
-            _ = torrentAction(method, arguments)
+            _, _ = torrentAction(method, arguments)
             return True
         else:
             logger.debug('%s has not finished seeding yet, torrent will not be removed' % name)
@@ -217,7 +217,7 @@ def checkLink():
     method = 'session-stats'
     arguments = {}
     session_id = None
-    response = torrentAction(method, arguments)  # type: dict
+    response, _ = torrentAction(method, arguments)  # type: dict
     if response:
         if response['result'] == 'success':
             # does transmission handle labels?
@@ -239,8 +239,9 @@ def torrentAction(method, arguments):
         port = check_int(lazylibrarian.CONFIG['TRANSMISSION_PORT'], 0)
 
         if not host or not port:
-            logger.error('Invalid transmission host or port, check your config')
-            return False
+            res = 'Invalid transmission host or port, check your config'
+            logger.error(res)
+            return False, res
 
         if not host.startswith("http://") and not host.startswith("https://"):
             host = 'http://' + host
@@ -273,22 +274,25 @@ def torrentAction(method, arguments):
     else:
         response = requests.get(host_url, auth=auth, proxies=proxies, timeout=timeout)
         if response is None:
-            logger.error("Error getting Transmission session ID")
-            return
+            res = "Error getting Transmission session ID"
+            logger.error(res)
+            return False, res
 
         # Parse response
         if response.status_code == 401:
             if auth:
-                logger.error("Username and/or password not accepted by Transmission")
+                res = "Username and/or password not accepted by Transmission"
             else:
-                logger.error("Transmission authorization required")
-            return
+                res = "Transmission authorization required"
+            logger.error(res)
+            return False, res
         elif response.status_code == 409:
             session_id = response.headers['x-transmission-session-id']
 
         if not session_id:
-            logger.error("Expected a Session ID from Transmission, got %s" % response.status_code)
-            return
+            res = "Expected a Session ID from Transmission, got %s" % response.status_code
+            logger.error(res)
+            return False, res
 
     # Prepare next request
     headers = {'x-transmission-session-id': session_id}
@@ -303,15 +307,18 @@ def torrentAction(method, arguments):
             response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
                                      auth=auth, timeout=timeout)
         if not str(response.status_code).startswith('2'):
-            logger.error("Expected a response from Transmission, got %s" % response.status_code)
-            return
+            res = "Expected a response from Transmission, got %s" % response.status_code
+            logger.error(res)
+            return False, res
         try:
             res = response.json()
         except ValueError:
-            logger.error("Expected json, Transmission returned %s" % response.text)
-            res = ''
-        return res
+            res = "Expected json, Transmission returned %s" % response.text
+            logger.error(res)
+            return False, res
+        return res, ''
 
     except Exception as e:
-        logger.error('Transmission %s: %s' % (type(e).__name__, str(e)))
-        return
+        res = 'Transmission %s: %s' % (type(e).__name__, str(e))
+        logger.error(res)
+        return False, res

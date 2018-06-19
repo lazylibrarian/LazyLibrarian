@@ -47,35 +47,38 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
+    res = ''
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] and lazylibrarian.CONFIG['SAB_HOST']:
         Source = "SABNZBD"
-        downloadID = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
+        downloadID, res = sabnzbd.SABnzbd(nzbtitle, nzburl, False)  # returns nzb_ids or False
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] and lazylibrarian.CONFIG['NZBGET_HOST']:
         Source = "NZBGET"
         data, success = fetchURL(nzburl)
         if not success:
-            logger.debug('Failed to read nzb data for nzbget: %s' % data)
+            res = 'Failed to read nzb data for nzbget: %s' % data
+            logger.debug(res)
             downloadID = ''
         else:
             nzb = classes.NZBDataSearchResult()
             nzb.extraInfo.append(data)
             nzb.name = nzbtitle
             nzb.url = nzburl
-            downloadID = nzbget.sendNZB(nzb)
+            downloadID, res = nzbget.sendNZB(nzb)
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] and lazylibrarian.CONFIG['USE_SYNOLOGY'] and \
             lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         Source = "SYNOLOGY_NZB"
-        downloadID = synology.addTorrent(nzburl)  # returns nzb_ids or False
+        downloadID, res = synology.addTorrent(nzburl)  # returns nzb_ids or False
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
         nzbfile, success = fetchURL(nzburl)
         if not success:
-            logger.warn('Error fetching nzb from url [%s]: %s' % (nzburl, nzbfile))
-            nzbfile = ''
+            res = 'Error fetching nzb from url [%s]: %s' % (nzburl, nzbfile)
+            logger.warn(res)
+            return False, res
 
         if nzbfile:
             nzbname = str(nzbtitle) + '.nzb'
@@ -90,12 +93,14 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
                 downloadID = nzbname
 
             except Exception as e:
-                logger.error('%s not writable, NZB not saved. %s: %s' % (nzbpath, type(e).__name__, str(e)))
-                downloadID = ''
+                res = '%s not writable, NZB not saved. %s: %s' % (nzbpath, type(e).__name__, str(e))
+                logger.error(res)
+                return False, res
 
     if not Source:
-        logger.warn('No NZB download method is enabled, check config.')
-        return False
+        res = 'No NZB download method is enabled, check config.'
+        logger.warn(res)
+        return False, res
 
     if downloadID:
         logger.debug('Nzbfile has been downloaded from ' + str(nzburl))
@@ -105,15 +110,15 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
             myDB.action('UPDATE books SET audiostatus = "Snatched" WHERE BookID=?', (bookid,))
         myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, nzburl))
-        return True
+        return True, ''
     else:
-        logger.error('Failed to send nzb to @ <a href="%s">%s</a>' % (nzburl, Source))
-        return False
+        res = 'Failed to send nzb to @ <a href="%s">%s</a>' % (nzburl, Source)
+        logger.error(res)
+        return False, res
 
 
 def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook'):
     myDB = database.DBConnection()
-    downloadID = False
     Source = "DIRECT"
 
     logger.debug("Starting Direct Download for [%s]" % dl_title)
@@ -122,19 +127,25 @@ def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook
     try:
         r = requests.get(dl_url, headers=headers, timeout=90, proxies=proxies)
     except requests.exceptions.Timeout:
-        logger.warn('Timeout fetching file from url: %s' % dl_url)
-        return False
+        res = 'Timeout fetching file from url: %s' % dl_url
+        logger.warn(res)
+        return False, res
     except Exception as e:
         if hasattr(e, 'reason'):
-            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, dl_url, e.reason))
+            res = '%s fetching file from url: %s, %s' % (type(e).__name__, dl_url, e.reason)
         else:
-            logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, dl_url, str(e)))
-        return False
+            res = '%s fetching file from url: %s, %s' % (type(e).__name__, dl_url, str(e))
+            logger.warn(res)
+        return False, res
 
     if not str(r.status_code).startswith('2'):
-        logger.debug("Got a %s response for %s" % (r.status_code, dl_url))
+        res = "Got a %s response for %s" % (r.status_code, dl_url)
+        logger.debug(res)
+        return False, res
     elif len(r.content) < 1000:
-        logger.debug("Only got %s bytes for %s, rejecting" % (len(r.content), dl_title))
+        res = "Only got %s bytes for %s" % (len(r.content), dl_title)
+        logger.debug(res)
+        return False, res
     else:
         extn = ''
         basename = ''
@@ -175,8 +186,9 @@ def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook
             setperm(destfile)
             downloadID = hashid
         except Exception as e:
-            logger.error("%s writing book to %s, %s" % (type(e).__name__, destfile, e))
-
+            res = "%s writing book to %s, %s" % (type(e).__name__, destfile, e)
+            logger.error(res)
+            return False, res
     if downloadID:
         logger.debug('File %s has been downloaded from %s' % (dl_title, dl_url))
         if library == 'eBook':
@@ -185,12 +197,11 @@ def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook
             myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
         myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, dl_url))
-        return True
+        return True, ''
     else:
-        logger.error('Failed to download file @ <a href="%s">%s</a>' % (dl_url, dl_url))
-        dlresult = "Failed to download file from %s" % Source
-        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, dl_url))
-        return False
+        res = 'Failed to download file @ <a href="%s">%s</a>' % (dl_url, dl_url)
+        logger.error(res)
+        return False, res
 
 
 def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'):
@@ -198,6 +209,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     downloadID = False
     Source = ''
     torrent = ''
+    res = ''
 
     full_url = tor_url  # keep the url as stored in "wanted" table
     if 'magnet:?' in tor_url:
@@ -235,20 +247,24 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             if str(r.status_code).startswith('2'):
                 torrent = r.content
                 if not len(torrent):
-                    logger.warn("Got empty response for %s, rejecting" % tor_url)
-                    return False
+                    res = "Got empty response for %s" % tor_url
+                    logger.warn(res)
+                    return False, res
                 elif len(torrent) < 100:
-                    logger.warn("Only got %s bytes for %s, rejecting" % (len(torrent), tor_url))
-                    return False
+                    res = "Only got %s bytes for %s" % (len(torrent), tor_url)
+                    logger.warn(res)
+                    return False, res
                 else:
                     logger.debug("Got %s bytes for %s" % (len(torrent), tor_url))
             else:
-                logger.warn("Got a %s response for %s, rejecting" % (r.status_code, tor_url))
-                return False
+                res = "Got a %s response for %s" % (r.status_code, tor_url)
+                logger.warn(res)
+                return False, res
 
         except requests.exceptions.Timeout:
-            logger.warn('Timeout fetching file from url: %s' % tor_url)
-            return False
+            res = 'Timeout fetching file from url: %s' % tor_url
+            logger.warn(res)
+            return False, res
         except Exception as e:
             # some jackett providers redirect internally using http 301 to a magnet link
             # which requests can't handle, so throws an exception
@@ -258,14 +274,16 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 logger.debug("Redirecting to %s" % tor_url)
             else:
                 if hasattr(e, 'reason'):
-                    logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason))
+                    res = '%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, e.reason)
                 else:
-                    logger.warn('%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e)))
-                return False
+                    res = '%s fetching file from url: %s, %s' % (type(e).__name__, tor_url, str(e))
+                logger.warn(res)
+                return False, res
 
     if not torrent and not tor_url.startswith('magnet:?'):
-        logger.warn("No magnet or data, cannot continue")
-        return False
+        res = "No magnet or data, cannot continue"
+        logger.warn(res)
+        return False, res
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
@@ -299,10 +317,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     logger.debug('Magnet file saved: %s' % tor_path)
                     downloadID = Source
                 except Exception as e:
-                    logger.warn("Failed to write magnet to file: %s %s" % (type(e).__name__, str(e)))
-                    logger.debug("Progress: %s" % msg)
-                    logger.debug("Filename [%s]" % (repr(tor_path)))
-                    return False
+                    res = "Failed to write magnet to file: %s %s" % (type(e).__name__, str(e))
+                    logger.warn(res)
+                    logger.debug("Progress: %s Filename [%s]" % (msg, repr(tor_path)))
+                    return False, res
         else:
             tor_name += '.torrent'
             tor_path = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
@@ -320,30 +338,30 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 logger.debug('Torrent file saved: %s' % tor_name)
                 downloadID = Source
             except Exception as e:
-                logger.warn("Failed to write torrent to file: %s %s" % (type(e).__name__, str(e)))
-                logger.debug("Progress: %s" % msg)
-                logger.debug("Filename [%s]" % (repr(tor_path)))
-                return False
+                res = "Failed to write torrent to file: %s %s" % (type(e).__name__, str(e))
+                logger.warn(res)
+                logger.debug("Progress: %s Filename [%s]" % (msg, repr(tor_path)))
+                return False, res
 
     hashid = calculate_torrent_hash(tor_url, torrent)
     if not hashid:
-        logger.error("Unable to calculate torrent hash from url/data")
+        res = "Unable to calculate torrent hash from url/data"
+        logger.error(res)
         logger.debug("url: %s" % tor_url)
-
         logger.debug("data: %s" % makeUnicode(str(torrent[:50])))
-        return False
+        return False, res
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_UTORRENT'] and lazylibrarian.CONFIG['UTORRENT_HOST']:
         logger.debug("Sending %s to Utorrent" % tor_title)
         Source = "UTORRENT"
-        downloadID = utorrent.addTorrent(tor_url, hashid)  # returns hash or False
+        downloadID, res = utorrent.addTorrent(tor_url, hashid)  # returns hash or False
         if downloadID:
             tor_title = utorrent.nameTorrent(downloadID)
 
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] and lazylibrarian.CONFIG['RTORRENT_HOST']:
         logger.debug("Sending %s to rTorrent" % tor_title)
         Source = "RTORRENT"
-        downloadID = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
+        downloadID, res = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
         if downloadID:
             tor_title = rtorrent.getName(downloadID)
 
@@ -351,10 +369,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         Source = "QBITTORRENT"
         if torrent:
             logger.debug("Sending %s data to qbittorrent" % tor_title)
-            status = qbittorrent.addTorrent(torrent, hashid)
+            status, res = qbittorrent.addTorrent(torrent, hashid)
         else:
             logger.debug("Sending %s url to qbittorrent" % tor_title)
-            status = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
+            status, res = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
         if status:
             downloadID = hashid
             tor_title = qbittorrent.getName(hashid)
@@ -364,10 +382,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         if torrent:
             logger.debug("Sending %s data to Transmission" % tor_title)
             # transmission needs b64encoded metainfo to be unicode, not bytes
-            downloadID = transmission.addTorrent(None, metainfo=makeUnicode(b64encode(torrent)))
+            downloadID, res = transmission.addTorrent(None, metainfo=makeUnicode(b64encode(torrent)))
         else:
             logger.debug("Sending %s url to Transmission" % tor_title)
-            downloadID = transmission.addTorrent(tor_url)  # returns id or False
+            downloadID, res = transmission.addTorrent(tor_url)  # returns id or False
         if downloadID:
             # transmission returns it's own int, but we store hashid instead
             downloadID = hashid
@@ -377,7 +395,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             lazylibrarian.CONFIG['SYNOLOGY_HOST']:
         logger.debug("Sending %s url to Synology" % tor_title)
         Source = "SYNOLOGY_TOR"
-        downloadID = synology.addTorrent(tor_url)  # returns id or False
+        downloadID, res = synology.addTorrent(tor_url)  # returns id or False
         if downloadID:
             tor_title = synology.getName(downloadID)
 
@@ -387,7 +405,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             Source = "DELUGEWEBUI"
             if torrent:
                 logger.debug("Sending %s data to Deluge" % tor_title)
-                downloadID = deluge.addTorrent(tor_title, data=b64encode(torrent))
+                downloadID, res = deluge.addTorrent(tor_title, data=b64encode(torrent))
             else:
                 logger.debug("Sending %s url to Deluge" % tor_title)
                 downloadID = deluge.addTorrent(tor_url)  # can be link or magnet, returns hash or False
@@ -404,13 +422,16 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 client.connect()
                 args = {"name": tor_title}
                 if tor_url.startswith('magnet'):
-                    logger.debug("Sending %s magnet to DelugeRPC" % tor_title)
+                    res = "Sending %s magnet to DelugeRPC" % tor_title
+                    logger.debug(res)
                     downloadID = client.call('core.add_torrent_magnet', tor_url, args)
                 elif torrent:
-                    logger.debug("Sending %s data to DelugeRPC" % tor_title)
+                    res = "Sending %s data to DelugeRPC" % tor_title
+                    logger.debug(res)
                     downloadID = client.call('core.add_torrent_file', tor_title, b64encode(torrent), args)
                 else:
-                    logger.debug("Sending %s url to DelugeRPC" % tor_title)
+                    res = "Sending %s url to DelugeRPC" % tor_title
+                    logger.debug(res)
                     downloadID = client.call('core.add_torrent_url', tor_url, args)
                 if downloadID:
                     if lazylibrarian.CONFIG['DELUGE_LABEL']:
@@ -418,14 +439,20 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                     result = client.call('core.get_torrent_status', downloadID, {})
                     if 'name' in result:
                         tor_title = result['name']
+                else:
+                    res += ' failed'
+                    logger.error(res)
+                    return False, res
 
             except Exception as e:
-                logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-                return False
+                res = 'DelugeRPC failed %s %s' % (type(e).__name__, str(e))
+                logger.error(res)
+                return False, res
 
     if not Source:
-        logger.warn('No torrent download method is enabled, check config.')
-        return False
+        res = 'No torrent download method is enabled, check config.'
+        logger.warn(res)
+        return False, res
 
     if downloadID:
         if tor_title:
@@ -468,12 +495,11 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             myDB.action('UPDATE books SET audiostatus="Snatched" WHERE BookID=?', (bookid,))
         myDB.action('UPDATE wanted SET status="Snatched", Source=?, DownloadID=? WHERE NZBurl=?',
                     (Source, downloadID, full_url))
-        return True
+        return True, ''
 
-    logger.error('Failed to send torrent to %s, %s' % (Source, tor_url))
-    dlresult = "Failed to send torrent to %s" % Source
-    myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (dlresult, full_url))
-    return False
+    res = 'Failed to send torrent to %s' % Source
+    logger.error(res)
+    return False, res
 
 
 def calculate_torrent_hash(link, data=None):

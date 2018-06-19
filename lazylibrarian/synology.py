@@ -228,7 +228,7 @@ def _deleteTask(task_cgi, sid, download_id, remove_data):
 def _addTorrentURI(task_cgi, sid, torurl):
     # Sends a magnet, Torrent url or NZB url to DownloadStation
     # Return task ID, or False if failed
-
+    res = ''
     params = {
         "api": "SYNO.DownloadStation.Task",
         "version": "1",
@@ -244,7 +244,8 @@ def _addTorrentURI(task_cgi, sid, torurl):
     if success:
         if not result['success']:
             errnum = result['error']['code']
-            logger.debug("Synology Create Error: %s" % _errorMsg(errnum, "create"))
+            res = "Synology Create Error: %s" % _errorMsg(errnum, "create")
+            logger.debug(res)
         else:
             # DownloadStation doesn't return the download_id for the newly added uri
             # which we need for monitoring progress & deleting etc.
@@ -255,21 +256,26 @@ def _addTorrentURI(task_cgi, sid, torurl):
                         errmsg = task['status_extra']['error_detail']
                     except KeyError:
                         errmsg = "No error details"
-                    logger.warn("Synology task [%s] failed: %s" % (task['title'], errmsg))
+                    res = "Synology task [%s] failed: %s" % (task['title'], errmsg)
+                    logger.warn(res)
                 else:
                     info = _getInfo(task_cgi, sid, task['id'])  # type: dict
                     try:
                         uri = info['additional']['detail']['uri']
                         if uri == torurl:
                             logger.debug('Synology task %s for %s' % (task['id'], task['title']))
-                            return task['id']
+                            return task['id'], ''
                     except KeyError:
-                        logger.debug("Unable to get uri for [%s] from getInfo" % task['title'])
-            logger.debug("Synology URL [%s] was not found in tasklist" % torurl)
-            return False
+                        res = "Unable to get uri for [%s] from getInfo" % task['title']
+                        logger.debug(res)
+                        return False, res
+            res = "Synology URL [%s] was not found in tasklist" % torurl
+            logger.debug(res)
+            return False, res
     else:
-        logger.debug("Synology Failed to add task: %s" % result)
-    return False
+        res = "Synology Failed to add task: %s" % result
+        logger.debug(res)
+    return False, res
 
 
 def _hostURL():
@@ -390,7 +396,7 @@ def addTorrent(tor_url):
     if hosturl:
         auth_cgi, task_cgi, sid = _login(hosturl)
         if sid:
-            result = _addTorrentURI(task_cgi, sid, tor_url)
+            result, res = _addTorrentURI(task_cgi, sid, tor_url)
             _logout(auth_cgi, sid)
-            return result
-    return False
+            return result, res
+    return False, "Invalid synology host"
