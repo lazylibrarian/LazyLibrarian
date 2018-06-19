@@ -170,6 +170,8 @@ class grauth:
 
                 if not response['status'].startswith('2'):
                     logger.error('Failure status: %s for page %s' % (response['status'], current_page))
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
+                        logger.debug(request_url)
                 else:
                     xmldoc = xml.dom.minidom.parseString(content)
 
@@ -332,7 +334,7 @@ class grauth:
             logger.error("Error in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
             return ''
         if not response['status'].startswith('2'):
-            logger.error('Cannot fetch resource: %s' % response['status'])
+            logger.error('Cannot fetch userid: %s' % response['status'])
             return ''
 
         userxml = xml.dom.minidom.parseString(content)
@@ -360,7 +362,9 @@ class grauth:
             logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
             return "Error in client.request: see error log"
         if not response['status'].startswith('2'):
-            logger.error('Failure status: %s for page %s' % (response['status'], page))
+            logger.error('Failure status: %s for %s page %s' % (response['status'], shelf_name, page))
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
+                logger.debug(request_url)
         return content
 
     #############################
