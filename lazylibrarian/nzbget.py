@@ -196,6 +196,6 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
             return False, res
     except Exception as e:
         res = "Connect Error to NZBget: could not add %s to the queue: %s %s" % (nzb.name + ".nzb",
-                type(e).__name__, str(e))
+                                                                                 type(e).__name__, str(e))
         logger.error(res)
         return False, res

@@ -228,7 +228,6 @@ def _deleteTask(task_cgi, sid, download_id, remove_data):
 def _addTorrentURI(task_cgi, sid, torurl):
     # Sends a magnet, Torrent url or NZB url to DownloadStation
     # Return task ID, or False if failed
-    res = ''
     params = {
         "api": "SYNO.DownloadStation.Task",
         "version": "1",

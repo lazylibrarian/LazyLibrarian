@@ -19,9 +19,14 @@ import lib.cherrypy_cors as cherrypy_cors
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.webServe import WebInterface
+
 cp_ver = getattr(cherrypy, '__version__', None)
 if cp_ver and int(cp_ver.split('.')[0]) >= 10:
-    import portend
+    try:
+        import portend
+    except ImportError:
+        portend = None
+
 
 def initialize(options=None):
     if options is None:
@@ -103,7 +108,7 @@ def initialize(options=None):
             # 'tools.proxy.local': 'Host'  # this is for nginx
             # 'tools.proxy.local': 'X-Host'  # this is for lighthttpd
             'tools.proxy.local': lazylibrarian.CONFIG['PROXY_LOCAL']
-            })
+        })
     if options['http_pass'] != "":
         logger.info("Web server authentication is enabled, username is '%s'" % options['http_user'])
         conf['/'].update({

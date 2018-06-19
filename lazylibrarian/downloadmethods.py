@@ -47,7 +47,6 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
     myDB = database.DBConnection()
     Source = ''
     downloadID = ''
-    res = ''
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_SABNZBD'] and lazylibrarian.CONFIG['SAB_HOST']:
         Source = "SABNZBD"
@@ -209,7 +208,6 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     downloadID = False
     Source = ''
     torrent = ''
-    res = ''
 
     full_url = tor_url  # keep the url as stored in "wanted" table
     if 'magnet:?' in tor_url:

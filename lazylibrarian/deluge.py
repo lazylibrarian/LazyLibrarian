@@ -48,7 +48,6 @@ def addTorrent(link, data=None):
     try:
         result = {}
         retid = False
-        res = ''
 
         if link and link.startswith('magnet:'):
             logger.debug('Deluge: Got a magnet link: %s' % link)
