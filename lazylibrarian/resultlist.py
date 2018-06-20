@@ -276,16 +276,17 @@ def downloadResult(match, book):
 
         myDB.upsert("wanted", newValueDict, controlValueDict)
         if newValueDict['NZBmode'] == 'direct':
-            snatch = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                          controlValueDict["NZBurl"], newValueDict["AuxInfo"])
+            snatch, res = DirectDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                               controlValueDict["NZBurl"], newValueDict["AuxInfo"])
         elif newValueDict['NZBmode'] in ["torznab", "torrent", "magnet"]:
-            snatch = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                       controlValueDict["NZBurl"], newValueDict["AuxInfo"])
+            snatch, res = TORDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                            controlValueDict["NZBurl"], newValueDict["AuxInfo"])
         elif newValueDict['NZBmode'] == 'nzb':
-            snatch = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
-                                       controlValueDict["NZBurl"], newValueDict["AuxInfo"])
+            snatch, res = NZBDownloadMethod(newValueDict["BookID"], newValueDict["NZBtitle"],
+                                            controlValueDict["NZBurl"], newValueDict["AuxInfo"])
         else:
-            logger.error('Unhandled NZBmode [%s] for %s' % (newValueDict['NZBmode'], controlValueDict["NZBurl"]))
+            res = 'Unhandled NZBmode [%s] for %s' % (newValueDict['NZBmode'], controlValueDict["NZBurl"])
+            logger.error(res)
             snatch = 0
 
         if snatch:
@@ -302,7 +303,7 @@ def downloadResult(match, book):
             return 2  # we found it
         else:
             myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
-                        ("%s DownloadMethod failed, see log" % newValueDict['NZBmode'], controlValueDict["NZBurl"]))
+                        (res, controlValueDict["NZBurl"]))
         return 0
     except Exception:
         logger.error('Unhandled exception in downloadResult: %s' % traceback.format_exc())

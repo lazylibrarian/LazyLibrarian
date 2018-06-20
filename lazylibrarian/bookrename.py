@@ -70,6 +70,7 @@ def audioRename(bookid):
                 id3r = TinyTag.get(os.path.join(r, f))
                 performer = id3r.artist
                 composer = id3r.composer
+                albumartist = id3r.albumartist
                 book = id3r.album
                 track = id3r.track
                 total = id3r.track_total
@@ -77,10 +78,29 @@ def audioRename(bookid):
                 track = check_int(track, 0)
                 total = check_int(total, 0)
 
+                if performer:
+                    performer = performer.strip()
+                else:
+                    performer = ''
+                if composer:
+                    composer = composer.strip()
+                else:
+                    composer = ''
+                if book:
+                    book = book.strip()
+                else:
+                    book = ''
+                if albumartist:
+                    albumartist = albumartist.strip()
+                else:
+                    albumartist = ''
+                
                 if composer:  # if present, should be author
                     author = composer
                 elif performer:  # author, or narrator if composer == author
                     author = performer
+                elif albumartist:
+                    author = albumartist
                 if author and book:
                     parts.append([track, book, author, f])
             except Exception as e:

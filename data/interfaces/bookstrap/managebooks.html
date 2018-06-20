@@ -44,6 +44,7 @@
             %endif
       </form>
     </div>
+    <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Syncing, please wait...</button>
 </%def>
 <%def name="body()">
   <h1>${title}</h1>
@@ -151,7 +152,9 @@
         });
 
         $('#synctogoodreads').on('click', function(e) {
+            $("#myAlert").removeClass('hidden');
             $.get('syncToGoodreads', function(data) {
+                $("#myAlert").addClass('hidden');
                 bootbox.dialog({
                     title: 'Goodreads Sync Result',
                     message: '<pre>'+data+'</pre>',
@@ -166,7 +169,9 @@
         });
 
         $('#synctocalibre').on('click', function(e) {
+            $("#myAlert").removeClass('hidden');
             $.get('syncToCalibre', function(data) {
+                $("#myAlert").addClass('hidden');
                 bootbox.dialog({
                     title: 'Calibre Sync Result',
                     message: '<pre>'+data+'</pre>',

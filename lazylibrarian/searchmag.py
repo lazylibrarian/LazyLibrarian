@@ -469,23 +469,28 @@ def search_magazines(mags=None, reset=False):
 
                 for magazine in maglist:
                     if magazine['nzbmode'] in ["torznab", "torrent", "magnet"]:
-                        snatch = TORDownloadMethod(
+                        snatch, res = TORDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
                             'magazine')
                     elif magazine['nzbmode'] == 'direct':
-                        snatch = DirectDownloadMethod(
+                        snatch, res = DirectDownloadMethod(
+                            magazine['bookid'],
+                            magazine['nzbtitle'],
+                            magazine['nzburl'],
+                            'magazine')
+                    elif magazine['NZBmode'] == 'nzb':
+                        snatch, res = NZBDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
                             'magazine')
                     else:
-                        snatch = NZBDownloadMethod(
-                            magazine['bookid'],
-                            magazine['nzbtitle'],
-                            magazine['nzburl'],
-                            'magazine')
+                        res = 'Unhandled NZBmode [%s] for %s' % (magazine['NZBmode'], magazine["nzburl"])
+                        logger.error(res)
+                        snatch = 0
+
                     if snatch:
                         logger.info('Downloading %s from %s' % (magazine['nzbtitle'], magazine["nzbprov"]))
                         custom_notify_snatch("%s %s" % (magazine['bookid'], magazine['nzburl']))
@@ -494,8 +499,7 @@ def search_magazines(mags=None, reset=False):
                         scheduleJob(action='Start', target='processDir')
                     else:
                         myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', 
-                                    ("%s DownloadMethod failed, see log" % magazine['nzbmode'], 
-                                     magazine["nzburl"]))
+                                    (res, magazine["nzburl"]))
 
         if reset:
             scheduleJob(action='Restart', target='search_magazines')

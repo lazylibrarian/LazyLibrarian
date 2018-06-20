@@ -1438,7 +1438,9 @@ class WebInterface(object):
     @cherrypy.expose
     def addAuthorID(self, AuthorID):
         threading.Thread(target=addAuthorToDB, name='ADDAUTHOR', args=['', False, AuthorID]).start()
-        raise cherrypy.HTTPRedirect("home")
+        time.sleep(2)  # so we get some data before going to authorpage
+        raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s" % AuthorID)
+        # raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
     def toggleAuth(self):
@@ -1506,19 +1508,22 @@ class WebInterface(object):
             AuthorID = bookdata["AuthorID"]
             # bookname = '%s LL.(%s)' % (bookdata["BookName"], bookid)
             if mode == 'direct':
-                snatch = DirectDownloadMethod(bookid, bookdata["BookName"], url, library)
+                snatch, res = DirectDownloadMethod(bookid, bookdata["BookName"], url, library)
             elif mode in ["torznab", "torrent", "magnet"]:
-                snatch = TORDownloadMethod(bookid, bookdata["BookName"], url, library)
+                snatch, res = TORDownloadMethod(bookid, bookdata["BookName"], url, library)
+            elif mode == 'nzb':
+                snatch, res = NZBDownloadMethod(bookid, bookdata["BookName"], url, library)
             else:
-                snatch = NZBDownloadMethod(bookid, bookdata["BookName"], url, library)
+                res = 'Unhandled NZBmode [%s] for %s' % (mode, url)
+                logger.error(res)
+                snatch = False
             if snatch:
                 logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
                 custom_notify_snatch("%s %s" % (bookid, library))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
                 scheduleJob(action='Start', target='processDir')
             else:
-                myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
-                            ("%s DownloadMethod failed, see log" % mode, url))
+                myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (res, url))
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
         else:
             logger.debug('snatchBook Invalid bookid [%s]' % bookid)
@@ -3150,29 +3155,36 @@ class WebInterface(object):
                 logger.debug('Snatching %s, %s from %s' % (items['nzbtitle'], items['nzbmode'], items['nzbprov']))
                 myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', (action, items['nzburl']))
                 if items['nzbmode'] == 'direct':
-                    snatch = DirectDownloadMethod(
+                    snatch, res = DirectDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
                         items['nzburl'],
                         'magazine')
                 elif items['nzbmode'] in ['torznab', 'torrent', 'magnet']:
-                    snatch = TORDownloadMethod(
+                    snatch, res = TORDownloadMethod(
+                        items['bookid'],
+                        items['nzbtitle'],
+                        items['nzburl'],
+                        'magazine')
+                elif items['nzbmode'] == 'nzb':
+                    snatch, res = NZBDownloadMethod(
                         items['bookid'],
                         items['nzbtitle'],
                         items['nzburl'],
                         'magazine')
                 else:
-                    snatch = NZBDownloadMethod(
-                        items['bookid'],
-                        items['nzbtitle'],
-                        items['nzburl'],
-                        'magazine')
-                if snatch:  # if snatch fails, downloadmethods already report it
+                    res = 'Unhandled NZBmode [%s] for %s' % (items['nzbmode'], items["nzburl"])
+                    logger.error(res)
+                    snatch = 0
+                if snatch:
                     myDB.action('UPDATE pastissues set status=? WHERE NZBurl=?', ("Snatched", items['nzburl']))
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     custom_notify_snatch("%s %s" % (items['bookid'], 'Magazine'))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
                     scheduleJob(action='Start', target='processDir')
+                else:
+                    myDB.action('UPDATE pastissues SET status="Failed",DLResult=? WHERE NZBurl=?',
+                                (res, items["nzburl"]))
         raise cherrypy.HTTPRedirect("pastIssues")
 
     @cherrypy.expose
@@ -3511,7 +3523,7 @@ class WebInterface(object):
             netloc = cherrypy.request.headers['X-Forwarded-Host']
         except KeyError:
             pass
-        
+
         if 'X-Forwarded-For' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
         elif 'X-Host' in cherrypy.request.headers:
@@ -3520,7 +3532,7 @@ class WebInterface(object):
             remote_ip = cherrypy.request.headers['Host']  # nginx
         else:
             remote_ip = cherrypy.request.remote.ip
-        
+
         filename = 'LazyLibrarian_RSS_' + ftype + '.xml'
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))

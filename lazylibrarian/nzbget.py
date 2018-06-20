@@ -54,8 +54,9 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
     host = lazylibrarian.CONFIG['NZBGET_HOST']
     port = check_int(lazylibrarian.CONFIG['NZBGET_PORT'], 0)
     if not host or not port:
-        logger.error('Invalid NZBget host or port, check your config')
-        return False
+        res = 'Invalid NZBget host or port, check your config'
+        logger.error(res)
+        return False, res
 
     addToTop = False
     nzbgetXMLrpc = "%(username)s:%(password)s@%(host)s:%(port)s/xmlrpc"
@@ -73,8 +74,9 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
     try:
         nzbGetRPC = xmlrpc_client.ServerProxy(url)
     except Exception as e:
-        logger.error("NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e)))
-        return False
+        res = "NZBget connection to %s failed: %s %s" % (url, type(e).__name__, str(e))
+        logger.error(res)
+        return False, res
 
     if cmd == "test":
         msg = "lazylibrarian connection test"
@@ -88,37 +90,41 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
             logger.debug("Successfully connected to NZBget")
             if cmd == "test":
                 # should check nzbget category is valid
-                return True
+                return True, ''
         else:
             if nzbID is not None:
-                logger.debug("Successfully connected to NZBget, unable to send message")
-                return False
+                res = "Successfully connected to NZBget, unable to send message"
+                logger.debug(res)
+                return False, res
             else:
                 logger.info("Successfully connected to NZBget, but unable to send %s" % (nzb.name + ".nzb"))
 
     except http_client.socket.error as e:
-        logger.error("Please check your NZBget host and port (if it is running). \
-            NZBget is not responding to this combination: %s" % e)
+        res = "Please check your NZBget host and port (if it is running). "
+        res += "NZBget is not responding to this combination: %s" % e
+        logger.error(res)
         logger.error("NZBget url set to [%s]" % url)
-        return False
+        return False, res
 
     except xmlrpc_client.ProtocolError as e:
         if e.errmsg == "Unauthorized":
-            logger.error("NZBget password is incorrect.")
+            res = "NZBget password is incorrect."
         else:
-            logger.error("Protocol Error: %s" % e.errmsg)
-        return False
+            res = "Protocol Error: %s" % e.errmsg
+        logger.error(res)
+        return False, res
 
     if nzbID is not None:
         # its a command for an existing task
         id_array = [int(nzbID)]
         if cmd == 'GroupDelete' or cmd == 'GroupFinalDelete':
-            return nzbGetRPC.editqueue(cmd, 0, "", id_array)
+            return nzbGetRPC.editqueue(cmd, 0, "", id_array), ''
         elif cmd == 'listgroups':
-            return nzbGetRPC.listgroups()
+            return nzbGetRPC.listgroups(), ''
         else:
-            logger.debug('Unsupported nzbget command %s' % repr(cmd))
-        return False
+            res = 'Unsupported nzbget command %s' % repr(cmd)
+            logger.debug(res)
+            return False, res
 
     nzbcontent64 = None
     if nzb.resultType == "nzbdata":
@@ -153,7 +159,7 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
                 #     nzbcontent64 = standard_b64encode(data)
                 # nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
                 #       addToTop, nzbcontent64)
-                return False
+                return False, "No nzbcontent64 found"
         elif nzbget_version == 12:
             if nzbcontent64:
                 nzbget_result = nzbGetRPC.append(nzb.name + ".nzb", lazylibrarian.CONFIG['NZBGET_CATEGORY'],
@@ -183,11 +189,13 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
 
         if nzbget_result:
             logger.debug("NZB sent to NZBget successfully")
-            return nzbget_result
+            return nzbget_result, ''
         else:
-            logger.error("NZBget could not add %s to the queue" % (nzb.name + ".nzb"))
-            return False
+            res = "NZBget could not add %s to the queue" % (nzb.name + ".nzb")
+            logger.error(res)
+            return False, res
     except Exception as e:
-        logger.error("Connect Error to NZBget: could not add %s to the queue: %s %s" %
-                     (nzb.name + ".nzb", type(e).__name__, str(e)))
-        return False
+        res = "Connect Error to NZBget: could not add %s to the queue: %s %s" % (nzb.name + ".nzb",
+                                                                                 type(e).__name__, str(e))
+        logger.error(res)
+        return False, res

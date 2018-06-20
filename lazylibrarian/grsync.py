@@ -19,7 +19,6 @@ import xml.dom.minidom
 from string import Template
 
 import lazylibrarian
-import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
@@ -27,6 +26,10 @@ from lazylibrarian.common import gr_api_sleep
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl
+if PY2:
+    import lib.oauth2 as oauth
+else:
+    import lib3.oauth2 as oauth
 
 client = ''
 request_token = ''
@@ -170,6 +173,8 @@ class grauth:
 
                 if not response['status'].startswith('2'):
                     logger.error('Failure status: %s for page %s' % (response['status'], current_page))
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
+                        logger.debug(request_url)
                 else:
                     xmldoc = xml.dom.minidom.parseString(content)
 
@@ -332,7 +337,7 @@ class grauth:
             logger.error("Error in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
             return ''
         if not response['status'].startswith('2'):
-            logger.error('Cannot fetch resource: %s' % response['status'])
+            logger.error('Cannot fetch userid: %s' % response['status'])
             return ''
 
         userxml = xml.dom.minidom.parseString(content)
@@ -360,7 +365,9 @@ class grauth:
             logger.error("Exception in client.request: %s %s" % (type(e).__name__, traceback.format_exc()))
             return "Error in client.request: see error log"
         if not response['status'].startswith('2'):
-            logger.error('Failure status: %s for page %s' % (response['status'], page))
+            logger.error('Failure status: %s for %s page %s' % (response['status'], shelf_name, page))
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_grsync:
+                logger.debug(request_url)
         return content
 
     #############################

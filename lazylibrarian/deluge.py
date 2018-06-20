@@ -143,17 +143,19 @@ def addTorrent(link, data=None):
             if lazylibrarian.CONFIG['DELUGE_LABEL']:
                 labelled = setTorrentLabel(result)
                 logger.debug('Deluge label returned: %s' % labelled)
-            return retid
+            return retid, ''
         else:
-            logger.info('Deluge returned status %s' % retid)
-            return False
+            res = 'Deluge returned status %s' % retid
+            logger.error(res)
+            return False, res
 
     except Exception as err:
-        logger.error(str(err))
+        res = str(err)
+        logger.error(res)
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             formatted_lines = traceback.format_exc().splitlines()
             logger.debug('; '.join(formatted_lines))
-        return False
+        return False, res
 
 
 def getTorrentFolder(torrentid):

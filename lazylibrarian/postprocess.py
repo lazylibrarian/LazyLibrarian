@@ -1069,7 +1069,7 @@ def getDownloadProgress(source, downloadid):
                 progress = 0
 
         elif source == 'SABNZBD':
-            res = sabnzbd.SABnzbd(nzburl='queue')
+            res, _ = sabnzbd.SABnzbd(nzburl='queue')
             found = False
             if res and 'queue' in res:
                 for item in res['queue']['slots']:
@@ -1078,7 +1078,7 @@ def getDownloadProgress(source, downloadid):
                         progress = item['percentage']
                         break
             if not found:  # not in queue, try history in case completed or error
-                res = sabnzbd.SABnzbd(nzburl='history')
+                res, _ = sabnzbd.SABnzbd(nzburl='history')
                 if res and 'history' in res:
                     for item in res['history']['slots']:
                         if item['nzo_id'] == downloadid:

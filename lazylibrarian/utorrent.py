@@ -254,5 +254,5 @@ def addTorrent(link, hashid):
     uTorrentClient.add_url(link)
     labelTorrent(hashid)
     if dirTorrent(hashid):
-        return hashid
-    return False
+        return hashid, ''
+    return False, 'uTorrent failed to locate hashid'
