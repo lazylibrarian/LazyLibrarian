@@ -669,8 +669,10 @@ class SignatureMethod_HMAC_SHA1(SignatureMethod):
         if token:
             key += escape(token.secret)
         raw = '&'.join(sig)
-        key = key.encode('utf-8')
-        raw = raw.encode('utf-8')
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+        if isinstance(raw, str):
+            raw = raw.encode('utf-8')
         return key, raw
 
     def sign(self, request, consumer, token):
@@ -698,6 +700,8 @@ class SignatureMethod_PLAINTEXT(SignatureMethod):
         sig = '%s&' % escape(consumer.secret)
         if token:
             sig = sig + escape(token.secret)
+        if isinstance(sig, str):
+            sig = sig.encode('utf-8')
         return sig, sig
 
     def sign(self, request, consumer, token):
