@@ -22,16 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import urllib
+import urllib.request
 import time
 import random
-import urlparse
+import urllib.parse
 import hmac
 import binascii
-import lib.httplib2 as httplib2
+import lib3.httplib2 as httplib2
 
 try:
-    from urlparse import parse_qs, parse_qsl
+    from urllib.parse import parse_qs, parse_qsl
 except ImportError:
     from cgi import parse_qs, parse_qsl
 
@@ -65,7 +65,7 @@ def build_authenticate_header(realm=''):
 
 def escape(s):
     """Escape a URL including any /."""
-    return urllib.quote(s, safe='~')
+    return urllib.parse.quote(s, safe='~')
 
 
 def generate_timestamp():
@@ -119,7 +119,7 @@ class Consumer(object):
             'oauth_consumer_secret': self.secret
         }
 
-        return urllib.urlencode(data)
+        return urllib.parse.urlencode(data)
 
 
 class Token(object):
@@ -163,13 +163,13 @@ class Token(object):
     def get_callback_url(self):
         if self.callback and self.verifier:
             # Append the oauth_verifier.
-            parts = urlparse.urlparse(self.callback)
+            parts = urllib.parse.urlparse(self.callback)
             scheme, netloc, path, params, query, fragment = parts[:6]
             if query:
                 query = '%s&oauth_verifier=%s' % (query, self.verifier)
             else:
                 query = 'oauth_verifier=%s' % self.verifier
-            return urlparse.urlunparse((scheme, netloc, path, params,
+            return urllib.parse.urlunparse((scheme, netloc, path, params,
                 query, fragment))
         return self.callback
 
@@ -187,7 +187,7 @@ class Token(object):
 
         if self.callback_confirmed is not None:
             data['oauth_callback_confirmed'] = self.callback_confirmed
-        return urllib.urlencode(data)
+        return urllib.parse.urlencode(data)
 
     @staticmethod
     def from_string(s):
@@ -266,7 +266,7 @@ class Request(dict):
 
     @setter
     def url(self, value):
-        parts = urlparse.urlparse(value)
+        parts = urllib.parse.urlparse(value)
         scheme, netloc, path = parts[:3]
 
         # Exclude default port numbers.
@@ -290,12 +290,12 @@ class Request(dict):
 
     def get_nonoauth_parameters(self):
         """Get any non-OAuth parameters."""
-        return dict([(k, v) for k, v in self.iteritems()
+        return dict([(k, v) for k, v in self.items()
                     if not k.startswith('oauth_')])
 
     def to_header(self, realm=''):
         """Serialize as a header for an HTTPAuth request."""
-        oauth_params = ((k, v) for k, v in self.items()
+        oauth_params = ((k, v) for k, v in list(self.items())
                             if k.startswith('oauth_'))
         stringy_params = ((k, escape(str(v))) for k, v in oauth_params)
         header_params = ('%s="%s"' % (k, v) for k, v in stringy_params)
@@ -315,7 +315,7 @@ class Request(dict):
         # tell urlencode to deal with sequence values and map them correctly
         # to resulting querystring. for example self["k"] = ["v1", "v2"] will
         # result in 'k=v1&k=v2' and not k=%5B%27v1%27%2C+%27v2%27%5D
-        return urllib.urlencode(data, True)
+        return urllib.parse.urlencode(data, True)
 
     def to_url(self):
         """Serialize as a URL for a GET request."""
@@ -330,8 +330,8 @@ class Request(dict):
 
     def get_normalized_parameters(self):
         """Return a string that contains the parameters that must be signed."""
-        items = [(k, v) for k, v in self.items() if k != 'oauth_signature']
-        encoded_str = urllib.urlencode(sorted(items), True)
+        items = [(k, v) for k, v in list(self.items()) if k != 'oauth_signature']
+        encoded_str = urllib.parse.urlencode(sorted(items), True)
         # Encode signature parameters per Oauth Core 1.0 protocol
         # spec draft 7, section 3.6
         # (http://tools.ietf.org/html/draft-hammer-oauth-07#section-3.6)
@@ -387,7 +387,7 @@ class Request(dict):
             parameters.update(query_params)
 
         # URL parameters.
-        param_str = urlparse.urlparse(http_url)[4] # query
+        param_str = urllib.parse.urlparse(http_url)[4] # query
         url_params = cls._split_url_string(param_str)
         parameters.update(url_params)
 
@@ -445,15 +445,15 @@ class Request(dict):
             # Split key-value.
             param_parts = param.split('=', 1)
             # Remove quotes and unescape the value.
-            params[param_parts[0]] = urllib.unquote(param_parts[1].strip('\"'))
+            params[param_parts[0]] = urllib.parse.unquote(param_parts[1].strip('\"'))
         return params
 
     @staticmethod
     def _split_url_string(param_str):
         """Turn URL string into parameters."""
         parameters = parse_qs(param_str, keep_blank_values=False)
-        for k, v in parameters.iteritems():
-            parameters[k] = urllib.unquote(v[0])
+        for k, v in parameters.items():
+            parameters[k] = urllib.parse.unquote(v[0])
         return parameters
 
 
@@ -512,7 +512,7 @@ class Server(object):
             # Get the signature method object.
             signature_method = self.signature_methods[signature_method]
         except:
-            signature_method_names = ', '.join(self.signature_methods.keys())
+            signature_method_names = ', '.join(list(self.signature_methods.keys()))
             raise Error('Signature method %s not supported try one of the following: %s' % (signature_method, signature_method_names))
 
         return signature_method
@@ -586,7 +586,7 @@ class Client(httplib2.Http):
         if body and method == "POST":
             parameters = dict(parse_qsl(body))
         elif method == "GET":
-            parsed = urlparse.urlparse(uri)
+            parsed = urllib.parse.urlparse(uri)
             parameters = parse_qs(parsed.query)
         else:
             parameters = None
@@ -614,7 +614,7 @@ class Client(httplib2.Http):
                 # don't call update twice.
                 headers.update(req.to_header())
 
-        return httplib2.Http.request(self, uri, method=method, body=body, 
+        return httplib2.Http.request(self, uri, method=method, body=body,
             headers=headers, redirections=redirections,
             connection_type=connection_type)
 

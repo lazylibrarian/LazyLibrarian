@@ -17,13 +17,17 @@
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
 import lazylibrarian
+import lib.pythontwitter as twitter
 
 from lazylibrarian import logger, common, formatter
-
-import lib.oauth2 as oauth
-import lib.pythontwitter as twitter
+from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import parse_qsl
+
+if PY2:
+    import lib.oauth2 as oauth
+else:
+    import lib3.oauth2 as oauth
 
 
 class TwitterNotifier:
@@ -67,7 +71,7 @@ class TwitterNotifier:
             lazylibrarian.CONFIG['TWITTER_USERNAME'] = request_token['oauth_token']
             lazylibrarian.CONFIG['TWITTER_PASSWORD'] = request_token['oauth_token_secret']
             logger.debug('Twitter oauth_token = %s oauth_secret = %s' % (lazylibrarian.CONFIG['TWITTER_USERNAME'],
-                         lazylibrarian.CONFIG['TWITTER_PASSWORD']))
+                                                                         lazylibrarian.CONFIG['TWITTER_PASSWORD']))
             return self.AUTHORIZATION_URL + "?oauth_token=" + request_token['oauth_token']
 
     def _get_credentials(self, key):

@@ -64,7 +64,11 @@ except ImportError:
   from md5 import md5
 
 # lazylibrarian changes
-import lib.oauth2 as oauth
+if PY2:
+    import lib.oauth2 as oauth
+else:
+    import lib3.oauth2 as oauth
+
 def longint(x):
   if PY2:
     return long(x)

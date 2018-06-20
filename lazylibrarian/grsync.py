@@ -19,7 +19,6 @@ import xml.dom.minidom
 from string import Template
 
 import lazylibrarian
-import lib.oauth2 as oauth
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
@@ -27,6 +26,10 @@ from lazylibrarian.common import gr_api_sleep
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl
+if PY2:
+    import lib.oauth2 as oauth
+else:
+    import lib3.oauth2 as oauth
 
 client = ''
 request_token = ''
