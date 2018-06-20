@@ -511,9 +511,13 @@ def calculate_torrent_hash(link, data=None):
         if len(torrent_hash) == 32:
             torrent_hash = b16encode(b32decode(torrent_hash)).lower()
     elif data:
-        # noinspection PyUnresolvedReferences
-        info = bdecode(data)["info"]
-        torrent_hash = sha1(bencode(info)).hexdigest()
+        try:
+            # noinspection PyUnresolvedReferences
+            info = bdecode(data)["info"]
+            torrent_hash = sha1(bencode(info)).hexdigest()
+        except Exception as e:
+            logger.error("Error calculating hash: %s" % e)
+            return ''
     else:
         logger.error("Cannot calculate torrent hash without magnet link or data")
         return ''
