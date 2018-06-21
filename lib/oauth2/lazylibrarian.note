@@ -1,0 +1,5 @@
+This version of oauth2 included with lazylibrarian
+is not up-to-date as later versions (also called 1.0)
+have issues with goodreads private profiles when reading
+users bookshelves (403 errors). This is the last known working 
+version. Have not looked into why.
