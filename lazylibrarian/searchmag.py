@@ -480,14 +480,14 @@ def search_magazines(mags=None, reset=False):
                             magazine['nzbtitle'],
                             magazine['nzburl'],
                             'magazine')
-                    elif magazine['NZBmode'] == 'nzb':
+                    elif magazine['nzbmode'] == 'nzb':
                         snatch, res = NZBDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
                             'magazine')
                     else:
-                        res = 'Unhandled NZBmode [%s] for %s' % (magazine['NZBmode'], magazine["nzburl"])
+                        res = 'Unhandled NZBmode [%s] for %s' % (magazine['nzbmode'], magazine["nzburl"])
                         logger.error(res)
                         snatch = 0
 
@@ -498,7 +498,7 @@ def search_magazines(mags=None, reset=False):
                                       (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
                         scheduleJob(action='Start', target='processDir')
                     else:
-                        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', 
+                        myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
                                     (res, magazine["nzburl"]))
 
         if reset:
