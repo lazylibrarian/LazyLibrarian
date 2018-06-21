@@ -26,10 +26,7 @@ from lazylibrarian.common import gr_api_sleep
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl
-if PY2:
-    import lib.oauth2 as oauth
-else:
-    import lib3.oauth2 as oauth
+import lib.oauth2 as oauth
 
 client = ''
 request_token = ''

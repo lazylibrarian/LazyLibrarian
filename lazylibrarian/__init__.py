@@ -55,7 +55,7 @@ COMMIT_LIST = None
 SHOWLOGOUT = 1
 
 # These are only used in startup
-SCHED = Scheduler()
+SCHED = None
 INIT_LOCK = threading.Lock()
 __INITIALIZED__ = False
 started = False
@@ -574,6 +574,8 @@ def initialize():
 
         if __INITIALIZED__:
             return False
+
+        SCHED = Scheduler(misfire_grace_time=30)
 
         check_section('General')
         # False to silence logging until logger initialised

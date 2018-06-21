@@ -18,16 +18,10 @@
 
 import lazylibrarian
 import lib.pythontwitter as twitter
-
 from lazylibrarian import logger, common, formatter
-from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import parse_qsl
-
-if PY2:
-    import lib.oauth2 as oauth
-else:
-    import lib3.oauth2 as oauth
+import lib.oauth2 as oauth
 
 
 class TwitterNotifier:
