@@ -281,11 +281,12 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             myDB.upsert("authors", newValueDict, controlValueDict)
 
         if addbooks:
-            # audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
             if new_author:
                 bookstatus = lazylibrarian.CONFIG['NEWAUTHOR_STATUS']
+                audiostatus = lazylibrarian.CONFIG['NEWAUTHOR_AUDIO']
             else:
                 bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
+                audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
 
             if entry_status not in ['Active', 'Wanted', 'Ignored', 'Paused']:
                 entry_status = 'Active'  # default for invalid/unknown or "loading"
@@ -293,20 +294,24 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 if lazylibrarian.CONFIG['GB_API']:
                     book_api = GoogleBooks()
-                    book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                    book_api.get_author_books(authorid, authorname, bookstatus=bookstatus, 
+                                              audiostatus=audiostatus, entrystatus=entry_status,
                                               refresh=refresh)
                 # if lazylibrarian.CONFIG['GR_API']:
                 #     book_api = GoodReads(authorname)
-                #     book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                #     book_api.get_author_books(authorid, authorname, bookstatus=bookstatus, 
+                #                               ausiostatus=audiostatus, entrystatus=entry_status,
                 #                               refresh=refresh)
             elif lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 if lazylibrarian.CONFIG['GR_API']:
                     book_api = GoodReads(authorname)
-                    book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                    book_api.get_author_books(authorid, authorname, bookstatus=bookstatus, 
+                                              audiostatus=audiostatus, entrystatus=entry_status,
                                               refresh=refresh)
                 # if lazylibrarian.CONFIG['GB_API']:
                 #     book_api = GoogleBooks()
-                #     book_api.get_author_books(authorid, authorname, bookstatus, entrystatus=entry_status,
+                #     book_api.get_author_books(authorid, authorname, bookstatus=bookstatus, 
+                #                               audiostatus=audiostatus, entrystatus=entry_status,
                 #                               refresh=refresh)
 
             update_totals(authorid)

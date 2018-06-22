@@ -131,7 +131,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     history = myDB.select('SELECT * from wanted')
                     logger.debug("There are %s items in history" % len(history))
                     if len(history):
-                        logger.debug("Looking for %s: %s" % (resultTitle, url))
+                        logger.debug("Searching history table for %s: %s" % (resultTitle, url))
                         cnt = 1
                         for item in history:
                             ratio = fuzz.ratio(url, item['NZBurl'])

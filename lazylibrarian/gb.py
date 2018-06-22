@@ -245,7 +245,7 @@ class GoogleBooks:
             logger.error('Unhandled exception in GB.find_results: %s' % traceback.format_exc())
 
     def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped",
-                         entrystatus='Active', refresh=False):
+                         audiostatus="Skipped", entrystatus='Active', refresh=False):
         # noinspection PyBroadException
         try:
             logger.debug('[%s] Now processing books with Google Books API' % authorname)
@@ -416,7 +416,7 @@ class GoogleBooks:
                                     audio_status = 'Ignored'
                                 else:
                                     book_status = bookstatus  # new_book status, or new_author status
-                                    audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
+                                    audio_status = audiostatus
                                 added = today()
                                 locked = False
 
@@ -604,7 +604,7 @@ class GoogleBooks:
         except Exception:
             logger.error('Unhandled exception in GB.get_author_books: %s' % traceback.format_exc())
 
-    def find_book(self, bookid=None, bookstatus="None"):
+    def find_book(self, bookid=None, bookstatus=None, audiostatus=None):
         myDB = database.DBConnection()
         if not lazylibrarian.CONFIG['GB_API']:
             logger.warn('No GoogleBooks API key, check config')
@@ -618,6 +618,8 @@ class GoogleBooks:
 
         if not bookstatus:
             bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
+        if not audiostatus:
+            audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
 
         book = bookdict(jsonresults)
         dic = {':': '.', '"': '', '\'': ''}
@@ -693,7 +695,7 @@ class GoogleBooks:
             "BookDate": book['date'],
             "BookLang": book['lang'],
             "Status": bookstatus,
-            "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
+            "AudioStatus": audiostatus,
             "BookAdded": today()
         }
 

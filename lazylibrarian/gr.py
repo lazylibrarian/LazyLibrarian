@@ -345,7 +345,7 @@ class GoodReads:
 
         return mydict
 
-    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped",
+    def get_author_books(self, authorid=None, authorname=None, bookstatus="Skipped", audiostatus='Skipped',
                          entrystatus='Active', refresh=False):
         # noinspection PyBroadException
         try:
@@ -691,7 +691,7 @@ class GoodReads:
                                     audio_status = 'Ignored'
                                 else:
                                     book_status = bookstatus  # new_book status, or new_author status
-                                    audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
+                                    audio_status = audiostatus
                                 added = today()
                                 locked = False
 
@@ -866,7 +866,7 @@ class GoodReads:
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
 
-    def find_book(self, bookid=None, bookstatus=None):
+    def find_book(self, bookid=None, bookstatus=None, audiostatus=None):
         myDB = database.DBConnection()
 
         URL = 'https://www.goodreads.com/book/show/' + bookid + '?' + urlencode(self.params)
@@ -882,6 +882,8 @@ class GoodReads:
 
         if not bookstatus:
             bookstatus = lazylibrarian.CONFIG['NEWBOOK_STATUS']
+        if not audiostatus:
+            audiostatus = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
         bookLanguage = rootxml.find('./book/language_code').text
         bookname = rootxml.find('./book/title').text
 
@@ -996,7 +998,7 @@ class GoodReads:
             "BookDate": bookdate,
             "BookLang": bookLanguage,
             "Status": bookstatus,
-            "AudioStatus": lazylibrarian.CONFIG['NEWAUDIO_STATUS'],
+            "AudioStatus": audiostatus,
             "BookAdded": today(),
             "WorkID": workid
         }
