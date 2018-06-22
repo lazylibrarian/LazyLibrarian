@@ -29,13 +29,17 @@
 
         var array = pop_types.split(' ');
         var item;
+        var loc = 'openBook?bookid=' + bookid + '&library=eBook&booktype='
         for (item of array) {
-                buttons[item] = {
+            % for extn in valid:
+                if (item === "${extn}") {
+                  buttons[item] = {
                     label: item,
                     className: 'btn-info',
-                    callback: function(result){ window.location = 'openBook?bookid=' + bookid +
-                                        '&library=eBook&booktype=' + item }
+                    callback: function(result){ window.location = loc + "${extn}"; }
                     };
+                }
+            %endfor
         };
 
         bootbox.dialog({
