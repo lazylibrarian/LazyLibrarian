@@ -2067,7 +2067,8 @@ class WebInterface(object):
                                 msg += typestr
                                 return serve_template(templatename="choosetype.html", prefix="",
                                                       title="Not Available", pop_message=msg,
-                                                      pop_types=typestr, bookid=bookid)
+                                                      pop_types=typestr, bookid=bookid, 
+                                                      valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
                         elif len(types) > 1:
                             msg = "Please select format to download"
                             typestr = ''
@@ -2077,7 +2078,8 @@ class WebInterface(object):
                                 typestr += item
                             return serve_template(templatename="choosetype.html", prefix="",
                                                   title="Choose Type", pop_message=msg,
-                                                  pop_types=typestr, bookid=bookid)
+                                                  pop_types=typestr, bookid=bookid,
+                                                  valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
 
                         logger.debug('Opening %s %s' % (library, bookfile))
                         return serve_file(bookfile, self.mimetype(bookfile), "attachment")
