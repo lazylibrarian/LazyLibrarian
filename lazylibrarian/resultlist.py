@@ -135,7 +135,8 @@ def findBestResult(resultlist, book, searchtype, source):
                         cnt = 1
                         for item in history:
                             ratio = fuzz.ratio(url, item['NZBurl'])
-                            logger.debug("%s: %s%% %s: %s" % (cnt, ratio, item['NZBtitle'], item['NZBurl']))
+                            logger.debug("%s: %s%% %s %s: %s" % (cnt, ratio, item['Status'],
+                                         item['NZBtitle'], item['NZBurl']))
                             cnt += 1
                             if ratio == 100:
                                 logger.debug("Found ratio 100 %s, (%s) at %s" %

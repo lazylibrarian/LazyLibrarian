@@ -2751,7 +2751,8 @@
                 <div class="form-group">
                   <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.CONFIG['REJECT_WORDS']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
-                    Search results with any of these words in the title will be ignored<br/>
+                    Search results with any of these words in the title or filenames<br>
+                    (where available) will be ignored<br/>
                   </span>
                 </div>
                 </div>
@@ -2760,7 +2761,8 @@
                 <div class="form-group">
                   <input type="text" id="reject_audio" name="reject_audio" value="${lazylibrarian.CONFIG['REJECT_AUDIO']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
-                    Search results with any of these words in the title will be ignored<br/>
+                    Search results with any of these words in the title or filenames<br>
+                    (where available) will be ignored<br/>
                   </span>
                 </div>
                 </div>
@@ -2769,7 +2771,8 @@
                 <div class="form-group">
                   <input type="text" id="reject_mags" name="reject_mags" value="${lazylibrarian.CONFIG['REJECT_MAGS']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
-                    Search results with any of these words in the title will be ignored<br/>
+                    Search results with any of these words in the title or filenames<br>
+                    (where available) will be ignored<br/>
                   </span>
                 </div>
                 </div>
@@ -2778,8 +2781,8 @@
                 <div class="form-group">
                   <input type="text" id="banned_ext" name="banned_ext" value="${lazylibrarian.CONFIG['BANNED_EXT']}" class="form-control" placeholder="Reject extensions list">
                   <span class="help-block">Comma separated list of extensions to reject:<br/>
-                    Results with any of these extensions in the contents will be rejected<br/>
-                    (only transmission/deluge/qbittorrent)<br/>
+                    Results with any of these extensions in the filenames will be rejected<br/>
+                    (where info is available)<br/>
                   </span>
                 </div>
                 </div>

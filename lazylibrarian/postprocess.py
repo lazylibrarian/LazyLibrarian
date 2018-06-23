@@ -346,7 +346,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         ppcount = 0
         myDB = database.DBConnection()
         skipped_extensions = getList(lazylibrarian.CONFIG['SKIPPED_EXT'])
-        banned_extensions = getList(lazylibrarian.CONFIG['BANNED_EXT'])
         if startdir:
             templist = [startdir]
         else:
@@ -377,77 +376,10 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                     matchtitle = torrentname
 
                 book_type = bookType(book)
-                if book_type == 'eBook':
-                    maxsize = lazylibrarian.CONFIG['REJECT_MAXSIZE']
-                    minsize = lazylibrarian.CONFIG['REJECT_MINSIZE']
-                    filetypes = lazylibrarian.CONFIG['EBOOK_TYPE']
-                elif book_type == 'AudioBook':
-                    maxsize = lazylibrarian.CONFIG['REJECT_MAXAUDIO']
-                    # minsize = lazylibrarian.CONFIG['REJECT_MINAUDIO']
-                    minsize = 0  # individual audiobook chapters can be quite small
-                    filetypes = lazylibrarian.CONFIG['AUDIOBOOK_TYPE']
-                elif book_type == 'Magazine':
-                    maxsize = lazylibrarian.CONFIG['REJECT_MAGSIZE']
-                    minsize = lazylibrarian.CONFIG['REJECT_MAGMIN']
-                    filetypes = lazylibrarian.CONFIG['MAG_TYPE']
-                else:  # shouldn't happen
-                    maxsize = 0
-                    minsize = 0
-                    filetypes = ''
 
                 # here we could also check percentage downloaded or eta or status?
                 # If downloader says it hasn't completed, no need to look for it.
-                rejected = False
-                if book['Source'] in ['TRANSMISSION', 'QBITTORRENT', 'DELUGEWEBUI', 'DELUGERPC']:
-                    torrentfiles = getDownloadFiles(book['Source'], book['DownloadID'])
-                    # Downloaders return varying amounts of info using varying names
-                    if not torrentfiles:  # empty
-                        logger.debug("No files returned by %s for %s" % (book['Source'], matchtitle))
-                    else:
-                        logger.debug("Checking files in %s" % matchtitle)
-                        for entry in torrentfiles:
-                            fname = ''
-                            fsize = 0
-                            if 'path' in entry:  # deluge
-                                fname = entry['path']
-                            if 'name' in entry:  # transmission, qbittorrent
-                                fname = entry['name']
-                            if 'filename' in entry:  # utorrent, synology
-                                fname = entry['filename']
-                            if 'size' in entry:  # deluge, qbittorrent, synology
-                                fsize = entry['size']
-                            if 'filesize' in entry:  # utorrent
-                                fsize = entry['filesize']
-                            if 'length' in entry:  # transmission
-                                fsize = entry['length']
-                            extn = os.path.splitext(fname)[1].lstrip('.').lower()
-                            if extn and extn in banned_extensions:
-                                rejected = "%s contains %s" % (matchtitle, extn)
-                                logger.warn("%s. Deleting torrent" % rejected)
-                                break
-                            # only check size on right types of file
-                            # eg dont reject cos jpg is smaller than min file size
-                            # need to check if we have a size in K M or just a number. If K or M could be a float.
-                            if fsize and extn in filetypes:
-                                try:
-                                    if 'M' in str(fsize):
-                                        fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
-                                    elif 'K' in str(fsize):
-                                        fsize = int(float(fsize.split('K')[0].strip() * 1024))
-                                    fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
-                                except ValueError:
-                                    fsize = 0
-                                if fsize:
-                                    if maxsize and fsize > maxsize:
-                                        rejected = "%s is too large (%sMb)" % (fname, fsize)
-                                        logger.warn("%s. Deleting torrent" % rejected)
-                                        break
-                                    if minsize and fsize < minsize:
-                                        rejected = "%s is too small (%sMb)" % (fname, fsize)
-                                        logger.warn("%s. Deleting torrent" % rejected)
-                                        break
-                            if not rejected:
-                                logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
+                rejected = check_contents(book['Source'], book['DownloadID'], book_type, matchtitle)
                 if rejected:
                     # change status to "Failed", and ask downloader to delete task and files
                     # Only reset book status to wanted if still snatched in case another download task succeeded
@@ -907,6 +839,100 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         threading.currentThread().name = threadname
 
 
+def check_contents(source, downloadid, book_type, title):
+    """ Check contents list of a download against various reject criteria
+        name, size, filetype, banned words
+        Return empty string if ok, or error message if rejected
+        Error message gets logged and then passed back to history table
+    """
+    rejected = ''
+    banned_extensions = getList(lazylibrarian.CONFIG['BANNED_EXT'])
+    if book_type.lower() == 'ebook':
+        maxsize = lazylibrarian.CONFIG['REJECT_MAXSIZE']
+        minsize = lazylibrarian.CONFIG['REJECT_MINSIZE']
+        filetypes = lazylibrarian.CONFIG['EBOOK_TYPE']
+        banwords = lazylibrarian.CONFIG['REJECT_WORDS']
+    elif book_type.lower() == 'audiobook':
+        maxsize = lazylibrarian.CONFIG['REJECT_MAXAUDIO']
+        # minsize = lazylibrarian.CONFIG['REJECT_MINAUDIO']
+        minsize = 0  # individual audiobook chapters can be quite small
+        filetypes = lazylibrarian.CONFIG['AUDIOBOOK_TYPE']
+        banwords = lazylibrarian.CONFIG['REJECT_AUDIO']
+    elif book_type.lower() == 'magazine':
+        maxsize = lazylibrarian.CONFIG['REJECT_MAGSIZE']
+        minsize = lazylibrarian.CONFIG['REJECT_MAGMIN']
+        filetypes = lazylibrarian.CONFIG['MAG_TYPE']
+        banwords = lazylibrarian.CONFIG['REJECT_MAGS']
+    else:  # shouldn't happen
+        maxsize = 0
+        minsize = 0
+        filetypes = ''
+        banwords = ''
+
+    downloadfiles = getDownloadFiles(source, downloadid)
+
+    # Downloaders return varying amounts of info using varying names
+    if not downloadfiles:  # empty
+        logger.debug("No files returned by %s for %s" % (source, title))
+    else:
+        logger.debug("Checking files in %s" % title)
+        for entry in downloadfiles:
+            fname = ''
+            fsize = 0
+            if 'path' in entry:  # deluge
+                fname = entry['path']
+            if 'name' in entry:  # transmission, qbittorrent
+                fname = entry['name']
+            if 'filename' in entry:  # utorrent, synology
+                fname = entry['filename']
+            if 'size' in entry:  # deluge, qbittorrent, synology
+                fsize = entry['size']
+            if 'filesize' in entry:  # utorrent
+                fsize = entry['filesize']
+            if 'length' in entry:  # transmission
+                fsize = entry['length']
+            extn = os.path.splitext(fname)[1].lstrip('.').lower()
+            if extn and extn in banned_extensions:
+                rejected = "%s extension %s" % (title, extn)
+                logger.warn("%s. Rejecting download" % rejected)
+                break
+
+            if not rejected and banwords:
+                wordlist = getList(fname.lower().replace(os.sep(), ' ').replace('.', ' '))
+                for word in wordlist:
+                    if word in banwords:
+                        rejected = "%s contains %s" % (fname, word)
+                        logger.warn("%s. Rejecting download" % rejected)
+                        break
+
+            # only check size on right types of file
+            # eg dont reject cos jpg is smaller than min file size
+            # need to check if we have a size in K M G or just a number. If K M G could be a float.
+            if not rejected and fsize and extn in filetypes:
+                try:
+                    if 'G' in str(fsize):
+                        fsize = int(float(fsize.split('G')[0].strip()) * 1073741824)
+                    elif 'M' in str(fsize):
+                        fsize = int(float(fsize.split('M')[0].strip()) * 1048576)
+                    elif 'K' in str(fsize):
+                        fsize = int(float(fsize.split('K')[0].strip() * 1024))
+                    fsize = round(check_int(fsize, 0) / 1048576.0, 2)  # float to 2dp in Mb
+                except ValueError:
+                    fsize = 0
+                if fsize:
+                    if maxsize and fsize > maxsize:
+                        rejected = "%s is too large (%sMb)" % (fname, fsize)
+                        logger.warn("%s. Rejecting download" % rejected)
+                        break
+                    if minsize and fsize < minsize:
+                        rejected = "%s is too small (%sMb)" % (fname, fsize)
+                        logger.warn("%s. Rejecting download" % rejected)
+                        break
+            if not rejected:
+                logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
+    return rejected
+
+
 def check_residual(download_dir):
     # Import any books in download that weren't marked as snatched, but have a LL.(bookid)
     # don't process any we've already got as we might not want to delete originals
@@ -1016,20 +1042,20 @@ def getDownloadName(title, source, downloadid):
 
 
 def getDownloadFiles(source, downloadid):
-    torrentfiles = None
+    dlfiles = None
     try:
         if source == 'TRANSMISSION':
-            torrentfiles = transmission.getTorrentFiles(downloadid)
+            dlfiles = transmission.getTorrentFiles(downloadid)
         elif source == 'UTORRENT':
-            torrentfiles = utorrent.listTorrent(downloadid)
+            dlfiles = utorrent.listTorrent(downloadid)
         # elif source == 'RTORRENT':
         #     torrentname = rtorrent.getFiles(downloadid)
         elif source == 'SYNOLOGY_TOR':
-            torrentfiles = synology.getFiles(downloadid)
+            dlfiles = synology.getFiles(downloadid)
         elif source == 'QBITTORRENT':
-            torrentfiles = qbittorrent.getFiles(downloadid)
+            dlfiles = qbittorrent.getFiles(downloadid)
         elif source == 'DELUGEWEBUI':
-            torrentfiles = deluge.getTorrentFiles(downloadid)
+            dlfiles = deluge.getTorrentFiles(downloadid)
         elif source == 'DELUGERPC':
             client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
                                      lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
@@ -1037,10 +1063,10 @@ def getDownloadFiles(source, downloadid):
                 client.connect()
                 result = client.call('core.get_torrent_status', downloadid, {})
                 if 'files' in result:
-                    torrentfiles = result['files']
+                    dlfiles = result['files']
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-        return torrentfiles
+        return dlfiles
 
     except Exception as e:
         logger.error("Failed to get list of files from %s for %s: %s %s" %

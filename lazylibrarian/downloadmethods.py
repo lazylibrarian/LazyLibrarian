@@ -36,7 +36,7 @@ from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, 
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import setperm, USER_AGENT, proxyList, mymakedirs
 from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
-from lazylibrarian.postprocess import delete_task
+from lazylibrarian.postprocess import delete_task, check_contents
 from lib.deluge_client import DelugeRPCClient
 from .magnet2torrent import magnet2torrent
 from lib.bencode import bencode, bdecode
@@ -461,7 +461,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 # need to check against reject words list again as the name may have changed
                 # library = magazine eBook AudioBook to determine which reject list
                 # but we can't easily do the per-magazine rejects
-                if library == 'magazine':
+                if library == 'Magazine':
                     reject_list = getList(lazylibrarian.CONFIG['REJECT_MAGS'])
                 elif library == 'eBook':
                     reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
@@ -478,6 +478,8 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                         rejected = "Rejecting torrent name %s, contains %s" % (tor_title, word)
                         logger.debug(rejected)
                         break
+                if not rejected:
+                    rejected = check_contents(Source, downloadID, library, tor_title)
                 if rejected:
                     myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
                                 (rejected, full_url))

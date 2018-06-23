@@ -473,19 +473,19 @@ def search_magazines(mags=None, reset=False):
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            'magazine')
+                            'Magazine')
                     elif magazine['nzbmode'] == 'direct':
                         snatch, res = DirectDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            'magazine')
+                            'Magazine')
                     elif magazine['nzbmode'] == 'nzb':
                         snatch, res = NZBDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            'magazine')
+                            'Magazine')
                     else:
                         res = 'Unhandled NZBmode [%s] for %s' % (magazine['nzbmode'], magazine["nzburl"])
                         logger.error(res)
