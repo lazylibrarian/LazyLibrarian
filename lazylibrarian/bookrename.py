@@ -61,6 +61,7 @@ def audioRename(bookid):
     book = ''
     total = 0
     audio_file = ''
+    abridged = ''
     for f in os.listdir(makeBytestr(r)):
         f = makeUnicode(f)
         if is_valid_booktype(f, booktype='audiobook'):
@@ -72,6 +73,7 @@ def audioRename(bookid):
                 composer = id3r.composer
                 albumartist = id3r.albumartist
                 book = id3r.album
+                title = id3r.title
                 track = id3r.track
                 total = id3r.track_total
 
@@ -94,7 +96,7 @@ def audioRename(bookid):
                     albumartist = albumartist.strip()
                 else:
                     albumartist = ''
-                
+
                 if composer:  # if present, should be author
                     author = composer
                 elif performer:  # author, or narrator if composer == author
@@ -103,9 +105,29 @@ def audioRename(bookid):
                     author = albumartist
                 if author and book:
                     parts.append([track, book, author, f])
+                if not abridged:
+                    for tag in [book, title, albumartist, performer, composer]:
+                        if 'unabridged' in tag.lower():
+                            abridged = 'Unabridged'
+                            break;
+                if not abridged:
+                    for tag in [book, title, albumartist, performer, composer]:
+                        if 'abridged' in tag.lower():
+                            abridged = 'Abridged'
+                            break;
+
             except Exception as e:
                 logger.error("tinytag %s %s" % (type(e).__name__, str(e)))
                 pass
+            finally:
+                if not abridged:
+                    if 'unabridged' in audio_file.lower():
+                        abridged = 'Unabridged'
+                        break;
+                if not abridged:
+                    if 'abridged' in audio_file.lower():
+                        abridged = 'Abridged'
+                        break;
 
     logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
 
@@ -181,12 +203,17 @@ def audioRename(bookid):
 
     # if we get here, looks like we have all the parts needed to rename properly
     seriesinfo = seriesInfo(bookid)
+
+    add_abridged = ''
+    if 'abridged' not in book.lower():
+        add_abridged = ' (%s)' % abridged
     dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
         '$Author', author).replace(
         '$Title', book).replace(
         '$Series', seriesinfo['Full']).replace(
         '$SerName', seriesinfo['Name']).replace(
         '$SerNum', seriesinfo['Num']).replace(
+        '$Abridged', add_abridged).replace(
         '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
     dest_path = replace_all(dest_path, __dic__)
@@ -211,6 +238,7 @@ def audioRename(bookid):
             '$Series', seriesinfo['Full']).replace(
             '$SerName', seriesinfo['Name']).replace(
             '$SerNum', seriesinfo['Num']).replace(
+            '$Abridged', add_abridged).replace(
             '$$', ' ')
         pattern = ' '.join(pattern.split()).strip()
 
