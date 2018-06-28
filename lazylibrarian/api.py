@@ -565,7 +565,7 @@ class Api(object):
         dirname = os.path.dirname(kwargs['name'])
 
         dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ', '#': '# '}
-        name_formatted = replace_all(filename, dic).strip()
+        name_formatted = replace_all(kwargs['name'], dic).strip()
 
         if name_formatted and name_formatted[0] == '[' and name_formatted[-1] == ']':
             name_formatted = name_formatted[1:-1]
