@@ -2067,7 +2067,7 @@ class WebInterface(object):
                                 msg += typestr
                                 return serve_template(templatename="choosetype.html", prefix="",
                                                       title="Not Available", pop_message=msg,
-                                                      pop_types=typestr, bookid=bookid, 
+                                                      pop_types=typestr, bookid=bookid,
                                                       valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
                         elif len(types) > 1:
                             msg = "Please select format to download"
@@ -3769,13 +3769,6 @@ class WebInterface(object):
                             provname = provname.replace('/', ' ')
                         nrow[3] = provname
 
-                    if title and provider:
-                        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
-                            lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
-                            nrow.append(getDownloadProgress(nrow[7], nrow[8]))
-                        else:
-                            nrow.append(-1)
-                        nrow.append(rowid)
                         rows.append(nrow)  # add the rowlist to the masterlist
 
                 if sSearch:
@@ -3795,6 +3788,12 @@ class WebInterface(object):
                     rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
                 for row in rows:
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and row[6] == 'Snatched':
+                        lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
+                        nrow.append(getDownloadProgress(row[7], row[8]))
+                    else:
+                        row.append(-1)
+                    row.append(rowid)
                     row.append(row[4])  # keep full datetime for tooltip
                     row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
 
