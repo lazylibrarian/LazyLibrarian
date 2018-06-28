@@ -40,7 +40,7 @@ from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
     safe_copy, safe_move, mymakedirs
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
-    replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int
+    replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int, is_valid_type
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -191,10 +191,7 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     list_dir = [makeUnicode(item) for item in list_dir]
     for ourfile in list_dir:
         if ourfile.startswith(fname) or is_valid_booktype(ourfile, booktype="audiobook"):
-            if is_valid_booktype(ourfile, booktype="book") \
-                    or is_valid_booktype(ourfile, booktype="audiobook") \
-                    or is_valid_booktype(ourfile, booktype="mag") \
-                    or os.path.splitext(ourfile)[1].lower() in ['.opf', '.jpg']:
+            if is_valid_type(ourfile):
                 try:
                     srcfile = os.path.join(sourcedir, ourfile)
                     dstfile = os.path.join(targetdir, ourfile)
@@ -241,8 +238,8 @@ def unpack_archive(pp_path, download_dir, title):
 
         namelist = z.namelist()
         for item in namelist:
-            if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
-                    or is_valid_booktype(item, booktype="mag"):
+            # Look for any valid book files, including jpg for cbr/cbz
+            if is_valid_type(item):
                 if not targetdir:
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
@@ -267,8 +264,7 @@ def unpack_archive(pp_path, download_dir, title):
 
         namelist = z.getnames()
         for item in namelist:
-            if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
-                    or is_valid_booktype(item, booktype="mag"):
+            if is_valid_type(item):
                 if not targetdir:
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
@@ -293,8 +289,7 @@ def unpack_archive(pp_path, download_dir, title):
 
         namelist = z.namelist()
         for item in namelist:
-            if is_valid_booktype(item, booktype="book") or is_valid_booktype(item, booktype="audiobook") \
-                    or is_valid_booktype(item, booktype="mag"):
+            if is_valid_type(item):
                 if not targetdir:
                     targetdir = os.path.join(download_dir, title + '.unpack')
                 if not os.path.isdir(targetdir):
@@ -445,9 +440,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     # things that aren't ours
                                     # note that epub are zipfiles so check booktype first
                                     #
-                                    if is_valid_booktype(fname, booktype="book") \
-                                            or is_valid_booktype(fname, booktype="audiobook") \
-                                            or is_valid_booktype(fname, booktype="mag"):
+                                    if is_valid_type(fname):
                                         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                             logger.debug('file [%s] is a valid book/mag' % fname)
                                         if bts_file(download_dir):
@@ -493,9 +486,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                                     for f in os.listdir(makeBytestr(pp_path)):
                                         f = makeUnicode(f)
-                                        if not is_valid_booktype(f, 'book') \
-                                                and not is_valid_booktype(f, 'audiobook') \
-                                                and not is_valid_booktype(f, 'mag'):
+                                        if not is_valid_type(f):
                                             # Is file an archive, if so look inside and extract to new dir
                                             res = unpack_archive(os.path.join(pp_path, f), pp_path, matchtitle)
                                             if res:
@@ -898,7 +889,7 @@ def check_contents(source, downloadid, book_type, title):
                 break
 
             if not rejected and banwords:
-                wordlist = getList(fname.lower().replace(os.sep(), ' ').replace('.', ' '))
+                wordlist = getList(fname.lower().replace(os.sep, ' ').replace('.', ' '))
                 for word in wordlist:
                     if word in banwords:
                         rejected = "%s contains %s" % (fname, word)
@@ -930,6 +921,10 @@ def check_contents(source, downloadid, book_type, title):
                         break
             if not rejected:
                 logger.debug("%s: (%sMb) is wanted" % (fname, fsize))
+    if not rejected:
+        logger.debug("%s accepted" % title)
+    else:
+        logger.debug("%s: %s" % (title, rejected))
     return rejected
 
 

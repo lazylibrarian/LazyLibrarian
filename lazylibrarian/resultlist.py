@@ -109,40 +109,32 @@ def findBestResult(resultlist, book, searchtype, source):
                 logger.debug("Rejecting %s, no URL found" % resultTitle)
 
             if not rejected and lazylibrarian.CONFIG['BLACKLIST_FAILED']:
-                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (url,))
-                if already_failed:
-                    logger.debug("Rejecting %s, blacklisted (Failed) at %s" %
-                                 (resultTitle, already_failed['NZBprov']))
+                blacklisted = myDB.match('SELECT * from wanted WHERE NZBurl=? and Status="Failed"', (url,))
+                if blacklisted:
+                    logger.debug("Rejecting %s, url blacklisted (Failed) at %s" %
+                                 (resultTitle, blacklisted['NZBprov']))
                     rejected = True
+                if not rejected:
+                    blacklisted = myDB.match('SELECT * from wanted WHERE NZBprov=? and NZBtitle=? and Status="Failed"',
+                                             (res[prefix + 'prov'], res[prefix + 'title']))
+                    if blacklisted:
+                        logger.debug("Rejecting %s, title blacklisted (Failed) at %s" %
+                                     (resultTitle, blacklisted['NZBprov']))
+                        rejected = True
 
             if not rejected and lazylibrarian.CONFIG['BLACKLIST_PROCESSED']:
-                already_failed = myDB.match('SELECT * from wanted WHERE NZBurl=?', (url,))
-                if already_failed:
-                    logger.debug("Rejecting %s, blacklisted (%s) at %s" %
-                                 (resultTitle, already_failed['Status'], already_failed['NZBprov']))
+                blacklisted = myDB.match('SELECT * from wanted WHERE NZBurl=?', (url,))
+                if blacklisted:
+                    logger.debug("Rejecting %s, url blacklisted (%s) at %s" %
+                                 (resultTitle, blacklisted['Status'], blacklisted['NZBprov']))
                     rejected = True
-            #
-            # Extra debugging check of history entries, but only fairly close matches...
-            if not rejected and lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
-                score = (Book_match + Author_match) / 2
-                if score < int(lazylibrarian.CONFIG['MATCH_RATIO']):
-                    logger.debug("No extended history check, only %s%% match" % score)
-                else:
-                    history = myDB.select('SELECT * from wanted')
-                    logger.debug("There are %s items in history" % len(history))
-                    if len(history):
-                        logger.debug("Searching history table for %s: %s" % (resultTitle, url))
-                        cnt = 1
-                        for item in history:
-                            ratio = fuzz.ratio(url, item['NZBurl'])
-                            logger.debug("%s: %s%% %s %s: %s" % (cnt, ratio, item['Status'],
-                                         item['NZBtitle'], item['NZBurl']))
-                            cnt += 1
-                            if ratio == 100:
-                                logger.debug("Found ratio 100 %s, (%s) at %s" %
-                                             (resultTitle, history['Status'], history['NZBprov']))
-                                # rejected = True
-                                # break
+                if not rejected:
+                    blacklisted = myDB.match('SELECT * from wanted WHERE NZBprov=? and NZBtitle=?',
+                                             (res[prefix + 'prov'], res[prefix + 'title']))
+                    if blacklisted:
+                        logger.debug("Rejecting %s, title blacklisted (%s) at %s" %
+                                     (resultTitle, blacklisted['NZBprov']))
+                        rejected = True
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                 rejected = True
@@ -161,11 +153,11 @@ def findBestResult(resultlist, book, searchtype, source):
 
             if not rejected and maxsize and size > maxsize:
                 rejected = True
-                logger.debug("Rejecting %s, too large" % resultTitle)
+                logger.debug("Rejecting %s, too large (%sMb)" % (resultTitle, size))
 
             if not rejected and minsize and size < minsize:
                 rejected = True
-                logger.debug("Rejecting %s, too small" % resultTitle)
+                logger.debug("Rejecting %s, too small (%sMb)" % (resultTitle, size))
 
             if not rejected:
                 bookid = book['bookid']
