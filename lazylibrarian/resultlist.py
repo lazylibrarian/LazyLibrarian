@@ -133,7 +133,7 @@ def findBestResult(resultlist, book, searchtype, source):
                                              (res[prefix + 'prov'], res[prefix + 'title']))
                     if blacklisted:
                         logger.debug("Rejecting %s, title blacklisted (%s) at %s" %
-                                     (resultTitle, blacklisted['NZBprov']))
+                                     (resultTitle, blacklisted['Status'], blacklisted['NZBprov']))
                         rejected = True
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):

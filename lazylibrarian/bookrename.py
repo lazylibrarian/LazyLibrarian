@@ -109,12 +109,12 @@ def audioRename(bookid):
                     for tag in [book, title, albumartist, performer, composer]:
                         if 'unabridged' in tag.lower():
                             abridged = 'Unabridged'
-                            break;
+                            break
                 if not abridged:
                     for tag in [book, title, albumartist, performer, composer]:
                         if 'abridged' in tag.lower():
                             abridged = 'Abridged'
-                            break;
+                            break
 
             except Exception as e:
                 logger.error("tinytag %s %s" % (type(e).__name__, str(e)))
@@ -123,11 +123,11 @@ def audioRename(bookid):
                 if not abridged:
                     if 'unabridged' in audio_file.lower():
                         abridged = 'Unabridged'
-                        break;
+                        break
                 if not abridged:
                     if 'abridged' in audio_file.lower():
                         abridged = 'Abridged'
-                        break;
+                        break
 
     logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
 

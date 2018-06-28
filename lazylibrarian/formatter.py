@@ -373,7 +373,7 @@ def is_valid_type(filename):
                         lazylibrarian.CONFIG['AUDIOBOOK_TYPE'] + ' ' +
                         lazylibrarian.CONFIG['EBOOK_TYPE'] + ' jpg, opf')
     extn = os.path.splitext(filename)[1].lstrip('.')
-    if extn and extn.lower() in booktype_list:
+    if extn and extn.lower() in type_list:
         return True
     return False
 

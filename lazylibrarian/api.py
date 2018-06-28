@@ -561,7 +561,6 @@ class Api(object):
             return
         self.data = ''
 
-        filename = os.path.basename(kwargs['name'])
         dirname = os.path.dirname(kwargs['name'])
 
         dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ', '#': '# '}
