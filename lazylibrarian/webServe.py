@@ -3726,7 +3726,6 @@ class WebInterface(object):
             cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID,rowid from wanted"
             rowlist = myDB.select(cmd)
             # turn the sqlite rowlist into a list of dicts
-            lazylibrarian.HIST_REFRESH = 0
             if len(rowlist):
                 # the masterlist to be filled with the row data
                 for row in rowlist:  # iterate through the sqlite3.Row objects
@@ -3784,6 +3783,7 @@ class WebInterface(object):
                 else:
                     nrows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
+                lazylibrarian.HIST_REFRESH = 0
                 rows = []
                 for row in nrows:
                     # separate out rowid and other additions so we don't break legacy interface
@@ -3791,8 +3791,10 @@ class WebInterface(object):
                     row = row[:9]
                     if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
                         if row[6] == 'Snatched':
-                            lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
-                            row.append(getDownloadProgress(row[7], row[8]))
+                            progress = getDownloadProgress(row[7], row[8])
+                            row.append(progress)
+                            if progress < 100:
+                                lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
                         else:
                             row.append(-1)
                         row.append(rowid)

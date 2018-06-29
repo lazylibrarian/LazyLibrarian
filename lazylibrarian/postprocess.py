@@ -513,8 +513,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                         matches.append([match, pp_path, book])
                                         if match == 100:  # no point looking any further
                                             break
-                                else:
-                                    logger.debug('%s is not a file or a directory?' % pp_path)
                             else:
                                 pp_path = os.path.join(download_dir, fname)
                                 matches.append([match, pp_path, book])  # so we can report closest match
