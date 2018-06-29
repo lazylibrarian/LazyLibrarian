@@ -862,7 +862,7 @@ def check_contents(source, downloadid, book_type, title):
 
     # Downloaders return varying amounts of info using varying names
     if not downloadfiles:  # empty
-        logger.debug("No files returned by %s for %s" % (source, title))
+        logger.debug("No filenames returned by %s for %s" % (source, title))
     else:
         logger.debug("Checking files in %s" % title)
         for entry in downloadfiles:
