@@ -116,7 +116,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     rejected = True
                 if not rejected:
                     blacklisted = myDB.match('SELECT * from wanted WHERE NZBprov=? and NZBtitle=? and Status="Failed"',
-                                             (res[prefix + 'prov'], res[prefix + 'title']))
+                                             (res[prefix + 'prov'], resultTitle))
                     if blacklisted:
                         logger.debug("Rejecting %s, title blacklisted (Failed) at %s" %
                                      (resultTitle, blacklisted['NZBprov']))
@@ -130,7 +130,7 @@ def findBestResult(resultlist, book, searchtype, source):
                     rejected = True
                 if not rejected:
                     blacklisted = myDB.match('SELECT * from wanted WHERE NZBprov=? and NZBtitle=?',
-                                             (res[prefix + 'prov'], res[prefix + 'title']))
+                                             (res[prefix + 'prov'], resultTitle))
                     if blacklisted:
                         logger.debug("Rejecting %s, title blacklisted (%s) at %s" %
                                      (resultTitle, blacklisted['Status'], blacklisted['NZBprov']))
