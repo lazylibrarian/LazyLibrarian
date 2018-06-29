@@ -283,6 +283,24 @@ def bookRename(bookid):
         logger.debug(msg)
         return f
 
+    # Check for more than one book in the folder. Note we can't rely on basename
+    # being the same, so just check for more than one bookfile of the same type
+    filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+    reject = ''
+    flist = os.listdir(makeBytestr(r))
+    flist = [makeUnicode(item) for item in flist]
+    for item in filetypes:
+        counter = 0
+        for fname in flist:
+            if fname.endswith(item):
+                counter += 1
+                if counter > 1:
+                    reject = item
+                    break
+    if reject:
+        logger.debug("Not renaming %s, found multiple %s" % (f, reject))
+        return f
+
     seriesinfo = seriesInfo(bookid)
     dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
         '$Author', exists['AuthorName']).replace(
@@ -295,6 +313,17 @@ def bookRename(bookid):
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
+
+    # windows doesn't allow directory names to end in a space or a period
+    # but allows starting with a period (not sure about starting with a space)
+    dest_parts = dest_path.split(os.sep)
+    new_parts = []
+    for part in dest_parts:
+        while part and part[-1] in ' .':
+            part = part[:-1]
+        part = part.strip(' ')
+    new_parts.append(part)
+    dest_path = os.sep.join(new_parts)
 
     if r != dest_path:
         try:
@@ -343,14 +372,15 @@ def bookRename(bookid):
             if extn:
                 ofname = os.path.join(r, fname)
                 nfname = os.path.join(r, new_basename + extn)
-                try:
-                    nfname = safe_move(ofname, nfname)
-                    logger.debug("bookRename %s to %s" % (ofname, nfname))
-                    if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
-                        f = nfname
-                except Exception as e:
-                    logger.error('Unable to rename [%s] to [%s] %s %s' %
-                                 (ofname, nfname, type(e).__name__, str(e)))
+                if ofname != nfname:
+                    try:
+                        nfname = safe_move(ofname, nfname)
+                        logger.debug("bookRename %s to %s" % (ofname, nfname))
+                        if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
+                            f = nfname
+                    except Exception as e:
+                        logger.error('Unable to rename [%s] to [%s] %s %s' %
+                                     (ofname, nfname, type(e).__name__, str(e)))
     return f
 
 
