@@ -2069,7 +2069,8 @@ class WebInterface(object):
                                 msg += typestr
                                 return serve_template(templatename="choosetype.html", prefix="",
                                                       title="Not Available", pop_message=msg,
-                                                      pop_types=typestr, bookid=bookid)
+                                                      pop_types=typestr, bookid=bookid,
+                                                      valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
                         elif len(types) > 1:
                             msg = "Please select format to download"
                             typestr = ''
@@ -2079,7 +2080,8 @@ class WebInterface(object):
                                 typestr += item
                             return serve_template(templatename="choosetype.html", prefix="",
                                                   title="Choose Type", pop_message=msg,
-                                                  pop_types=typestr, bookid=bookid)
+                                                  pop_types=typestr, bookid=bookid,
+                                                  valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
 
                         logger.debug('Opening %s %s' % (library, bookfile))
                         return serve_file(bookfile, self.mimetype(bookfile), "attachment")
@@ -3726,14 +3728,10 @@ class WebInterface(object):
             cmd = "SELECT NZBTitle,AuxInfo,BookID,NZBProv,NZBDate,NZBSize,Status,Source,DownloadID,rowid from wanted"
             rowlist = myDB.select(cmd)
             # turn the sqlite rowlist into a list of dicts
-            lazylibrarian.HIST_REFRESH = 0
             if len(rowlist):
                 # the masterlist to be filled with the row data
                 for row in rowlist:  # iterate through the sqlite3.Row objects
                     nrow = list(row)
-                    # separate out rowid so we don't break legacy interface
-                    rowid = nrow[9]
-                    nrow = nrow[:9]
                     # title needs spaces, not dots, for column resizing
                     title = nrow[0]  # type: str
                     if title:
@@ -3769,13 +3767,6 @@ class WebInterface(object):
                             provname = provname.replace('/', ' ')
                         nrow[3] = provname
 
-                    if title and provider:
-                        if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy' and nrow[6] == 'Snatched':
-                            lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
-                            nrow.append(getDownloadProgress(nrow[7], nrow[8]))
-                        else:
-                            nrow.append(-1)
-                        nrow.append(rowid)
                         rows.append(nrow)  # add the rowlist to the masterlist
 
                 if sSearch:
@@ -3790,13 +3781,28 @@ class WebInterface(object):
                 filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
                 if iDisplayLength < 0:  # display = all
-                    rows = filtered
+                    nrows = filtered
                 else:
-                    rows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
+                    nrows = filtered[iDisplayStart:(iDisplayStart + iDisplayLength)]
 
-                for row in rows:
-                    row.append(row[4])  # keep full datetime for tooltip
-                    row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
+                lazylibrarian.HIST_REFRESH = 0
+                rows = []
+                for row in nrows:
+                    # separate out rowid and other additions so we don't break legacy interface
+                    rowid = row[9]
+                    row = row[:9]
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
+                        if row[6] == 'Snatched':
+                            progress = getDownloadProgress(row[7], row[8])
+                            row.append(progress)
+                            if progress < 100:
+                                lazylibrarian.HIST_REFRESH = lazylibrarian.CONFIG['HIST_REFRESH']
+                        else:
+                            row.append(-1)
+                        row.append(rowid)
+                        row.append(row[4])  # keep full datetime for tooltip
+                        row[4] = dateFormat(row[4], lazylibrarian.CONFIG['DATE_FORMAT'])
+                    rows.append(row)
 
             if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                 logger.debug("getHistory returning %s to %s" % (iDisplayStart, iDisplayStart + iDisplayLength))

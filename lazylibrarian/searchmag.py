@@ -473,19 +473,19 @@ def search_magazines(mags=None, reset=False):
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            'magazine')
+                            'Magazine')
                     elif magazine['nzbmode'] == 'direct':
                         snatch, res = DirectDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            'magazine')
+                            'Magazine')
                     elif magazine['nzbmode'] == 'nzb':
                         snatch, res = NZBDownloadMethod(
                             magazine['bookid'],
                             magazine['nzbtitle'],
                             magazine['nzburl'],
-                            'magazine')
+                            'Magazine')
                     else:
                         res = 'Unhandled NZBmode [%s] for %s' % (magazine['nzbmode'], magazine["nzburl"])
                         logger.error(res)
@@ -553,7 +553,7 @@ def get_issue_date(nzbtitle_exploded):
                         day = 1
                         regex_pass = 1
                     else:
-                        day = check_int(nzbtitle_exploded[pos - 2], 1)
+                        day = check_int(re.sub("\D", "", nzbtitle_exploded[pos - 2]), 0)
                         if pos > 2 and nzbtitle_exploded[pos-3].lower().strip('.') in nouns:
                             # definitely an issue number
                             issuedate = str(day)  # 4 == 04 == 004
@@ -561,8 +561,10 @@ def get_issue_date(nzbtitle_exploded):
                         elif day > 31:  # probably issue number nn
                             regex_pass = 2
                             day = 1
-                        else:
+                        elif day:
                             regex_pass = 3
+                        else:
+                            regex_pass = 0
                 else:
                     regex_pass = 4
                     day = 1
@@ -584,7 +586,7 @@ def get_issue_date(nzbtitle_exploded):
             if year and (pos > 1):
                 month = month2num(nzbtitle_exploded[pos - 2])
                 if month:
-                    day = check_int(nzbtitle_exploded[pos - 1].rstrip(','), 1)
+                    day = check_int(re.sub("\D", "", nzbtitle_exploded[pos - 1]), 0)
                     try:
                         _ = datetime.date(year, month, day)
                         issuedate = "%04d-%02d-%02d" % (year, month, day)
@@ -605,7 +607,7 @@ def get_issue_date(nzbtitle_exploded):
                     month = check_int(nzbtitle_exploded[pos + 1], 0)
                 if month:
                     if pos + 2 < len(nzbtitle_exploded):
-                        day = check_int(nzbtitle_exploded[pos + 2], 0)
+                        day = check_int(re.sub("\D", "", nzbtitle_exploded[pos + 2]), 0)
                         if day:
                             regex_pass = 6
                         else:
@@ -735,5 +737,4 @@ def get_issue_date(nzbtitle_exploded):
                     regex_pass = 18
                     break
             pos += 1
-
     return regex_pass, issuedate, year

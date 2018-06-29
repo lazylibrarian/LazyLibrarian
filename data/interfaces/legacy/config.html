@@ -1211,7 +1211,7 @@
             <small>Status for new ebooks by existing authors</small>
             <div>
               <br>
-              <label>New Authors Book Status:</label>
+              <label>New Authors eBook Status:</label>
               <select name="newauthor_status"  style="float:right;">
                 %for na_status in config['status_list']:
                 <%
@@ -1224,6 +1224,22 @@
               </select>
               <br>
               <small>Status for ebooks by new authors</small>
+            </div>
+            <div>
+              <br>
+              <label>New Authors AudioBook Status:</label>
+              <select name="newauthor_audio"  style="float:right;">
+                %for na_status in config['status_list']:
+                <%
+                        selected = ''
+                        if na_status == lazylibrarian.CONFIG['NEWAUTHOR_AUDIO']:
+                                selected = 'selected="selected"'
+                  %>
+                <option value="${na_status}" ${selected}>${na_status}</option>
+                %endfor
+              </select>
+              <br>
+              <small>Status for audiobooks by new authors</small>
             </div>
             <div>
               <%

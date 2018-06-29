@@ -368,6 +368,16 @@ def is_valid_isbn(isbn):
     return False
 
 
+def is_valid_type(filename):
+    type_list = getList(lazylibrarian.CONFIG['MAG_TYPE'] + ' ' +
+                        lazylibrarian.CONFIG['AUDIOBOOK_TYPE'] + ' ' +
+                        lazylibrarian.CONFIG['EBOOK_TYPE'] + ' jpg, opf')
+    extn = os.path.splitext(filename)[1].lstrip('.')
+    if extn and extn.lower() in type_list:
+        return True
+    return False
+
+
 def is_valid_booktype(filename, booktype=None):
     """
     Check if filename extension is one we want

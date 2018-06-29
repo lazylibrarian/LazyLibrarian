@@ -1042,5 +1042,6 @@ if __name__ == '__main__':
         print('Album       :', id3.album)
         print('AlbumArtist :', id3.albumartist)
         print('Composer    :', id3.composer)
+        print('Title       :', id3.title)
         print('Track       :', id3.track)
         print('EndTrack    :', id3.track_total)

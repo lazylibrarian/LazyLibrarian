@@ -397,6 +397,7 @@ CONFIG_DEFINITIONS = {
     'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUDIO_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUTHOR_AUDIO': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_BOOKS': ('bool', 'LibraryScan', 0),
     'NO_FUTURE': ('bool', 'LibraryScan', 0),
     'NO_PUBDATE': ('bool', 'LibraryScan', 0),

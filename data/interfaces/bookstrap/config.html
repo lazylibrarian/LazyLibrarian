@@ -1518,7 +1518,7 @@
                     <span class="help-block">Status for new audiobooks by existing authors</span>
                   </div>
                   <div class="form-group">
-                    <label for="newauthor_status">New Authors Book Status:</label>
+                    <label for="newauthor_status">New Authors eBook Status:</label>
                     <select id="newauthor_status" name="newauthor_status" class="form-control">
                       %for na_status in config['status_list']:
                       <%
@@ -1530,6 +1530,20 @@
                       %endfor
                     </select>
                     <span class="help-block">Status for ebooks by new authors</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="newauthor_audio">New Authors AudioBook Status:</label>
+                    <select id="newauthor_audio" name="newauthor_audio" class="form-control">
+                      %for na_status in config['status_list']:
+                      <%
+                        selected = ''
+                        if na_status == lazylibrarian.CONFIG['NEWAUTHOR_AUDIO']:
+                            selected = 'selected="selected"'
+                      %>
+                      <option value="${na_status}" ${selected}>${na_status}</option>
+                      %endfor
+                    </select>
+                    <span class="help-block">Status for audiobooks by new authors</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1658,7 +1672,7 @@
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $$, any string.</span>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Abridged, $$, any string.</span>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
@@ -1669,7 +1683,7 @@
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
                     <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Part, $Total, $$, any string.<br/>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Abridged, $Part, $Total, $$, any string.<br/>
                       Current limitation: Has to include $Title and $Part</span>
                   </div>
                   <div class="checkbox">
@@ -2737,7 +2751,8 @@
                 <div class="form-group">
                   <input type="text" id="reject_words" name="reject_words" value="${lazylibrarian.CONFIG['REJECT_WORDS']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
-                    Search results with any of these words in the title will be ignored<br/>
+                    Search results with any of these words in the title or filenames<br>
+                    (where available) will be ignored<br/>
                   </span>
                 </div>
                 </div>
@@ -2746,7 +2761,8 @@
                 <div class="form-group">
                   <input type="text" id="reject_audio" name="reject_audio" value="${lazylibrarian.CONFIG['REJECT_AUDIO']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
-                    Search results with any of these words in the title will be ignored<br/>
+                    Search results with any of these words in the title or filenames<br>
+                    (where available) will be ignored<br/>
                   </span>
                 </div>
                 </div>
@@ -2755,7 +2771,8 @@
                 <div class="form-group">
                   <input type="text" id="reject_mags" name="reject_mags" value="${lazylibrarian.CONFIG['REJECT_MAGS']}" class="form-control" placeholder="Reject word list">
                   <span class="help-block">Comma separated list of words to reject:<br/>
-                    Search results with any of these words in the title will be ignored<br/>
+                    Search results with any of these words in the title or filenames<br>
+                    (where available) will be ignored<br/>
                   </span>
                 </div>
                 </div>
@@ -2764,8 +2781,8 @@
                 <div class="form-group">
                   <input type="text" id="banned_ext" name="banned_ext" value="${lazylibrarian.CONFIG['BANNED_EXT']}" class="form-control" placeholder="Reject extensions list">
                   <span class="help-block">Comma separated list of extensions to reject:<br/>
-                    Results with any of these extensions in the contents will be rejected<br/>
-                    (only transmission/deluge/qbittorrent)<br/>
+                    Results with any of these extensions in the filenames will be rejected<br/>
+                    (where info is available)<br/>
                   </span>
                 </div>
                 </div>

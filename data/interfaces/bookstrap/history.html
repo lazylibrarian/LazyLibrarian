@@ -78,6 +78,8 @@
 
     $(document).ready(function()
     {
+       var timer;
+
        $('#showdownloads').on('click', function(e) {
             $.get('showdownloads', function(data) {
                 bootbox.dialog({
@@ -166,9 +168,13 @@
                 column.visible( ! column.visible() );
             } );
 
-            if ( ${lazylibrarian.HIST_REFRESH} > 0 ) {
-                setInterval( function () { table.ajax.reload( null, false ); }, ${lazylibrarian.HIST_REFRESH} );
-            };
+        if(timer)
+        {
+            clearInterval(timer);
+        }
+        if ( ${lazylibrarian.HIST_REFRESH} > 0 ) {
+            timer = setInterval( function () { table.ajax.reload( null, false ); }, ${lazylibrarian.HIST_REFRESH} );
+        };
 
         //enable datatables console logging
         //table.on(function ( e ) {
