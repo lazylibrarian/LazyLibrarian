@@ -24,10 +24,10 @@ except ImportError:
 
 try:
     import magic
-except (ImportError, TypeError):
+except (ImportError, TypeError, AttributeError):
     try:
         import lib.magic as magic
-    except (ImportError, TypeError):
+    except (ImportError, TypeError, AttributeError):
         magic = None
 
 import lazylibrarian
