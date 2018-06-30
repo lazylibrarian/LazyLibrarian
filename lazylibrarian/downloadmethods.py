@@ -22,12 +22,14 @@ try:
 except ImportError:
     import lib.requests as requests
 
+# noinspection PyBroadException
 try:
     import magic
-except (ImportError, TypeError):
+except Exception:
+    # noinspection PyBroadException
     try:
         import lib.magic as magic
-    except (ImportError, TypeError):
+    except Exception:
         magic = None
 
 import lazylibrarian

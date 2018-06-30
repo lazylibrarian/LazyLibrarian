@@ -34,7 +34,7 @@ except ImportError:
 
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
-from lazylibrarian.bookrename import seriesInfo, audioRename
+from lazylibrarian.bookrename import seriesInfo, audioRename, stripspaces
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
@@ -563,13 +563,14 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
                                 dest_dir = lazylibrarian.DIRECTORY('Audio')
                             dest_path = os.path.join(dest_dir, dest_path)
+                            dest_path = stripspaces(dest_path)
 
                             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
                                 '$Author', authorname).replace(
                                 '$Title', bookname).replace(
-                                '$Series', '').replace(
-                                '$SerName', '').replace(
-                                '$SerNum', '').replace(
+                                '$Series', seriesinfo['Full']).replace(
+                                '$SerName', seriesinfo['Name']).replace(
+                                '$SerNum', seriesinfo['Num']).replace(
                                 '$$', ' ')
                             global_name = ' '.join(global_name.split()).strip()
                         else:
@@ -805,7 +806,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         q = 'UPDATE wanted SET Status="Failed",DLResult=? WHERE NZBurl=? and Status="Snatched"'
                         myDB.action(q, (dlresult, book['NZBurl']))
                     else:  # don't overwrite dlresult reason for the abort
-                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="Snatched"'
+                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="Aborted"'
                         myDB.action(q, (book['NZBurl'],))
 
                     delete_task(book['Source'], book['DownloadID'], True)
@@ -862,7 +863,7 @@ def check_contents(source, downloadid, book_type, title):
 
     # Downloaders return varying amounts of info using varying names
     if not downloadfiles:  # empty
-        logger.debug("No files returned by %s for %s" % (source, title))
+        logger.debug("No filenames returned by %s for %s" % (source, title))
     else:
         logger.debug("Checking files in %s" % title)
         for entry in downloadfiles:
@@ -1329,14 +1330,15 @@ def process_book(pp_path=None, bookID=None):
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
             dest_path = os.path.join(dest_dir, dest_path)
+            dest_path = stripspaces(dest_path)
             # global_name is only used for ebooks to ensure book/cover/opf all have the same basename
             # audiobooks are usually multi part so can't be renamed this way
             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
                 '$Author', authorname).replace(
                 '$Title', bookname).replace(
-                '$Series', '').replace(
-                '$SerName', '').replace(
-                '$SerNum', '').replace(
+                '$Series', seriesinfo['Full']).replace(
+                '$SerName', seriesinfo['Name']).replace(
+                '$SerNum', seriesinfo['Num']).replace(
                 '$$', ' ')
             global_name = ' '.join(global_name.split()).strip()
 

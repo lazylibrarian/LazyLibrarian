@@ -1672,19 +1672,20 @@
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Abridged, $$, any string.</span>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Abridged, $$, any string.<br/>
+                      <strong>Current limitation: Each title has to be in unique subfolder</strong></span>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                     <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $$, any string.<br/>
-                      Current limitation: Each title has to be in unique subfolder</span>
+                      <strong>Current limitation: Each title has to be in unique subfolder</strong></span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
                     <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
                     <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Abridged, $Part, $Total, $$, any string.<br/>
-                      Current limitation: Has to include $Title and $Part</span>
+                      <strong>Current limitation: Has to include $Title and $Part</strong></span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1728,8 +1729,8 @@
                     <label for="mag_dest_file">Magazine Filename Pattern:</label>
                     <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
                     <span class="help-block">Options: $Title, $IssueDate, any string
-                      <BR>Current limitations: Issue Filename must contain IssueDate
-                      <BR>If Issue Filename does not contain Title, Foldername is used as Title</span>
+                      <BR><strong>Current limitations: Issue Filename must contain IssueDate
+                      <BR>If Issue Filename does not contain Title, Foldername is used as Title</strong></span>
                   </div>
                   <div class="checkbox">
                     <%

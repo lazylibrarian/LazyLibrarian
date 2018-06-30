@@ -269,7 +269,20 @@ def find_book_in_db(author, book, ignored=None):
             elif ratio == best_ratio:
                 if a_book['Status'] == 'Have':
                     use_it = True
-                elif best_type == 'Ignored' and a_book['Status'] != 'Ignored':
+                if not use_it:
+                    want_words = getList(book_lower)
+                    best_words = getList(ratio_name.lower())
+                    new_words = getList(a_book['BookName'].lower())
+                    best_cnt = 0
+                    new_cnt = 0
+                    for word in want_words:
+                        if word in best_words:
+                            best_cnt += 1
+                        if word in new_words:
+                            new_cnt += 1
+                    if new_cnt > best_cnt:
+                        use_it = True
+                if not use_it and best_type == 'Ignored' and a_book['Status'] != 'Ignored':
                     use_it = True
             if use_it:
                 best_ratio = ratio
@@ -283,7 +296,20 @@ def find_book_in_db(author, book, ignored=None):
             elif partial == best_partial:
                 if a_book['Status'] == 'Have':
                     use_it = True
-                elif partial_type == 'Ignored' and a_book['Status'] != 'Ignored':
+                if not use_it:
+                    want_words = getList(book_lower)
+                    best_words = getList(partial_name.lower())
+                    new_words = getList(a_book['BookName'].lower())
+                    best_cnt = 0
+                    new_cnt = 0
+                    for word in want_words:
+                        if word in best_words:
+                            best_cnt += 1
+                        if word in new_words:
+                            new_cnt += 1
+                    if new_cnt > best_cnt:
+                        use_it = True
+                if not use_it and partial_type == 'Ignored' and a_book['Status'] != 'Ignored':
                     use_it = True
             if use_it:
                 best_partial = partial
@@ -297,7 +323,20 @@ def find_book_in_db(author, book, ignored=None):
             elif partname == best_partname:
                 if a_book['Status'] == 'Have':
                     use_it = True
-                elif partname_type == 'Ignored' and a_book['Status'] != 'Ignored':
+                if not use_it:
+                    want_words = getList(book_lower)
+                    best_words = getList(partname_name.lower())
+                    new_words = getList(a_book['BookName'].lower())
+                    best_cnt = 0
+                    new_cnt = 0
+                    for word in want_words:
+                        if word in best_words:
+                            best_cnt += 1
+                        if word in new_words:
+                            new_cnt += 1
+                    if new_cnt > best_cnt:
+                        use_it = True
+                if not use_it and partname_type == 'Ignored' and a_book['Status'] != 'Ignored':
                     use_it = True
             if use_it:
                 best_partname = partname
@@ -308,7 +347,7 @@ def find_book_in_db(author, book, ignored=None):
         if best_ratio > 90:
             logger.debug("Fuzz match ratio [%d] [%s] [%s] %s" % (best_ratio, book, ratio_name, ratio_id))
             return ratio_id, best_type
-        if best_partial > 90:
+        if best_partial > 95:
             logger.debug("Fuzz match partial [%d] [%s] [%s] %s" % (best_partial, book, partial_name, partial_id))
             return partial_id, partial_type
         if best_partname > 95:

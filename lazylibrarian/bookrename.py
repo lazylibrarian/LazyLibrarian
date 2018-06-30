@@ -12,7 +12,7 @@
 
 
 import os
-
+import platform
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import safe_move
@@ -256,6 +256,21 @@ def audioRename(bookid):
     return book_filename
 
 
+def stripspaces(pathname):
+    # windows doesn't allow directory names to end in a space or a period
+    # but allows starting with a period (not sure about starting with a space)
+    if 'windows' in platform.system().lower():
+        parts = pathname.split(os.sep)
+        new_parts = []
+        for part in parts:
+            while part and part[-1] in ' .':
+                part = part[:-1]
+            part = part.lstrip(' ')
+            new_parts.append(part)
+        pathname = os.sep.join(new_parts)
+    return pathname
+
+
 def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -283,6 +298,24 @@ def bookRename(bookid):
         logger.debug(msg)
         return f
 
+    # Check for more than one book in the folder. Note we can't rely on basename
+    # being the same, so just check for more than one bookfile of the same type
+    filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+    reject = ''
+    flist = os.listdir(makeBytestr(r))
+    flist = [makeUnicode(item) for item in flist]
+    for item in filetypes:
+        counter = 0
+        for fname in flist:
+            if fname.endswith(item):
+                counter += 1
+                if counter > 1:
+                    reject = item
+                    break
+    if reject:
+        logger.debug("Not renaming %s, found multiple %s" % (f, reject))
+        return f
+
     seriesinfo = seriesInfo(bookid)
     dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
         '$Author', exists['AuthorName']).replace(
@@ -295,11 +328,12 @@ def bookRename(bookid):
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
+    dest_path = stripspaces(dest_path)
 
-    if r != dest_path:
+    oldpath = r
+    if oldpath != dest_path:
         try:
-            dest_path = safe_move(r, dest_path)
-            r = dest_path
+            dest_path = safe_move(oldpath, dest_path)
         except Exception as why:
             if not os.path.isdir(dest_path):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
@@ -331,7 +365,7 @@ def bookRename(bookid):
 
     if book_basename != new_basename:
         # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
-        for fname in os.listdir(makeBytestr(r)):
+        for fname in os.listdir(makeBytestr(dest_path)):
             fname = makeUnicode(fname)
             extn = ''
             if is_valid_booktype(fname, booktype='ebook'):
@@ -341,16 +375,18 @@ def bookRename(bookid):
             elif fname.endswith('.jpg') and not fname == 'cover.jpg':
                 extn = '.jpg'
             if extn:
-                ofname = os.path.join(r, fname)
-                nfname = os.path.join(r, new_basename + extn)
-                try:
-                    nfname = safe_move(ofname, nfname)
-                    logger.debug("bookRename %s to %s" % (ofname, nfname))
-                    if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
-                        f = nfname
-                except Exception as e:
-                    logger.error('Unable to rename [%s] to [%s] %s %s' %
-                                 (ofname, nfname, type(e).__name__, str(e)))
+                ofname = os.path.join(dest_path, fname)
+                nfname = os.path.join(dest_path, new_basename + extn)
+                if ofname != nfname:
+                    try:
+                        nfname = safe_move(ofname, nfname)
+                        logger.debug("bookRename %s to %s" % (ofname, nfname))
+                        oldname = os.path.join(oldpath, fname)
+                        if oldname == exists['BookFile']:  # if we renamed/moved the preferred file, return new name
+                            f = nfname
+                    except Exception as e:
+                        logger.error('Unable to rename [%s] to [%s] %s %s' %
+                                     (ofname, nfname, type(e).__name__, str(e)))
     return f
 
 
@@ -390,13 +426,26 @@ def seriesInfo(bookid):
     res = myDB.match(cmd, (seriesid,))
     if res:
         seriesname = res['SeriesName']
-        if not seriesnum:
+        if seriesname and not seriesnum:
             # add what we got back to end of series name
             if serieslist:
                 seriesname = "%s %s" % (seriesname, serieslist)
 
-    mydict['Name'] = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
-    mydict['Num'] = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
-    mydict['Full'] = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
-                        '$SerName', seriesname).replace('$$', ' ')
+    if seriesname:
+        sername = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
+    else:
+        sername = ''
+    if seriesnum:
+        sernum = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
+    else:
+        sernum = ''
+    if seriesnum or seriesname:
+        serfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+                                                             '$SerName', seriesname).replace('$$', ' ')
+    else:
+        serfull = ''
+
+    mydict['Name'] = sername
+    mydict['Num'] = sernum
+    mydict['Full'] = serfull
     return mydict
