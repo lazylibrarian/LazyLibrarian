@@ -470,27 +470,39 @@ def scheduleJob(action='Start', target=None):
                 logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'authorUpdate' in target and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
             # Try to get all authors scanned evenly inside the cache age
-            minutes = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0) * 24 * 60
-            myDB = database.DBConnection()
-            cmd = "select count(*) as counter from Authors where Status='Active' or Status='Wanted'"
-            cmd += " or Status='Loading'"
-            authors = myDB.match(cmd)
-            authcount = authors['counter']
-            if not authcount:
-                minutes = 60
-            else:
-                # Allow a few minutes per task - interval starts from END of previous task
-                minutes = int(minutes / authcount) - 5
+            maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
+            if maxage:
+                myDB = database.DBConnection()
+                cmd = 'SELECT DateAdded from authors WHERE Status="Active" or Status="Loading"'
+                cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
+                authors = myDB.action(cmd)
+                authcount = 0
+                dtnow = datetime.datetime.now()
+                for author in authors:
+                    diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+                    if diff < maxage:
+                        break
+                    authcount += 1
 
-            if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
-                minutes = 10
-            if minutes <= 600:  # for bigger intervals switch to hours
-                lazylibrarian.SCHED.add_interval_job(authorUpdate, minutes=minutes)
-                logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
+                if not authcount:
+                    logger.debug("No authors need updating yet")
+                    minutes = 60 * 24  # check again in 24hrs
+                else:
+                    logger.debug("There are %s authors needing update" % authcount)
+                    minutes = maxage * 60 * 24
+                    minutes = int(minutes / authcount)
+
+                if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
+                    minutes = 10
+                if minutes <= 600:  # for bigger intervals switch to hours
+                    lazylibrarian.SCHED.add_interval_job(authorUpdate, minutes=minutes)
+                    logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
+                else:
+                    hours = int(minutes / 60)
+                    lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=hours)
+                    logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
             else:
-                hours = int(minutes / 60)
-                lazylibrarian.SCHED.add_interval_job(authorUpdate, hours=hours)
-                logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
+                logger.debug("No authorupdate scheduled")
 
 
 def authorUpdate():
@@ -508,21 +520,17 @@ def authorUpdate():
             diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
             msg = 'Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff))
             if diff > check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
-                logger.info('Starting update for %s' % author['AuthorName'])
+                msg = 'Starting update for %s' % author['AuthorName']
+                logger.info(msg)
                 authorid = author['AuthorID']
-                logger.debug(msg)
                 lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
             else:
-                # don't nag. Show info message no more than every 12 hrs, debug message otherwise
-                timenow = int(time.time())
-                if check_int(lazylibrarian.AUTHORUPDATE_MSG, 0) + 43200 < timenow:
-                    logger.info(msg)
-                    lazylibrarian.AUTHORUPDATE_MSG = timenow
-                else:
-                    logger.debug(msg)
-
+                logger.debug(msg)
+            scheduleJob("Restart", "authorUpdate")
+            return msg
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
+        return "Unhandled exception in AuthorUpdate"
 
 
 def aaUpdate(refresh=False):
