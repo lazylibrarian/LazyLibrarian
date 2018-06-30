@@ -12,7 +12,7 @@
 
 
 import os
-
+import platform
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import safe_move
@@ -256,6 +256,21 @@ def audioRename(bookid):
     return book_filename
 
 
+def stripspaces(pathname):
+    # windows doesn't allow directory names to end in a space or a period
+    # but allows starting with a period (not sure about starting with a space)
+    if 'windows' in platform.system().lower():
+        parts = pathname.split(os.sep)
+        new_parts = []
+        for part in parts:
+            while part and part[-1] in ' .':
+                part = part[:-1]
+            part = part.lstrip(' ')
+            new_parts.append(part)
+        pathname = os.sep.join(new_parts)
+    return pathname
+
+
 def bookRename(bookid):
     myDB = database.DBConnection()
     cmd = 'select AuthorName,BookName,BookFile from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -313,22 +328,12 @@ def bookRename(bookid):
     dest_path = replace_all(dest_path, __dic__)
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
+    dest_path = stripspaces(dest_path)
 
-    # windows doesn't allow directory names to end in a space or a period
-    # but allows starting with a period (not sure about starting with a space)
-    dest_parts = dest_path.split(os.sep)
-    new_parts = []
-    for part in dest_parts:
-        while part and part[-1] in ' .':
-            part = part[:-1]
-        part = part.strip(' ')
-    new_parts.append(part)
-    dest_path = os.sep.join(new_parts)
-
-    if r != dest_path:
+    oldpath = r
+    if oldpath != dest_path:
         try:
-            dest_path = safe_move(r, dest_path)
-            r = dest_path
+            dest_path = safe_move(oldpath, dest_path)
         except Exception as why:
             if not os.path.isdir(dest_path):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
@@ -360,7 +365,7 @@ def bookRename(bookid):
 
     if book_basename != new_basename:
         # only rename bookname.type, bookname.jpg, bookname.opf, not cover.jpg or metadata.opf
-        for fname in os.listdir(makeBytestr(r)):
+        for fname in os.listdir(makeBytestr(dest_path)):
             fname = makeUnicode(fname)
             extn = ''
             if is_valid_booktype(fname, booktype='ebook'):
@@ -370,13 +375,14 @@ def bookRename(bookid):
             elif fname.endswith('.jpg') and not fname == 'cover.jpg':
                 extn = '.jpg'
             if extn:
-                ofname = os.path.join(r, fname)
-                nfname = os.path.join(r, new_basename + extn)
+                ofname = os.path.join(dest_path, fname)
+                nfname = os.path.join(dest_path, new_basename + extn)
                 if ofname != nfname:
                     try:
                         nfname = safe_move(ofname, nfname)
                         logger.debug("bookRename %s to %s" % (ofname, nfname))
-                        if ofname == exists['BookFile']:  # if we renamed the preferred filetype, return new name
+                        oldname = os.path.join(oldpath, fname)
+                        if oldname == exists['BookFile']:  # if we renamed/moved the preferred file, return new name
                             f = nfname
                     except Exception as e:
                         logger.error('Unable to rename [%s] to [%s] %s %s' %
@@ -420,13 +426,26 @@ def seriesInfo(bookid):
     res = myDB.match(cmd, (seriesid,))
     if res:
         seriesname = res['SeriesName']
-        if not seriesnum:
+        if seriesname and not seriesnum:
             # add what we got back to end of series name
             if serieslist:
                 seriesname = "%s %s" % (seriesname, serieslist)
 
-    mydict['Name'] = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
-    mydict['Num'] = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
-    mydict['Full'] = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
-                        '$SerName', seriesname).replace('$$', ' ')
+    if seriesname:
+        sername = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
+    else:
+        sername = ''
+    if seriesnum:
+        sernum = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
+    else:
+        sernum = ''
+    if seriesnum or seriesname:
+        serfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+                                                             '$SerName', seriesname).replace('$$', ' ')
+    else:
+        serfull = ''
+
+    mydict['Name'] = sername
+    mydict['Num'] = sernum
+    mydict['Full'] = serfull
     return mydict

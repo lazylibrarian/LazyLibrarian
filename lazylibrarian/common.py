@@ -101,6 +101,8 @@ def safe_move(src, dst, action='move'):
         try:
             if action == 'copy':
                 shutil.copy(src, dst)
+            elif os.path.isdir(src) and dst.startswith(src):
+                shutil.copytree(src, dst)
             else:
                 shutil.move(src, dst)
             return dst
@@ -485,10 +487,10 @@ def scheduleJob(action='Start', target=None):
                     authcount += 1
 
                 if not authcount:
-                    logger.debug("No authors need updating yet")
+                    logger.debug("There are no authors to update")
                     minutes = 60 * 24  # check again in 24hrs
                 else:
-                    logger.debug("There are %s authors needing update" % authcount)
+                    logger.debug("Found %s author%s needing update" % (authcount, plural(authcount)))
                     minutes = maxage * 60 * 24
                     minutes = int(minutes / authcount)
 
