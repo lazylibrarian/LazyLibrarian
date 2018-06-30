@@ -805,7 +805,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         q = 'UPDATE wanted SET Status="Failed",DLResult=? WHERE NZBurl=? and Status="Snatched"'
                         myDB.action(q, (dlresult, book['NZBurl']))
                     else:  # don't overwrite dlresult reason for the abort
-                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="Snatched"'
+                        q = 'UPDATE wanted SET Status="Failed" WHERE NZBurl=? and Status="Aborted"'
                         myDB.action(q, (book['NZBurl'],))
 
                     delete_task(book['Source'], book['DownloadID'], True)
