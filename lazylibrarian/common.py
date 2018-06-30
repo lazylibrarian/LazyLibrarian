@@ -787,12 +787,14 @@ def logHeader():
     except ImportError:
         header += "cryptography: module missing\n"
 
+    # noinspection PyBroadException
     try:
         import magic
-    except (ImportError, TypeError):
+    except Exception:
+        # noinspection PyBroadException
         try:
             import lib.magic as magic
-        except (ImportError, TypeError):
+        except Exception:
             magic = None
 
     if magic:
