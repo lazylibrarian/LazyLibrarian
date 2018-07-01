@@ -740,7 +740,12 @@ def logHeader():
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
     header += "requests: %s\n" % getattr(requests, '__version__', None)
+    tls_version = requests.get('https://www.howsmyssl.com/a/check', timeout=30, verify=False).json()['tls_version']
+    if '1.2' not in tls_version and '1.3' not in tls_version:
+        header += 'tls: missing required functionality. Try upgrading to v1.2 or newer. You have '
+    header += "tls: %s\n" % tls_version
     header += "cherrypy: %s\n" % getattr(cherrypy, '__version__', None)
+
     if not lazylibrarian.GROUP_CONCAT:
         # 3.5.4 is the earliest version with GROUP_CONCAT which we use, but is not essential
         header += 'sqlite3: missing required functionality. Try upgrading to v3.5.4 or newer. You have '
