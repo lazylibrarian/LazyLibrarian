@@ -564,7 +564,8 @@ def get_issue_date(nzbtitle_exploded):
                         elif day:
                             regex_pass = 3
                         else:
-                            regex_pass = 0
+                            regex_pass = 4
+                            day = 1
                 else:
                     regex_pass = 4
                     day = 1

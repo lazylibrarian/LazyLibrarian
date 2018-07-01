@@ -1204,10 +1204,15 @@ def getDownloadProgress(source, downloadid):
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
 
+        try:
+            progress = int(progress)
+        except ValueError:
+            logger.debug("Progress value error %s [%s] %s" % (source, progress, downloadid))
+            progress = 0
         return progress
 
     except Exception as e:
-        logger.error("Failed to get torrent progress from %s for %s: %s %s" %
+        logger.error("Failed to get download progress from %s for %s: %s %s" %
                      (source, downloadid, type(e).__name__, str(e)))
         return 0
 
