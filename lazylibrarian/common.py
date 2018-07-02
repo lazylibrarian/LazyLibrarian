@@ -90,11 +90,14 @@ def mymakedirs(dest_path):
             # Ignoring the error might just move the problem further on?
             # Something similar seems to occur on google drive filestream
             # but that returns Error 5 Access is denied
-            if 'exists' in why or "Error 183" in why:
-                logger.debug("Ignoring mkdir already exists %s" % repr(entry))
+            # Trap errno 17 (linux file exists) and 183 (windows already exists)
+            if hasattr(why, 'errno') and why.errno in [17, 183]:
+                logger.debug("Ignoring mkdir already exists errno %s: [%s]" % (why.errno, repr(entry)))
                 pass
+            elif 'exists' in str(why):
+                logger.debug("Ignoring %s: [%s]" % (why, repr(entry)))
             else:
-                logger.error('Unable to create directory %s: %s' % (repr(entry), why))
+                logger.error('Unable to create directory %s: [%s]' % (why, repr(entry)))
                 return False
     return True
 
