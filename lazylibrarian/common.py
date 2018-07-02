@@ -85,8 +85,17 @@ def mymakedirs(dest_path):
             os.mkdir(entry)  # mkdir uses umask, so set perm ourselves
             _ = setperm(entry)  # failing to set perm might not be fatal
         except OSError as why:
-            logger.error('Unable to create directory %s: %s' % (entry, why))
-            return False
+            # os.path.isdir() has some odd behaviour on windows, says the directory does NOT exist
+            # then when you try to mkdir complains it already exists.
+            # Ignoring the error might just move the problem further on?
+            # Something similar seems to occur on google drive filestream
+            # but that returns Error 5 Access is denied
+            if 'exists' in why or "Error 183" in why:
+                logger.debug("Ignoring mkdir already exists %s" % repr(entry))
+                pass
+            else:
+                logger.error('Unable to create directory %s: %s' % (repr(entry), why))
+                return False
     return True
 
 
