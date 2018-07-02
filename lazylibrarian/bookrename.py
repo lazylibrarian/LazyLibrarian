@@ -421,6 +421,9 @@ def seriesInfo(bookid):
     if not seriesnum:
         # couldn't figure out number, keep everything we got, could be something like "Book Two"
         serieslist = res['SeriesNum']
+    else:
+        if seriesnum.isdigit():
+            seriesnum.zfill(2)
 
     cmd = 'SELECT SeriesName from series WHERE seriesid=?'
     res = myDB.match(cmd, (seriesid,))

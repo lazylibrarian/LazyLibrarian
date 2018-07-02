@@ -127,7 +127,7 @@ perm_force = 1 << 11  # 2048 can use background tasks (refresh authors/librarysc
 perm_download = 1 << 12  # 4096 can download existing books/mags
 
 perm_authorbooks = perm_audio + perm_ebook
-perm_guest = perm_download + perm_series + perm_ebook + perm_audio + perm_magazines
+perm_guest = perm_download + perm_series + perm_authorbooks + perm_magazines
 perm_friend = perm_guest + perm_search + perm_status
 perm_admin = 65535
 
