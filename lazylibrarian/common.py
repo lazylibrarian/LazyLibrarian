@@ -96,6 +96,7 @@ def mymakedirs(dest_path):
                 pass
             elif 'exists' in str(why):
                 logger.debug("Ignoring %s: [%s]" % (why, repr(entry)))
+                pass
             else:
                 logger.error('Unable to create directory %s: [%s]' % (why, repr(entry)))
                 return False

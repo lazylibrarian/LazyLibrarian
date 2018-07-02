@@ -489,7 +489,7 @@ def db_v14(myDB, upgradelog):
     try:
         os.mkdir(os.path.join(src, 'author'))
     except OSError as e:
-        if e.errno is not 17:  # already exists is ok
+        if e.errno not in [17, 183]:  # already exists is ok
             msg = 'mkdir author cache reports: %s' % str(e)
             logger.debug(msg)
             upgradelog.write("%s v14: %s\n" % (time.ctime(), msg))
@@ -530,7 +530,7 @@ def db_v14(myDB, upgradelog):
     try:
         os.mkdir(os.path.join(src, 'book'))
     except OSError as e:
-        if e.errno is not 17:  # already exists is ok
+        if e.errno not in [17, 183]:  # already exists is ok
             msg = 'mkdir book cache reports: %s' % str(e)
             logger.debug(msg)
             upgradelog.write("%s v14: %s\n" % (time.ctime(), msg))
