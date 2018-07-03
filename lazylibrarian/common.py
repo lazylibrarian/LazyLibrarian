@@ -81,12 +81,29 @@ def mymakedirs(dest_path):
             dest_path = parent
 
     for entry in to_make:
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_fileperms:
+            logger.debug("mkdir: [%s]" % repr(entry))
         try:
             os.mkdir(entry)  # mkdir uses umask, so set perm ourselves
             _ = setperm(entry)  # failing to set perm might not be fatal
         except OSError as why:
-            logger.error('Unable to create directory %s: %s' % (entry, why))
-            return False
+            # os.path.isdir() has some odd behaviour on windows, says the directory does NOT exist
+            # then when you try to mkdir complains it already exists.
+            # Ignoring the error might just move the problem further on?
+            # Something similar seems to occur on google drive filestream
+            # but that returns Error 5 Access is denied
+            # Trap errno 17 (linux file exists) and 183 (windows already exists)
+            if why.errno in [17, 183]:
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_fileperms:
+                    logger.debug("Ignoring mkdir already exists errno %s: [%s]" % (why.errno, repr(entry)))
+                pass
+            elif 'exists' in str(why):
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_fileperms:
+                    logger.debug("Ignoring %s: [%s]" % (why, repr(entry)))
+                pass
+            else:
+                logger.error('Unable to create directory %s: [%s]' % (why, repr(entry)))
+                return False
     return True
 
 

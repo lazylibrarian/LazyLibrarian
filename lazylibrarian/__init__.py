@@ -127,7 +127,7 @@ perm_force = 1 << 11  # 2048 can use background tasks (refresh authors/librarysc
 perm_download = 1 << 12  # 4096 can download existing books/mags
 
 perm_authorbooks = perm_audio + perm_ebook
-perm_guest = perm_download + perm_series + perm_ebook + perm_audio + perm_magazines
+perm_guest = perm_download + perm_series + perm_authorbooks + perm_magazines
 perm_friend = perm_guest + perm_search + perm_status
 perm_admin = 65535
 
@@ -164,7 +164,7 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
-                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT']
+                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES',
@@ -246,6 +246,7 @@ CONFIG_DEFINITIONS = {
     'CALIBRE_SERVER': ('str', 'General', ''),
     'CALIBRE_USER': ('str', 'General', ''),
     'CALIBRE_PASS': ('str', 'General', ''),
+    'CALIBRE_RENAME': ('bool', 'General', 0),
     'IMP_SINGLEBOOK': ('bool', 'General', 0),
     'IMP_RENAME': ('bool', 'General', 0),
     'MAG_RENAME': ('bool', 'General', 0),
@@ -494,7 +495,7 @@ CONFIG_DEFINITIONS = {
     'GB_API': ('str', 'API', ''),  # API key has daily limits, each user needs their own
     'FMT_SERNAME': ('str', 'FMT', '$SerName'),
     'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
-    'FMT_SERIES': ('str', 'FMT', '( $SerName $SerNum )')
+    'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )')
 }
 
 
