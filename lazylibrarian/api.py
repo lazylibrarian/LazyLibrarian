@@ -28,7 +28,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, setAllBookSeries, \
     getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors
 from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers
-from lazylibrarian.bookrename import audioRename
+from lazylibrarian.bookrename import audioRename, seriesInfo, stripspaces
 from lazylibrarian.cache import cache_img
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
@@ -149,6 +149,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
             'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
+            'seriesNames': '&id Show the series names that would be used for a bookid',
             'showCaps': '&provider= get a list of capabilities from a provider',
             'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
             'syncCalibreList': '[&toread=] [&read=] sync list of read/toread books with calibre',
@@ -336,6 +337,12 @@ class Api(object):
             self.data = 'Missing parameter: id'
             return
         self.data = audioRename(kwargs['id'])
+
+    def _seriesNames(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        self.data = seriesInfo(kwargs['id'])
 
     def _saveTable(self, **kwargs):
         if 'table' not in kwargs:
