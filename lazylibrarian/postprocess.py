@@ -550,13 +550,13 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     'EBOOK_DEST_FOLDER'].replace('/', '\\')
                             # Default destination path, should be allowed change per config file.
                             seriesinfo = seriesInfo(book['BookID'])
-                            dest_path = seriesinfo['BookDir']
+                            dest_path = seriesinfo['FolderName']
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
                                 dest_dir = lazylibrarian.DIRECTORY('Audio')
                             dest_path = os.path.join(dest_dir, dest_path)
                             dest_path = stripspaces(dest_path)
-                            global_name = seriesinfo['BookName']
+                            global_name = seriesinfo['BookFile']
                         else:
                             data = myDB.match('SELECT IssueDate from magazines WHERE Title=?', (book['BookID'],))
                             if data:  # it's a magazine
@@ -1309,12 +1309,12 @@ def process_book(pp_path=None, bookID=None):
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
             seriesinfo = seriesInfo(bookID)
-            dest_path = seriesinfo['BookDir']
+            dest_path = seriesinfo['FolderName']
             dest_path = os.path.join(dest_dir, dest_path)
             dest_path = stripspaces(dest_path)
             # global_name is only used for ebooks to ensure book/cover/opf all have the same basename
             # audiobooks are usually multi part so can't be renamed this way
-            global_name = seriesinfo['BookName']
+            global_name = seriesinfo['BookFile']
 
             success, dest_file = processDestination(pp_path, dest_path, authorname, bookname,
                                                     global_name, bookID, book_type)

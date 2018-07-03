@@ -205,7 +205,7 @@ def audioRename(bookid):
         abridged = ' (%s)' % abridged
     # if we get here, looks like we have all the parts needed to rename properly
     seriesinfo = seriesInfo(bookid, abridged)
-    dest_path = seriesinfo['AudioDir']
+    dest_path = seriesinfo['FolderName']
     dest_dir = lazylibrarian.DIRECTORY('Audio')
     dest_path = os.path.join(dest_dir, dest_path)
     if r != dest_path:
@@ -217,7 +217,7 @@ def audioRename(bookid):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
 
     for part in parts:
-        pattern = seriesinfo['AudioName']
+        pattern = seriesinfo['AudioFile']
         pattern = pattern.replace(
             '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
             '$Total', str(len(parts)))
@@ -266,18 +266,19 @@ def bookRename(bookid):
         return ''
 
     r = os.path.dirname(f)
-    try:
-        # noinspection PyTypeChecker
-        calibreid = r.rsplit('(', 1)[1].split(')')[0]
-        if not calibreid.isdigit():
+    if not lazylibrarian.CONFIG['CALIBRE_RENAME']:
+        try:
+            # noinspection PyTypeChecker
+            calibreid = r.rsplit('(', 1)[1].split(')')[0]
+            if not calibreid.isdigit():
+                calibreid = ''
+        except IndexError:
             calibreid = ''
-    except IndexError:
-        calibreid = ''
 
-    if calibreid:
-        msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
-        logger.debug(msg)
-        return f
+        if calibreid:
+            msg = '[%s] looks like a calibre directory: not renaming book' % os.path.basename(r)
+            logger.debug(msg)
+            return f
 
     # Check for more than one book in the folder. Note we can't rely on basename
     # being the same, so just check for more than one bookfile of the same type
@@ -298,12 +299,12 @@ def bookRename(bookid):
         return f
 
     seriesinfo = seriesInfo(bookid)
-    dest_path = seriesinfo['BookDir']
+    dest_path = seriesinfo['FolderName']
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
     dest_path = stripspaces(dest_path)
-
     oldpath = r
+
     if oldpath != dest_path:
         try:
             dest_path = safe_move(oldpath, dest_path)
@@ -312,7 +313,7 @@ def bookRename(bookid):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
 
     book_basename, prefextn = os.path.splitext(os.path.basename(f))
-    new_basename = seriesinfo['BookName']
+    new_basename = seriesinfo['BookFile']
 
     if ' / ' in new_basename:  # used as a separator in goodreads omnibus
         logger.warn("bookRename [%s] looks like an omnibus? Not renaming %s" % (new_basename, book_basename))
@@ -356,15 +357,17 @@ def seriesInfo(bookid, abridged=''):
         SerName and SerNum are the unformatted base strings
         """
     mydict = {'FmtName': '', 'FmtFull': '', 'FmtNum': '', 'PadNum': '', 'SerName': '', 'SerNum': '',
-              'BookDir': '', 'BookName': ''}
+              'FolderName': '', 'BookFile': '', 'AudioFile': ''}
     myDB = database.DBConnection()
     cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
     res = myDB.match(cmd, (bookid,))
-    if not res:
-        return mydict
+    if res:
+        seriesid = res['SeriesID']
+        serieslist = getList(res['SeriesNum'])
+    else:
+        seriesid = ''
+        serieslist = []
 
-    seriesid = res['SeriesID']
-    serieslist = getList(res['SeriesNum'])
     seriesnum = ''
     seriesname = ''
     # might be "Book 3.5" or similar, just get the numeric part
@@ -378,20 +381,21 @@ def seriesInfo(bookid, abridged=''):
             pass
 
     padnum = ''
-    if not seriesnum:
+    if res and not seriesnum:
         # couldn't figure out number, keep everything we got, could be something like "Book Two"
         serieslist = res['SeriesNum']
     elif seriesnum.isdigit():
         padnum = seriesnum.zfill(2)
 
-    cmd = 'SELECT SeriesName from series WHERE seriesid=?'
-    res = myDB.match(cmd, (seriesid,))
-    if res:
-        seriesname = res['SeriesName']
-        if seriesname and not seriesnum:
-            # add what we got back to end of series name
-            if serieslist:
-                seriesname = "%s %s" % (seriesname, serieslist)
+    if seriesid:
+        cmd = 'SELECT SeriesName from series WHERE seriesid=?'
+        res = myDB.match(cmd, (seriesid,))
+        if res:
+            seriesname = res['SeriesName']
+            if seriesname and not seriesnum:
+                # add what we got back to end of series name
+                if serieslist:
+                    seriesname = "%s %s" % (seriesname, serieslist)
 
     if seriesname:
         fmtname = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
@@ -435,13 +439,11 @@ def seriesInfo(bookid, abridged=''):
         '$FmtNum', mydict['FmtNum']).replace(
         '$SerNum', mydict['SerNum']).replace(
         '$SerName', mydict['SerName']).replace(
+        '$Abridged', abridged).replace(
         '$PadNum', mydict['PadNum']).replace(
         '$$', ' ')
-    audio_path = dest_path.replace('$Abridged', abridged)
     dest_path = ' '.join(dest_path.split()).strip()
-    mydict['BookDir'] = replace_all(dest_path, __dic__)
-    audio_path = ' '.join(audio_path.split()).strip()
-    mydict['AudioDir'] = replace_all(audio_path, __dic__)
+    mydict['FolderName'] = replace_all(dest_path, __dic__)
 
     bookfile = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
     bookfile = bookfile.replace(
@@ -462,7 +464,7 @@ def seriesInfo(bookid, abridged=''):
             if bookfile[slash + 1] != ' ':
                 bookfile = bookfile[:slash] + '_' + bookfile[slash + 1:]
         slash = bookfile.find('/', slash + 1)
-    mydict['BookName'] = bookfile
+    mydict['BookFile'] = bookfile
 
     audiofile = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
     audiofile = audiofile.replace(
