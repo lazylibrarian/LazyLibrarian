@@ -494,7 +494,7 @@ CONFIG_DEFINITIONS = {
     'GB_API': ('str', 'API', ''),  # API key has daily limits, each user needs their own
     'FMT_SERNAME': ('str', 'FMT', '$SerName'),
     'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
-    'FMT_SERIES': ('str', 'FMT', '( $SerName $SerNum )')
+    'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )')
 }
 
 

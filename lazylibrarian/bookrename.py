@@ -210,9 +210,12 @@ def audioRename(bookid):
     dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
         '$Author', author).replace(
         '$Title', book).replace(
-        '$Series', seriesinfo['Full']).replace(
-        '$SerName', seriesinfo['Name']).replace(
-        '$SerNum', seriesinfo['Num']).replace(
+        '$Series', seriesinfo['FmtFull']).replace(
+        '$FmtName', seriesinfo['FmtName']).replace(
+        '$FmtNum', seriesinfo['FmtNum']).replace(
+        '$SerNum', seriesinfo['SerNum']).replace(
+        '$SerName', seriesinfo['SerName']).replace(
+        '$PadNum', seriesinfo['PadNum']).replace(
         '$Abridged', add_abridged).replace(
         '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
@@ -235,9 +238,12 @@ def audioRename(bookid):
             '$Title', book).replace(
             '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
             '$Total', str(len(parts))).replace(
-            '$Series', seriesinfo['Full']).replace(
-            '$SerName', seriesinfo['Name']).replace(
-            '$SerNum', seriesinfo['Num']).replace(
+            '$Series', seriesinfo['FmtFull']).replace(
+            '$FmtName', seriesinfo['FmtName']).replace(
+            '$FmtNum', seriesinfo['FmtNum']).replace(
+            '$SerName', seriesinfo['SerName']).replace(
+            '$SerNum', seriesinfo['SerNum']).replace(
+            '$PadNum', seriesinfo['PadNum']).replace(
             '$Abridged', add_abridged).replace(
             '$$', ' ')
         pattern = ' '.join(pattern.split()).strip()
@@ -320,9 +326,12 @@ def bookRename(bookid):
     dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
         '$Author', exists['AuthorName']).replace(
         '$Title', exists['BookName']).replace(
-        '$Series', seriesinfo['Full']).replace(
-        '$SerName', seriesinfo['Name']).replace(
-        '$SerNum', seriesinfo['Num']).replace(
+        '$Series', seriesinfo['FmtFull']).replace(
+        '$FmtName', seriesinfo['FmtName']).replace(
+        '$FmtNum', seriesinfo['FmtNum']).replace(
+        '$SerNum', seriesinfo['SerNum']).replace(
+        '$SerName', seriesinfo['SerName']).replace(
+        '$PadNum', seriesinfo['PadNum']).replace(
         '$$', ' ')
     dest_path = ' '.join(dest_path.split()).strip()
     dest_path = replace_all(dest_path, __dic__)
@@ -345,9 +354,12 @@ def bookRename(bookid):
     new_basename = new_basename.replace(
         '$Author', exists['AuthorName']).replace(
         '$Title', exists['BookName']).replace(
-        '$Series', seriesinfo['Full']).replace(
-        '$SerName', seriesinfo['Name']).replace(
-        '$SerNum', seriesinfo['Num']).replace(
+        '$Series', seriesinfo['FmtFull']).replace(
+        '$FmtName', seriesinfo['FmtName']).replace(
+        '$FmtNum', seriesinfo['FmtNum']).replace(
+        '$SerNum', seriesinfo['SerNum']).replace(
+        '$SerName', seriesinfo['SerName']).replace(
+        '$PadNum', seriesinfo['PadNum']).replace(
         '$$', ' ')
     new_basename = ' '.join(new_basename.split()).strip()
 
@@ -393,11 +405,14 @@ def bookRename(bookid):
 def seriesInfo(bookid):
     """ Return series info for a bookid as a dict of formatted strings
         The strings are configurable, but by default...
-        Full returns ( Lord of the Rings 2 )
-        Name returns Lord of the Rings (with added Num part if that's not numeric, eg Lord of the Rings Book One)
-        Num  returns Book #1 -    (or empty string if no numeric part)
-        so you can combine to make Book #1 - Lord of the Rings  """
-    mydict = {'Name': '', 'Full': '', 'Num': ''}
+        FmtFull returns ( Lord of the Rings 2 )
+        FmtName returns Lord of the Rings (with added Num part if that's not numeric, eg Lord of the Rings Book One)
+        FmtNum  returns Book #1 -    (or empty string if no numeric part)
+        so you can combine to make Book #1 - Lord of the Rings
+        PadNum is zero padded numeric part or empty string
+        SerName and SerNum are the unformatted base strings
+        """
+    mydict = {'FmtName': '', 'FmtFull': '', 'FmtNum': '', 'PadNum': '', 'SerName': '', 'SerNum': ''}
     myDB = database.DBConnection()
     cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
     res = myDB.match(cmd, (bookid,))
@@ -418,12 +433,12 @@ def seriesInfo(bookid):
             seriesnum = ''
             pass
 
+    padnum = ''
     if not seriesnum:
         # couldn't figure out number, keep everything we got, could be something like "Book Two"
         serieslist = res['SeriesNum']
-    else:
-        if seriesnum.isdigit():
-            seriesnum.zfill(2)
+    elif seriesnum.isdigit():
+        padnum = seriesnum.zfill(2)
 
     cmd = 'SELECT SeriesName from series WHERE seriesid=?'
     res = myDB.match(cmd, (seriesid,))
@@ -435,20 +450,27 @@ def seriesInfo(bookid):
                 seriesname = "%s %s" % (seriesname, serieslist)
 
     if seriesname:
-        sername = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
+        fmtname = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
     else:
-        sername = ''
+        fmtname = ''
     if seriesnum:
-        sernum = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace('$$', ' ')
+        fmtnum = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace(
+                                                            '$PadNum', padnum).replace('$$', ' ')
     else:
-        sernum = ''
-    if seriesnum or seriesname:
-        serfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
-                                                             '$SerName', seriesname).replace('$$', ' ')
+        fmtnum = ''
+    if fmtnum or fmtname:
+        fmtfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+                                                             '$SerName', seriesname).replace(
+                                                             '$PadNum', padnum).replace(
+                                                             '$FmtName', fmtname).replace(
+                                                             '$FmtNum', fmtnum).replace('$$', ' ')
     else:
-        serfull = ''
+        fmtfull = ''
 
-    mydict['Name'] = sername
-    mydict['Num'] = sernum
-    mydict['Full'] = serfull
+    mydict['FmtName'] = fmtname
+    mydict['FmtNum'] = fmtnum
+    mydict['FmtFull'] = fmtfull
+    mydict['PadNum'] = padnum
+    mydict['SerName'] = seriesname
+    mydict['SerNum'] = seriesnum
     return mydict

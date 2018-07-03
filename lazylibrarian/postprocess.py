@@ -553,9 +553,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
                                 '$Author', authorname).replace(
                                 '$Title', bookname).replace(
-                                '$Series', seriesinfo['Full']).replace(
-                                '$SerName', seriesinfo['Name']).replace(
-                                '$SerNum', seriesinfo['Num']).replace(
+                                '$Series', seriesinfo['FmtFull']).replace(
+                                '$FmtName', seriesinfo['FmtName']).replace(
+                                '$FmtNum', seriesinfo['FmtNum']).replace(
+                                '$SerNum', seriesinfo['SerNum']).replace(
+                                '$SerName', seriesinfo['SerName']).replace(
+                                '$PadNum', seriesinfo['PadNum']).replace(
                                 '$$', ' ')
                             dest_path = ' '.join(dest_path.split()).strip()
                             dest_path = replace_all(dest_path, __dic__)
@@ -568,9 +571,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
                                 '$Author', authorname).replace(
                                 '$Title', bookname).replace(
-                                '$Series', seriesinfo['Full']).replace(
-                                '$SerName', seriesinfo['Name']).replace(
-                                '$SerNum', seriesinfo['Num']).replace(
+                                '$Series', seriesinfo['FmtFull']).replace(
+                                '$FmtName', seriesinfo['FmtName']).replace(
+                                '$FmtNum', seriesinfo['FmtNum']).replace(
+                                '$SerNum', seriesinfo['SerNum']).replace(
+                                '$SerName', seriesinfo['SerName']).replace(
+                                '$PadNum', seriesinfo['PadNum']).replace(
                                 '$$', ' ')
                             global_name = ' '.join(global_name.split()).strip()
                         else:
@@ -1328,9 +1334,12 @@ def process_book(pp_path=None, bookID=None):
             dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
                 '$Author', authorname).replace(
                 '$Title', bookname).replace(
-                '$Series', seriesinfo['Full']).replace(
-                '$SerName', seriesinfo['Name']).replace(
-                '$SerNum', seriesinfo['Num']).replace(
+                '$Series', seriesinfo['FmtFull']).replace(
+                '$FmtName', seriesinfo['FmtName']).replace(
+                '$FmtNum', seriesinfo['FmtNum']).replace(
+                '$SerNum', seriesinfo['SerNum']).replace(
+                '$SerName', seriesinfo['SerName']).replace(
+                '$PadNum', seriesinfo['PadNum']).replace(
                 '$$', ' ')
             dest_path = ' '.join(dest_path.split()).strip()
             dest_path = replace_all(dest_path, __dic__)
@@ -1341,9 +1350,12 @@ def process_book(pp_path=None, bookID=None):
             global_name = lazylibrarian.CONFIG['EBOOK_DEST_FILE'].replace(
                 '$Author', authorname).replace(
                 '$Title', bookname).replace(
-                '$Series', seriesinfo['Full']).replace(
-                '$SerName', seriesinfo['Name']).replace(
-                '$SerNum', seriesinfo['Num']).replace(
+                '$Series', seriesinfo['FmtFull']).replace(
+                '$FmtName', seriesinfo['FmtName']).replace(
+                '$FmtNum', seriesinfo['FmtNum']).replace(
+                '$SerNum', seriesinfo['SerNum']).replace(
+                '$SerName', seriesinfo['SerName']).replace(
+                '$PadNum', seriesinfo['PadNum']).replace(
                 '$$', ' ')
             global_name = ' '.join(global_name.split()).strip()
 
