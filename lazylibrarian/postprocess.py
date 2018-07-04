@@ -358,17 +358,19 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
         if len(snatched):
             for book in snatched:
-                # if torrent, see if we can get current status from the downloader as the name
+                # see if we can get current status from the downloader as the name
                 # may have been changed once magnet resolved, or download started or completed
                 # depending on torrent downloader. Usenet doesn't change the name. We like usenet.
                 matchtitle = unaccented_str(book['NZBtitle'])
-                torrentname = getDownloadName(matchtitle, book['Source'], book['DownloadID'])
+                dlname = getDownloadName(matchtitle, book['Source'], book['DownloadID'])
 
-                if torrentname and torrentname != matchtitle:
-                    logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, torrentname))
+                if dlname and dlname != matchtitle:
+                    if book['Source'] == 'SABNZBD':
+                        logger.warn("%s unexpected change [%s] to [%s]" % (book['Source'], matchtitle, dlname))
+                    logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, dlname))
                     # should we check against reject word list again as the name has changed?
-                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (torrentname, book['NZBurl']))
-                    matchtitle = torrentname
+                    myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (dlname, book['NZBurl']))
+                    matchtitle = dlname
 
                 book_type = bookType(book)
 
@@ -406,7 +408,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
             if len(snatched):
                 for book in snatched:
                     book_type = bookType(book)
+                    # remove accents and convert not-ascii apostrophes
                     matchtitle = unaccented_str(book['NZBtitle'])
+                    # torrent names might have words_separated_by_underscores
+                    matchtitle = matchtitle.split(' LL.(')[0].replace('_', ' ')
+                    # strip noise characters
+                    matchtitle = replace_all(matchtitle, __dic__)
                     matches = []
                     logger.debug('Looking for %s %s in %s' % (book_type, matchtitle, download_dir))
 
@@ -421,10 +428,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                             # We ask the torrent downloader for the torrent name, but don't always get an answer
                             # so we try to do a "best match" on the name, there might be a better way...
 
-                            matchname = fname
-                            # torrents might have words_separated_by_underscores
+                            matchname = unaccented_str(fname)
                             matchname = matchname.split(' LL.(')[0].replace('_', ' ')
-                            matchtitle = matchtitle.split(' LL.(')[0].replace('_', ' ')
+                            matchname = replace_all(matchname, __dic__)
                             match = fuzz.token_set_ratio(matchtitle, matchname)
                             if lazylibrarian.LOGLEVEL & lazylibrarian.log_fuzz:
                                 logger.debug("%s%% match %s : %s" % (match, matchtitle, matchname))
@@ -984,21 +990,21 @@ def check_residual(download_dir):
 
 
 def getDownloadName(title, source, downloadid):
-    torrentname = None
+    dlname = None
     try:
         logger.debug("%s was sent to %s" % (title, source))
         if source == 'TRANSMISSION':
-            torrentname = transmission.getTorrentFolder(downloadid)
+            dlname = transmission.getTorrentFolder(downloadid)
         elif source == 'QBITTORRENT':
-            torrentname = qbittorrent.getName(downloadid)
+            dlname = qbittorrent.getName(downloadid)
         elif source == 'UTORRENT':
-            torrentname = utorrent.nameTorrent(downloadid)
+            dlname = utorrent.nameTorrent(downloadid)
         elif source == 'RTORRENT':
-            torrentname = rtorrent.getName(downloadid)
+            dlname = rtorrent.getName(downloadid)
         elif source == 'SYNOLOGY_TOR':
-            torrentname = synology.getName(downloadid)
+            dlname = synology.getName(downloadid)
         elif source == 'DELUGEWEBUI':
-            torrentname = deluge.getTorrentFolder(downloadid)
+            dlname = deluge.getTorrentFolder(downloadid)
         elif source == 'DELUGERPC':
             client = DelugeRPCClient(lazylibrarian.CONFIG['DELUGE_HOST'], int(lazylibrarian.CONFIG['DELUGE_PORT']),
                                      lazylibrarian.CONFIG['DELUGE_USER'], lazylibrarian.CONFIG['DELUGE_PASS'])
@@ -1008,13 +1014,29 @@ def getDownloadName(title, source, downloadid):
                 # for item in result:
                 #     logger.debug ('Deluge RPC result %s: %s' % (item, result[item]))
                 if 'name' in result:
-                    torrentname = unaccented_str(result['name'])
+                    dlname = unaccented_str(result['name'])
             except Exception as e:
                 logger.error('DelugeRPC failed %s %s' % (type(e).__name__, str(e)))
-        return torrentname
+        elif source == 'SABNZBD':
+            res, _ = sabnzbd.SABnzbd(nzburl='queue')
+            found = False
+            if res and 'queue' in res:
+                for item in res['queue']['slots']:
+                    if item['nzo_id'] == downloadid:
+                        found = True
+                        dlname = item['filename']
+                        break
+            if not found:  # not in queue, try history in case completed or error
+                res, _ = sabnzbd.SABnzbd(nzburl='history')
+                if res and 'history' in res:
+                    for item in res['history']['slots']:
+                        if item['nzo_id'] == downloadid:
+                            dlname = item['name']
+                            break
+        return dlname
 
     except Exception as e:
-        logger.error("Failed to get updated torrent name from %s for %s: %s %s" %
+        logger.error("Failed to get filename from %s for %s: %s %s" %
                      (source, downloadid, type(e).__name__, str(e)))
         return None
 
@@ -1027,7 +1049,7 @@ def getDownloadFiles(source, downloadid):
         elif source == 'UTORRENT':
             dlfiles = utorrent.listTorrent(downloadid)
         # elif source == 'RTORRENT':
-        #     torrentname = rtorrent.getFiles(downloadid)
+        #     dlfiles = rtorrent.getFiles(downloadid)
         elif source == 'SYNOLOGY_TOR':
             dlfiles = synology.getFiles(downloadid)
         elif source == 'QBITTORRENT':
@@ -1152,7 +1174,7 @@ def getDownloadProgress(source, downloadid):
                 progress = -1
 
         # elif source == 'RTORRENT':
-        #     torrentname = rtorrent.getName(downloadid)
+        #     progress, message = rtorrent.getProgress(downloadid)
 
         elif source == 'SYNOLOGY_TOR':
             progress, status = synology.getProgress(downloadid)

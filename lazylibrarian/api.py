@@ -13,23 +13,23 @@
 
 import json
 import os
-import sys
 import shutil
+import sys
 import threading
-import cherrypy
-from lib.six import PY2, string_types
+
 # noinspection PyUnresolvedReferences
 from lib.six.moves import configparser, queue
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlsplit, urlunsplit
 
+import cherrypy
 import lazylibrarian
 from lazylibrarian import logger, database
+from lazylibrarian.bookrename import audioRename, seriesInfo
 from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, setAllBookSeries, \
     getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors
-from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers
-from lazylibrarian.bookrename import audioRename, seriesInfo, stripspaces
 from lazylibrarian.cache import cache_img
+from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
     logHeader
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table
@@ -37,17 +37,18 @@ from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, 
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.grsync import grfollow, grsync
+from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan
 from lazylibrarian.manualbook import searchItem
 from lazylibrarian.postprocess import processDir, processAlternate, processOPF
+from lazylibrarian.providers import get_capabilities
+from lazylibrarian.rssfeed import genFeed
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines, get_issue_date
 from lazylibrarian.searchrss import search_rss_book, search_wishlist
-from lazylibrarian.calibre import syncCalibreList, calibreList
-from lazylibrarian.providers import get_capabilities
-from lazylibrarian.rssfeed import genFeed
+from lib.six import PY2, string_types
 
 cmd_dict = {'help': 'list available commands. ' +
                     'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
@@ -827,10 +828,10 @@ class Api(object):
         if 'id' in kwargs:
             authid = kwargs['id']
         if 'wait' in kwargs:
-            LibraryScan(startdir=startdir, library='audio', authid=authid, remove=remove)
+            LibraryScan(startdir=startdir, library='AudioBook', authid=authid, remove=remove)
         else:
             threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN',
-                             args=[startdir, 'audio', authid, remove]).start()
+                             args=[startdir, 'AudioBook', authid, remove]).start()
 
     @staticmethod
     def _forceMagazineScan(**kwargs):
