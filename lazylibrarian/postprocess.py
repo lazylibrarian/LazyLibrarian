@@ -365,6 +365,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                 dlname = getDownloadName(matchtitle, book['Source'], book['DownloadID'])
 
                 if dlname and dlname != matchtitle:
+                    if book['Source'] == 'SABNZBD':
+                        logger.warn("%s unexpected change [%s] to [%s]" % (book['Source'], matchtitle, dlname))
                     logger.debug("%s Changing [%s] to [%s]" % (book['Source'], matchtitle, dlname))
                     # should we check against reject word list again as the name has changed?
                     myDB.action('UPDATE wanted SET NZBtitle=? WHERE NZBurl=?', (dlname, book['NZBurl']))

@@ -828,10 +828,10 @@ class Api(object):
         if 'id' in kwargs:
             authid = kwargs['id']
         if 'wait' in kwargs:
-            LibraryScan(startdir=startdir, library='audio', authid=authid, remove=remove)
+            LibraryScan(startdir=startdir, library='AudioBook', authid=authid, remove=remove)
         else:
             threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN',
-                             args=[startdir, 'audio', authid, remove]).start()
+                             args=[startdir, 'AudioBook', authid, remove]).start()
 
     @staticmethod
     def _forceMagazineScan(**kwargs):

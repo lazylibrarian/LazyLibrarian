@@ -424,7 +424,6 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
         # allow full_scan override so we can scan in alternate directories without deleting others
         if remove:
-
             if library == 'eBook':
                 cmd = 'select AuthorName, BookName, BookFile, BookID from books,authors'
                 cmd += ' where BookLibrary is not null and books.AuthorID = authors.AuthorID'
@@ -442,7 +441,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         logger.warn('eBook %s - %s updated as not found on disk' %
                                     (book['AuthorName'], book['BookName']))
 
-            else:  # library == 'Audio':
+            else:  # library == 'AudioBook':
                 cmd = 'select AuthorName, BookName, AudioFile, BookID from books,authors'
                 cmd += ' where AudioLibrary is not null and books.AuthorID = authors.AuthorID'
                 if not startdir == destdir:
@@ -523,7 +522,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                         (subdirectory in processed_subdirectories):
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                         logger.debug("[%s] already scanned" % subdirectory)
-                elif library == 'Audio' and (subdirectory in processed_subdirectories):
+                elif library == 'AudioBook' and (subdirectory in processed_subdirectories):
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
                         logger.debug("[%s] already scanned" % subdirectory)
                 elif not os.path.isdir(rootdir):
@@ -538,7 +537,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                     # and look up isbn/lang from LT or GR later
                     match = 0
                     if (library == 'eBook' and is_valid_booktype(files, 'ebook')) or \
-                            (library == 'Audio' and is_valid_booktype(files, 'audiobook')):
+                            (library == 'AudioBook' and is_valid_booktype(files, 'audiobook')):
 
                         logger.debug("[%s] Now scanning subdirectory %s" % (startdir, subdirectory))
 
@@ -933,7 +932,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 myDB.action('UPDATE books set BookFile=? where BookID=?',
                                                             (book_filename, bookid))
 
-                                        elif library == 'Audio':
+                                        elif library == 'AudioBook':
                                             if check_status['AudioStatus'] != 'Open':
                                                 # we found a new audiobook
                                                 new_book_count += 1
@@ -1086,7 +1085,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
 
             if library == 'eBook':
                 lazylibrarian.EBOOK_UPDATE = 0
-            elif library == 'Audio':
+            elif library == 'AudioBook':
                 lazylibrarian.AUDIO_UPDATE = 0
             lazylibrarian.AUTHORS_UPDATE = 0
         else:
@@ -1111,7 +1110,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
         if startdir == destdir:  # full library scan
             if library == 'eBook':
                 lazylibrarian.EBOOK_UPDATE = 0
-            elif library == 'Audio':
+            elif library == 'AudioBook':
                 lazylibrarian.AUDIO_UPDATE = 0
         else:
             if authid:
