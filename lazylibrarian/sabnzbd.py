@@ -77,6 +77,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         title = 'LL.(%s)' % nzburl
     elif nzburl == 'queue':
         params['mode'] = 'queue'
+        params['limit'] = '100'
         params['output'] = 'json'
         if lazylibrarian.CONFIG['SAB_USER']:
             params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
@@ -87,6 +88,7 @@ def SABnzbd(title=None, nzburl=None, remove_data=False):
         title = 'LL.(Queue)'
     elif nzburl == 'history':
         params['mode'] = 'history'
+        params['limit'] = '100'
         params['output'] = 'json'
         if lazylibrarian.CONFIG['SAB_USER']:
             params['ma_username'] = lazylibrarian.CONFIG['SAB_USER']
