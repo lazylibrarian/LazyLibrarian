@@ -1027,6 +1027,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                   'bad_lang': stats['sum(bad_lang)'], 'bad_char': stats['sum(bad_char)'],
                   'uncached': stats['sum(uncached)'], 'duplicates': stats['sum(duplicates)']}
 
+            # noinspection PyUnresolvedReferences
             for item in list(st.keys()):
                 if st[item] is None:
                     st[item] = 0

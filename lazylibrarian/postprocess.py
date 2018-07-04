@@ -1029,7 +1029,6 @@ def getDownloadName(title, source, downloadid):
                 if res and 'history' in res:
                     for item in res['history']['slots']:
                         if item['nzo_id'] == downloadid:
-                            found = True
                             dlname = item['name']
                             break
         return dlname
