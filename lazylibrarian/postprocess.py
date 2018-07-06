@@ -218,16 +218,21 @@ def unpack_archive(pp_path, download_dir, title):
     # noinspection PyBroadException
     try:
         from lib.unrar import rarfile
-        gotrar = True
     except Exception:
-        gotrar = False
         rarfile = None
 
-    targetdir = ''
     pp_path = makeUnicode(pp_path)
     if not os.path.isfile(pp_path):  # regular files only
-        targetdir = ''
-    elif zipfile.is_zipfile(pp_path):
+        return ''
+
+    targetdir = os.path.join(download_dir, title + '.unpack')
+    if not os.path.isdir(targetdir):
+        res = mymakedirs(targetdir)
+        if not res:
+            logger.error("Failed to create target dir %s" % targetdir)
+            return ''
+
+    if zipfile.is_zipfile(pp_path):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug('%s is a zip file' % pp_path)
         try:
@@ -238,20 +243,9 @@ def unpack_archive(pp_path, download_dir, title):
 
         namelist = z.namelist()
         for item in namelist:
-            # Look for any valid book files, including jpg for cbr/cbz
-            if is_valid_type(item):
-                if not targetdir:
-                    targetdir = os.path.join(download_dir, title + '.unpack')
-                if not os.path.isdir(targetdir):
-                    res = mymakedirs(targetdir)
-                    if not res:
-                        return ''
-
-                with open(os.path.join(targetdir, item), "wb") as f:
-                    logger.debug('Extracting %s to %s' % (item, targetdir))
-                    f.write(z.read(item))
-            else:
-                logger.debug('Skipping zipped file %s' % item)
+            with open(os.path.join(targetdir, item), "wb") as f:
+                logger.debug('Extracting %s to %s' % (item, targetdir))
+                f.write(z.read(item))
 
     elif tarfile.is_tarfile(pp_path):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
@@ -264,21 +258,11 @@ def unpack_archive(pp_path, download_dir, title):
 
         namelist = z.getnames()
         for item in namelist:
-            if is_valid_type(item):
-                if not targetdir:
-                    targetdir = os.path.join(download_dir, title + '.unpack')
-                if not os.path.isdir(targetdir):
-                    res = mymakedirs(targetdir)
-                    if not res:
-                        return ''
+            with open(os.path.join(targetdir, item), "wb") as f:
+                logger.debug('Extracting %s to %s' % (item, targetdir))
+                f.write(z.extractfile(item).read())
 
-                with open(os.path.join(targetdir, item), "wb") as f:
-                    logger.debug('Extracting %s to %s' % (item, targetdir))
-                    f.write(z.extractfile(item).read())
-            else:
-                logger.debug('Skipping tarred file %s' % item)
-
-    elif gotrar and rarfile.is_rarfile(pp_path):
+    elif rarfile and rarfile.is_rarfile(pp_path):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug('%s is a rar file' % pp_path)
         try:
@@ -289,21 +273,12 @@ def unpack_archive(pp_path, download_dir, title):
 
         namelist = z.namelist()
         for item in namelist:
-            if is_valid_type(item):
-                if not targetdir:
-                    targetdir = os.path.join(download_dir, title + '.unpack')
-                if not os.path.isdir(targetdir):
-                    res = mymakedirs(targetdir)
-                    if not res:
-                        return ''
-
-                with open(os.path.join(targetdir, item), "wb") as f:
-                    logger.debug('Extracting %s to %s' % (item, targetdir))
-                    f.write(z.read(item))
-            else:
-                logger.debug('Skipping rarred file %s' % item)
+            with open(os.path.join(targetdir, item), "wb") as f:
+                logger.debug('Extracting %s to %s' % (item, targetdir))
+                f.write(z.read(item))
     else:
         logger.debug('[%s] Not a recognised archive' % pp_path)
+        return ''
     return targetdir
 
 
