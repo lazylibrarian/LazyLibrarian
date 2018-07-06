@@ -106,11 +106,11 @@ def TPB(book=None, test=False):
                         size = size.replace('&nbsp;', '')
                         size = size_in_bytes(size)
                         try:
-                            seeders = int(td[2].text)
+                            seeders = int(td[2].text.replace(',', ''))
                         except ValueError:
                             seeders = 0
 
-                        if minimumseeders < int(seeders):
+                        if minimumseeders < seeders:
                             # no point in asking for magnet link if not enough seeders
                             magurl = '%s/%s' % (host, magnet)
                             result, success = fetchURL(magurl)
@@ -233,13 +233,13 @@ def KAT(book=None, test=False):
                     except ValueError:
                         size = 0
                     try:
-                        seeders = int(td[3].text)
+                        seeders = int(td[3].text.replace(',', ''))
                     except ValueError:
                         seeders = 0
 
                     if not url or not title:
                         logger.debug('Missing url or title')
-                    elif minimumseeders < int(seeders):
+                    elif minimumseeders < seeders:
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -359,13 +359,13 @@ def WWT(book=None, test=False):
                         except ValueError:
                             size = 0
                         try:
-                            seeders = int(td[2].text)
+                            seeders = int(td[2].text.replace(',', ''))
                         except ValueError:
                             seeders = 0
 
                         if not url or not title:
                             logger.debug('Missing url or title')
-                        elif minimumseeders < int(seeders):
+                        elif minimumseeders < seeders:
                             results.append({
                                 'bookid': book['bookid'],
                                 'tor_prov': provider,
@@ -435,7 +435,7 @@ def EXTRA(book=None, test=False):
                     title = unaccented(item['title'])
 
                     try:
-                        seeders = int(item['seeders'])
+                        seeders = int(item['seeders'].replace(',', ''))
                     except ValueError:
                         seeders = 0
 
@@ -451,7 +451,7 @@ def EXTRA(book=None, test=False):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < int(seeders):
+                    elif minimumseeders < seeders:
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -517,7 +517,7 @@ def ZOO(book=None, test=False):
             for item in d.entries:
                 try:
                     title = unaccented(item['title'])
-                    seeders = int(item['torrent_seeds'])
+                    seeders = int(item['torrent_seeds'].replace(',', ''))
                     link = item['links'][1]['href']
                     size = int(item['links'][1]['length'])
                     magnet = item['torrent_magneturi']
@@ -534,7 +534,7 @@ def ZOO(book=None, test=False):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < int(seeders):
+                    elif minimumseeders < seeders:
                         results.append({
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -603,7 +603,7 @@ def LIME(book=None, test=False):
                     title = unaccented(item['title'])
                     try:
                         seeders = item['description']
-                        seeders = int(seeders.split('Seeds:')[1].split(',')[0].strip())
+                        seeders = int(seeders.split('Seeds:')[1].split(' ,')[0].replace(',', '').strip())
                     except (IndexError, ValueError):
                         seeders = 0
 
@@ -625,7 +625,7 @@ def LIME(book=None, test=False):
 
                     if not url or not title:
                         logger.debug('No url or title found')
-                    elif minimumseeders < int(seeders):
+                    elif minimumseeders < seeders:
                         res = {
                             'bookid': book['bookid'],
                             'tor_prov': provider,
@@ -698,7 +698,7 @@ def TDL(book=None, test=False):
             for item in d.entries:
                 try:
                     title = item['title']
-                    seeders = int(item['seeders'])
+                    seeders = int(item['seeders'].replace(',', ''))
                     link = item['link']
                     size = int(item['size'])
                     url = None
@@ -708,7 +708,7 @@ def TDL(book=None, test=False):
                     except KeyError:
                         pubdate = None
 
-                    if link and minimumseeders < int(seeders):
+                    if link and minimumseeders < seeders:
                         # no point requesting the magnet link if not enough seeders
                         # TDL gives us a relative link
                         result, success = fetchURL(providerurl+link)
