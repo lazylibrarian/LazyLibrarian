@@ -35,6 +35,35 @@ def url_fix(s, charset='utf-8'):
     return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
+def multibook(foldername, recurse=False):
+    # Check for more than one book in the folder(tree). Note we can't rely on basename
+    # being the same, so just check for more than one bookfile of the same type
+    # Return which type we found multiples of, or empty string if no multiples
+    filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+
+    if recurse:
+        for r, d, f in os.walk(makeBytestr(foldername)):
+            flist = [makeUnicode(item) for item in f]
+            for item in filetypes:
+                counter = 0
+                for fname in flist:
+                    if fname.endswith(item):
+                        counter += 1
+                        if counter > 1:
+                            return item
+    else:
+        flist = os.listdir(makeBytestr(foldername))
+        flist = [makeUnicode(item) for item in flist]
+        for item in filetypes:
+            counter = 0
+            for fname in flist:
+                if fname.endswith(item):
+                    counter += 1
+                    if counter > 1:
+                        return item
+    return ''
+
+
 def bookSeries(bookname):
     """
     Try to get a book series/seriesNum from a bookname, or return empty string
@@ -209,15 +238,13 @@ def dateFormat(datestr, formatstr):
 
     # noinspection PyBroadException
     try:
-        Y = datestr[0:4]
-        y = datestr[2:4]
-        m = datestr[5:7]
-        d = datestr[8:10]
-        B = lazylibrarian.MONTHNAMES[int(m)][0]
-        b = lazylibrarian.MONTHNAMES[int(m)][1]
-        return formatstr.replace('$Y', Y).replace('$y', y).replace(
-                                 '$m', m).replace('$d', d).replace(
-                                 '$B', B.title()).replace('$b', b.title())
+        return formatstr.replace(
+            '$Y', datestr[0:4]).replace(
+            '$y', datestr[2:4]).replace(
+            '$m', datestr[5:7]).replace(
+            '$d', datestr[8:10]).replace(
+            '$B', lazylibrarian.MONTHNAMES[int(datestr[5:7])][0].title()).replace(
+            '$b', lazylibrarian.MONTHNAMES[int(datestr[5:7])][1].title())
     except Exception:
         return datestr
 
@@ -368,10 +395,11 @@ def is_valid_isbn(isbn):
     return False
 
 
-def is_valid_type(filename):
-    type_list = getList(lazylibrarian.CONFIG['MAG_TYPE'] + ' ' +
-                        lazylibrarian.CONFIG['AUDIOBOOK_TYPE'] + ' ' +
-                        lazylibrarian.CONFIG['EBOOK_TYPE'] + ' jpg, opf')
+def is_valid_type(filename, extras='jpg, opf'):
+    type_list = list(set(getList(lazylibrarian.CONFIG['MAG_TYPE']) +
+                         getList(lazylibrarian.CONFIG['AUDIOBOOK_TYPE']) +
+                         getList(lazylibrarian.CONFIG['EBOOK_TYPE']) +
+                         getList(extras)))
     extn = os.path.splitext(filename)[1].lstrip('.')
     if extn and extn.lower() in type_list:
         return True
@@ -443,7 +471,7 @@ def split_title(author, book):
         return bookname, booksub
     # if not (words in braces at end of string)
     # split subtitle on whichever comes first, ':' or '('
-    # unless the part in braces is one word, eg (TM) or (Annotated)
+    # unless the part in braces is one word, eg (TM) or (Annotated) or (Unabridged)
     # Might need to expand this to be a list of allowed words?
     colon = book.find(':')
     colon += 1
@@ -474,7 +502,7 @@ def split_title(author, book):
 
 
 def formatAuthorName(author):
-    """ get authorame in a consistent format """
+    """ get authorname in a consistent format """
     author = makeUnicode(author)
 
     if "," in author:
