@@ -40,7 +40,7 @@ from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
     safe_copy, safe_move, mymakedirs
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
-    replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int, is_valid_type
+    replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int, is_valid_type, multibook
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import get_book_info, find_book_in_db, LibraryScan
@@ -70,14 +70,17 @@ def processAlternate(source_dir=None):
     # import a book from an alternate directory
     # noinspection PyBroadException
     try:
-        if not source_dir or not os.path.isdir(source_dir):
+        if not source_dir:
             logger.warn("Alternate Directory not configured")
+            return False
+        if not os.path.isdir(source_dir):
+            logger.warn("%s is not a directory" % source_dir)
             return False
         if source_dir == lazylibrarian.DIRECTORY('eBook'):
             logger.warn('Alternate directory must not be the same as Destination')
             return False
 
-        logger.debug('Processing alternate directory %s' % source_dir)
+        logger.debug('Processing directory %s' % source_dir)
         # first, recursively process any books in subdirectories
         flist = os.listdir(makeBytestr(source_dir))
         flist = [makeUnicode(item) for item in flist]
@@ -89,96 +92,100 @@ def processAlternate(source_dir=None):
         # the importer may delete the directory after importing a book,
         # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
         # also if multiple books in a folder and only a "metadata.opf"
-        # which book is it for?
-        new_book = book_file(source_dir, booktype='ebook')
-        # Check for more than one book in the folder. Note we can't rely on basename
-        # being the same, so just check for more than one bookfile of the same type
-        filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
-        reject = ''
-        flist = os.listdir(makeBytestr(source_dir))
-        flist = [makeUnicode(item) for item in flist]
-        for item in filetypes:
-            counter = 0
-            for fname in flist:
-                if fname.endswith(item):
-                    counter += 1
-                    if counter > 1:
-                        reject = item
-                        break
+        # or "cover.jpg"" which book is it for?
+        reject = multibook(source_dir)
         if reject:
             logger.debug("Not processing %s, found multiple %s" % (source_dir, reject))
-        elif new_book:
-            metadata = {}
-            # see if there is a metadata file in this folder with the info we need
-            # try book_name.opf first, or fall back to any filename.opf
-            metafile = os.path.splitext(new_book)[0] + '.opf'
-            if not os.path.isfile(metafile):
-                metafile = opf_file(source_dir)
-            if metafile and os.path.isfile(metafile):
-                try:
-                    metadata = get_book_info(metafile)
-                except Exception as e:
-                    logger.warn('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
-            else:
-                logger.debug('No metadata file found for %s' % new_book)
-            if 'title' not in metadata or 'creator' not in metadata:
-                # if not got both, try to get metadata from the book file
-                extn = os.path.splitext(new_book)[1]
-                if extn in [".epub", ".mobi"]:
-                    if PY2:
-                        new_book = new_book.encode(lazylibrarian.SYS_ENCODING)
-                    try:
-                        metadata = get_book_info(new_book)
-                    except Exception as e:
-                        logger.warn('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
-            if 'title' in metadata and 'creator' in metadata:
-                authorname = metadata['creator']
-                bookname = metadata['title']
-                myDB = database.DBConnection()
-                authorid = ''
-                authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
+            return False
 
-                if not authmatch:
-                    # try goodreads preferred authorname
-                    logger.debug("Checking GoodReads for [%s]" % authorname)
-                    GR = GoodReads(authorname)
-                    try:
-                        author_gr = GR.find_author_id()
-                    except Exception as e:
-                        author_gr = {}
-                        logger.warn("No author id for [%s] %s" % (authorname, type(e).__name__))
-                    if author_gr:
-                        grauthorname = author_gr['authorname']
-                        authorid = author_gr['authorid']
-                        logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
-                        authorname = grauthorname
-                        authmatch = myDB.match('SELECT * FROM authors where AuthorID=?', (authorid,))
-
-                if authmatch:
-                    logger.debug("Author %s found in database" % authorname)
-                else:
-                    logger.debug("Author %s not found, adding to database" % authorname)
-                    if authorid:
-                        addAuthorToDB(authorid=authorid)
-                    else:
-                        addAuthorNameToDB(author=authorname)
-
-                bookid, mtype = find_book_in_db(authorname, bookname, ignored=False)
-                if bookid:
-                    if mtype == "Ignored":
-                        logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
-                                    (bookname, authorname))
-                    return process_book(source_dir, bookid)
-                else:
-                    logger.warn("Book %s by %s not found in database" % (bookname, authorname))
-            else:
-                logger.warn('Book %s has no metadata, unable to import' % new_book)
-        else:
-            # could check if an archive in this directory?
+        new_book = book_file(source_dir, booktype='ebook')
+        if not new_book:
+            # check if an archive in this directory
+            for f in os.listdir(makeBytestr(source_dir)):
+                f = makeUnicode(f)
+                if not is_valid_type(f):
+                    # Is file an archive, if so look inside and extract to new dir
+                    res = unpack_archive(os.path.join(source_dir, f), source_dir, f)
+                    if res:
+                        source_dir = res
+                        break
+            new_book = book_file(source_dir, booktype='ebook')
+        if not new_book:
             logger.warn("No book file found in %s" % source_dir)
+            return False
+
+        metadata = {}
+        # see if there is a metadata file in this folder with the info we need
+        # try book_name.opf first, or fall back to any filename.opf
+        metafile = os.path.splitext(new_book)[0] + '.opf'
+        if not os.path.isfile(metafile):
+            metafile = opf_file(source_dir)
+        if metafile and os.path.isfile(metafile):
+            try:
+                metadata = get_book_info(metafile)
+            except Exception as e:
+                logger.warn('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
+        else:
+            logger.debug('No metadata file found for %s' % new_book)
+
+        if 'title' not in metadata or 'creator' not in metadata:
+            # if not got both, try to get metadata from the book file
+            extn = os.path.splitext(new_book)[1]
+            if extn in [".epub", ".mobi"]:
+                if PY2:
+                    new_book = new_book.encode(lazylibrarian.SYS_ENCODING)
+                try:
+                    metadata = get_book_info(new_book)
+                except Exception as e:
+                    logger.warn('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
+
+        if 'title' in metadata and 'creator' in metadata:
+            authorname = metadata['creator']
+            bookname = metadata['title']
+            myDB = database.DBConnection()
+            authorid = ''
+            authmatch = myDB.match('SELECT * FROM authors where AuthorName=?', (authorname,))
+
+            if not authmatch:
+                # try goodreads preferred authorname
+                logger.debug("Checking GoodReads for [%s]" % authorname)
+                GR = GoodReads(authorname)
+                try:
+                    author_gr = GR.find_author_id()
+                except Exception as e:
+                    author_gr = {}
+                    logger.warn("No author id for [%s] %s" % (authorname, type(e).__name__))
+                if author_gr:
+                    grauthorname = author_gr['authorname']
+                    authorid = author_gr['authorid']
+                    logger.debug("GoodReads reports [%s] for [%s]" % (grauthorname, authorname))
+                    authorname = grauthorname
+                    authmatch = myDB.match('SELECT * FROM authors where AuthorID=?', (authorid,))
+
+            if authmatch:
+                logger.debug("Author %s found in database" % authorname)
+            else:
+                logger.debug("Author %s not found, adding to database" % authorname)
+                if authorid:
+                    addAuthorToDB(authorid=authorid)
+                else:
+                    addAuthorNameToDB(author=authorname)
+
+            bookid, mtype = find_book_in_db(authorname, bookname, ignored=False)
+            if bookid:
+                if mtype == "Ignored":
+                    logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
+                                (bookname, authorname))
+                return process_book(source_dir, bookid)
+            else:
+                logger.warn("Book %s by %s not found in database" % (bookname, authorname))
+        else:
+            logger.warn('Book %s has no metadata, unable to import' % new_book)
         return False
+
     except Exception:
         logger.error('Unhandled exception in processAlternate: %s' % traceback.format_exc())
+        return False
 
 
 def move_into_subdir(sourcedir, targetdir, fname, move='move'):
@@ -225,13 +232,6 @@ def unpack_archive(pp_path, download_dir, title):
     if not os.path.isfile(pp_path):  # regular files only
         return ''
 
-    targetdir = os.path.join(download_dir, title + '.unpack')
-    if not os.path.isdir(targetdir):
-        res = mymakedirs(targetdir)
-        if not res:
-            logger.error("Failed to create target dir %s" % targetdir)
-            return ''
-
     if zipfile.is_zipfile(pp_path):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
             logger.debug('%s is a zip file' % pp_path)
@@ -241,6 +241,12 @@ def unpack_archive(pp_path, download_dir, title):
             logger.error("Failed to unzip %s: %s" % (pp_path, e))
             return ''
 
+        targetdir = os.path.join(download_dir, title + '.unpack')
+        if not os.path.isdir(targetdir):
+            res = mymakedirs(targetdir)
+            if not res:
+                logger.error("Failed to create target dir %s" % targetdir)
+                return ''
         namelist = z.namelist()
         for item in namelist:
             with open(os.path.join(targetdir, item), "wb") as f:
@@ -256,6 +262,12 @@ def unpack_archive(pp_path, download_dir, title):
             logger.error("Failed to untar %s: %s" % (pp_path, e))
             return ''
 
+        targetdir = os.path.join(download_dir, title + '.unpack')
+        if not os.path.isdir(targetdir):
+            res = mymakedirs(targetdir)
+            if not res:
+                logger.error("Failed to create target dir %s" % targetdir)
+                return ''
         namelist = z.getnames()
         for item in namelist:
             with open(os.path.join(targetdir, item), "wb") as f:
@@ -271,13 +283,19 @@ def unpack_archive(pp_path, download_dir, title):
             logger.error("Failed to unrar %s: %s" % (pp_path, e))
             return ''
 
+        targetdir = os.path.join(download_dir, title + '.unpack')
+        if not os.path.isdir(targetdir):
+            res = mymakedirs(targetdir)
+            if not res:
+                logger.error("Failed to create target dir %s" % targetdir)
+                return ''
         namelist = z.namelist()
         for item in namelist:
             with open(os.path.join(targetdir, item), "wb") as f:
                 logger.debug('Extracting %s to %s' % (item, targetdir))
                 f.write(z.read(item))
     else:
-        logger.debug('[%s] Not a recognised archive' % pp_path)
+        logger.debug("[%s] doesn't look like an archive" % pp_path)
         return ''
     return targetdir
 
@@ -420,7 +438,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     # move the file into it's own subdirectory so we don't move/delete
                                     # things that aren't ours
                                     # note that epub are zipfiles so check booktype first
-                                    #
                                     if is_valid_type(fname):
                                         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                             logger.debug('file [%s] is a valid book/mag' % fname)
@@ -475,7 +492,16 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                 break
 
                                     skipped = False
-                                    if book_type == 'eBook' and not book_file(pp_path, 'ebook'):
+                                    # Might be multiple books in the download, could be a collection?
+                                    # If so, should we process all the books recursively? we can maybe use
+                                    # processAlternate(pp_path) but that currently only does ebooks, not audio or mag
+                                    # or should we just try to find and extract the one item from the collection?
+                                    # For now just import single book from top level directory...
+                                    mult = multibook(pp_path, recurse=True)
+                                    if mult:
+                                        logger.debug("Skipping %s, found multiple %s" % (pp_path, mult))
+                                        skipped = True
+                                    elif book_type == 'eBook' and not book_file(pp_path, 'ebook'):
                                         logger.debug("Skipping %s, no ebook found" % pp_path)
                                         skipped = True
                                     elif book_type == 'AudioBook' and not book_file(pp_path, 'audiobook'):

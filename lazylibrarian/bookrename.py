@@ -17,7 +17,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import safe_move
 from lazylibrarian.formatter import plural, is_valid_booktype, check_int, replace_all, getList, \
-    makeUnicode, makeBytestr
+    makeUnicode, makeBytestr, multibook
 
 try:
     from lib.tinytag import TinyTag
@@ -280,20 +280,7 @@ def bookRename(bookid):
             logger.debug(msg)
             return f
 
-    # Check for more than one book in the folder. Note we can't rely on basename
-    # being the same, so just check for more than one bookfile of the same type
-    filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
-    reject = ''
-    flist = os.listdir(makeBytestr(r))
-    flist = [makeUnicode(item) for item in flist]
-    for item in filetypes:
-        counter = 0
-        for fname in flist:
-            if fname.endswith(item):
-                counter += 1
-                if counter > 1:
-                    reject = item
-                    break
+    reject = multibook(r)
     if reject:
         logger.debug("Not renaming %s, found multiple %s" % (f, reject))
         return f

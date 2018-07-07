@@ -35,6 +35,35 @@ def url_fix(s, charset='utf-8'):
     return urlunsplit((scheme, netloc, path, qs, anchor))
 
 
+def multibook(foldername, recurse=False):
+    # Check for more than one book in the folder(tree). Note we can't rely on basename
+    # being the same, so just check for more than one bookfile of the same type
+    # Return which type we found multiples of, or empty string if no multiples
+    filetypes = getList(lazylibrarian.CONFIG['EBOOK_TYPE'])
+
+    if recurse:
+        for r, d, f in os.walk(makeBytestr(foldername)):
+            flist = [makeUnicode(item) for item in f]
+            for item in filetypes:
+                counter = 0
+                for fname in flist:  
+                    if fname.endswith(item):
+                        counter += 1
+                        if counter > 1:
+                            return item
+    else:
+        flist = os.listdir(makeBytestr(foldername))
+        flist = [makeUnicode(item) for item in flist]
+        for item in filetypes:
+            counter = 0
+            for fname in flist:
+                if fname.endswith(item):
+                    counter += 1
+                    if counter > 1:
+                        return item
+    return ''
+
+
 def bookSeries(bookname):
     """
     Try to get a book series/seriesNum from a bookname, or return empty string
