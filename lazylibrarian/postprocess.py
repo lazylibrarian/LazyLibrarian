@@ -131,7 +131,7 @@ def processAlternate(source_dir=None):
         if 'title' not in metadata or 'creator' not in metadata:
             # if not got both, try to get metadata from the book file
             extn = os.path.splitext(new_book)[1]
-            if extn in [".epub", ".mobi"]:
+            if extn.lower() in [".epub", ".mobi"]:
                 if PY2:
                     new_book = new_book.encode(lazylibrarian.SYS_ENCODING)
                 try:
@@ -219,8 +219,8 @@ def move_into_subdir(sourcedir, targetdir, fname, move='move'):
     return cnt
 
 
-def unpack_archive(pp_path, download_dir, title):
-    """ See if pp_path is an archive containing a book
+def unpack_archive(archivename, download_dir, title):
+    """ See if archivename is an archive containing a book
         returns new directory in download_dir with book in it, or empty string """
     # noinspection PyBroadException
     try:
@@ -228,74 +228,72 @@ def unpack_archive(pp_path, download_dir, title):
     except Exception:
         rarfile = None
 
-    pp_path = makeUnicode(pp_path)
-    if not os.path.isfile(pp_path):  # regular files only
+    archivename = makeUnicode(archivename)
+    if not os.path.isfile(archivename):  # regular files only
         return ''
 
-    if zipfile.is_zipfile(pp_path):
+    if zipfile.is_zipfile(archivename):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
-            logger.debug('%s is a zip file' % pp_path)
+            logger.debug('%s is a zip file' % archivename)
         try:
-            z = zipfile.ZipFile(pp_path)
+            z = zipfile.ZipFile(archivename)
         except Exception as e:
-            logger.error("Failed to unzip %s: %s" % (pp_path, e))
+            logger.error("Failed to unzip %s: %s" % (archivename, e))
             return ''
 
         targetdir = os.path.join(download_dir, title + '.unpack')
-        if not os.path.isdir(targetdir):
-            res = mymakedirs(targetdir)
-            if not res:
-                logger.error("Failed to create target dir %s" % targetdir)
-                return ''
+        if not mymakedirs(targetdir):
+            logger.error("Failed to create target dir %s" % targetdir)
+            return ''
         namelist = z.namelist()
         for item in namelist:
-            with open(os.path.join(targetdir, item), "wb") as f:
-                logger.debug('Extracting %s to %s' % (item, targetdir))
-                f.write(z.read(item))
+            # Look for any wanted files (inc jpg for cbr/cbz) and directories (name endswith / )
+            if item.endswith('/') or is_valid_type(item):
+                with open(os.path.join(targetdir, item), "wb") as f:
+                    logger.debug('Extracting %s to %s' % (item, targetdir))
+                    f.write(z.read(item))
 
-    elif tarfile.is_tarfile(pp_path):
+    elif tarfile.is_tarfile(archivename):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
-            logger.debug('%s is a tar file' % pp_path)
+            logger.debug('%s is a tar file' % archivename)
         try:
-            z = tarfile.TarFile(pp_path)
+            z = tarfile.TarFile(archivename)
         except Exception as e:
-            logger.error("Failed to untar %s: %s" % (pp_path, e))
+            logger.error("Failed to untar %s: %s" % (archivename, e))
             return ''
 
         targetdir = os.path.join(download_dir, title + '.unpack')
-        if not os.path.isdir(targetdir):
-            res = mymakedirs(targetdir)
-            if not res:
-                logger.error("Failed to create target dir %s" % targetdir)
-                return ''
+        if not mymakedirs(targetdir):
+            logger.error("Failed to create target dir %s" % targetdir)
+            return ''
         namelist = z.getnames()
         for item in namelist:
-            with open(os.path.join(targetdir, item), "wb") as f:
-                logger.debug('Extracting %s to %s' % (item, targetdir))
-                f.write(z.extractfile(item).read())
+            if item.endswith('/') or is_valid_type(item):
+                with open(os.path.join(targetdir, item), "wb") as f:
+                    logger.debug('Extracting %s to %s' % (item, targetdir))
+                    f.write(z.extractfile(item).read())
 
-    elif rarfile and rarfile.is_rarfile(pp_path):
+    elif rarfile and rarfile.is_rarfile(archivename):
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
-            logger.debug('%s is a rar file' % pp_path)
+            logger.debug('%s is a rar file' % archivename)
         try:
-            z = rarfile.RarFile(pp_path)
+            z = rarfile.RarFile(archivename)
         except Exception as e:
-            logger.error("Failed to unrar %s: %s" % (pp_path, e))
+            logger.error("Failed to unrar %s: %s" % (archivename, e))
             return ''
 
         targetdir = os.path.join(download_dir, title + '.unpack')
-        if not os.path.isdir(targetdir):
-            res = mymakedirs(targetdir)
-            if not res:
-                logger.error("Failed to create target dir %s" % targetdir)
-                return ''
+        if not mymakedirs(targetdir):
+            logger.error("Failed to create target dir %s" % targetdir)
+            return ''
         namelist = z.namelist()
         for item in namelist:
-            with open(os.path.join(targetdir, item), "wb") as f:
-                logger.debug('Extracting %s to %s' % (item, targetdir))
-                f.write(z.read(item))
+            if item.endswith('/') or is_valid_type(item):
+                with open(os.path.join(targetdir, item), "wb") as f:
+                    logger.debug('Extracting %s to %s' % (item, targetdir))
+                    f.write(z.read(item))
     else:
-        logger.debug("[%s] doesn't look like an archive" % pp_path)
+        logger.debug("[%s] doesn't look like an archive" % archivename)
         return ''
     return targetdir
 
@@ -438,7 +436,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     # move the file into it's own subdirectory so we don't move/delete
                                     # things that aren't ours
                                     # note that epub are zipfiles so check booktype first
-                                    if is_valid_type(fname):
+                                    if is_valid_type(fname, extras=''):
                                         if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
                                             logger.debug('file [%s] is a valid book/mag' % fname)
                                         if bts_file(download_dir):
@@ -457,10 +455,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                 targetdir = os.path.join(download_dir, aname)
                                                 move = 'move'
 
-                                            if not os.path.isdir(targetdir):
-                                                _ = mymakedirs(targetdir)
-
-                                            if os.path.isdir(targetdir):
+                                            if mymakedirs(targetdir):
                                                 cnt = move_into_subdir(download_dir, targetdir, aname, move=move)
                                                 if cnt:
                                                     pp_path = targetdir
@@ -470,6 +465,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                                     except OSError as why:
                                                         logger.warn("Unable to delete %s: %s" %
                                                                     (targetdir, why.strerror))
+                                            else:
+                                                logger.debug("Unable to make directory %s" % targetdir)
                                     else:
                                         # Is file an archive, if so look inside and extract to new dir
                                         res = unpack_archive(pp_path, download_dir, matchtitle)
@@ -481,16 +478,6 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 if os.path.isdir(pp_path):
                                     logger.debug('Found folder (%s%%) [%s] for %s %s' %
                                                  (match, pp_path, book_type, matchtitle))
-
-                                    for f in os.listdir(makeBytestr(pp_path)):
-                                        f = makeUnicode(f)
-                                        if not is_valid_type(f):
-                                            # Is file an archive, if so look inside and extract to new dir
-                                            res = unpack_archive(os.path.join(pp_path, f), pp_path, matchtitle)
-                                            if res:
-                                                pp_path = res
-                                                break
-
                                     skipped = False
                                     # Might be multiple books in the download, could be a collection?
                                     # If so, should we process all the books recursively? we can maybe use
@@ -582,8 +569,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                     dest_path = os.path.join(dest_dir, dest_path)
                                     if PY2:
                                         dest_path = dest_path.encode(lazylibrarian.SYS_ENCODING)
-                                    res = mymakedirs(dest_path)
-                                    if not res:
+                                    if not mymakedirs(dest_path):
                                         logger.warn('Unable to create directory %s' % dest_path)
                                     else:
                                         ignorefile = os.path.join(dest_path, '.ll_ignore')
@@ -1614,10 +1600,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 return False, 'Unable to delete %s: %s' % (dest_path, why.strerror)
         if os.path.isdir(dest_path):
             setperm(dest_path)
-        else:
-            res = mymakedirs(dest_path)
-            if not res:
-                return False, 'Unable to create directory %s' % dest_path
+        elif not mymakedirs(dest_path):
+            return False, 'Unable to create directory %s' % dest_path
 
         # ok, we've got a target directory, try to copy only the files we want, renaming them on the fly.
         firstfile = ''  # try to keep track of "preferred" ebook type or the first part of multi-part audiobooks
