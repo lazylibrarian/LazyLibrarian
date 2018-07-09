@@ -1390,7 +1390,7 @@ class WebInterface(object):
                 library = kwargs['library']
 
             if library == 'AudioBook':
-                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
+                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('AudioBook'), AuthorName))
             else:  # if library == 'eBook':
                 authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
@@ -3440,7 +3440,7 @@ class WebInterface(object):
                 logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('%s already running' % threadname)
-        if library == 'Audio':
+        if library == 'AudioBook':
             raise cherrypy.HTTPRedirect("audio")
         raise cherrypy.HTTPRedirect("books")
 
