@@ -174,7 +174,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
                      'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
-                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL']
+                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -252,6 +252,7 @@ CONFIG_DEFINITIONS = {
     'MAG_RENAME': ('bool', 'General', 0),
     'IMP_MAGOPF': ('bool', 'General', 1),
     'IMP_CONVERT': ('str', 'General', ''),
+    'IMP_PREPROCESS': ('str', 'General', ''),
     'GIT_PROGRAM': ('str', 'General', ''),
     'CACHE_AGE': ('int', 'General', 30),
     'TASK_AGE': ('int', 'General', 2),
