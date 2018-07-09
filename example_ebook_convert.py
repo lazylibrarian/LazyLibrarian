@@ -15,6 +15,8 @@ import os
 import subprocess
 
 converter = "ebook-convert"  # if not in your "path", put the full pathname here
+calibredb = "calibredb"  # and here if needed
+calibrelib = "http://192.168.1.2:9000"  # --with-library value, either server or library name
 
 mydict = {}
 try:
@@ -42,12 +44,25 @@ elif 'Event' in mydict and mydict['Event'] == 'Added to Library':
         basename, extn = os.path.splitext(mydict['BookFile'])
         have_epub = os.path.exists(basename + '.epub')
         have_mobi = os.path.exists(basename + '.mobi')
+        try:
+            calibreid = basename.rsplit('(', 1)[1].split(')')[0]
+            if not calibreid.isdigit():
+                calibreid = ''
+        except IndexError:
+            calibreid = ''
+
+        if not calibrelib or not calibredb:
+            calibreid = ''
 
         if have_epub and not have_mobi:
             params = [converter, basename + '.epub', basename + '.mobi']
             try:
                 res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                 print("Created mobi for %s" % mydict['BookName'])
+                if calibreid:  # tell calibre about the new format
+                    params = [calibredb, "add_format", "--with-library", "%s" % calibrelib, calibreid,
+                              "%s" % basename + '.mobi']
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                 exit(0)
             except Exception as e:
                 sys.stderr.write("%s\n" % e)
@@ -58,6 +73,10 @@ elif 'Event' in mydict and mydict['Event'] == 'Added to Library':
             try:
                 res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                 print("Created epub for %s" % mydict['BookName'])
+                if calibreid:  # tell calibre about the new format
+                    params = [calibredb, "add_format", "--with-library", "%s" % calibrelib, calibreid,
+                              "%s" % basename + '.epub']
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                 exit(0)
             except Exception as e:
                 sys.stderr.write("%s\n" % e)
