@@ -1558,6 +1558,12 @@
                     <span class="help-block">This will include details for other books by new authors found in wishlists or csv files,<br>
                       or when manually importing a book by a new author</span>
                   </div>
+                  <div class="form-group">
+                    <label for="imp_preprocess">PreProcessor program:</label>
+                    <input type="text" id="imp_preprocess" name="imp_preprocess" value="${lazylibrarian.CONFIG['IMP_PREPROCESS']}" class="form-control">
+                    <span class="help-block">Path to preprocessor to run before importing books into the library</span>
+                    <input type="button" value="Test preprocessor" id="testpreprocessor" class="btn btn-default" />
+                  </div>
                 </fieldset>
                 <legend>Calibre</legend>
                   <fieldset>
@@ -1657,34 +1663,34 @@
                   <div class="form-group">
                     <label for="fmt_series">Series Pattern:</label>
                     <input type="text" id="fmt_series" name="fmt_series" value="${lazylibrarian.CONFIG['FMT_SERIES']}" class="form-control" placeholder="eg ($SerName #$SerNum)">
-                    <span class="help-block">Options: $SerName, $FmtName, $SerNum, $FmtNum, $PadNum, $$, any string.</span>
+                    <span class="help-block">Options: $SerName, $FmtName, $SerNum, $FmtNum, $PadNum, $PubYear, $$, any string.</span>
                   </div>
                   <div class="form-group">
                     <label for="fmt_sername">Series Name Pattern:</label>
-                    <input type="text" id="fmt_sername" name="fmt_sername" value="${lazylibrarian.CONFIG['FMT_SERNAME']}" class="form-control" placeholder="eg $SerName$$">
-                    <span class="help-block">Options: $SerName, $$, any string.</span>
+                    <input type="text" id="fmt_sername" name="fmt_sername" value="${lazylibrarian.CONFIG['FMT_SERNAME']}" class="form-control" placeholder="eg $SerName">
+                    <span class="help-block">Options: $SerName, $PubYear, $$, any string.</span>
                   </div>
                   <div class="form-group">
                     <label for="fmt_sernum">Series Number Pattern:</label>
-                    <input type="text" id="fmt_sernum" name="fmt_sernum" value="${lazylibrarian.CONFIG['FMT_SERNUM']}" class="form-control" placeholder="eg Book #$SerNum$$">
-                    <span class="help-block">Options: $SerNum, $PadNum, $$, any string.</span>
+                    <input type="text" id="fmt_sernum" name="fmt_sernum" value="${lazylibrarian.CONFIG['FMT_SERNUM']}" class="form-control" placeholder="eg Book #$SerNum">
+                    <span class="help-block">Options: $SerNum, $PadNum, $PubYear, $$, any string.</span>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $FmtName, $FmtNum, $PadNum, $Abridged, $$, any string.<br/>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $FmtName, $FmtNum, $PadNum, $PubYear, $Abridged, $$, any string.<br/>
                       <strong>Current limitation: Each title has to be in unique subfolder</strong></span>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
-                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Fmtname, $FmtNum, $PadNum, $$, any string.<br/>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Fmtname, $FmtNum, $PadNum, $PubYear, $Abridged, $$, any string.<br/>
                       <strong>Current limitation: Each title has to be in unique subfolder</strong></span>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
                     <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
-                    <span class="help-block">Options: $Author, $Title, $Series, $FmtName, $FmtNum, $SerName, $SerNum, $Abridged, $Part, $Total, $$, any string.<br/>
+                    <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Fmtname, $FmtNum, $PadNum, $PubYear, $Abridged, $Part, $Total, $$, any string.<br/>
                       <strong>Current limitation: Has to include $Title and $Part</strong></span>
                   </div>
                   <div class="checkbox">
@@ -4089,6 +4095,23 @@
                 function (data) {
                     bootbox.dialog({
                         title: 'CalibreDB',
+                        message: '<pre>'+data+'</pre>',
+                        buttons: {
+                            primary: {
+                                label: "Close",
+                                className: 'btn-primary'
+                            }
+                        }
+                    });
+                });
+        });
+
+        $('#testpreprocessor').click(function () {
+            var prg = $.trim($("#imp_preprocessor").val());
+            $.get("testPreProcessor", { 'prg': prg},
+                function (data) {
+                    bootbox.dialog({
+                        title: 'PreProcessor',
                         message: '<pre>'+data+'</pre>',
                         buttons: {
                             primary: {

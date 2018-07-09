@@ -204,7 +204,7 @@ def audioRename(bookid):
     if abridged:
         abridged = ' (%s)' % abridged
     # if we get here, looks like we have all the parts needed to rename properly
-    seriesinfo = seriesInfo(bookid, abridged)
+    seriesinfo = nameVars(bookid, abridged)
     dest_path = seriesinfo['FolderName']
     dest_dir = lazylibrarian.DIRECTORY('Audio')
     dest_path = os.path.join(dest_dir, dest_path)
@@ -239,16 +239,15 @@ def audioRename(bookid):
 
 def stripspaces(pathname):
     # windows doesn't allow directory names to end in a space or a period
-    # but allows starting with a period (not sure about starting with a space)
-    if 'windows' in platform.system().lower():
-        parts = pathname.split(os.sep)
-        new_parts = []
-        for part in parts:
-            while part and part[-1] in ' .':
-                part = part[:-1]
-            part = part.lstrip(' ')
-            new_parts.append(part)
-        pathname = os.sep.join(new_parts)
+    # but allows starting with a period (not sure about starting with a space but it looks messy anyway)
+    parts = pathname.split(os.sep)
+    new_parts = []
+    for part in parts:
+        while part and part[-1] in ' .':
+            part = part[:-1]
+        part = part.lstrip(' ')
+        new_parts.append(part)
+    pathname = os.sep.join(new_parts)
     return pathname
 
 
@@ -285,7 +284,7 @@ def bookRename(bookid):
         logger.debug("Not renaming %s, found multiple %s" % (f, reject))
         return f
 
-    seriesinfo = seriesInfo(bookid)
+    seriesinfo = nameVars(bookid)
     dest_path = seriesinfo['FolderName']
     dest_dir = lazylibrarian.DIRECTORY('eBook')
     dest_path = os.path.join(dest_dir, dest_path)
@@ -333,8 +332,8 @@ def bookRename(bookid):
     return f
 
 
-def seriesInfo(bookid, abridged=''):
-    """ Return series info for a bookid as a dict of formatted strings
+def nameVars(bookid, abridged=''):
+    """ Return name variables for a bookid as a dict of formatted strings
         The strings are configurable, but by default...
         FmtFull returns ( Lord of the Rings 2 )
         FmtName returns Lord of the Rings (with added Num part if that's not numeric, eg Lord of the Rings Book One)
@@ -342,24 +341,31 @@ def seriesInfo(bookid, abridged=''):
         so you can combine to make Book #1 - Lord of the Rings
         PadNum is zero padded numeric part or empty string
         SerName and SerNum are the unformatted base strings
+        PubYear is the publication year or empty string
         """
-    mydict = {'FmtName': '', 'FmtFull': '', 'FmtNum': '', 'PadNum': '', 'SerName': '', 'SerNum': '',
-              'FolderName': '', 'BookFile': '', 'AudioFile': ''}
+    mydict = {}
     myDB = database.DBConnection()
-    cmd = 'SELECT SeriesID,SeriesNum from member WHERE bookid=?'
+    cmd = 'SELECT SeriesID,SeriesNum,BookDate from member,books WHERE books.bookid = member.bookid and books.bookid=?'
     res = myDB.match(cmd, (bookid,))
     if res:
         seriesid = res['SeriesID']
         serieslist = getList(res['SeriesNum'])
+        pubyear = res['BookDate']
     else:
         seriesid = ''
         serieslist = []
+        pubyear = ''
+
+    if not pubyear or pubyear == '0000':
+        pubyear = ''
+    pubyear = pubyear[:4]  # googlebooks sometimes has month or full date
 
     seriesnum = ''
     seriesname = ''
     # might be "Book 3.5" or similar, just get the numeric part
     while serieslist:
         seriesnum = serieslist.pop()
+        seriesnum = seriesnum.lstrip('#')
         try:
             _ = float(seriesnum)
             break
@@ -368,37 +374,63 @@ def seriesInfo(bookid, abridged=''):
             pass
 
     padnum = ''
-    if res and not seriesnum:
+    if res and seriesnum == '':  # allow zero as valid seriesnum
         # couldn't figure out number, keep everything we got, could be something like "Book Two"
         serieslist = res['SeriesNum']
     elif seriesnum.isdigit():
-        padnum = seriesnum.zfill(2)
+        padnum = str(int(seriesnum)).zfill(2)
+    else:
+        try:
+            padnum = str(float(seriesnum))
+            if padnum[1] == '.':
+                padnum = '0' + padnum
+        except (ValueError, IndexError):
+            padnum = ''
 
     if seriesid:
         cmd = 'SELECT SeriesName from series WHERE seriesid=?'
         res = myDB.match(cmd, (seriesid,))
         if res:
             seriesname = res['SeriesName']
-            if seriesname and not seriesnum:
+            if seriesnum == '':  # allow zero as a seriesnum
                 # add what we got back to end of series name
-                if serieslist:
+                if seriesname and serieslist:
                     seriesname = "%s %s" % (seriesname, serieslist)
 
+    seriesname = ' '.join(seriesname.split())  # strip extra spaces
+    if seriesname.isspace():  # but don't return just whitespace
+        seriesname = ''
+
     if seriesname:
-        fmtname = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace('$$', ' ')
+        fmtname = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace(
+                                                              '$PubYear', pubyear).replace(
+                                                              '$$', ' ')
     else:
         fmtname = ''
-    if seriesnum:
+
+    fmtname = ' '.join(fmtname.split())
+    if fmtname.isspace():
+        fmtname = ''
+
+    if seriesnum != '':  # allow 0
         fmtnum = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace(
+                                                            '$PubYear', pubyear).replace(
                                                             '$PadNum', padnum).replace('$$', ' ')
     else:
         fmtnum = ''
-    if fmtnum or fmtname:
+
+    fmtnum = ' '.join(fmtnum.split())
+    if fmtnum.isspace():
+        fmtnum = ''
+
+    if fmtnum != '' or fmtname:
         fmtfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
                                                              '$SerName', seriesname).replace(
                                                              '$PadNum', padnum).replace(
+                                                             '$PubYear', pubyear).replace(
                                                              '$FmtName', fmtname).replace(
                                                              '$FmtNum', fmtnum).replace('$$', ' ')
+        fmtfull = ' '.join(fmtfull.split())
     else:
         fmtfull = ''
 
@@ -408,43 +440,25 @@ def seriesInfo(bookid, abridged=''):
     mydict['PadNum'] = padnum
     mydict['SerName'] = seriesname
     mydict['SerNum'] = seriesnum
+    mydict['PubYear'] = pubyear
+    mydict['Abridged'] = abridged
 
     cmd = 'select AuthorName,BookName from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
     exists = myDB.match(cmd, (bookid,))
     if exists:
-        author = exists['AuthorName']
-        book = exists['BookName']
+        mydict['Author'] = exists['AuthorName']
+        mydict['Title'] = exists['BookName']
     else:
-        author = ''
-        book = ''
+        mydict['Author'] = ''
+        mydict['Title'] = ''
 
-    dest_path = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace(
-        '$Author', author).replace(
-        '$Title', book).replace(
-        '$Series', mydict['FmtFull']).replace(
-        '$FmtName', mydict['FmtName']).replace(
-        '$FmtNum', mydict['FmtNum']).replace(
-        '$SerNum', mydict['SerNum']).replace(
-        '$SerName', mydict['SerName']).replace(
-        '$Abridged', abridged).replace(
-        '$PadNum', mydict['PadNum']).replace(
-        '$$', ' ')
-    dest_path = ' '.join(dest_path.split()).strip()
-    mydict['FolderName'] = replace_all(dest_path, __dic__)
+    dest_path = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'], mydict)
+    dest_path = replace_all(dest_path, __dic__)
+    mydict['FolderName'] = stripspaces(dest_path)
 
-    bookfile = lazylibrarian.CONFIG['EBOOK_DEST_FILE']
-    bookfile = bookfile.replace(
-        '$Author', author).replace(
-        '$Title', book).replace(
-        '$Series', mydict['FmtFull']).replace(
-        '$FmtName', mydict['FmtName']).replace(
-        '$FmtNum', mydict['FmtNum']).replace(
-        '$SerNum', mydict['SerNum']).replace(
-        '$SerName', mydict['SerName']).replace(
-        '$PadNum', mydict['PadNum']).replace(
-        '$$', ' ')
-    bookfile = ' '.join(bookfile.split()).strip()
+    bookfile = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FILE'], mydict)
     # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
+    # but also used in some multi-book titles
     slash = bookfile.find('/')
     while slash > 0:
         if bookfile[slash - 1] != ' ':
@@ -453,18 +467,29 @@ def seriesInfo(bookid, abridged=''):
         slash = bookfile.find('/', slash + 1)
     mydict['BookFile'] = bookfile
 
-    audiofile = lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']
-    audiofile = audiofile.replace(
-        '$Author', author).replace(
-        '$Title', book).replace(
+    audiofile = replacevars(lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'], mydict)
+    slash = audiofile.find('/')
+    while slash > 0:
+        if audiofile[slash - 1] != ' ':
+            if audiofile[slash + 1] != ' ':
+                audiofile = audiofile[:slash] + '_' + audiofile[slash + 1:]
+        slash = audiofile.find('/', slash + 1)
+    mydict['AudioFile'] = audiofile
+
+    return mydict
+
+
+def replacevars(base, mydict):
+    res = base.replace(
+        '$Author', mydict['Author']).replace(
+        '$Title', mydict['Title']).replace(
         '$Series', mydict['FmtFull']).replace(
         '$FmtName', mydict['FmtName']).replace(
         '$FmtNum', mydict['FmtNum']).replace(
         '$SerName', mydict['SerName']).replace(
         '$SerNum', mydict['SerNum']).replace(
         '$PadNum', mydict['PadNum']).replace(
-        '$Abridged', abridged).replace(
+        '$PubYear', mydict['PubYear']).replace(
+        '$Abridged', mydict['Abridged']).replace(
         '$$', ' ')
-    mydict['AudioFile'] = ' '.join(audiofile.split()).strip()
-
-    return mydict
+    return ' '.join(res.split()).strip()

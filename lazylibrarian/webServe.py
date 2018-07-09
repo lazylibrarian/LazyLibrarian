@@ -21,6 +21,7 @@ import time
 import tempfile
 import traceback
 from shutil import copyfile, rmtree
+from subprocess import Popen, PIPE
 
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, unquote_plus, urlsplit, urlunsplit
@@ -1389,7 +1390,7 @@ class WebInterface(object):
                 library = kwargs['library']
 
             if library == 'AudioBook':
-                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('Audio'), AuthorName))
+                authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('AudioBook'), AuthorName))
             else:  # if library == 'eBook':
                 authordir = safe_unicode(os.path.join(lazylibrarian.DIRECTORY('eBook'), AuthorName))
             if not os.path.isdir(authordir):
@@ -3441,7 +3442,7 @@ class WebInterface(object):
                 logger.error('Unable to complete the scan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('%s already running' % threadname)
-        if library == 'Audio':
+        if library == 'AudioBook':
             raise cherrypy.HTTPRedirect("audio")
         raise cherrypy.HTTPRedirect("books")
 
@@ -4588,3 +4589,23 @@ class WebInterface(object):
         if 'prg' in kwargs and kwargs['prg']:
             lazylibrarian.CONFIG['IMP_CALIBREDB'] = kwargs['prg']
         return calibreTest()
+
+    @cherrypy.expose
+    def testPreProcessor(self, **kwargs):
+        threading.currentThread().name = "WEBSERVER"
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        if 'prg' in kwargs and kwargs['prg']:
+            lazylibrarian.CONFIG['IMP_PREPROCESS'] = kwargs['prg']
+
+        params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], 'test', '']
+        try:
+            p = Popen(params, stdout=PIPE, stderr=PIPE)
+            res, err = p.communicate()
+            rc = p.returncode
+            res = makeUnicode(res)
+            err = makeUnicode(err)
+            if rc:
+                return "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
+            return res
+        except Exception as e:
+            return 'Error running preprocessor: %s' % e

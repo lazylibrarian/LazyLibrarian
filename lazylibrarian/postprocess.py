@@ -20,6 +20,7 @@ import shutil
 import tarfile
 import threading
 import traceback
+from subprocess import Popen, PIPE
 
 import lazylibrarian
 from lib.six import PY2
@@ -34,7 +35,7 @@ except ImportError:
 
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
-from lazylibrarian.bookrename import seriesInfo, audioRename, stripspaces
+from lazylibrarian.bookrename import nameVars, audioRename, stripspaces
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
@@ -543,7 +544,7 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG[
                                     'EBOOK_DEST_FOLDER'].replace('/', '\\')
                             # Default destination path, should be allowed change per config file.
-                            seriesinfo = seriesInfo(book['BookID'])
+                            seriesinfo = nameVars(book['BookID'])
                             dest_path = seriesinfo['FolderName']
                             dest_dir = lazylibrarian.DIRECTORY('eBook')
                             if book_type == 'AudioBook' and lazylibrarian.DIRECTORY('Audio'):
@@ -1317,7 +1318,7 @@ def process_book(pp_path=None, bookID=None):
                 logger.warn('Please check your EBOOK_DEST_FOLDER setting')
                 lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'] = lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'].replace('/', '\\')
 
-            seriesinfo = seriesInfo(bookID)
+            seriesinfo = nameVars(bookID)
             dest_path = seriesinfo['FolderName']
             dest_path = os.path.join(dest_dir, dest_path)
             dest_path = stripspaces(dest_path)
@@ -1486,6 +1487,22 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         # no book/mag found in a format we wanted. Leave for the user to delete or convert manually
         return False, 'Unable to locate a valid filetype (%s) in %s, leaving for manual processing' % (
             booktype, pp_path)
+
+    # run custom pre-processing, for example remove unwanted formats
+    # or force format conversion before sending to calibre
+    if len(lazylibrarian.CONFIG['IMP_PREPROCESS']):
+        params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], booktype, pp_path]
+        try:
+            p = Popen(params, stdout=PIPE, stderr=PIPE)
+            res, err = p.communicate()
+            rc = p.returncode
+            res = makeUnicode(res)
+            err = makeUnicode(err)
+            if rc:
+                return False, "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
+            logger.debug("PreProcessor: %s" % res)
+        except Exception as e:
+            return False, 'Error running preprocessor: %s' % e
 
     # If ebook, do we want calibre to import the book for us
     newbookfile = ''
