@@ -1500,7 +1500,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             err = makeUnicode(err)
             if rc:
                 return False, "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
-            logger.debug(res)
+            logger.debug("PreProcessor: %s" % res)
         except Exception as e:
             return False, 'Error running preprocessor: %s' % e
 

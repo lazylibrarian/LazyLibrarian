@@ -9,9 +9,10 @@
 # The exit code and messages get passed back to the "test" button
 # Always exit zero on success, non-zero on fail
 
-import sys
 import os
 import subprocess
+import sys
+import time
 
 converter = "ebook-convert"  # if not in your "path", put the full pathname here
 # set these to your preferences
@@ -65,73 +66,86 @@ else:
 booktype = sys.argv[1]
 bookfolder = sys.argv[2]
 
-if not booktype or booktype not in ['ebook', 'audiobook', 'mag', 'test']:
-    sys.stderr.write("%s %s\n" % ("Invalid booktype", booktype))
-    exit(1)
-if not os.path.exists(bookfolder) and booktype != 'test':
-    sys.stderr.write("%s %s\n" % ("Invalid bookfolder", bookfolder))
-    exit(1)
-
-if booktype == 'test':
-    if not os.path.exists(bookfolder):
-        bookfolder = os.path.dirname(os.path.abspath(__file__))
-
-if booktype == 'book' or booktype == 'test':
-    sourcefile = None
-    created = ''
-    for fname in os.listdir(makeBytestr(bookfolder)):
-        fname = makeUnicode(fname)
-        filename, extn = os.path.splitext(fname)
-        if extn == '.epub':
-            sourcefile = fname
-            break
-        elif extn == '.mobi':
-            sourcefile = fname
-            break
-    if not sourcefile:
-        sys.stderr.write("%s %s\n" % ("No suitable sourcefile found in", bookfolder))
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor.log'), 'a') as pplog:
+    pplog.write("%s: %s %s\n" % (time.ctime(), booktype, bookfolder))
+    if not booktype or booktype not in ['ebook', 'audiobook', 'mag', 'test']:
+        sys.stderr.write("%s %s\n" % ("Invalid booktype", booktype))
+        pplog.write("%s: %s %s\n" % (time.ctime(), "Invalid booktype", booktype))
+        exit(1)
+    if not os.path.exists(bookfolder) and booktype != 'test':
+        sys.stderr.write("%s %s\n" % ("Invalid bookfolder", bookfolder))
+        pplog.write("%s: %s %s\n" % (time.ctime(), "Invalid bookfolder", bookfolder))
         exit(1)
 
-    basename, source_extn = os.path.splitext(sourcefile)
+    if booktype == 'test':
+        if not os.path.exists(bookfolder):
+            bookfolder = os.path.dirname(os.path.abspath(__file__))
 
-    for ftype in wanted_formats:
-        if not os.path.exists(os.path.join(bookfolder, basename + ftype)):
-            params = [converter, os.path.join(bookfolder, sourcefile), os.path.join(bookfolder, basename + ftype)]
-            try:
-                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                if created:
-                    created += ' '
-                created += ftype
-            except Exception as e:
-                sys.stderr.write("%s\n" % e)
-                exit(1)
-
-    if delete_others:
-        if keep_opf:
-            wanted_formats.append('.opf')
-        if keep_jpg:
-            wanted_formats.append('.jpg')
+    if booktype == 'ebook' or booktype == 'test':
+        sourcefile = None
+        created = ''
         for fname in os.listdir(makeBytestr(bookfolder)):
             fname = makeUnicode(fname)
             filename, extn = os.path.splitext(fname)
-            if not extn or extn.lower() not in wanted_formats:
-                if booktype == 'test':
-                    print("Would delete %s" % fname)
-                else:
-                    print("Deleting %s" % fname)
-                    try:
-                        os.remove(os.path.join(bookfolder, fname))
-                    except OSError:
-                        pass
-    if created:
-        print("Created %s from %s" % (created, source_extn))
-    else:
-        print("No extra ebook formats created")
-elif booktype == 'audio':
-    # maybe you want a zip archive of the audiobook, or create a playlist?
-    print("This example preprocessor only preprocesses eBooks")
-elif booktype == 'mag':
-    # maybe you want to split the pages and turn them into jpeg like a comic?
-    print("This example preprocessor only preprocesses eBooks")
+            if extn == '.epub':
+                sourcefile = fname
+                break
+            elif extn == '.mobi':
+                sourcefile = fname
+                break
+        if not sourcefile:
+            sys.stderr.write("%s %s\n" % ("No suitable sourcefile found in", bookfolder))
+            pplog.write("%s: %s %s\n" % (time.ctime(), "No suitable sourcefile found in", bookfolder))
+            exit(1)
+
+        basename, source_extn = os.path.splitext(sourcefile)
+        pplog.write("Wanted formats: %s\n" % str(wanted_formats))
+        for ftype in wanted_formats:
+            if not os.path.exists(os.path.join(bookfolder, basename + ftype)):
+                pplog.write("No %s\n" % ftype)
+                params = [converter, os.path.join(bookfolder, sourcefile), os.path.join(bookfolder, basename + ftype)]
+                try:
+                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    if created:
+                        created += ' '
+                    created += ftype
+                except Exception as e:
+                    sys.stderr.write("%s\n" % e)
+                    pplog.write("%s: %s\n" % (time.ctime(), e))
+                    exit(1)
+            else:
+                pplog.write("Found %s\n" % ftype)
+
+        if delete_others:
+            if keep_opf:
+                wanted_formats.append('.opf')
+            if keep_jpg:
+                wanted_formats.append('.jpg')
+            for fname in os.listdir(makeBytestr(bookfolder)):
+                fname = makeUnicode(fname)
+                filename, extn = os.path.splitext(fname)
+                if not extn or extn.lower() not in wanted_formats:
+                    if booktype == 'test':
+                        print("Would delete %s" % fname)
+                        pplog.write("Would delete %s\n" % fname)
+                    else:
+                        print("Deleting %s" % fname)
+                        pplog.write("Deleting %s\n" % fname)
+                        try:
+                            os.remove(os.path.join(bookfolder, fname))
+                        except OSError:
+                            pass
+        if created:
+            print("Created %s from %s" % (created, source_extn))
+            pplog.write("%s: Created %s from %s\n" % (time.ctime(), created, source_extn))
+        else:
+            print("No extra ebook formats created")
+            pplog.write("%s: No extra ebook formats created\n" % time.ctime())
+    elif booktype == 'audio':
+        # maybe you want a zip archive of the audiobook, or create a playlist?
+        print("This example preprocessor only preprocesses eBooks")
+    elif booktype == 'mag':
+        # maybe you want to split the pages and turn them into jpeg like a comic?
+        print("This example preprocessor only preprocesses eBooks")
 
 exit(0)
