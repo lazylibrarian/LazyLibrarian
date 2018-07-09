@@ -1164,7 +1164,7 @@ def DIRECTORY(dirname):
     usedir = ''
     if dirname == "eBook":
         usedir = CONFIG['EBOOK_DIR']
-    elif dirname == "Audio":
+    elif dirname == "AudioBook" or dirname == "Audio":
         usedir = CONFIG['AUDIO_DIR']
     elif dirname == "Download":
         try:
