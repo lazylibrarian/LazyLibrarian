@@ -239,16 +239,15 @@ def audioRename(bookid):
 
 def stripspaces(pathname):
     # windows doesn't allow directory names to end in a space or a period
-    # but allows starting with a period (not sure about starting with a space)
-    if 'windows' in platform.system().lower():
-        parts = pathname.split(os.sep)
-        new_parts = []
-        for part in parts:
-            while part and part[-1] in ' .':
-                part = part[:-1]
-            part = part.lstrip(' ')
-            new_parts.append(part)
-        pathname = os.sep.join(new_parts)
+    # but allows starting with a period (not sure about starting with a space but it looks messy anyway)
+    parts = pathname.split(os.sep)
+    new_parts = []
+    for part in parts:
+        while part and part[-1] in ' .':
+            part = part[:-1]
+        part = part.lstrip(' ')
+        new_parts.append(part)
+    pathname = os.sep.join(new_parts)
     return pathname
 
 
@@ -454,7 +453,8 @@ def nameVars(bookid, abridged=''):
         mydict['Title'] = ''
 
     dest_path = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'], mydict)
-    mydict['FolderName'] = replace_all(dest_path, __dic__)
+    dest_path = replace_all(dest_path, __dic__)
+    mydict['FolderName'] = stripspaces(dest_path)
 
     bookfile = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FILE'], mydict)
     # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
