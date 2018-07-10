@@ -16,7 +16,6 @@
 import datetime
 
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import plural
 from lib.rfeed import Item, Guid, Feed
 
 

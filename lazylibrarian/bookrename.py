@@ -12,7 +12,7 @@
 
 
 import os
-import platform
+
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import safe_move

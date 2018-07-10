@@ -1115,15 +1115,15 @@ def getDownloadProgress(source, downloadid):
             res = nzbget.sendNZB(cmd='listgroups', nzbID=downloadid)
             found = False
             for items in res:
-              for item in items:
-                if str(item['NZBID']) == str(downloadid):
-                    found = True
-                    total = item['FileSizeHi'] << 32 + item['FileSizeLo']
-                    remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
-                    done = total - remaining
-                    if total:
-                        progress = done * 100 / total
-                    break
+                for item in items:
+                    if str(item['NZBID']) == str(downloadid):
+                        found = True
+                        total = item['FileSizeHi'] << 32 + item['FileSizeLo']
+                        if total:
+                            remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
+                            done = total - remaining
+                            progress = done * 100 / total
+                        break
             if not found:
                 logger.debug('%s not found at %s' % (downloadid, source))
 

@@ -117,7 +117,7 @@ def sendNZB(nzb=None, cmd=None, nzbID=None):
     if nzbID is not None:
         # its a command for an existing task
         id_array = [int(nzbID)]
-        if cmd == 'GroupDelete' or cmd == 'GroupFinalDelete':
+        if cmd in ['GroupDelete', 'GroupFinalDelete', 'HistoryDelete', 'HistoryFinalDelete']:
             return nzbGetRPC.editqueue(cmd, 0, "", id_array), ''
         elif cmd == 'listgroups':
             return nzbGetRPC.listgroups(), ''
