@@ -88,5 +88,5 @@ def genFeed(ftype, limit=10, user=0, baseurl=''):
         language="en-US",
         lastBuildDate=datetime.datetime.now(),
         items=items)
-    logger.debug("Returning %s %s%s" % (len(items), ftype, plural(len(items))))
+    # logger.debug("Returning %s %s%s" % (len(items), ftype, plural(len(items))))
     return feed.rss()
