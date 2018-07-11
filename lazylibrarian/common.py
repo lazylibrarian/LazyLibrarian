@@ -446,7 +446,7 @@ def scheduleJob(action='Start', target=None):
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
-        if 'processDir' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
+        if 'PostProcessor' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
             minutes = check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0)
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir, minutes=minutes)
@@ -494,15 +494,15 @@ def scheduleJob(action='Start', target=None):
                 myDB = database.DBConnection()
                 cmd = 'SELECT DateAdded from authors WHERE Status="Active" or Status="Loading"'
                 cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
-                authors = myDB.action(cmd)
+                authors = myDB.select(cmd)
                 overdue = 0
-                total = 0
+                total = len(authors)
                 dtnow = datetime.datetime.now()
                 for author in authors:
                     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-                    if diff > maxage:
-                        overdue += 1
-                    total += 1
+                    if diff < maxage:
+                        break
+                    overdue += 1
 
                 if not overdue:
                     logger.debug("There are no authors to update")
@@ -579,7 +579,7 @@ def aaUpdate(refresh=False):
 
 
 def restartJobs(start='Restart'):
-    scheduleJob(start, 'processDir')
+    scheduleJob(start, 'PostProcessor')
     scheduleJob(start, 'search_book')
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_wishlist')
@@ -604,7 +604,7 @@ def checkRunningJobs():
     # search jobs start when something gets marked "wanted" but are
     # not aware of any config changes that happen later, ie enable or disable providers,
     # so we check whenever config is saved
-    # processdir is started when something gets marked "snatched"
+    # postprocessor is started when something gets marked "snatched"
     # and cancels itself once everything is processed so should be ok
     # but check anyway for completeness...
 
@@ -612,7 +612,7 @@ def checkRunningJobs():
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
     if snatched:
-        ensureRunning('processDir')
+        ensureRunning('PostProcessor')
     if wanted:
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
             ensureRunning('search_book')
@@ -655,7 +655,7 @@ def showJobs():
             jobname = "RSS book search"
         elif "search_wishlist" in job:
             jobname = "Wishlist search"
-        elif "processDir" in job:
+        elif "PostProcessor" in job:
             jobname = "Process downloads"
         elif "authorUpdate" in job:
             jobname = "Update authors"

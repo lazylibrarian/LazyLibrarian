@@ -292,7 +292,7 @@ def downloadResult(match, book):
             # This would implement a round-robin search system. Blocklist with an incremental counter.
             # If number of active providers == number blocklisted, so no unblocked providers are left,
             # either sleep for a while, or unblock the one with the lowest counter.
-            scheduleJob(action='Start', target='processDir')
+            scheduleJob(action='Start', target='PostProcessor')
             return 2  # we found it
         else:
             myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
