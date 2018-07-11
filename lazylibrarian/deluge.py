@@ -26,7 +26,7 @@ import os
 import re
 import time
 import traceback
-from base64 import b64encode
+from base64 import b64encode, b64decode
 
 try:
     import requests
@@ -107,6 +107,13 @@ def addTorrent(link, data=None):
             if data:
                 logger.debug('Deluge: Getting .torrent data')
                 torrentfile = data
+                if 'announce' not in torrentfile[:40]:
+                    logger.debug('Deluge: Contents doesn\'t look like a torrent file, maybe b64encoded')
+                    data = b64decode(torrentfile)
+                    if 'announce' not in data[:40]:
+                        logger.debug('Deluge: Contents doesn\'t look like a b64encoded torrent file')
+                    else:
+                        torrentfile = data
             else:
                 logger.debug('Deluge: Getting .torrent file')
                 with open(link, str('rb')) as f:

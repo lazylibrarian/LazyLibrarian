@@ -1114,29 +1114,15 @@ def getDownloadProgress(source, downloadid):
         elif source == 'NZBGET':
             res = nzbget.sendNZB(cmd='listgroups', nzbID=downloadid)
             found = False
-            for item in res:
-                if item['NZBID'] == downloadid:
-                    found = True
-                    total = item['FileSizeHi'] << 32 + item['FileSizeLo']
-                    remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
-                    done = total - remaining
-                    progress = done * 100 / total
-                    break
-            if not found:
-                res = nzbget.sendNZB(cmd='history', nzbID=downloadid)
-                for item in res:
-                    if item['NZBID'] == downloadid:
+            for items in res:
+                for item in items:
+                    if str(item['NZBID']) == str(downloadid):
                         found = True
-                        if str(item['Status']).startswith('SUCCESS'):
-                            total = item['FileSizeHi'] << 32 + item['FileSizeLo']
+                        total = item['FileSizeHi'] << 32 + item['FileSizeLo']
+                        if total:
                             remaining = item['RemainingSizeHi'] << 32 + item['RemainingSizeLo']
                             done = total - remaining
                             progress = done * 100 / total
-                        else:
-                            myDB = database.DBConnection()
-                            cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
-                            myDB.action(cmd, (item['Status'], downloadid, source))
-                            progress = -1
                         break
             if not found:
                 logger.debug('%s not found at %s' % (downloadid, source))

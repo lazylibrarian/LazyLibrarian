@@ -495,21 +495,24 @@ def scheduleJob(action='Start', target=None):
                 cmd = 'SELECT DateAdded from authors WHERE Status="Active" or Status="Loading"'
                 cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
                 authors = myDB.action(cmd)
-                authcount = 0
+                overdue = 0
+                total = 0
                 dtnow = datetime.datetime.now()
                 for author in authors:
                     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-                    if diff < maxage:
-                        break
-                    authcount += 1
+                    if diff > maxage:
+                        overdue += 1
+                    total += 1
 
-                if not authcount:
+                if not overdue:
                     logger.debug("There are no authors to update")
                     minutes = 60 * 24  # check again in 24hrs
                 else:
-                    logger.debug("Found %s author%s needing update" % (authcount, plural(authcount)))
+                    logger.debug("Found %s author%s from %s overdue update" % (
+                                 overdue, plural(overdue), total))
                     minutes = maxage * 60 * 24
-                    minutes = int(minutes / authcount)
+                    # minutes = int(minutes / overdue)
+                    minutes = int(minutes / total)
 
                 if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
                     minutes = 10
