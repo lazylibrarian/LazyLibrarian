@@ -55,6 +55,7 @@ from lazylibrarian.providers import test_provider
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.rssfeed import genFeed
+from lazylibrarian.opds import OPDS
 from lib.deluge_client import DelugeRPCClient
 from lib.six import PY2
 from mako import exceptions
@@ -1522,7 +1523,7 @@ class WebInterface(object):
                 logger.info('Downloading %s %s from %s' % (library, bookdata["BookName"], provider))
                 custom_notify_snatch("%s %s" % (bookid, library))
                 notify_snatch("%s from %s at %s" % (unaccented(bookdata["BookName"]), provider, now()))
-                scheduleJob(action='Start', target='processDir')
+                scheduleJob(action='Start', target='PostProcessor')
             else:
                 myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?', (res, url))
             raise cherrypy.HTTPRedirect("authorPage?AuthorID=%s&library=%s" % (AuthorID, library))
@@ -3182,7 +3183,7 @@ class WebInterface(object):
                     logger.info('Downloading %s from %s' % (items['nzbtitle'], items['nzbprov']))
                     custom_notify_snatch("%s %s" % (items['bookid'], 'Magazine'))
                     notifiers.notify_snatch(items['nzbtitle'] + ' at ' + now())
-                    scheduleJob(action='Start', target='processDir')
+                    scheduleJob(action='Start', target='PostProcessor')
                 else:
                     myDB.action('UPDATE pastissues SET status="Failed",DLResult=? WHERE NZBurl=?',
                                 (res, items["nzburl"]))
@@ -4326,7 +4327,7 @@ class WebInterface(object):
     def forceProcess(self, source=None):
         if 'POSTPROCESS' not in [n.name for n in [t for t in threading.enumerate()]]:
             threading.Thread(target=processDir, name='POSTPROCESS', args=[True]).start()
-            scheduleJob(action='Restart', target='processDir')
+            scheduleJob(action='Restart', target='PostProcessor')
         else:
             logger.debug('POSTPROCESS already running')
         raise cherrypy.HTTPRedirect(source)
@@ -4607,3 +4608,10 @@ class WebInterface(object):
             return res
         except Exception as e:
             return 'Error running preprocessor: %s' % e
+
+    @cherrypy.expose
+    def opds(self, **kwargs):
+        op = OPDS()
+        op.checkParams(**kwargs)
+        data = op.fetchData()
+        return data

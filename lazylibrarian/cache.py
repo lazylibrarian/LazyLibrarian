@@ -89,14 +89,15 @@ def cache_img(img_type, img_ID, img_url, refresh=False):
         linked to the id, return the link to the cached file, success, was_in_cache
         or error message, False, False if failed to cache """
 
-    if img_type not in ['book', 'author']:
+    if img_type not in ['book', 'author', 'magazine']:
         logger.error('Internal error in cache_img, img_type = [%s]' % img_type)
         img_type = 'book'
 
     cachefile = os.path.join(lazylibrarian.CACHEDIR, img_type, img_ID + '.jpg')
     link = 'cache/%s/%s.jpg' % (img_type, img_ID)
     if os.path.isfile(cachefile) and not refresh:  # overwrite any cached image
-        logger.debug("Cached %s image exists %s" % (img_type, cachefile))
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_cache:
+            logger.debug("Cached %s image exists %s" % (img_type, cachefile))
         return link, True, True
 
     if img_url.startswith('http'):
@@ -151,7 +152,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
         time_now = time.time()
         if cache_modified_time < time_now - expiry:
             # Cache entry is too old, delete it
-            logger.debug("Expiring %s" % myhash)
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_cache:
+                logger.debug("Expiring %s" % myhash)
             os.remove(hashfilename)
         else:
             valid_cache = True
@@ -164,7 +166,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
             try:
                 source = json.load(open(hashfilename))
             except ValueError:
-                logger.debug("Error decoding json from %s" % hashfilename)
+                logger.error("Error decoding json from %s" % hashfilename)
                 return None, False
         elif cache == "XML":
             with open(hashfilename, "rb") as cachefile:
@@ -178,13 +180,13 @@ def get_cached_request(url, useCache=True, cache="XML"):
                         result = result.decode('utf-16').encode('utf-8')
                         source = ElementTree.fromstring(result)
                     except (ElementTree.ParseError, UnicodeEncodeError, UnicodeDecodeError):
-                        logger.debug("Error parsing xml from %s" % hashfilename)
+                        logger.error("Error parsing xml from %s" % hashfilename)
                         source = None
                 except ElementTree.ParseError:
-                    logger.debug("Error parsing xml from %s" % hashfilename)
+                    logger.error("Error parsing xml from %s" % hashfilename)
                     source = None
             if source is None:
-                logger.debug("Error reading xml from %s" % hashfilename)
+                logger.error("Error reading xml from %s" % hashfilename)
                 os.remove(hashfilename)
                 return None, False
     else:
@@ -196,7 +198,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
             result, success = fetchURL(url)
 
         if success:
-            logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_cache:
+                logger.debug("CacheHandler: Storing %s %s for %s" % (cache, myhash, url))
             if cache == "JSON":
                 try:
                     source = json.loads(result)
@@ -221,19 +224,20 @@ def get_cached_request(url, useCache=True, cache="XML"):
                             if not expiry:
                                 return source, False
                         except (ElementTree.ParseError, UnicodeEncodeError, UnicodeDecodeError):
-                            logger.debug("Error parsing xml from %s" % url)
+                            logger.error("Error parsing xml from %s" % url)
                             source = None
                     except ElementTree.ParseError:
-                        logger.debug("Error parsing xml from %s" % url)
+                        logger.error("Error parsing xml from %s" % url)
                         source = None
 
                 if source is not None:
                     with open(hashfilename, "wb") as cachefile:
                         cachefile.write(result)
                 else:
-                    logger.debug("Error getting xml data from %s" % url)
+                    logger.error("Error getting xml data from %s" % url)
                     return None, False
         else:
-            logger.debug("Got error response for %s: %s" % (url, result))
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_cache:
+                logger.debug("Got error response for %s: %s" % (url, result))
             return None, False
     return source, valid_cache

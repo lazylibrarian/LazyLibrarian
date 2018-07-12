@@ -121,6 +121,18 @@ def initialize(options=None):
         conf['/api'].update({
             'tools.auth_basic.on': False,
         })
+    if options['opds_authentication']:
+        user_list = {}
+        if len(options['opds_username']) > 0:
+            user_list[options['opds_username']] = options['opds_password']
+        if options['http_password'] is not None and options['http_username'] != options['opds_username']:
+            user_list[options['http_username']] = options['http_password']
+        conf['/opds'] = {'tools.auth_basic.on': True,
+                         'tools.auth_basic.realm': 'LazyLibrarian OPDS',
+                         'tools.auth_basic.checkpassword': cherrypy.lib.auth_basic.checkpassword_dict(user_list)}
+    else:
+        conf['/opds'] = {'tools.auth_basic.on': False}
+
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
     cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)
