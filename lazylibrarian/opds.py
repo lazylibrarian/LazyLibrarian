@@ -25,10 +25,10 @@ import os
 import tempfile
 from urllib import quote_plus
 from cherrypy.lib.static import serve_file, serve_download
-from lazylibrarian.formatter import now, makeUnicode, md5_utf8
+from lazylibrarian.formatter import now, makeUnicode, md5_utf8, check_int
 from lazylibrarian.cache import cache_img
 from lib.six.moves.urllib_parse import quote_plus
-from lib.six import PY2
+from lib.six import PY2, string_types
 
 try:
     import zipfile
@@ -38,8 +38,8 @@ except ImportError:
     else:
         import lib3.zipfile as zipfile
 
-cmd_list = ['root', 'Authors', 'Magazines', 'Magazine', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags',
-            'Audio', 'Book', 'Issue']
+cmd_list = ['root', 'Authors', 'Magazines', 'Series', 'Members', 'Magazine', 'Author', 'RecentBooks', 'RecentAudio',
+            'RecentMags', 'Serve']
 
 
 class OPDS(object):
@@ -91,7 +91,7 @@ class OPDS(object):
                 return serve_file(path=self.img, content_type='image/jpeg')
             if self.file and self.filename:
                 return serve_download(path=self.file, name=self.filename)
-            if isinstance(self.data, basestring):
+            if isinstance(self.data, string_types):
                 return self.data
             else:
                 cherrypy.response.headers['Content-Type'] = "text/xml"
@@ -178,6 +178,20 @@ class OPDS(object):
                     'rel': 'subsection',
                 }
             )
+        series = myDB.select("SELECT Have from series WHERE CAST(Have AS INTEGER) > 0 order by seriesname")
+        if len(series) > 0:
+            count = len(series)
+            entries.append(
+                {
+                    'title': 'Series (%s)' % count,
+                    'id': 'Series',
+                    'updated': now(),
+                    'content': 'List of Series',
+                    'href': '%s?cmd=Series' % self.opdsroot,
+                    'kind': 'navigation',
+                    'rel': 'subsection',
+                }
+            )
         magazines = myDB.select("SELECT title from magazines order by title")
         if len(magazines) > 0:
             count = len(magazines)
@@ -213,25 +227,25 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Authors' % self.opdsroot,
                              type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
-        cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded from Authors order by AuthorName"
+        cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded from Authors "
+        cmd += "WHERE CAST(HaveBooks AS INTEGER) > 0 order by AuthorName"
         authors = myDB.select(cmd)
         for author in authors:
-            totalbooks = author['TotalBooks']
-            havebooks = author['HaveBooks']
+            totalbooks = check_int(author['TotalBooks'], 0)
+            havebooks = check_int(author['HaveBooks'], 0)
             lastupdated = author['DateAdded']
             name = makeUnicode(author['AuthorName'])
-            if havebooks > 0:
-                entries.append(
-                    {
-                        'title': escape('%s (%s/%s)' % (name, havebooks, totalbooks)),
-                        'id': escape('author:%s' % author['AuthorID']),
-                        'updated': lastupdated,
-                        'content': escape('%s (%s)' % (name, havebooks)),
-                        'href': '%s?cmd=Author&amp;authorid=%s' % (self.opdsroot, author['AuthorID']),
-                        'kind': 'navigation',
-                        'rel': 'subsection',
-                    }
-                )
+            entries.append(
+                {
+                    'title': escape('%s (%s/%s)' % (name, havebooks, totalbooks)),
+                    'id': escape('author:%s' % author['AuthorID']),
+                    'updated': lastupdated,
+                    'content': escape('%s (%s)' % (name, havebooks)),
+                    'href': '%s?cmd=Author&amp;authorid=%s' % (self.opdsroot, author['AuthorID']),
+                    'kind': 'navigation',
+                    'rel': 'subsection',
+                }
+            )
         if len(entries) > (index + self.PAGE_SIZE):
             links.append(
                 getLink(href='%s?cmd=Authors&amp;index=%s' % (self.opdsroot, index + self.PAGE_SIZE),
@@ -286,6 +300,61 @@ class OPDS(object):
         if index >= self.PAGE_SIZE:
             links.append(
                 getLink(href='%s?cmd=Magazines&amp;index=%s' % (self.opdsroot, index - self.PAGE_SIZE),
+                        type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
+
+        feed['links'] = links
+        feed['entries'] = entries[index:(index + self.PAGE_SIZE)]
+        self.data = feed
+        return
+
+    def _Series(self, **kwargs):
+        index = 0
+        if 'index' in kwargs:
+            index = int(kwargs['index'])
+        myDB = database.DBConnection()
+        feed = {}
+        feed['title'] = 'LazyLibrarian OPDS - Series'
+        feed['id'] = 'Series'
+        feed['updated'] = now()
+        links = []
+        entries = []
+        links.append(getLink(href=self.opdsroot, type='application/atom+xml; profile=opds-catalog; kind=navigation',
+                             rel='start', title='Home'))
+        links.append(getLink(href='%s?cmd=Series' % self.opdsroot,
+                             type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        cmd = "SELECT SeriesName,SeriesID,Have,Total from Series WHERE CAST(Have AS INTEGER) > 0 order by SeriesName"
+        series = myDB.select(cmd)
+        for aseries in series:
+            cmd = "SELECT books.BookID,SeriesNum from books,member where SeriesID=? "
+            cmd += "and books.bookid = member.bookid order by CAST(SeriesNum AS INTEGER)"
+            firstbook = myDB.match(cmd, (aseries['SeriesID'],))
+            if firstbook:
+                cmd = 'SELECT AuthorName from authors,books WHERE authors.authorid = books.authorid AND books.bookid=?'
+                res = myDB.match(cmd, (firstbook['BookID'],))
+                author = res['AuthorName']
+            else:
+                author = 'Unknown'
+            totalbooks = check_int(aseries['Total'], 0)
+            havebooks = check_int(aseries['Have'], 0)
+            sername = makeUnicode(aseries['SeriesName'])
+            entries.append(
+                {
+                    'title': escape('%s (%s/%s) %s' % (sername, havebooks, totalbooks, author)),
+                    'id': escape('series:%s' % aseries['SeriesID']),
+                    'updated': now(),
+                    'content': escape('%s (%s)' % (sername, havebooks)),
+                    'href': '%s?cmd=Members&amp;seriesid=%s' % (self.opdsroot, aseries['SeriesID']),
+                    'kind': 'navigation',
+                    'rel': 'subsection',
+                }
+            )
+        if len(entries) > (index + self.PAGE_SIZE):
+            links.append(
+                getLink(href='%s?cmd=Series&amp;index=%s' % (self.opdsroot, index + self.PAGE_SIZE),
+                        type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
+        if index >= self.PAGE_SIZE:
+            links.append(
+                getLink(href='%s?cmd=Series&amp;index=%s' % (self.opdsroot, index - self.PAGE_SIZE),
                         type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links
@@ -361,10 +430,8 @@ class OPDS(object):
             return
         links = []
         entries = []
-        cmd = "SELECT AuthorName,AuthorBorn,AuthorDeath from authors WHERE AuthorID='%s'"
+        cmd = "SELECT AuthorName from authors WHERE AuthorID='%s'"
         author = myDB.match(cmd % kwargs['authorid'])
-        born = author['AuthorBorn']
-        died = author['AuthorDeath']
         author = makeUnicode(author['AuthorName'])
         cmd = "SELECT BookName,BookDate,BookID,BookAdded,BookDesc,BookImg from books "
         cmd += "where (Status='Open' or AudioStatus='Open') and AuthorID=? order by BookDate DESC"
@@ -382,10 +449,7 @@ class OPDS(object):
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 entry['image'] = book['BookImg']
                 entry['content'] = escape('%s - %s' % (book['BookName'], book['BookDesc']))
-                if born or died:
-                    entry['author'] = escape('%s (%s-%s)' % (author, born, died))
-                else:
-                    entry['author'] = escape('%s' % author)
+                entry['author'] = escape('%s' % author)
             else:
                 entry['content'] = escape('%s (%s)' % (book['BookName'], book['BookAdded']))
             entries.append(entry)
@@ -407,9 +471,77 @@ class OPDS(object):
                         type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= self.PAGE_SIZE:
             links.append(
-                getLink(href='%s?cmd=Author&amp;pubid=%s&amp;index=%s' % (self.opdsroot,
-                                                                          quote_plus(kwargs['authorid']),
-                                                                          index - self.PAGE_SIZE),
+                getLink(href='%s?cmd=Author&amp;authorid=%s&amp;index=%s' % (self.opdsroot,
+                                                                             quote_plus(kwargs['authorid']),
+                                                                             index - self.PAGE_SIZE),
+                        type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
+
+        feed['links'] = links
+        feed['entries'] = entries[index:(index + self.PAGE_SIZE)]
+        self.data = feed
+        return
+
+    def _Members(self, **kwargs):
+        index = 0
+        if 'index' in kwargs:
+            index = int(kwargs['index'])
+        myDB = database.DBConnection()
+        if 'seriesid' not in kwargs:
+            self.data = self._error_with_message('No Series Provided')
+            return
+        links = []
+        entries = []
+        series = myDB.match("SELECT SeriesName from Series WHERE SeriesID=?", (kwargs['seriesid'],))
+        cmd = "SELECT BookName,BookDate,BookAdded,BookDesc,BookImg,books.BookID,SeriesNum from books,member "
+        cmd += "where (Status='Open' or AudioStatus='Open') and SeriesID=? "
+        cmd += "and books.bookid = member.bookid order by CAST(SeriesNum AS INTEGER)"
+        books = myDB.select(cmd, (kwargs['seriesid'],))
+        cmd = 'SELECT AuthorName from authors,books WHERE authors.authorid = books.authorid AND '
+        cmd += 'books.bookid=?'
+        res = myDB.match(cmd, (books[0]['BookID'],))
+        author = res['AuthorName']
+        for book in books:
+            if book['SeriesNum']:
+                snum = ' (%s)' % book['SeriesNum']
+            else:
+                snum = ''
+            entry = {
+                'title': escape('%s%s' % (book['BookName'], snum)),
+                'id': escape('book:%s' % book['BookID']),
+                'updated': book['BookAdded'],
+                'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
+                'kind': 'acquisition',
+                'rel': 'subsection',
+                'author': escape("%s" % author)
+            }
+
+            if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                entry['image'] = book['BookImg']
+                entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
+                                                             book['SeriesNum'], book['BookDesc']))
+            else:
+                entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
+                                                             book['SeriesNum'], book['BookAdded']))
+            entries.append(entry)
+
+        feed = {}
+        seriesname = '%s (%s) %s' % (escape(series['SeriesName']), len(entries), author)
+        feed['title'] = 'LazyLibrarian OPDS - %s' % seriesname
+        feed['id'] = 'series:%s' % escape(kwargs['seriesid'])
+        feed['updated'] = now()
+        links.append(getLink(href=self.opdsroot, type='application/atom+xml; profile=opds-catalog; kind=navigation',
+                             rel='start', title='Home'))
+        links.append(getLink(href='%s?cmd=Series' % self.opdsroot,
+                             type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        if len(entries) > (index + self.PAGE_SIZE):
+            links.append(
+                getLink(href='%s?cmd=Members&amp;seriesid=%s&amp;index=%s' % (self.opdsroot, kwargs['seriesid'],
+                                                                              index + self.PAGE_SIZE),
+                        type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
+        if index >= self.PAGE_SIZE:
+            links.append(
+                getLink(href='%s?cmd=Members&amp;seriesid=%s&amp;index=%s' % (self.opdsroot, kwargs['seriesid'],
+                                                                              index - self.PAGE_SIZE),
                         type='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links
