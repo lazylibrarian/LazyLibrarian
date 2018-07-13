@@ -408,7 +408,7 @@ CONFIG_DEFINITIONS = {
     'IMP_GOOGLEIMAGE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
-    'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title: Part $Part of $Total'),
+    'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title Part $Part of $Total'),
     'ONE_FORMAT': ('bool', 'PostProcess', 0),
     'MAG_DEST_FOLDER': ('str', 'PostProcess', '_Magazines/$Title/$IssueDate'),
     'MAG_DEST_FILE': ('str', 'PostProcess', '$IssueDate - $Title'),
