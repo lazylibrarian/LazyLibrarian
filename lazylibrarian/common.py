@@ -674,13 +674,29 @@ def showJobs():
         result.append(jobinfo)
 
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-    cmd += 'or Status="Wanted" order by DateAdded ASC'
+    cmd += 'or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
     author = myDB.match(cmd)
     if author:
         dtnow = datetime.datetime.now()
         diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
         result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
-
+        maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
+        if maxage:
+            authors = myDB.select(cmd)
+            overdue = 0
+            total = len(authors)
+            dtnow = datetime.datetime.now()
+            for author in authors:
+                diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+                if diff < maxage:
+                    break
+                overdue += 1
+            if not overdue:
+                result.append("There are no authors to update")
+                minutes = 60 * 24  # check again in 24hrs
+            else:
+                result.append("Found %s author%s from %s overdue update" % (
+                             overdue, plural(overdue), total))
     return result
 
 
