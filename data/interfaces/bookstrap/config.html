@@ -547,6 +547,17 @@
                   </div>
                   <div class="checkbox">
                     <%
+                    if lazylibrarian.CONFIG['NO_LANG'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_lang">
+                      <input type="checkbox" id="no_lang" name="no_lang" value="1" ${checked} />
+                      Treat invalid language as ignored</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
                     if lazylibrarian.CONFIG['IMP_IGNORE'] == True:
                         checked = 'checked="checked"'
                     else:
@@ -554,7 +565,7 @@
                     %>
                     <label for="imp_ignore">
                       <input type="checkbox" id="imp_ignore" name="imp_ignore" value="1" ${checked} />
-                      Add ignored books to database</label>
+                      Add ignored books to database (marked Ignored)</label>
                   </div>
                   <div class="checkbox">
                     <%

@@ -392,8 +392,10 @@ class GoodReads:
             cover_time = 0
             isbn_time = 0
             auth_start = time.time()
-            # these are reject reasons we might want to change, so optionally add to database as "ignored"
-            ignorable = ['future', 'nodate', 'noisbn', 'lang', 'word', 'set']
+            # these are reject reasons we might want to override, so optionally add to database as "ignored"
+            ignorable = ['future', 'nodate', 'noisbn', 'word', 'set']
+            if lazylibrarian.CONFIG['NO_LANG']:
+                ignorable.append('lang')
 
             if resultxml is None:
                 logger.warn('[%s] No books found for author with ID: %s' % (authorname, authorid))
@@ -437,26 +439,22 @@ class GoodReads:
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' %
                                          (bookid, authorNameResult))
-                            removedResults += 1
                             rejected = 'noname'
 
                         if not rejected and re.match('[^\w-]', bookname):  # reject books with bad characters in title
                             logger.debug("removed result [" + bookname + "] for bad characters")
-                            removedResults += 1
                             rejected = 'badchars'
 
                         if not rejected:
                             if lazylibrarian.CONFIG['NO_FUTURE']:
                                 if bookdate > today()[:4]:
                                     logger.debug('Rejecting %s, future publication date %s' % (bookname, bookdate))
-                                    removedResults += 1
                                     rejected = 'future'
 
                         if not rejected:
                             if lazylibrarian.CONFIG['NO_PUBDATE']:
                                 if not bookdate or bookdate == '0000':
                                     logger.debug('Rejecting %s, no publication date' % bookname)
-                                    removedResults += 1
                                     rejected = 'nodate'
 
                         if not rejected:
@@ -585,13 +583,11 @@ class GoodReads:
 
                             if not isbnhead and lazylibrarian.CONFIG['NO_ISBN']:
                                 logger.debug('Rejecting %s, no isbn' % bookname)
-                                removedResults += 1
                                 rejected = 'noisbn'
 
                             if "All" not in valid_langs:  # do we care about language
                                 if bookLanguage not in valid_langs:
-                                    logger.debug('Skipped %s with language %s' % (bookname, bookLanguage))
-                                    ignored += 1
+                                    logger.debug('Rejected %s with language %s' % (bookname, bookLanguage))
                                     rejected = 'lang'
 
                         if not rejected:
@@ -604,12 +600,7 @@ class GoodReads:
                             namewords = name.split(' ')
                             badwords = getList(lazylibrarian.CONFIG['REJECT_WORDS'], ',')
                             for word in badwords:
-                                if ' ' in word:
-                                    if word in name:
-                                        logger.debug('Rejected %s contains %s' % (bookname, word))
-                                        rejected = 'word'
-                                        break
-                                elif word in namewords:
+                                if (' ' in word and word in name) or word in namewords:
                                     logger.debug('Rejected %s contains %s' % (bookname, word))
                                     rejected = 'word'
                                     break
@@ -617,7 +608,9 @@ class GoodReads:
                         if not rejected:
                             bookname = unaccented(bookname)
                             if lazylibrarian.CONFIG['NO_SETS']:
-                                if re.search(r'\d+ of \d+', bookname) or re.search(r'\d+-\d+', bookname):
+                                if re.search(r'\d+ of \d+', bookname) or \
+                                        re.search(r'\d+-\d+', bookname) or \
+                                        re.search(r'\d+/\d+', bookname):
                                     logger.debug('Rejected %s looks like a set' % bookname)
                                     rejected = 'set'
 
@@ -641,6 +634,7 @@ class GoodReads:
                             anames = authors.getiterator('author')
                             amatch = False
                             alist = ''
+                            role = ''
                             for aname in anames:
                                 aid = aname.find('id').text
                                 anm = aname.find('name').text
@@ -651,17 +645,16 @@ class GoodReads:
                                 if aid == authorid or anm == authorNameResult:
                                     if aid != authorid:
                                         logger.warn("Author %s has different authorid %s:%s" % (anm, aid, authorid))
-                                    if role is None or 'author' in role.lower() \
-                                            or 'pseudonym' in role.lower() or 'pen name' in role.lower():
+                                    if role is None or 'author' in role.lower() or \
+                                            'creator' in role.lower() or \
+                                            'pseudonym' in role.lower() or \
+                                            'pen name' in role.lower():
                                         amatch = True
                                     else:
-                                        logger.debug('Ignoring %s for %s, role is %s' %
-                                                     (anm, bookname, role))
+                                        logger.debug('Ignoring %s for %s, role is %s' % (anm, bookname, role))
                             if not amatch:
-                                logger.debug('Ignoring %s for %s, wrong author? (got %s)' %
-                                             (bookname, authorNameResult, alist))
-                                removedResults += 1
-                            if not amatch:
+                                logger.debug('Ignoring %s for %s, wrong author? (got %s,%s)' %
+                                             (bookname, authorNameResult, alist, role))
                                 rejected = 'author'
 
                         if not rejected:
@@ -717,14 +710,18 @@ class GoodReads:
                                 elif locked.isdigit():
                                     locked = bool(int(locked))
                             else:
+                                book_status = bookstatus  # new_book status, or new_author status
+                                audio_status = audiostatus
+                                added = today()
+                                locked = False
+
+                            if rejected:
                                 if rejected in ignorable:
                                     book_status = 'Ignored'
                                     audio_status = 'Ignored'
-                                else:
-                                    book_status = bookstatus  # new_book status, or new_author status
-                                    audio_status = audiostatus
-                                added = today()
-                                locked = False
+                                    book_ignore_count += 1
+                            else:
+                                removedResults += 1
 
                             # Leave alone if locked
                             if not locked:
@@ -752,7 +749,7 @@ class GoodReads:
                                 resultsCount += 1
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                                logger.debug("Book found: %s %s" % (bookname, bookdate))
+                                # logger.debug("Book found: %s %s" % (bookname, bookdate))
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from another source
@@ -794,11 +791,12 @@ class GoodReads:
                                         updated = True
                                 setSeries(serieslist, bookid)
 
-                                new_status = setStatus(bookid, serieslist, bookstatus)
+                                if not rejected:
+                                    new_status = setStatus(bookid, serieslist, bookstatus)
 
-                                if not new_status == book_status:
-                                    book_status = new_status
-                                    updated = True
+                                    if new_status != book_status:
+                                        book_status = new_status
+                                        updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -814,8 +812,6 @@ class GoodReads:
                                     logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                  (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
-                            else:
-                                book_ignore_count += 1
 
                     loopCount += 1
                     if 0 < lazylibrarian.CONFIG['MAX_BOOKPAGES'] < loopCount:
@@ -871,9 +867,7 @@ class GoodReads:
             logger.debug("Found %s result%s in %s page%s" % (total_count, plural(total_count),
                                                              loopCount, plural(loopCount)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
-            logger.debug(
-                "Removed %s incorrect/incomplete result%s" %
-                (removedResults, plural(removedResults)))
+            logger.debug("Removed %s incorrect/incomplete result%s" % (removedResults, plural(removedResults)))
             logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
             logger.debug("Imported/Updated %s book%s in %d secs" % (modified_count, plural(modified_count),

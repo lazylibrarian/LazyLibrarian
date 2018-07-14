@@ -35,7 +35,7 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.formatter import check_int
+from lazylibrarian.formatter import check_int, makeBytestr
 from lazylibrarian.common import mymakedirs
 
 delugeweb_auth = {}
@@ -478,7 +478,7 @@ def _add_torrent_file(result):
         # content is torrent file contents that needs to be encoded to base64
         post_json = {"method": "core.add_torrent_file",
                      "params": [result['name'] + '.torrent',
-                                b64encode(result['content'].encode('utf8')), {}],
+                                b64encode(makeBytestr(result['content'])), {}],
                      "id": 2}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
