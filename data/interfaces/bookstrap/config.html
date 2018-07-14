@@ -536,6 +536,17 @@
                   </div>
                   <div class="checkbox">
                     <%
+                    if lazylibrarian.CONFIG['NO_SETS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_sets">
+                      <input type="checkbox" id="no_sets" name="no_sets" value="1" ${checked} />
+                      Ignore part books and sets</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
                     if lazylibrarian.CONFIG['IMP_IGNORE'] == True:
                         checked = 'checked="checked"'
                     else:

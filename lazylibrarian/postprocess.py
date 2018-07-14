@@ -819,18 +819,18 @@ def check_contents(source, downloadid, book_type, title):
         maxsize = lazylibrarian.CONFIG['REJECT_MAXSIZE']
         minsize = lazylibrarian.CONFIG['REJECT_MINSIZE']
         filetypes = lazylibrarian.CONFIG['EBOOK_TYPE']
-        banwords = lazylibrarian.CONFIG['REJECT_WORDS']
+        banwords = lazylibrarian.CONFIG['REJECT_WORDS', ',']
     elif book_type.lower() == 'audiobook':
         maxsize = lazylibrarian.CONFIG['REJECT_MAXAUDIO']
         # minsize = lazylibrarian.CONFIG['REJECT_MINAUDIO']
         minsize = 0  # individual audiobook chapters can be quite small
         filetypes = lazylibrarian.CONFIG['AUDIOBOOK_TYPE']
-        banwords = lazylibrarian.CONFIG['REJECT_AUDIO']
+        banwords = lazylibrarian.CONFIG['REJECT_AUDIO', ',']
     elif book_type.lower() == 'magazine':
         maxsize = lazylibrarian.CONFIG['REJECT_MAGSIZE']
         minsize = lazylibrarian.CONFIG['REJECT_MAGMIN']
         filetypes = lazylibrarian.CONFIG['MAG_TYPE']
-        banwords = lazylibrarian.CONFIG['REJECT_MAGS']
+        banwords = lazylibrarian.CONFIG['REJECT_MAGS', ',']
     else:  # shouldn't happen
         maxsize = 0
         minsize = 0

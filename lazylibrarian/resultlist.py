@@ -73,13 +73,13 @@ def findBestResult(resultlist, book, searchtype, source):
             title = unaccented_str(replace_all(book['bookName'], dic))
 
         if book['library'] == 'AudioBook':
-            reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+            reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'], ',')
             maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
             minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
             auxinfo = 'AudioBook'
 
         else:  # elif book['library'] == 'eBook':
-            reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+            reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'], ',')
             maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
             minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
             auxinfo = 'eBook'

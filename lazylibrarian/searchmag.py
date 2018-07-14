@@ -280,7 +280,7 @@ def search_magazines(mags=None, reset=False):
 
                         if not rejected:
                             reject_list = getList(str(results['Reject']).lower())
-                            reject_list += getList(lazylibrarian.CONFIG['REJECT_MAGS'])
+                            reject_list += getList(lazylibrarian.CONFIG['REJECT_MAGS'], ',')
                             lower_title = unaccented(nzbtitle_formatted).lower()
                             lower_bookid = unaccented(bookid).lower()
                             if reject_list:
