@@ -20,7 +20,6 @@
 import lazylibrarian
 from lazylibrarian import logger, database
 import cherrypy
-from xml.sax.saxutils import escape
 import os
 import tempfile
 from cherrypy.lib.static import serve_file, serve_download
@@ -773,3 +772,13 @@ def mimetype(filename):
     elif name.endswith('.xml'):
         return 'application/rss+xml'
     return "application/x-download"
+
+
+def escape(data):
+    """Escape &, <, and > in a string of data.
+    """
+    # must do ampersand first
+    data = data.replace("&", "&amp;")
+    data = data.replace(">", "&gt;")
+    data = data.replace("<", "&lt;")
+    return data
