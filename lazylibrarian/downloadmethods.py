@@ -408,9 +408,11 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
                 downloadID, res = deluge.addTorrent(tor_title, data=b64encode(torrent))
             else:
                 logger.debug("Sending %s url to Deluge" % tor_title)
-                downloadID = deluge.addTorrent(tor_url)  # can be link or magnet, returns hash or False
+                downloadID, res = deluge.addTorrent(tor_url)  # can be link or magnet, returns hash or False
             if downloadID:
                 tor_title = deluge.getTorrentFolder(downloadID)
+            else:
+                return False, res
         else:
             # have username, talk to the daemon
             Source = "DELUGERPC"

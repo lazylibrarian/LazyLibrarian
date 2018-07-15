@@ -24,7 +24,6 @@ from __future__ import unicode_literals
 
 import os
 import re
-import time
 import traceback
 from base64 import b64encode, b64decode
 
@@ -35,7 +34,7 @@ except ImportError:
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.formatter import check_int, makeBytestr
+from lazylibrarian.formatter import check_int
 from lazylibrarian.common import mymakedirs
 
 delugeweb_auth = {}
@@ -110,12 +109,14 @@ def addTorrent(link, data=None):
                 if 'announce' in data[:40]:
                     torrentfile = data
                 else:
-                    logger.debug('Deluge: Contents doesn\'t look like a torrent file, maybe b64encoded')
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                        logger.debug('Deluge: Contents doesn\'t look like a torrent file, maybe b64encoded')
                     data = b64decode(data)
                     if 'announce' in data[:40]:
                         torrentfile = data
                     else:
-                        logger.debug('Deluge: Contents doesn\'t look like a b64encoded torrent file either')
+                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                            logger.debug('Deluge: Contents doesn\'t look like a b64encoded torrent file either')
 
             if not torrentfile:
                 logger.debug('Deluge: Getting .torrent file')
@@ -123,12 +124,15 @@ def addTorrent(link, data=None):
                     torrentfile = f.read()
             # Extract torrent name from .torrent
             try:
-                logger.debug('Deluge: Getting torrent name length')
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                    logger.debug('Deluge: Getting torrent name length')
                 name_length = int(re.findall('name([0-9]*):.*?:', torrentfile)[0])
-                logger.debug('Deluge: Getting torrent name')
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                    logger.debug('Deluge: Getting torrent name')
                 name = re.findall('name[0-9]*:(.*?):', torrentfile)[0][:name_length]
             except (re.error, IndexError, TypeError):
-                logger.debug('Deluge: Could not get torrent name, getting file name')
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                    logger.debug('Deluge: Could not get torrent name, getting file name')
                 # get last part of link/path (name only)
                 name = link.split('\\')[-1].split('/')[-1]
                 # remove '.torrent' suffix
@@ -152,7 +156,8 @@ def addTorrent(link, data=None):
             logger.info('Deluge: Torrent sent to Deluge successfully  (%s)' % retid)
             if lazylibrarian.CONFIG['DELUGE_LABEL']:
                 labelled = setTorrentLabel(result)
-                logger.debug('Deluge label returned: %s' % labelled)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                    logger.debug('Deluge label returned: %s' % labelled)
             return retid, ''
         else:
             res = 'Deluge returned status %s' % retid
@@ -169,7 +174,8 @@ def addTorrent(link, data=None):
 
 
 def getTorrentFolder(torrentid):
-    logger.debug('Deluge: Get torrent folder name')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Get torrent folder name')
     res = getTorrentStatus(torrentid, "name")  # type: dict
     if res:
         return res['result']['name']
@@ -177,7 +183,8 @@ def getTorrentFolder(torrentid):
 
 
 def getTorrentFiles(torrentid):
-    logger.debug('Deluge: Get torrent files')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Get torrent files')
     res = getTorrentStatus(torrentid, "files")  # type: dict
     if res:
         return res['result']['files']
@@ -185,11 +192,14 @@ def getTorrentFiles(torrentid):
 
 
 def getTorrentProgress(torrentid):
-    logger.debug('Deluge: Get torrent progress')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Get torrent progress')
     res = getTorrentStatus(torrentid, ["progress", "message"])  # type: dict
     if res:
-        return res['result']['progress'], res['result']['message']
-    return ''
+        if 'progress' in res['result']:
+            return res['result']['progress'], res['result']['message']
+        return 0, 'OK'
+    return 0, ''
 
 
 def getTorrentStatus(torrentid, data):
@@ -201,15 +211,16 @@ def getTorrentStatus(torrentid, data):
         post_json = {"method": "web.get_torrent_status",
                      "params": [torrentid, ["total_done", "message", "state"]],
                      "id": 22}
-
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                  verify=deluge_verify_cert, headers=headers, timeout=timeout)
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug('Status code: %s' % response.status_code)
-            logger.debug(response.text)
+            logger.debug(str(response.text))
 
         try:
             total_done = response.json()['result']['total_done']
+            if data[0] == 'progress' and total_done == 0:
+                return response.json()
         except KeyError:
             total_done = 0
             pass
@@ -217,7 +228,6 @@ def getTorrentStatus(torrentid, data):
         tries = 0
         while total_done == 0 and tries < 10:
             tries += 1
-            time.sleep(5)
             response = requests.post(delugeweb_url, json=post_json, timeout=timeout,
                                      verify=deluge_verify_cert, cookies=delugeweb_auth, headers=headers)
             try:
@@ -260,7 +270,8 @@ def removeTorrent(torrentid, remove_data=False):
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
 
     try:
-        logger.debug('Deluge: Removing torrent %s' % str(torrentid))
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Deluge: Removing torrent %s' % str(torrentid))
         post_json = {"method": "core.remove_torrent", "params": [torrentid, remove_data], "id": 25}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
@@ -277,8 +288,9 @@ def removeTorrent(torrentid, remove_data=False):
 
 
 def _get_auth():
-    logger.debug('Deluge: Authenticating...')
     global delugeweb_auth, delugeweb_url, headers, deluge_verify_cert
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Authenticating...')
     delugeweb_auth = {}
     timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
 
@@ -296,11 +308,13 @@ def _get_auth():
 
     if delugeweb_cert is None or delugeweb_cert.strip() == '':
         deluge_verify_cert = False
-        logger.debug('Deluge: FYI no SSL certificate configured')
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Deluge: FYI no SSL certificate configured')
     else:
         deluge_verify_cert = delugeweb_cert
         delugeweb_host = delugeweb_host.replace('http:', 'https:')
-        logger.debug('Deluge: Using certificate %s, host is now %s' % (deluge_verify_cert, delugeweb_host))
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Deluge: Using certificate %s, host is now %s' % (deluge_verify_cert, delugeweb_host))
 
     if delugeweb_host.endswith('/'):
         delugeweb_host = delugeweb_host[:-1]
@@ -315,7 +329,8 @@ def _get_auth():
                                  verify=deluge_verify_cert, headers=headers)
     except requests.ConnectionError:
         try:
-            logger.debug('Deluge: Connection failed, let\'s try HTTPS just in case')
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                logger.debug('Deluge: Connection failed, let\'s try HTTPS just in case')
             response = requests.post(delugeweb_url.replace('http:', 'https:'), json=post_json, timeout=timeout,
                                      cookies=delugeweb_auth, verify=deluge_verify_cert, headers=headers)
             # If the previous line didn't fail, change delugeweb_url for the rest of this session
@@ -336,9 +351,11 @@ def _get_auth():
 
     auth = response.json()["result"]
     auth_error = response.json()["error"]
-    logger.debug('Deluge: Authentication result: %s, Error: %s' % (auth, auth_error))
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Authentication result: %s, Error: %s' % (auth, auth_error))
     delugeweb_auth = response.cookies
-    logger.debug('Deluge: Authentication cookies: %s' % str(delugeweb_auth.get_dict()))
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Authentication cookies: %s' % str(delugeweb_auth.get_dict()))
     post_json = {"method": "web.connected", "params": [], "id": 10}
 
     try:
@@ -355,7 +372,8 @@ def _get_auth():
 
     connected = response.json()['result']
     connected_error = response.json()['error']
-    logger.debug('Deluge: Connection result: %s, Error: %s' % (connected, connected_error))
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Connection result: %s, Error: %s' % (connected, connected_error))
 
     if not connected:
         post_json = {"method": "web.get_hosts", "params": [], "id": 11}
@@ -419,7 +437,8 @@ def _get_auth():
 
 
 def _add_torrent_magnet(result):
-    logger.debug('Deluge: Adding magnet')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Adding magnet')
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -435,7 +454,8 @@ def _add_torrent_magnet(result):
 
         result['hash'] = response.json()['result']
         msg = 'Deluge: Response was %s' % result['hash']
-        logger.debug(msg)
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug(msg)
         if 'was None' in msg:
             logger.error('Deluge: Adding magnet failed: Is the WebUI running?')
         return response.json()['result']
@@ -445,7 +465,8 @@ def _add_torrent_magnet(result):
 
 
 def _add_torrent_url(result):
-    logger.debug('Deluge: Adding URL')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Adding URL')
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -462,7 +483,8 @@ def _add_torrent_url(result):
 
         result['hash'] = response.json()['result']
         msg = 'Deluge: Response was %s' % result['hash']
-        logger.debug(msg)
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug(msg)
         if 'was None' in msg:
             logger.error('Deluge: Adding torrent URL failed: Is the WebUI running?')
         return response.json()['result']
@@ -472,7 +494,8 @@ def _add_torrent_url(result):
 
 
 def _add_torrent_file(result):
-    logger.debug('Deluge: Adding file')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Adding file')
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -492,7 +515,8 @@ def _add_torrent_file(result):
 
         result['hash'] = response.json()['result']
         msg = 'Deluge: Response was %s' % result['hash']
-        logger.debug(msg)
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug(msg)
         if 'was None' in msg:
             logger.error('Deluge: Adding torrent file failed: Is the WebUI running?')
         return response.json()['result']
@@ -505,13 +529,15 @@ def _add_torrent_file(result):
 
 
 def setTorrentLabel(result):
-    logger.debug('Deluge: Setting label')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Setting label')
     label = lazylibrarian.CONFIG['DELUGE_LABEL']
     if not any(delugeweb_auth):
         _get_auth()
 
     if not label:
-        logger.debug('Deluge: No Label set')
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+            logger.debug('Deluge: No Label set')
         return True
 
     if ' ' in label:
@@ -538,7 +564,8 @@ def setTorrentLabel(result):
             label = label.lower()  # deluge lowercases labels
             if label not in labels:
                 try:
-                    logger.debug('Deluge: %s label doesn\'t exist in Deluge, let\'s add it' % label)
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                        logger.debug('Deluge: %s label doesn\'t exist in Deluge, let\'s add it' % label)
                     post_json = {"method": 'label.add', "params": [label], "id": 4}
                     response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
                                              verify=deluge_verify_cert, headers=headers, timeout=timeout)
@@ -555,7 +582,8 @@ def setTorrentLabel(result):
                     if not result:
                         return False
             else:
-                logger.debug("Label [%s] is valid" % label)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                    logger.debug("Label [%s] is valid" % label)
 
             if not result:
                 return True
@@ -579,7 +607,8 @@ def setTorrentLabel(result):
 
 
 def setSeedRatio(result):
-    logger.debug('Deluge: Setting seed ratio')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Setting seed ratio')
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -615,7 +644,8 @@ def setSeedRatio(result):
 
 
 def setTorrentPath(result):
-    logger.debug('Deluge: Setting download path')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Setting download path')
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -635,7 +665,8 @@ def setTorrentPath(result):
             logger.debug(response.text)
 
         if not os.path.isdir(dl_dir):
-            logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % dl_dir)
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                logger.debug('Deluge: %s directory doesn\'t exist, let\'s create it' % dl_dir)
             _ = mymakedirs(dl_dir)
 
         post_json = {"method": "core.set_torrent_move_completed_path", "params": [result['hash'], dl_dir], "id": 8}
@@ -653,7 +684,8 @@ def setTorrentPath(result):
 
 
 def setTorrentPause(result):
-    logger.debug('Deluge: Pausing torrent')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Pausing torrent')
     if not any(delugeweb_auth):
         _get_auth()
 
@@ -674,7 +706,8 @@ def setTorrentPause(result):
 
 
 def checkLink():
-    logger.debug('Deluge: Checking connection')
+    if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+        logger.debug('Deluge: Checking connection')
     msg = "Deluge: Connection successful"
     auth = _get_auth()
     if auth:
