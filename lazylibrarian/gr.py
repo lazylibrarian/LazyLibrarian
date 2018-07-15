@@ -592,7 +592,7 @@ class GoodReads:
 
                         if not rejected:
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '',
-                                   '[': ' ', ']': ' ', '#': '# '}
+                                   '[': ' ', ']': ' ', '#': '# ', ':': ' ', ';': ' '}
                             name = replace_all(bookname, dic).strip()
                             name = name.lower()
                             # remove extra spaces if they're in a row
