@@ -21,9 +21,9 @@ import lazylibrarian
 from lazylibrarian import logger, database
 import cherrypy
 import os
-import tempfile
+import datetime
 from cherrypy.lib.static import serve_file, serve_download
-from lazylibrarian.formatter import now, makeUnicode, check_int
+from lazylibrarian.formatter import makeUnicode, check_int
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
@@ -51,6 +51,7 @@ class OPDS(object):
         self.filename = None
         self.kwargs = None
         self.data = None
+
         if lazylibrarian.CONFIG['HTTP_ROOT'] is None:
             self.opdsroot = '/opds'
         elif lazylibrarian.CONFIG['HTTP_ROOT'].endswith('/'):
@@ -232,7 +233,7 @@ class OPDS(object):
                 {
                     'title': escape('%s (%s/%s)' % (name, havebooks, totalbooks)),
                     'id': escape('author:%s' % author['AuthorID']),
-                    'updated': lastupdated,
+                    'updated': opdstime(lastupdated),
                     'content': escape('%s (%s)' % (name, havebooks)),
                     'href': '%s?cmd=Author&amp;authorid=%s' % (self.opdsroot, author['AuthorID']),
                     'kind': 'navigation',
@@ -276,7 +277,7 @@ class OPDS(object):
                 entry = {
                     'title': escape('%s (%s)' % (title, mag['Iss_Cnt'])),
                     'id': escape('magazine:%s' % title),
-                    'updated': mag['LastAcquired'],
+                    'updated': opdstime(mag['LastAcquired']),
                     'content': escape('%s (%s)' % (title, mag['Iss_Cnt'])),
                     'href': '%s?cmd=Magazine&amp;magid=%s' % (self.opdsroot, quote_plus(title)),
                     'kind': 'navigation',
@@ -375,7 +376,7 @@ class OPDS(object):
             entry = {
                 'title': escape('%s (%s)' % (title, issue['IssueDate'])),
                 'id': escape('issue:%s' % issue['IssueID']),
-                'updated': issue['IssueAcquired'],
+                'updated': opdstime(issue['IssueAcquired']),
                 'content': escape('%s (%s)' % (title, issue['IssueDate'])),
                 'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(issue['IssueID'])),
                 'kind': 'acquisition',
@@ -434,7 +435,7 @@ class OPDS(object):
             entry = {
                 'title': escape('%s (%s)' % (book['BookName'], book['BookDate'])),
                 'id': escape('book:%s' % book['BookID']),
-                'updated': book['BookAdded'],
+                'updated': opdstime(book['BookAdded']),
                 'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
                 'kind': 'acquisition',
                 'rel': 'file',
@@ -503,7 +504,7 @@ class OPDS(object):
             entry = {
                 'title': escape('%s%s' % (book['BookName'], snum)),
                 'id': escape('book:%s' % book['BookID']),
-                'updated': book['BookAdded'],
+                'updated': opdstime(book['BookAdded']),
                 'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
                 'kind': 'acquisition',
                 'rel': 'file',
@@ -567,7 +568,7 @@ class OPDS(object):
             entry = {
                 'title': escape('%s' % mag['IssueDate']),
                 'id': escape('issue:%s' % mag['IssueID']),
-                'updated': mag['IssueAcquired'],
+                'updated': opdstime(mag['IssueAcquired']),
                 'content': escape('%s (%s)' % (title, mag['IssueDate'])),
                 'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(mag['IssueID'])),
                 'kind': 'acquisition',
@@ -617,7 +618,7 @@ class OPDS(object):
             entry = {
                 'title': escape(title),
                 'id': escape('issue:%s' % book['BookID']),
-                'updated': book['BookLibrary'],
+                'updated': opdstime(book['BookLibrary']),
                 'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
                 'kind': 'acquisition',
                 'rel': 'file',
@@ -676,7 +677,7 @@ class OPDS(object):
             entry = {
                 'title': escape(title),
                 'id': escape('issue:%s' % book['BookID']),
-                'updated': book['AudioLibrary'],
+                'updated': opdstime(book['AudioLibrary']),
                 'href': '%s?cmd=Serve&amp;audioid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
                 'kind': 'acquisition',
                 'rel': 'file',
@@ -782,3 +783,17 @@ def escape(data):
     data = data.replace(">", "&gt;")
     data = data.replace("<", "&lt;")
     return data
+
+def now():
+    dtnow = datetime.datetime.now()
+    return dtnow.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def opdstime(datestr):
+    # YYYY-MM-DDTHH:MM:SSZ
+    if not datestr:
+        return now()
+    if len(datestr) == 10:
+        return "%s%s" % (datestr, 'T00:00:00Z')
+    elif len(datestr) == 19:
+        return "%sT%sZ" % (datestr[:10], datestr[11:])
+    return now()
