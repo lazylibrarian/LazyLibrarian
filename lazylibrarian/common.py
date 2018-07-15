@@ -656,7 +656,9 @@ def showJobs():
         elif "search_wishlist" in job:
             jobname = "Wishlist search"
         elif "PostProcessor" in job:
-            jobname = "Process downloads"
+            jobname = "PostProcessor"
+        elif "cron_processDir" in job:
+            jobname = "PostProcessor"
         elif "authorUpdate" in job:
             jobname = "Update authors"
         elif "sync_to_gr" in job:
