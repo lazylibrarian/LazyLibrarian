@@ -56,7 +56,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_NZBGET'] and lazylibrarian.CONFIG['NZBGET_HOST']:
         Source = "NZBGET"
-        data, success = fetchURL(nzburl)
+        data, success = fetchURL(nzburl, raw=True)
         if not success:
             res = 'Failed to read nzb data for nzbget: %s' % data
             logger.debug(res)
@@ -75,7 +75,7 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
     if lazylibrarian.CONFIG['NZB_DOWNLOADER_BLACKHOLE']:
         Source = "BLACKHOLE"
-        nzbfile, success = fetchURL(nzburl)
+        nzbfile, success = fetchURL(nzburl, raw=True)
         if not success:
             res = 'Error fetching nzb from url [%s]: %s' % (nzburl, nzbfile)
             logger.warn(res)

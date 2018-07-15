@@ -30,7 +30,7 @@ from lazylibrarian.formatter import check_int, md5_utf8
 def fetchURL(URL, headers=None, retry=True, raw=None):
     """ Return the result of fetching a URL and True if success
         Otherwise return error message and False
-        Return data as raw/bytes n python2 or if raw == True
+        Return data as raw/bytes in python2 or if raw == True
         On python3 default to unicode, need to set raw=True for images/data
         Allow one retry on timeout by default"""
 

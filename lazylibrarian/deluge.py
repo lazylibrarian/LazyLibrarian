@@ -104,17 +104,20 @@ def addTorrent(link, data=None):
             """
         # elif link.endswith('.torrent') or data:
         elif link:
+            torrentfile = ''
             if data:
                 logger.debug('Deluge: Getting .torrent data')
-                torrentfile = data
-                if 'announce' not in torrentfile[:40]:
+                if 'announce' in data[:40]:
+                    torrentfile = data
+                else:
                     logger.debug('Deluge: Contents doesn\'t look like a torrent file, maybe b64encoded')
-                    data = b64decode(torrentfile)
-                    if 'announce' not in data[:40]:
-                        logger.debug('Deluge: Contents doesn\'t look like a b64encoded torrent file')
-                    else:
+                    data = b64decode(data)
+                    if 'announce' in data[:40]:
                         torrentfile = data
-            else:
+                    else:
+                        logger.debug('Deluge: Contents doesn\'t look like a b64encoded torrent file either')
+
+            if not torrentfile:
                 logger.debug('Deluge: Getting .torrent file')
                 with open(link, str('rb')) as f:
                     torrentfile = f.read()
@@ -477,8 +480,7 @@ def _add_torrent_file(result):
     try:
         # content is torrent file contents that needs to be encoded to base64
         post_json = {"method": "core.add_torrent_file",
-                     "params": [result['name'] + '.torrent',
-                                b64encode(makeBytestr(result['content'])), {}],
+                     "params": [result['name'] + '.torrent', b64encode(result['content']), {}],
                      "id": 2}
 
         response = requests.post(delugeweb_url, json=post_json, cookies=delugeweb_auth,
