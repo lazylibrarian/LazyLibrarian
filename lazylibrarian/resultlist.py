@@ -73,13 +73,13 @@ def findBestResult(resultlist, book, searchtype, source):
             title = unaccented_str(replace_all(book['bookName'], dic))
 
         if book['library'] == 'AudioBook':
-            reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'])
+            reject_list = getList(lazylibrarian.CONFIG['REJECT_AUDIO'], ',')
             maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXAUDIO'], 0)
             minsize = check_int(lazylibrarian.CONFIG['REJECT_MINAUDIO'], 0)
             auxinfo = 'AudioBook'
 
         else:  # elif book['library'] == 'eBook':
-            reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'])
+            reject_list = getList(lazylibrarian.CONFIG['REJECT_WORDS'], ',')
             maxsize = check_int(lazylibrarian.CONFIG['REJECT_MAXSIZE'], 0)
             minsize = check_int(lazylibrarian.CONFIG['REJECT_MINSIZE'], 0)
             auxinfo = 'eBook'
@@ -292,7 +292,7 @@ def downloadResult(match, book):
             # This would implement a round-robin search system. Blocklist with an incremental counter.
             # If number of active providers == number blocklisted, so no unblocked providers are left,
             # either sleep for a while, or unblock the one with the lowest counter.
-            scheduleJob(action='Start', target='processDir')
+            scheduleJob(action='Start', target='PostProcessor')
             return 2  # we found it
         else:
             myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',

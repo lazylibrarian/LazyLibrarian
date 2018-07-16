@@ -222,6 +222,10 @@ def main():
         'https_enabled': lazylibrarian.CONFIG['HTTPS_ENABLED'],
         'https_cert': lazylibrarian.CONFIG['HTTPS_CERT'],
         'https_key': lazylibrarian.CONFIG['HTTPS_KEY'],
+        'opds_enabled': lazylibrarian.CONFIG['OPDS_ENABLED'],
+        'opds_authentication': lazylibrarian.CONFIG['OPDS_AUTHENTICATION'],
+        'opds_username': lazylibrarian.CONFIG['OPDS_USERNAME'],
+        'opds_password': lazylibrarian.CONFIG['OPDS_PASSWORD'],
     })
 
     if lazylibrarian.CONFIG['LAUNCH_BROWSER'] and not options.nolaunch:

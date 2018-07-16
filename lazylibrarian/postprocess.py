@@ -795,10 +795,10 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         if len(snatched) == 0:
             logger.info('Nothing marked as snatched. Stopping postprocessor.')
-            scheduleJob(action='Stop', target='processDir')
+            scheduleJob(action='Stop', target='PostProcessor')
 
         elif reset:
-            scheduleJob(action='Restart', target='processDir')
+            scheduleJob(action='Restart', target='PostProcessor')
 
     except Exception:
         logger.error('Unhandled exception in processDir: %s' % traceback.format_exc())
@@ -837,6 +837,11 @@ def check_contents(source, downloadid, book_type, title):
         filetypes = ''
         banwords = ''
 
+    if banwords:
+        banlist = getList(banwords, ',')
+    else:
+        banlist = []
+
     downloadfiles = getDownloadFiles(source, downloadid)
 
     # Downloaders return varying amounts of info using varying names
@@ -865,10 +870,10 @@ def check_contents(source, downloadid, book_type, title):
                 logger.warn("%s. Rejecting download" % rejected)
                 break
 
-            if not rejected and banwords:
+            if not rejected and banlist:
                 wordlist = getList(fname.lower().replace(os.sep, ' ').replace('.', ' '))
                 for word in wordlist:
-                    if word in banwords:
+                    if word in banlist:
                         rejected = "%s contains %s" % (fname, word)
                         logger.warn("%s. Rejecting download" % rejected)
                         break
@@ -1477,6 +1482,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     # run custom pre-processing, for example remove unwanted formats
     # or force format conversion before sending to calibre
     if len(lazylibrarian.CONFIG['IMP_PREPROCESS']):
+        logger.debug("Running PreProcessor: %s %s" % (booktype, pp_path))
         params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], booktype, pp_path]
         try:
             p = Popen(params, stdout=PIPE, stderr=PIPE)

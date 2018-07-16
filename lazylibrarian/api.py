@@ -212,12 +212,12 @@ class Api(object):
         threading.currentThread().name = "API"
 
         if self.data == 'OK':
-            if 'X-Forwarded-For' in cherrypy.request.headers:
+            if 'Remote-Addr' in cherrypy.request.headers:
+                remote_ip = cherrypy.request.headers['Remote-Addr']
+            elif 'X-Forwarded-For' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
             elif 'X-Host' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-            elif 'Host' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['Host']  # nginx
             else:
                 remote_ip = cherrypy.request.remote.ip
             logger.debug('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))

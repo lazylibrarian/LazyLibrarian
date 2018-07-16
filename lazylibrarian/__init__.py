@@ -173,8 +173,9 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
                      'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
-                     'NO_ISBN', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
-                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS']
+                     'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
+                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
+                     'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -403,11 +404,13 @@ CONFIG_DEFINITIONS = {
     'NO_FUTURE': ('bool', 'LibraryScan', 0),
     'NO_PUBDATE': ('bool', 'LibraryScan', 0),
     'NO_ISBN': ('bool', 'LibraryScan', 0),
+    'NO_SETS': ('bool', 'LibraryScan', 0),
+    'NO_LANG': ('bool', 'LibraryScan', 0),
     'IMP_IGNORE': ('bool', 'LibraryScan', 0),
     'IMP_GOOGLEIMAGE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
     'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
-    'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title: Part $Part of $Total'),
+    'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title Part $Part of $Total'),
     'ONE_FORMAT': ('bool', 'PostProcess', 0),
     'MAG_DEST_FOLDER': ('str', 'PostProcess', '_Magazines/$Title/$IssueDate'),
     'MAG_DEST_FILE': ('str', 'PostProcess', '$IssueDate - $Title'),
@@ -496,7 +499,12 @@ CONFIG_DEFINITIONS = {
     'GB_API': ('str', 'API', ''),  # API key has daily limits, each user needs their own
     'FMT_SERNAME': ('str', 'FMT', '$SerName'),
     'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
-    'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )')
+    'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )'),
+    'OPDS_ENABLED': ('bool', 'OPDS', 0),
+    'OPDS_AUTHENTICATION': (bool, 'OPDS', 0),
+    'OPDS_USERNAME': ('str', 'OPDS', ''),
+    'OPDS_PASSWORD': ('str', 'OPDS', ''),
+    'OPDS_METAINFO': ('bool', 'OPDS', 0),
 }
 
 
@@ -955,7 +963,7 @@ def config_write(part=None):
                 elif key == 'WISHLIST_INTERVAL':
                     scheduleJob('Restart', 'search_wishlist')
                 elif key == 'SCAN_INTERVAL':
-                    scheduleJob('Restart', 'processDir')
+                    scheduleJob('Restart', 'PostProcessor')
                 elif key == 'VERSIONCHECK_INTERVAL':
                     scheduleJob('Restart', 'checkForUpdates')
                 elif key == 'GOODREADS_INTERVAL' and CONFIG['GR_SYNC']:

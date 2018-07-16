@@ -280,7 +280,7 @@ def search_magazines(mags=None, reset=False):
 
                         if not rejected:
                             reject_list = getList(str(results['Reject']).lower())
-                            reject_list += getList(lazylibrarian.CONFIG['REJECT_MAGS'])
+                            reject_list += getList(lazylibrarian.CONFIG['REJECT_MAGS'], ',')
                             lower_title = unaccented(nzbtitle_formatted).lower()
                             lower_bookid = unaccented(bookid).lower()
                             if reject_list:
@@ -496,7 +496,7 @@ def search_magazines(mags=None, reset=False):
                         custom_notify_snatch("%s %s" % (magazine['bookid'], magazine['nzburl']))
                         notify_snatch("Magazine %s from %s at %s" %
                                       (unaccented(magazine['nzbtitle']), magazine["nzbprov"], now()))
-                        scheduleJob(action='Start', target='processDir')
+                        scheduleJob(action='Start', target='PostProcessor')
                     else:
                         myDB.action('UPDATE wanted SET status="Failed",DLResult=? WHERE NZBurl=?',
                                     (res, magazine["nzburl"]))

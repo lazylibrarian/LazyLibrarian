@@ -202,6 +202,53 @@
                         <small>Current API key: <strong>${lazylibrarian.CONFIG['API_KEY']}</strong></small>
                       </div>
                     </fieldset>
+                    <fieldset>
+                        <div class="checkbox">
+                          <%
+                            if lazylibrarian.CONFIG['OPDS_ENABLED'] == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                          %>
+                          <label for="opds_enabled" title="Allow remote applications to interface with LazyLibrarian">
+                          <input type="checkbox" id="opds_enabled" name="opds_enabled" value="1" ${checked} />
+                          Enable OPDS</label>
+                        </div>
+                        <fieldset id="opdsoptions">
+                            <div class="checkbox">
+                              <%
+                                if lazylibrarian.CONFIG['OPDS_AUTHENTICATION'] == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                              %>
+                              <label for="opds_authentication" title="OPDS requires username and password">
+                              <input type="checkbox" id="opds_authentication" name="opds_authentication" value="1" ${checked} />
+                              OPDS Requires Credentials</label>
+                            </div>
+                            <div id="opdscredentials">
+                                <div class="form-group">
+                                    <label>OPDS Username</label>
+                                    <input type="text" name="opds_username" value="${lazylibrarian.CONFIG['OPDS_USERNAME']}" size="30">
+                                </div>
+                                <div class="form-group">
+                                    <label>OPDS Password</label>
+                                    <input type="password" name="opds_password" value="${lazylibrarian.CONFIG['OPDS_PASSWORD']| h}" size="30">
+                                </div>
+                            </div>
+                            <div class="checkbox">
+                              <%
+                                if lazylibrarian.CONFIG['OPDS_METAINFO'] == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                              %>
+                              <label for="opds_metainfo" title="OPDS extra metainfo">
+                              <input type="checkbox" id="opds_metainfo" name="opds_metainfo" value="1" ${checked} />
+                              OPDS Include MetaInfo</label></br><small>This will include book summary, cover, author details</small>
+                            </div>
+                        </fieldset>
+                    </fieldset>
                   </fieldset>
                   <fieldset>
                     <legend>Appearance</legend>
@@ -489,6 +536,28 @@
                   </div>
                   <div class="checkbox">
                     <%
+                    if lazylibrarian.CONFIG['NO_SETS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_sets">
+                      <input type="checkbox" id="no_sets" name="no_sets" value="1" ${checked} />
+                      Ignore part books and sets</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                    if lazylibrarian.CONFIG['NO_LANG'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+                    <label for="no_lang">
+                      <input type="checkbox" id="no_lang" name="no_lang" value="1" ${checked} />
+                      Treat invalid language as ignored</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
                     if lazylibrarian.CONFIG['IMP_IGNORE'] == True:
                         checked = 'checked="checked"'
                     else:
@@ -496,7 +565,7 @@
                     %>
                     <label for="imp_ignore">
                       <input type="checkbox" id="imp_ignore" name="imp_ignore" value="1" ${checked} />
-                      Add ignored books to database</label>
+                      Add ignored books to database (marked Ignored)</label>
                   </div>
                   <div class="checkbox">
                     <%
@@ -3208,6 +3277,46 @@
                     }
                 });
             });
+        });
+
+        if ($("#opds_enabled").is(":checked"))
+          {
+            $("#opdsoptions").show();
+          }
+          else
+          {
+              $("#opdsoptions").hide();
+          }
+
+        $("#opds_enabled").click(function(){
+          if ($("#opds_enabled").is(":checked"))
+          {
+            $("#opdsoptions").slideDown();
+          }
+          else
+          {
+            $("#opdsoptions").slideUp();
+          }
+        });
+
+        if ($("#opds_authentication").is(":checked"))
+          {
+            $("#opdscredentials").show();
+          }
+          else
+          {
+            $("#opdscredentials").hide();
+          }
+
+        $("#opds_authentication").click(function(){
+          if ($("#opds_authentication").is(":checked"))
+          {
+            $("#opdscredentials").slideDown();
+          }
+          else
+          {
+            $("#opdscredentials").slideUp();
+          }
         });
 
         $("button[role='testprov']").on('click', function(e) {

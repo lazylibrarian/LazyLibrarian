@@ -429,11 +429,33 @@ def book_file(search_dir=None, booktype=None):
     return ""
 
 
+def mimeType(filename):
+    name = filename.lower()
+    if name.endswith('.epub'):
+        return 'application/epub+zip'
+    elif name.endswith('.mobi') or name.endswith('.azw'):
+        return 'application/x-mobipocket-ebook'
+    elif name.endswith('.azw3'):
+        return 'application/x-mobi8-ebook'
+    elif name.endswith('.pdf'):
+        return 'application/pdf'
+    elif name.endswith('.mp3'):
+        return 'audio/mpeg3'
+    elif name.endswith('.zip'):
+        return 'application/x-zip-compressed'
+    elif name.endswith('.xml'):
+        return 'application/rss+xml'
+    return "application/x-download"
+
+
 def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
         target=search_magazines, target=processDir, target=search_book """
     if target is None:
         return
+
+    if target == 'PostProcessor':  # more readable
+        target = 'processDir'
 
     if action == 'Stop' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
@@ -494,15 +516,15 @@ def scheduleJob(action='Start', target=None):
                 myDB = database.DBConnection()
                 cmd = 'SELECT DateAdded from authors WHERE Status="Active" or Status="Loading"'
                 cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
-                authors = myDB.action(cmd)
+                authors = myDB.select(cmd)
                 overdue = 0
-                total = 0
+                total = len(authors)
                 dtnow = datetime.datetime.now()
                 for author in authors:
                     diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-                    if diff > maxage:
-                        overdue += 1
-                    total += 1
+                    if diff < maxage:
+                        break
+                    overdue += 1
 
                 if not overdue:
                     logger.debug("There are no authors to update")
@@ -579,7 +601,7 @@ def aaUpdate(refresh=False):
 
 
 def restartJobs(start='Restart'):
-    scheduleJob(start, 'processDir')
+    scheduleJob(start, 'PostProcessor')
     scheduleJob(start, 'search_book')
     scheduleJob(start, 'search_rss_book')
     scheduleJob(start, 'search_wishlist')
@@ -604,7 +626,7 @@ def checkRunningJobs():
     # search jobs start when something gets marked "wanted" but are
     # not aware of any config changes that happen later, ie enable or disable providers,
     # so we check whenever config is saved
-    # processdir is started when something gets marked "snatched"
+    # postprocessor is started when something gets marked "snatched"
     # and cancels itself once everything is processed so should be ok
     # but check anyway for completeness...
 
@@ -612,7 +634,7 @@ def checkRunningJobs():
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
     wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
     if snatched:
-        ensureRunning('processDir')
+        ensureRunning('PostProcessor')
     if wanted:
         if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
             ensureRunning('search_book')
@@ -655,8 +677,10 @@ def showJobs():
             jobname = "RSS book search"
         elif "search_wishlist" in job:
             jobname = "Wishlist search"
-        elif "processDir" in job:
-            jobname = "Process downloads"
+        elif "PostProcessor" in job:
+            jobname = "PostProcessor"
+        elif "cron_processDir" in job:
+            jobname = "PostProcessor"
         elif "authorUpdate" in job:
             jobname = "Update authors"
         elif "sync_to_gr" in job:
@@ -674,13 +698,28 @@ def showJobs():
         result.append(jobinfo)
 
     cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-    cmd += 'or Status="Wanted" order by DateAdded ASC'
+    cmd += 'or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
     author = myDB.match(cmd)
     if author:
         dtnow = datetime.datetime.now()
         diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
         result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
-
+        maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
+        if maxage:
+            authors = myDB.select(cmd)
+            overdue = 0
+            total = len(authors)
+            dtnow = datetime.datetime.now()
+            for author in authors:
+                diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+                if diff < maxage:
+                    break
+                overdue += 1
+            if not overdue:
+                result.append("There are no authors to update")
+            else:
+                result.append("Found %s author%s from %s overdue update" % (
+                             overdue, plural(overdue), total))
     return result
 
 
