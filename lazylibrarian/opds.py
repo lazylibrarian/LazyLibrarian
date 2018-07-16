@@ -22,8 +22,9 @@ from lazylibrarian import logger, database
 import cherrypy
 import os
 import datetime
-from cherrypy.lib.static import serve_file, serve_download
+from cherrypy.lib.static import serve_file
 from lazylibrarian.formatter import makeUnicode, check_int
+from lazylibrarian.common import mimeType
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
@@ -37,8 +38,9 @@ except ImportError:
     else:
         import lib3.zipfile as zipfile
 
-cmd_list = ['root', 'Authors', 'Magazines', 'Series', 'Members', 'Magazine', 'Author', 'RecentBooks', 'RecentAudio',
-            'RecentMags', 'Serve']
+searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags']
+
+cmd_list = searchable + ['root', 'Serve', 'search', 'Members', 'Magazine']
 
 
 class OPDS(object):
@@ -84,22 +86,27 @@ class OPDS(object):
     def fetchData(self):
 
         if self.data == 'OK':
-            if 'X-Forwarded-For' in cherrypy.request.headers:
+            if 'Remote-Addr' in cherrypy.request.headers:
+                remote_ip = cherrypy.request.headers['Remote-Addr']
+            elif 'X-Forwarded-For' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
             elif 'X-Host' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-            elif 'Host' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['Host']  # nginx
             else:
                 remote_ip = cherrypy.request.remote.ip
             logger.debug('Received OPDS command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
+            if self.cmd == 'search':
+                if 't' not in self.kwargs or self.kwargs['t'] not in searchable:
+                    self.kwargs['t'] = 'RecentBooks'
+                self.cmd = self.kwargs['t']
             methodToCall = getattr(self, "_" + self.cmd)
             _ = methodToCall(**self.kwargs)
             if self.img:
-                return serve_file(path=self.img, content_type='image/jpeg')
+                return serve_file(self.img, content_type='image/jpeg')
             if self.file and self.filename:
                 logger.debug('Downloading %s: %s' % (self.filename, self.file))
-                return serve_download(path=self.file, name=self.filename)
+                # return serve_download(path=self.file, name=self.filename)
+                return serve_file(self.file, mimeType(self.filename), 'attachment', name=self.filename)
             if isinstance(self.data, string_types):
                 return self.data
             else:
@@ -124,9 +131,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='self'))
-        links.append(
-            getLink(href='%s?cmd=search' % self.opdsroot, ftype='application/opensearchdescription+xml', rel='search',
-                    title='Search'))
+        links.append(getLink(href='%s?cmd=search' % self.opdsroot, ftype='application/opensearchdescription+xml',
+                             rel='search', title='Search'))
         entries.append(
             {
                 'title': 'Recent eBooks',
@@ -220,8 +226,10 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Authors' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
-        cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded from Authors "
-        cmd += "WHERE CAST(HaveBooks AS INTEGER) > 0 order by AuthorName"
+        cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded from Authors WHERE "
+        if 'query' in kwargs:
+            cmd += "AuthorName LIKE '%" + kwargs['query'] + "%' AND "
+        cmd += "CAST(HaveBooks AS INTEGER) > 0 order by AuthorName"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for author in page:
@@ -268,7 +276,10 @@ class OPDS(object):
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
 
         cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
-        cmd += ' as Iss_Cnt from magazines order by magazines.title'
+        cmd += ' as Iss_Cnt from magazines '
+        if 'query' in kwargs:
+            cmd += "WHERE magazines.title LIKE '%" + kwargs['query'] + "%' "
+        cmd += 'order by magazines.title'
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for mag in page:
@@ -315,7 +326,10 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Series' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
-        cmd = "SELECT SeriesName,SeriesID,Have,Total from Series WHERE CAST(Have AS INTEGER) > 0 order by SeriesName"
+        cmd = "SELECT SeriesName,SeriesID,Have,Total from Series WHERE CAST(Have AS INTEGER) > 0 "
+        if 'query' in kwargs:
+            cmd += "AND SeriesName LIKE '%" + kwargs['query'] + "%' "
+        cmd += "order by SeriesName"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for series in page:
@@ -373,16 +387,14 @@ class OPDS(object):
         page = results[index:(index + self.PAGE_SIZE)]
         for issue in page:
             title = makeUnicode(issue['Title'])
-            entry = {
-                'title': escape('%s (%s)' % (title, issue['IssueDate'])),
-                'id': escape('issue:%s' % issue['IssueID']),
-                'updated': opdstime(issue['IssueAcquired']),
-                'content': escape('%s - %s' % (title, issue['IssueDate'])),
-                'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(issue['IssueID'])),
-                'kind': 'acquisition',
-                'rel': 'file',
-            }
-            entry['type'] = mimetype(issue['IssueFile'])
+            entry = {'title': escape('%s (%s)' % (title, issue['IssueDate'])),
+                     'id': escape('issue:%s' % issue['IssueID']),
+                     'updated': opdstime(issue['IssueAcquired']),
+                     'content': escape('%s - %s' % (title, issue['IssueDate'])),
+                     'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(issue['IssueID'])),
+                     'kind': 'acquisition',
+                     'rel': 'file',
+                     'type': mimeType(issue['IssueFile'])}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 fname = os.path.splitext(issue['IssueFile'])[0]
                 res = cache_img('magazine', issue['IssueID'], fname + '.jpg')
@@ -427,20 +439,20 @@ class OPDS(object):
         cmd = "SELECT AuthorName from authors WHERE AuthorID='%s'"
         author = myDB.match(cmd % kwargs['authorid'])
         author = makeUnicode(author['AuthorName'])
-        cmd = "SELECT BookName,BookDate,BookID,BookAdded,BookDesc,BookImg,BookFile from books "
-        cmd += "where (Status='Open' or AudioStatus='Open') and AuthorID=? order by BookDate DESC"
+        cmd = "SELECT BookName,BookDate,BookID,BookAdded,BookDesc,BookImg,BookFile from books WHERE "
+        if 'query' in kwargs:
+            cmd += "BookName LIKE '%" + kwargs['query'] + "%' AND "
+        cmd += "(Status='Open' or AudioStatus='Open') and AuthorID=? order by BookDate DESC"
         results = myDB.select(cmd, (kwargs['authorid'],))
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
-            entry = {
-                'title': escape('%s (%s)' % (book['BookName'], book['BookDate'])),
-                'id': escape('book:%s' % book['BookID']),
-                'updated': opdstime(book['BookAdded']),
-                'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
-                'kind': 'acquisition',
-                'rel': 'file',
-            }
-            entry['type'] = mimetype(book['BookFile'])
+            entry = {'title': escape('%s (%s)' % (book['BookName'], book['BookDate'])),
+                     'id': escape('book:%s' % book['BookID']),
+                     'updated': opdstime(book['BookAdded']),
+                     'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
+                     'kind': 'acquisition',
+                     'rel': 'file',
+                     'type': mimeType(book['BookFile'])}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 entry['image'] = book['BookImg']
                 entry['content'] = escape('%s - %s' % (book['BookName'], book['BookDesc']))
@@ -501,16 +513,14 @@ class OPDS(object):
                 snum = ' (%s)' % book['SeriesNum']
             else:
                 snum = ''
-            entry = {
-                'title': escape('%s%s' % (book['BookName'], snum)),
-                'id': escape('book:%s' % book['BookID']),
-                'updated': opdstime(book['BookAdded']),
-                'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
-                'kind': 'acquisition',
-                'rel': 'file',
-                'author': escape("%s" % author)
-            }
-            entry['type'] = mimetype(book['BookFile'])
+            entry = {'title': escape('%s%s' % (book['BookName'], snum)),
+                     'id': escape('book:%s' % book['BookID']),
+                     'updated': opdstime(book['BookAdded']),
+                     'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
+                     'kind': 'acquisition',
+                     'rel': 'file',
+                     'author': escape("%s" % author),
+                     'type': mimeType(book['BookFile'])}
 
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 entry['image'] = book['BookImg']
@@ -560,22 +570,23 @@ class OPDS(object):
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
 
         cmd = "select Title,IssueID,IssueAcquired,IssueDate,IssueFile from issues "
-        cmd += "where IssueFile != '' order by IssueAcquired DESC"
+        cmd += "where IssueFile != '' "
+        if 'query' in kwargs:
+            cmd += "AND Title LIKE '%" + kwargs['query'] + "%' "
+        cmd += "order by IssueAcquired DESC"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for mag in page:
             title = makeUnicode(mag['Title'])
-            entry = {
-                'title': escape('%s' % mag['IssueDate']),
-                'id': escape('issue:%s' % mag['IssueID']),
-                'updated': opdstime(mag['IssueAcquired']),
-                'content': escape('%s - %s' % (title, mag['IssueDate'])),
-                'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(mag['IssueID'])),
-                'kind': 'acquisition',
-                'rel': 'file',
-                'author': title,
-            }
-            entry['type'] = mimetype(mag['IssueFile'])
+            entry = {'title': escape('%s' % mag['IssueDate']),
+                     'id': escape('issue:%s' % mag['IssueID']),
+                     'updated': opdstime(mag['IssueAcquired']),
+                     'content': escape('%s - %s' % (title, mag['IssueDate'])),
+                     'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(mag['IssueID'])),
+                     'kind': 'acquisition',
+                     'rel': 'file',
+                     'author': title,
+                     'type': mimeType(mag['IssueFile'])}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 fname = os.path.splitext(mag['IssueFile'])[0]
                 res = cache_img('magazine', mag['IssueID'], fname + '.jpg')
@@ -610,20 +621,21 @@ class OPDS(object):
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
 
         cmd = "select BookName,BookID,BookLibrary,BookDate,BookImg,BookDesc,BookAdded,BookFile,AuthorID "
-        cmd += "from books where Status='Open' order by BookLibrary DESC"
+        cmd += "from books where Status='Open' "
+        if 'query' in kwargs:
+            cmd += "AND BookName LIKE '%" + kwargs['query'] + "%' "
+        cmd += "order by BookLibrary DESC"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
             title = makeUnicode(book['BookName'])
-            entry = {
-                'title': escape(title),
-                'id': escape('issue:%s' % book['BookID']),
-                'updated': opdstime(book['BookLibrary']),
-                'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
-                'kind': 'acquisition',
-                'rel': 'file',
-            }
-            entry['type'] = mimetype(book['BookFile'])
+            entry = {'title': escape(title),
+                     'id': escape('issue:%s' % book['BookID']),
+                     'updated': opdstime(book['BookLibrary']),
+                     'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
+                     'kind': 'acquisition',
+                     'rel': 'file',
+                     'type': mimeType(book['BookFile'])}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
                 author = makeUnicode(author['AuthorName'])
@@ -668,21 +680,21 @@ class OPDS(object):
         links.append(getLink(href='%s?cmd=RecentAudio' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
 
-        cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookAdded,AuthorID "
-        cmd += "from books WHERE AudioStatus='Open' order by AudioLibrary DESC"
+        cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookAdded,AuthorID from books WHERE "
+        if 'query' in kwargs:
+            cmd += "BookName LIKE '%" + kwargs['query'] + "%' AND "
+        cmd += "AudioStatus='Open' order by AudioLibrary DESC"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
             title = makeUnicode(book['BookName'])
-            entry = {
-                'title': escape(title),
-                'id': escape('issue:%s' % book['BookID']),
-                'updated': opdstime(book['AudioLibrary']),
-                'href': '%s?cmd=Serve&amp;audioid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
-                'kind': 'acquisition',
-                'rel': 'file',
-            }
-            entry['type'] = mimetype("we_send.zip")
+            entry = {'title': escape(title),
+                     'id': escape('issue:%s' % book['BookID']),
+                     'updated': opdstime(book['AudioLibrary']),
+                     'href': '%s?cmd=Serve&amp;audioid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
+                     'kind': 'acquisition',
+                     'rel': 'file',
+                     'type': mimeType("we_send.zip")}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
                 author = makeUnicode(author['AuthorName'])
@@ -745,6 +757,7 @@ class OPDS(object):
                 self.filename = res['BookName'] + '.zip'
             return
 
+
 def getLink(href=None, ftype=None, rel=None, title=None):
     link = {}
     if href:
@@ -758,23 +771,6 @@ def getLink(href=None, ftype=None, rel=None, title=None):
     return link
 
 
-def mimetype(filename):
-    name = filename.lower()
-    if name.endswith('.epub'):
-        return 'application/epub+zip'
-    elif name.endswith('.mobi') or name.endswith('.azw3'):
-        return 'application/x-mobipocket-ebook'
-    elif name.endswith('.pdf'):
-        return 'application/pdf'
-    elif name.endswith('.mp3'):
-        return 'audio/mpeg3'
-    elif name.endswith('.zip'):
-        return 'application/zip'
-    elif name.endswith('.xml'):
-        return 'application/rss+xml'
-    return "application/x-download"
-
-
 def escape(data):
     """Escape &, <, and > in a string of data.
     """
@@ -784,9 +780,11 @@ def escape(data):
     data = data.replace("<", "&lt;")
     return data
 
+
 def now():
     dtnow = datetime.datetime.now()
     return dtnow.strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
 def opdstime(datestr):
     # YYYY-MM-DDTHH:MM:SSZ
