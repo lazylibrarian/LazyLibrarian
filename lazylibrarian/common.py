@@ -429,11 +429,33 @@ def book_file(search_dir=None, booktype=None):
     return ""
 
 
+def mimeType(filename):
+    name = filename.lower()
+    if name.endswith('.epub'):
+        return 'application/epub+zip'
+    elif name.endswith('.mobi') or name.endswith('.azw'):
+        return 'application/x-mobipocket-ebook'
+    elif name.endswith('.azw3'):
+        return 'application/x-mobi8-ebook'
+    elif name.endswith('.pdf'):
+        return 'application/pdf'
+    elif name.endswith('.mp3'):
+        return 'audio/mpeg3'
+    elif name.endswith('.zip'):
+        return 'application/x-zip-compressed'
+    elif name.endswith('.xml'):
+        return 'application/rss+xml'
+    return "application/x-download"
+
+
 def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
         target=search_magazines, target=processDir, target=search_book """
     if target is None:
         return
+
+    if target == 'PostProcessor':  # more readable
+        target = 'processDir'
 
     if action == 'Stop' or action == 'Restart':
         for job in lazylibrarian.SCHED.get_jobs():
@@ -446,7 +468,7 @@ def scheduleJob(action='Start', target=None):
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
                 return  # return if already running, if not, start a new one
-        if 'PostProcessor' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
+        if 'processDir' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
             minutes = check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0)
             lazylibrarian.SCHED.add_interval_job(
                 lazylibrarian.postprocess.cron_processDir, minutes=minutes)
@@ -695,7 +717,6 @@ def showJobs():
                 overdue += 1
             if not overdue:
                 result.append("There are no authors to update")
-                minutes = 60 * 24  # check again in 24hrs
             else:
                 result.append("Found %s author%s from %s overdue update" % (
                              overdue, plural(overdue), total))

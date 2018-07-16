@@ -34,10 +34,9 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
     qbittorrent, utorrent, rtorrent, transmission, sabnzbd, nzbget, deluge, synology, grsync
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
-from lazylibrarian.calibre import calibreTest, syncCalibreList
-from lazylibrarian.calibre import calibredb
+from lazylibrarian.calibre import calibreTest, syncCalibreList, calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail
+    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
@@ -1854,21 +1853,6 @@ class WebInterface(object):
         else:
             raise cherrypy.HTTPRedirect("books")
 
-    @staticmethod
-    def mimetype(filename):
-        name = filename.lower()
-        if name.endswith('.epub'):
-            return 'application/epub+zip'
-        elif name.endswith('.mobi') or name.endswith('.azw3'):
-            return 'application/x-mobipocket-ebook'
-        elif name.endswith('.pdf'):
-            return 'application/pdf'
-        elif name.endswith('.mp3'):
-            return 'audio/mpeg3'
-        elif name.endswith('.xml'):
-            return 'application/rss+xml'
-        return "application/x-download"
-
     @cherrypy.expose
     def requestBook(self, **kwargs):
         self.label_thread('REQUEST_BOOK')
@@ -2004,7 +1988,7 @@ class WebInterface(object):
 
         if basefile and os.path.isfile(basefile):
             logger.debug('Opening %s %s' % (ftype, basefile))
-            return serve_file(basefile, self.mimetype(basefile), "attachment")
+            return serve_file(basefile, mimeType(basefile), "attachment")
 
         else:
             logger.warn("No file found for %s %s" % (ftype, itemid))
@@ -2044,7 +2028,7 @@ class WebInterface(object):
                     bookfile = bookdata["AudioFile"]
                     if bookfile and os.path.isfile(bookfile):
                         logger.debug('Opening %s %s' % (library, bookfile))
-                        return serve_file(bookfile, self.mimetype(bookfile), "attachment")
+                        return serve_file(bookfile, mimeType(bookfile), "attachment")
                 else:
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]
@@ -2084,7 +2068,7 @@ class WebInterface(object):
                                                   valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
 
                         logger.debug('Opening %s %s' % (library, bookfile))
-                        return serve_file(bookfile, self.mimetype(bookfile), "attachment")
+                        return serve_file(bookfile, mimeType(bookfile), "attachment")
 
                 logger.info('Missing %s %s, %s [%s]' % (library, authorName, bookName, bookfile))
             else:
@@ -3070,7 +3054,7 @@ class WebInterface(object):
             IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
                 logger.debug('Opening file %s' % IssueFile)
-                return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
+                return serve_file(IssueFile, mimeType(IssueFile), "attachment")
 
         # or we may just have a title to find magazine in issues table
         mag_data = myDB.select('SELECT * from issues WHERE Title=?', (bookid,))
@@ -3080,7 +3064,7 @@ class WebInterface(object):
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.debug('Opening %s - %s' % (bookid, IssueDate))
-            return serve_file(IssueFile, self.mimetype(IssueFile), "attachment")
+            return serve_file(IssueFile, mimeType(IssueFile), "attachment")
         else:  # multiple issues, show a list
             logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             if PY2:
@@ -3526,12 +3510,12 @@ class WebInterface(object):
         except KeyError:
             pass
 
-        if 'X-Forwarded-For' in cherrypy.request.headers:
+        if 'Remote-Addr' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['Remote-Addr']
+        elif 'X-Forwarded-For' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
         elif 'X-Host' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-        elif 'Host' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['Host']  # nginx
         else:
             remote_ip = cherrypy.request.remote.ip
 
