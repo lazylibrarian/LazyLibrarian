@@ -2623,7 +2623,7 @@ class WebInterface(object):
             cmd = 'SELECT BookLink,BookImg,BookID,BookName from books where Status="Open" order by BookLibrary DESC'
             title = 'Recently Downloaded Books'
         else:
-            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books order by BookAdded DESC'
+            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books where Status != "Ignored" order by BookAdded DESC'
             title = 'Recently Added Books'
         results = myDB.select(cmd)
         if not len(results):

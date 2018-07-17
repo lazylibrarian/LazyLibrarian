@@ -115,18 +115,22 @@
                     { targets: [7], 'render': function(data, type, row) {
                         var btn = data
                         if ( btn.indexOf('Open') >= 0 ) {
-                            %if lazylibrarian.CONFIG['MAG_SINGLE']:
-                                if ( row[3] == 1) {
-                                btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + row[0] +
-                                    '" target="_self"><i class="fa fa-book"></i> Open</a>' }
-                                else {
-                                btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + row[0] +
-                                    '" target="_self"><i class="fa fa-book"></i> Show</a>' }
-                            %else:
-                                btn = '<a class="button green btn btn-xs btn-primary" href="openMag?bookid=' + row[0] +
-                                    '" target="_self"><i class="fa fa-book"></i> Show</a>'
-                            %endif
-                            }
+                                %if lazylibrarian.CONFIG['MAG_SINGLE']:
+                                    if ( row[3] == 1) {
+                                        %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
+                                           btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + row[0] +
+                                            '" target="_self"><i class="fa fa-book"></i> Open</a>' }
+                                        %else:
+                                           btn = '<a class="button button green btn btn-xs btn-info"><i class="fa fa-book"></i> ' + btn.replace("Open", "Have") + '</a>'
+                                       %endif
+                                    else {
+                                        btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + row[0] +
+                                            '" target="_self"><i class="fa fa-book"></i> Show</a>' }
+                                %else:
+                                    btn = '<a class="button green btn btn-xs btn-primary" href="openMag?bookid=' + row[0] +
+                                        '" target="_self"><i class="fa fa-book"></i> Show</a>'
+                                %endif
+                           }
                         else if ( btn.indexOf('Wanted') >= 0 ) {
                             btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p>'
                             %if perm&lazylibrarian.perm_force:

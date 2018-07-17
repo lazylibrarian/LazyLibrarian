@@ -32,15 +32,31 @@
               <% count = count + 1 %>
               %if redirect == 'books':
                 %if have == '1':
+                  %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
                   <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&library=eBook" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
+                  %else:
+                  <td class="bookart text-center"><a href="#" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
+                  %endif
                 %else:
+                  %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
                   <td class="bookart text-center"><a href="${result['BookLink']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
+                  %else:
+                  <td class="bookart text-center"><a href="#" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
+                  %endif
                 %endif
               %else:
                 %if redirect == 'audio':
+                  %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
                   <td class="bookart text-center"><a href="openBook?bookid=${result['BookID']}&library=AudioBook" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
+                  %else:
+                  <td class="bookart text-center"><a href="#" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" alt="cover" class="bookcover-sm"></a><br>${result['BookName']}</td>
+                  %endif
                 %else:
+                  %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
                   <td class="bookart text-center"><a href="openMag?bookid=${result['IssueID']}" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a><br>${result['IssueDate']}</td>
+                  %else:
+                  <td class="bookart text-center"><a href="#" target="_blank" rel="noreferrer"><img src="${result['Cover']}" alt="cover" class="bookcover-sm"></a><br>${result['IssueDate']}</td>
+                  %endif
                 %endif
               %endif
               %if count == columns:

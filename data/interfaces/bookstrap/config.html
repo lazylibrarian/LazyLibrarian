@@ -351,6 +351,17 @@
                         <input type="checkbox" id="sort_surname" name="sort_surname" value="1" ${checked} />
                         Show author surname first</label>
                     </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['OPEN_LINK'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="open_link" class="control-label">
+                        <input type="checkbox" id="open_link" name="open_link" value="1" ${checked} />
+                        Show "Open" button</label>
+                    </div>
                     <div class="form-group">
                       <label for="http_look">Interface:</label>
                       <select id="http_look" name="http_look" class="form-control">
