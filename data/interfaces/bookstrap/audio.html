@@ -144,8 +144,13 @@
                     var flag = row[13]
                     btn = btn + flag
                     if ( btn.indexOf('Open') >= 0 ) {
-                        btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
-                                '&library=AudioBook" target="_self"><i class="fa fa-headphones"></i> ' + btn + '</a>'}
+                        %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
+                            btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
+                                '&library=AudioBook" target="_self"><i class="fa fa-headphones"></i> ' + btn + '</a>'
+                        %else:
+                            btn = '<a class="button btn btn-xs btn-info"><i class="fa fa-headphones"></i> ' + btn.replace("Open", "Have") + '</a>'
+                        %endif
+                    }
                     else if ( btn.indexOf('Wanted') >= 0 ) {
                         %if perm&lazylibrarian.perm_force:
                             btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=AudioBook" target="_self"><i class="fa fa-search"></i> Search</a></p>'

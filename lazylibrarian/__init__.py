@@ -162,8 +162,8 @@ isbn_978_dict = {
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
-CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
+CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'OPEN_LINK',
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME']
 # default interface does not know about these items, so leave them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
@@ -406,6 +406,7 @@ CONFIG_DEFINITIONS = {
     'NO_ISBN': ('bool', 'LibraryScan', 0),
     'NO_SETS': ('bool', 'LibraryScan', 0),
     'NO_LANG': ('bool', 'LibraryScan', 0),
+    'ISBN_LOOKUP': ('bool', 'LibraryScan', 1),
     'IMP_IGNORE': ('bool', 'LibraryScan', 0),
     'IMP_GOOGLEIMAGE': ('bool', 'LibraryScan', 0),
     'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
@@ -505,6 +506,7 @@ CONFIG_DEFINITIONS = {
     'OPDS_USERNAME': ('str', 'OPDS', ''),
     'OPDS_PASSWORD': ('str', 'OPDS', ''),
     'OPDS_METAINFO': ('bool', 'OPDS', 0),
+    'OPEN_LINK': ('bool', 'General', 0),
 }
 
 
