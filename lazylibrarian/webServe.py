@@ -3809,27 +3809,31 @@ class WebInterface(object):
         if '^' not in target:
             return ''
         status, rowid = target.split('^')
-        cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult,Source,DownloadID '
-        cmd += 'from wanted where rowid=?'
-        match = myDB.match(cmd, (rowid,))
-        dltype = match['AuxInfo']
-        if dltype not in ['eBook', 'AudioBook']:
-            if not dltype:
-                dltype = 'eBook'
-            else:
-                dltype = 'Magazine'
-        message = "Title: %s<br>" % match['NZBtitle']
-        message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
-        message += "Date: %s<br>" % match['NZBdate']
-        message += "Size: %s Mb<br>" % match['NZBsize']
-        message += "Provider: %s<br>" % match['NZBprov']
-        message += "Downloader: %s<br>" % match['Source']
-        message += "DownloadID: %s<br>" % match['DownloadID']
-        message += "URL: %s<br>" % match['NZBurl']
-        if status == 'Processed':
-            message += "File: %s<br>" % match['DLResult']
+        if status == 'Ignored':
+            match = myDB.match('select ScanResult from books WHERE bookid=?', (rowid,))
+            message = 'Reason: %s<br>' % match['ScanResult']
         else:
-            message += "Error: %s<br>" % match['DLResult']
+            cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult,Source,DownloadID '
+            cmd += 'from wanted where rowid=?'
+            match = myDB.match(cmd, (rowid,))
+            dltype = match['AuxInfo']
+            if dltype not in ['eBook', 'AudioBook']:
+                if not dltype:
+                    dltype = 'eBook'
+                else:
+                    dltype = 'Magazine'
+            message = "Title: %s<br>" % match['NZBtitle']
+            message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
+            message += "Date: %s<br>" % match['NZBdate']
+            message += "Size: %s Mb<br>" % match['NZBsize']
+            message += "Provider: %s<br>" % match['NZBprov']
+            message += "Downloader: %s<br>" % match['Source']
+            message += "DownloadID: %s<br>" % match['DownloadID']
+            message += "URL: %s<br>" % match['NZBurl']
+            if status == 'Processed':
+                message += "File: %s<br>" % match['DLResult']
+            else:
+                message += "Error: %s<br>" % match['DLResult']
         return message
 
     @cherrypy.expose

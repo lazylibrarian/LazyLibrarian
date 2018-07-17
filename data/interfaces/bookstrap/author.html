@@ -293,6 +293,9 @@
                             btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=${library}" target="_self"><i class="fa fa-search"></i> Search</a></p>'}
                         else if ( btn.indexOf('Snatched') >= 0 ) {
                             btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
+                        else if ( btn.indexOf('Ignored') >= 0 ) {
+                            btn = '<button onclick="dlinfo(\'' + btn + '^' + row[9] +
+                            '\')" class="button btn btn-xs btn-primary" type="button">' + btn + '</button>'}
                         else if ( btn.indexOf('Have') >= 0 ) {
                             %if perm&lazylibrarian.perm_status:
                             btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'
@@ -351,6 +354,25 @@
             column.visible( ! column.visible() );
         } );
     });
+
+    function dlinfo(target) {
+        var res = target.split('^');
+        var status = res[0]
+        var rowid = res[1]
+        $.get('dlinfo', {'target': target},
+        function(data) {
+            bootbox.dialog({
+                title: 'Title '+ status,
+                message: '<pre>'+data+'</pre>',
+                buttons: {
+                   primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            });
+        });
+    };
 
     // Read a page's GET URL variables and return them as an associative array.
     function getUrlVars() {

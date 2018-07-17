@@ -78,8 +78,9 @@ def upgrade_needed():
     # 31 add DateType to magazines table
     # 32 add counters to series table
     # 33 add DLResult to wanted table
+    # 34 add ScanResult to books table
 
-    db_current_version = 33
+    db_current_version = 34
 
     if db_version < db_current_version:
         return db_current_version
@@ -147,7 +148,7 @@ def dbupgrade(db_current_version):
                                 'BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
                                 'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
                                 'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
-                                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT)')
+                                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT)')
                     myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
                                 'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
                                 'Source TEXT, DownloadID TEXT, DLResult TEXT)')
@@ -185,14 +186,11 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE INDEX authors_index_status ON authors(Status)')
                     myDB.action('CREATE INDEX wanted_index_status ON wanted(Status)')
 
-                upgradefunctions = [db_v2, db_v3, db_v4, db_v5, db_v6, db_v7, db_v8, db_v9, db_v10, db_v11,
-                                    db_v12, db_v13, db_v14, db_v15, db_v16, db_v17, db_v18, db_v19, db_v20,
-                                    db_v21, db_v22, db_v23, db_v24, db_v25, db_v26, db_v27, db_v28, db_v29,
-                                    db_v30, db_v31, db_v32, db_v33]
-
-                for index, upgrade_function in enumerate(upgradefunctions):
-                    if index + 2 > db_version:
-                        upgrade_function(myDB, upgradelog)
+                index = db_version + 1
+                while 'db_v%s' % index in globals():
+                    upgrade_function = getattr(lazylibrarian.dbupgrade, 'db_v%s' % index)
+                    upgrade_function(myDB, upgradelog)
+                    index += 1
 
                 # Now do any non-version-specific tidying
                 try:
@@ -940,3 +938,10 @@ def db_v33(myDB, upgradelog):
         myDB.action('ALTER TABLE wanted ADD COLUMN DLResult TEXT')
         myDB.action('ALTER TABLE pastissues ADD COLUMN DLResult TEXT')
     upgradelog.write("%s v33: complete\n" % time.ctime())
+
+def db_v34(myDB, upgradelog):
+    if not has_column(myDB, "books", "ScanResult"):
+        lazylibrarian.UPDATE_MSG = 'Adding ScanResult to books table'
+        upgradelog.write("%s v34: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE books ADD COLUMN ScanResult TEXT')
+    upgradelog.write("%s v34: complete\n" % time.ctime())
