@@ -346,6 +346,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
             else:
                 logger.debug("[%s] is not a directory" % item)
 
+        if not dirlist:
+            logger.error("No download directories are configured")
+
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
         if len(snatched):
@@ -846,7 +849,8 @@ def check_contents(source, downloadid, book_type, title):
 
     # Downloaders return varying amounts of info using varying names
     if not downloadfiles:  # empty
-        logger.debug("No filenames returned by %s for %s" % (source, title))
+        if source not in ['DIRECT', 'RTORRENT', 'NZBGET', 'SABNZBD']:  # these don't give us a contents list
+            logger.debug("No filenames returned by %s for %s" % (source, title))
     else:
         logger.debug("Checking files in %s" % title)
         for entry in downloadfiles:
