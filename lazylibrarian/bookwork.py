@@ -136,7 +136,7 @@ def setSeries(serieslist=None, bookid=None):
                     cnt = myDB.match("select count(*) as counter from series")
                     res = check_int(cnt['counter'], 0)
                     seriesid = str(res + 1)
-                myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)', 
+                myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)',
                             (seriesid, item[2], "Active", 0, 0), suppress='UNIQUE')
                 # don't ask what other books are in the series - leave for user to query if series wanted
                 # _ = getSeriesMembers(match['SeriesID'])
@@ -720,7 +720,7 @@ def getWorkSeries(bookID=None):
                     serieslist.append((seriesid, seriesnum, seriesname))
                     match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
                     if not match:
-                        myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)', 
+                        myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
                                     (seriesid, seriesname, "Active", 0, 0))
                     elif match['SeriesID'] != seriesid:
                         myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
@@ -771,7 +771,14 @@ def thingLang(isbn):
 
 
 def isbn_from_words(words):
-    """Use Google to get an ISBN from words from title and author's name."""
+    """ Use Google to get an ISBN for a book from words in title and authors name.
+        Store the results in the database """
+    myDB = database.DBConnection()
+    res = myDB.match("SELECT ISBN from isbn WHERE Words=?", (words,))
+    if res:
+        logger.debug('Found cached ISBN for %s' % (words))
+        return res['ISBN']
+
     baseurl = "http://www.google.com/search?q=ISBN+"
     if not PY2:
         search_url = baseurl + quote(words.replace(' ', '+'))
@@ -790,13 +797,17 @@ def isbn_from_words(words):
 
     # take the first answer that's a plain isbn, no spaces, dashes etc.
     res = RE_ISBN13.findall(content)
+    logger.debug('Found %s ISBN13 for %s' % (len(res), words))
     for item in res:
         if len(item) == 13:
+            myDB.action("INSERT into isbn (Words, ISBN) VALUES (?, ?)", (words, item))
             return item
 
     res = RE_ISBN10.findall(content)
+    logger.debug('Found %s ISBN10 for %s' % (len(res), words))
     for item in res:
         if len(item) == 10:
+            myDB.action("INSERT into isbn (Words, ISBN) VALUES (?, ?)", (words, item))
             return item
 
     logger.debug('No ISBN found for %s' % words)

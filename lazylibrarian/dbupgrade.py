@@ -78,7 +78,7 @@ def upgrade_needed():
     # 31 add DateType to magazines table
     # 32 add counters to series table
     # 33 add DLResult to wanted table
-    # 34 add ScanResult to books table
+    # 34 add ScanResult to books table, and new isbn table
 
     db_current_version = 34
 
@@ -171,6 +171,7 @@ def dbupgrade(db_current_version):
                                 'Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, ' +
                                 'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT)')
                     myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
+                    myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
 
                     # pastissues table has same layout as wanted table, code below is to save typos if columns change
                     res = myDB.match("SELECT sql FROM sqlite_master WHERE type='table' AND name='wanted'")
@@ -944,4 +945,5 @@ def db_v34(myDB, upgradelog):
         lazylibrarian.UPDATE_MSG = 'Adding ScanResult to books table'
         upgradelog.write("%s v34: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('ALTER TABLE books ADD COLUMN ScanResult TEXT')
+        myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
     upgradelog.write("%s v34: complete\n" % time.ctime())
