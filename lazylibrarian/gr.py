@@ -471,7 +471,7 @@ class GoodReads:
                                     bookisbn = isbn10
                                     isbnhead = bookisbn[0:3]
 
-                            if not isbnhead and not lazylibrarian.CONFIG['NO_ISBN']:
+                            if not isbnhead and lazylibrarian.CONFIG['ISBN_LOOKUP']:
                                 # try lookup by name
                                 if bookname:
                                     try:
@@ -681,13 +681,17 @@ class GoodReads:
                                     logger.debug('Renaming bookid %s for [%s][%s] to [%s]' %
                                                  (bookid, authorNameResult, match['BookName'], bookname))
                                     check_status = True
-
-                                elif bookname != match['BookName'] or authorNameResult != match['AuthorName']:
-                                    rejected = 'differ', 'Got different book with this bookid [%s][%s]' % (
-                                                match['AuthorName'], match['BookName'])
-                                    logger.debug('Rejecting bookid %s for [%s][%s] %s' %
-                                                 (bookid, authorNameResult, bookname, rejected[1]))
+                                elif bookname != match['BookName']:
+                                    rejected = 'bookname', 'Got different bookname for this bookid [%s][%s]' % (
+                                                bookname, match['BookName'])
+                                    logger.debug('Rejecting bookid %s, %s' % (bookid, rejected[1]))
                                     check_status = False
+                                elif authorNameResult != match['AuthorName']:
+                                    rejected = 'author', 'Got different author for this bookid [%s][%s]' % (
+                                                authorNameResult, match['AuthorName'])
+                                    logger.debug('Rejecting bookid %s, %s' % (bookid, rejected[1]))
+                                    check_status = False
+
                                 else:
                                     rejected = 'got', 'Already got this book in database'
                                     logger.debug('Rejecting bookid %s for [%s][%s] %s' %
@@ -695,8 +699,10 @@ class GoodReads:
                                     check_status = True
                                 duplicates += 1
 
-                        if check_status or rejected is None or (
-                                lazylibrarian.CONFIG['IMP_IGNORE'] and rejected[0] in ignorable):
+                        if rejected and rejected[0] not in ignorable:
+                            removedResults += 1
+                        if check_status or not rejected or (
+                                lazylibrarian.CONFIG['IMP_IGNORE'] and rejected and rejected[0] in ignorable):
                             updated = False
                             cmd = 'SELECT Status,AudioStatus,Manual,BookAdded,BookName FROM books WHERE BookID=?'
                             existing = myDB.match(cmd, (bookid,))
@@ -723,8 +729,6 @@ class GoodReads:
                                     book_status = 'Ignored'
                                     audio_status = 'Ignored'
                                     book_ignore_count += 1
-                                else:
-                                    removedResults += 1
                             else:
                                 reason = ''
 
