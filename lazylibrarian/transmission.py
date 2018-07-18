@@ -13,6 +13,7 @@
 import time
 
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests

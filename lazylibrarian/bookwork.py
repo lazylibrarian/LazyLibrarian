@@ -28,6 +28,7 @@ from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
 
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests

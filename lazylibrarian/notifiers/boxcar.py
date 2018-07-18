@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests
