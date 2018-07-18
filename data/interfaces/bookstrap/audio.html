@@ -144,12 +144,8 @@
                     var flag = row[13]
                     btn = btn + flag
                     if ( btn.indexOf('Open') >= 0 ) {
-                        %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
                             btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
                                 '&library=AudioBook" target="_self"><i class="fa fa-headphones"></i> ' + btn + '</a>'
-                        %else:
-                            btn = '<a class="button btn btn-xs btn-info"><i class="fa fa-headphones"></i> ' + btn.replace("Open", "Have") + '</a>'
-                        %endif
                     }
                     else if ( btn.indexOf('Wanted') >= 0 ) {
                         %if perm&lazylibrarian.perm_force:

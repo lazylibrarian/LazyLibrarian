@@ -85,12 +85,8 @@
                         'render': function(data, type, row) {
                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                     { targets: [4], 'render': function(data, type, row) {
-                        %if lazylibrarian.CONFIG['OPEN_LINK'] == True:
                             btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + data +
                                     '" target="_self"><i class="fa fa-book"></i> Open</a>'
-                        %else:
-                            btn = '<a class="button button green btn btn-xs btn-info"><i class="fa fa-book"></i> Have</a>'
-                        %endif
                             return btn;} },
                 ],
                 "oLanguage": {
