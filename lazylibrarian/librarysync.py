@@ -896,7 +896,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 # we found a new book
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set Status="Open" where BookID=?', (bookid,))
+                                                    'UPDATE books set Status="%s" where BookID=?' %
+                                                    lazylibrarian.CONFIG['FOUND_STATUS'], (bookid,))
                                                 myDB.action(
                                                     'UPDATE books set BookLibrary=? where BookID=?',
                                                     (now(), bookid))
@@ -937,7 +938,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 # we found a new audiobook
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set AudioStatus="Open" where BookID=?', (bookid,))
+                                                    'UPDATE books set AudioStatus="%s" where BookID=?' %
+                                                    lazylibrarian.CONFIG['FOUND_STATUS'], (bookid,))
                                                 myDB.action(
                                                     'UPDATE books set AudioLibrary=? where BookID=?', (now(), bookid))
                                             # store audiobook location so we can check if it gets (re)moved

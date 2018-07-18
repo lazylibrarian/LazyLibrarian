@@ -167,7 +167,7 @@ CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DI
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME']
 # default interface does not know about these items, so leaves them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
-                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES',
+                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'FOUND_STATUS',
                      'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
                      'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
                      'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
@@ -396,6 +396,7 @@ CONFIG_DEFINITIONS = {
     'ADD_AUTHOR': ('bool', 'LibraryScan', 1),
     'ADD_SERIES': ('bool', 'LibraryScan', 1),
     'NOTFOUND_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'FOUND_STATUS': ('str', 'LibraryScan', 'Open'),
     'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUDIO_STATUS': ('str', 'LibraryScan', 'Skipped'),
     'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
