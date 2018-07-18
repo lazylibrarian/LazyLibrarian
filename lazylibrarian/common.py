@@ -800,7 +800,10 @@ def logHeader():
     header += "uname: %s\n" % str(platform.uname())
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
-    header += "urllib3: %s\n" % getattr(urllib3, '__version__', None)
+    if 'urllib3' in globals():
+        header += "urllib3: %s\n" % getattr(urllib3, '__version__', None)
+    else:
+        header += "urllib3: missing\n"
     header += "requests: %s\n" % getattr(requests, '__version__', None)
     tls_version = requests.get('https://www.howsmyssl.com/a/check', timeout=30, verify=False).json()['tls_version']
     if '1.2' not in tls_version and '1.3' not in tls_version:
