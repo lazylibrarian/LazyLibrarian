@@ -2052,8 +2052,8 @@ class WebInterface(object):
                                         partlist += ' '
                                     partlist += str(item)
                                     item += 1
-                            return serve_template(templatename="choosetype.html", prefix="",
-                                                  title="AudioBook Part", pop_message=msg,
+                            return serve_template(templatename="choosetype.html", prefix="AudioBook",
+                                                  title=unaccented(bookName), pop_message=msg,
                                                   pop_types=partlist, bookid=bookid,
                                                   valid=getList(partlist.replace(' ', ',')))
                         else:

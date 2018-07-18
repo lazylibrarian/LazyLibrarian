@@ -16,6 +16,7 @@
     $(document).ready(function()
     {
         var title = '${title}';
+        var prefix = '${prefix}';
         var pop_message = '${pop_message}';
         var bookid = '${bookid}';
         var pop_types = '${pop_types}';
@@ -29,7 +30,7 @@
 
         var array = pop_types.split(' ');
         var item;
-        if ( title.indexOf('AudioBook') >= 0 ) {
+        if ( prefix.indexOf('AudioBook') >= 0 ) {
             var loc = 'openBook?bookid=' + bookid + '&library=AudioBook&booktype='}
         else {
             var loc = 'openBook?bookid=' + bookid + '&library=eBook&booktype='}
