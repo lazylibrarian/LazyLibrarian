@@ -29,7 +29,11 @@
 
         var array = pop_types.split(' ');
         var item;
-        var loc = 'openBook?bookid=' + bookid + '&library=eBook&booktype='
+        if ( title.indexOf('AudioBook') >= 0 ) {
+            var loc = 'openBook?bookid=' + bookid + '&library=AudioBook&booktype='}
+        else {
+            var loc = 'openBook?bookid=' + bookid + '&library=eBook&booktype='}
+
         for (item of array) {
             % for extn in valid:
                 if (item === "${extn}") {

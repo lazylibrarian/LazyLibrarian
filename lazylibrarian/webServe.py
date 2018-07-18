@@ -1957,7 +1957,8 @@ class WebInterface(object):
                         with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as myzip:
                             for root, dirs, files in os.walk(parentdir):
                                 for fname in files:
-                                    myzip.write(os.path.join(root, fname), fname)
+                                    if not fname.endswith('.zip') and not fname.endswith('.ll'):
+                                        myzip.write(os.path.join(root, fname), fname)
                         # Reset file pointer
                         tmp.seek(0)
                         return serve_file(tmp.name, 'application/x-zip-compressed', 'attachment',
@@ -2027,8 +2028,37 @@ class WebInterface(object):
                 if library == 'AudioBook':
                     bookfile = bookdata["AudioFile"]
                     if bookfile and os.path.isfile(bookfile):
-                        logger.debug('Opening %s %s' % (library, bookfile))
-                        return serve_file(bookfile, mimeType(bookfile), "attachment")
+                        parentdir = os.path.dirname(bookfile)
+                        index = os.path.join(parentdir, 'playlist.ll')
+                        if os.path.isfile(index):
+                            idx = check_int(booktype, 0)
+                            if idx:
+                                with open(index, 'r') as f:
+                                    part = f.read().splitlines()[idx - 1]
+                                bookfile = os.path.join(parentdir, part)
+                                logger.debug('Opening %s %s' % (library, bookfile))
+                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+
+                            cnt = sum(1 for line in open(index))
+                            if cnt <= 1:
+                                logger.debug('Opening %s %s' % (library, bookfile))
+                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                            else:
+                                msg = "Please select which part to download"
+                                item = 1
+                                partlist = ''
+                                while item <= cnt:
+                                    if partlist:
+                                        partlist += ' '
+                                    partlist += str(item)
+                                    item += 1
+                            return serve_template(templatename="choosetype.html", prefix="",
+                                                  title="AudioBook Part", pop_message=msg,
+                                                  pop_types=partlist, bookid=bookid,
+                                                  valid=getList(partlist.replace(' ', ',')))
+                        else:
+                            logger.debug('Opening %s %s' % (library, bookfile))
+                            return serve_file(bookfile, mimeType(bookfile), "attachment")
                 else:
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]

@@ -749,7 +749,7 @@ class OPDS(object):
                     with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as myzip:
                         for root, dirs, files in os.walk(parentdir):
                             for fname in files:
-                                if not fname.endswith('.zip'):
+                                if not fname.endswith('.zip') and not fname.endswith('.ll'):
                                     cnt += 1
                                     myzip.write(os.path.join(root, fname), fname)
                     logger.debug('Zipped up %s files' % cnt)
