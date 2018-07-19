@@ -1183,11 +1183,11 @@ def zipAudio(source, zipname):
         Doesn't actually check for audiobook parts, just zips everything
         Return full path to zipfile
     """
-    zipfile = os.path.join(source, zipname + '.zip')
-    if not os.path.exists(zipfile):
+    zip_file = os.path.join(source, zipname + '.zip')
+    if not os.path.exists(zip_file):
         logger.debug('Zipping up %s' % zipname)
         cnt = 0
-        with zipfile.ZipFile(zipfile, 'w', zipfile.ZIP_DEFLATED) as myzip:
+        with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as myzip:
             for rootdir, dirs, filenames in os.walk(makeBytestr(source)):
                 rootdir = makeUnicode(rootdir)
                 filenames = [makeUnicode(item) for item in filenames]
@@ -1197,4 +1197,4 @@ def zipAudio(source, zipname):
                         cnt += 1
                         myzip.write(os.path.join(rootdir, filename), filename)
         logger.debug('Zipped up %s files' % cnt)
-    return zipfile
+    return zip_file
