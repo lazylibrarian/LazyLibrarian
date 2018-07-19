@@ -24,19 +24,12 @@ import os
 import datetime
 from cherrypy.lib.static import serve_file
 from lazylibrarian.formatter import makeUnicode, check_int
-from lazylibrarian.common import mimeType
+from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
 from lib.six import PY2, string_types
 
-try:
-    import zipfile
-except ImportError:
-    if PY2:
-        import lib.zipfile as zipfile
-    else:
-        import lib3.zipfile as zipfile
 
 searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags']
 
@@ -739,21 +732,10 @@ class OPDS(object):
             myDB = database.DBConnection()
             res = myDB.match('SELECT AudioFile,BookName from books where BookID=?', (myid,))
             basefile = res['AudioFile']
-            # zip up all the audiobook parts in a temporary file
+            # zip up all the audiobook parts
             if basefile and os.path.isfile(basefile):
-                parentdir = os.path.dirname(basefile)
-                zipname = os.path.join(parentdir, res['BookName'] + '.zip')
-                if not os.path.exists(zipname):
-                    logger.debug('Zipping up %s' % res['BookName'])
-                    cnt = 0
-                    with zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED) as myzip:
-                        for root, dirs, files in os.walk(parentdir):
-                            for fname in files:
-                                if not fname.endswith('.zip') and not fname.endswith('.ll'):
-                                    cnt += 1
-                                    myzip.write(os.path.join(root, fname), fname)
-                    logger.debug('Zipped up %s files' % cnt)
-                self.file = zipname
+                target = zipAudio(os.path.dirname(basefile), res['BookName'])
+                self.file = target
                 self.filename = res['BookName'] + '.zip'
             return
 

@@ -36,7 +36,7 @@ from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthor
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibreTest, syncCalibreList, calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType
+    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType, zipAudio
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
@@ -59,14 +59,6 @@ from lib.deluge_client import DelugeRPCClient
 from lib.six import PY2
 from mako import exceptions
 from mako.lookup import TemplateLookup
-
-try:
-    import zipfile
-except ImportError:
-    if PY2:
-        import lib.zipfile as zipfile
-    else:
-        import lib3.zipfile as zipfile
 
 
 def serve_template(templatename, **kwargs):
@@ -1950,19 +1942,11 @@ class WebInterface(object):
             res = myDB.match('SELECT AudioFile,BookName from books WHERE BookID=?', (itemid,))
             if res:
                 basefile = res['AudioFile']
-                # zip up all the audiobook parts in a temporary file
+                # zip up all the audiobook parts
                 if basefile and os.path.isfile(basefile):
-                    parentdir = os.path.dirname(basefile)
-                    with tempfile.NamedTemporaryFile() as tmp:
-                        with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as myzip:
-                            for root, dirs, files in os.walk(parentdir):
-                                for fname in files:
-                                    if not fname.endswith('.zip') and not fname.endswith('.ll'):
-                                        myzip.write(os.path.join(root, fname), fname)
-                        # Reset file pointer
-                        tmp.seek(0)
-                        return serve_file(tmp.name, 'application/x-zip-compressed', 'attachment',
-                                          name=res['BookName'] + '.zip')
+                    target = zipAudio(parentdir, res['BookName'])
+                    return serve_file(target, 'application/x-zip-compressed', 'attachment',
+                                       name=res['BookName'] + '.zip')
 
         basefile = None
         if ftype == 'book':
@@ -2031,6 +2015,10 @@ class WebInterface(object):
                         parentdir = os.path.dirname(bookfile)
                         index = os.path.join(parentdir, 'playlist.ll')
                         if os.path.isfile(index):
+                            if booktype == 'zip':
+                                zipfile = zipAudio(parentdir, bookName)
+                                logger.debug('Opening %s %s' % (library, zipfile))
+                                return serve_file(zipfile, mimeType(zipfile), "attachment")
                             idx = check_int(booktype, 0)
                             if idx:
                                 with open(index, 'r') as f:
@@ -2038,7 +2026,6 @@ class WebInterface(object):
                                 bookfile = os.path.join(parentdir, part)
                                 logger.debug('Opening %s %s' % (library, bookfile))
                                 return serve_file(bookfile, mimeType(bookfile), "attachment")
-
                             cnt = sum(1 for line in open(index))
                             if cnt <= 1:
                                 logger.debug('Opening %s %s' % (library, bookfile))
@@ -2052,8 +2039,11 @@ class WebInterface(object):
                                         partlist += ' '
                                     partlist += str(item)
                                     item += 1
+                                    partlist += ' zip'
+                                safetitle = bookName.replace('&', '&amp;').replace("'", "")
+
                             return serve_template(templatename="choosetype.html", prefix="AudioBook",
-                                                  title=unaccented(bookName), pop_message=msg,
+                                                  title=safetitle, pop_message=msg,
                                                   pop_types=partlist, bookid=bookid,
                                                   valid=getList(partlist.replace(' ', ',')))
                         else:

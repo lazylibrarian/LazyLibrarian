@@ -1176,3 +1176,25 @@ def cleanCache():
     result.append(msg)
     logger.debug(msg)
     return result
+
+def zipAudio(source, zipname):
+    """ Zip up all the audiobook parts in source folder to zipname
+        Check if zipfile already exists, if not create a new one
+        Doesn't actually check for audiobook parts, just zips everything
+        Return full path to zipfile
+    """
+    zipfile = os.path.join(source, zipname + '.zip')
+    if not os.path.exists(zipfile):
+        logger.debug('Zipping up %s' % zipname)
+        cnt = 0
+        with zipfile.ZipFile(zipfile, 'w', zipfile.ZIP_DEFLATED) as myzip:
+            for rootdir, dirs, filenames in os.walk(makeBytestr(source)):
+                rootdir = makeUnicode(rootdir)
+                filenames = [makeUnicode(item) for item in filenames]
+                for filename in filenames:
+                    # don't include self or our special index file
+                    if not filename.endswith('.zip') and not filename.endswith('.ll'):
+                        cnt += 1
+                        myzip.write(os.path.join(rootdir, filename), filename)
+        logger.debug('Zipped up %s files' % cnt)
+    return zipfile
