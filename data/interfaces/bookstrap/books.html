@@ -154,7 +154,8 @@
                     btn = btn + flag
                     if ( btn.indexOf('Open') >= 0 ) {
                         btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
-                                '&library=eBook" target="_self"><i class="fa fa-book"></i> ' + btn + '</a>'}
+                            '&library=eBook" target="_self"><i class="fa fa-book"></i> ' + btn + '</a>'
+                    }
                     else if ( btn.indexOf('Wanted') >= 0 ) {
                         %if perm&lazylibrarian.perm_force:
                             btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=eBook" target="_self"><i class="fa fa-search"></i> Search</a></p>'

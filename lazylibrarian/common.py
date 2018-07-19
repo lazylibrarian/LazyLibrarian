@@ -39,7 +39,9 @@ import ssl
 import sqlite3
 import cherrypy
 
+# some mac versions include requests _without_ urllib3, our copy bundles it
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests
@@ -798,6 +800,10 @@ def logHeader():
     header += "uname: %s\n" % str(platform.uname())
     header += "version: %s\n" % str(platform.version())
     header += "mac_ver: %s\n" % str(platform.mac_ver())
+    if 'urllib3' in globals():
+        header += "urllib3: %s\n" % getattr(urllib3, '__version__', None)
+    else:
+        header += "urllib3: missing\n"
     header += "requests: %s\n" % getattr(requests, '__version__', None)
     tls_version = requests.get('https://www.howsmyssl.com/a/check', timeout=30, verify=False).json()['tls_version']
     if '1.2' not in tls_version and '1.3' not in tls_version:
@@ -1170,3 +1176,25 @@ def cleanCache():
     result.append(msg)
     logger.debug(msg)
     return result
+
+def zipAudio(source, zipname):
+    """ Zip up all the audiobook parts in source folder to zipname
+        Check if zipfile already exists, if not create a new one
+        Doesn't actually check for audiobook parts, just zips everything
+        Return full path to zipfile
+    """
+    zip_file = os.path.join(source, zipname + '.zip')
+    if not os.path.exists(zip_file):
+        logger.debug('Zipping up %s' % zipname)
+        cnt = 0
+        with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as myzip:
+            for rootdir, dirs, filenames in os.walk(makeBytestr(source)):
+                rootdir = makeUnicode(rootdir)
+                filenames = [makeUnicode(item) for item in filenames]
+                for filename in filenames:
+                    # don't include self or our special index file
+                    if not filename.endswith('.zip') and not filename.endswith('.ll'):
+                        cnt += 1
+                        myzip.write(os.path.join(rootdir, filename), filename)
+        logger.debug('Zipped up %s files' % cnt)
+    return zip_file

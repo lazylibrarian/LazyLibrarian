@@ -22,6 +22,7 @@ import time
 
 import lazylibrarian
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests

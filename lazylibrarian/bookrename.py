@@ -186,20 +186,15 @@ def audioRename(bookid):
                     if pattern in part[3]:
                         part[0] = cnt
                         break
+
+    parts.sort(key=lambda part: part[0])
     # check all parts are present
     cnt = 0
-    found = True
-    while found and cnt < len(parts):
-        found = False
-        cnt += 1
-        for part in parts:
-            trk = part[0]
-            if trk == cnt:
-                found = True
-                break
-        if not found:
-            logger.warn("%s: No part %i found" % (exists['BookName'], cnt))
+    while cnt < len(parts):
+        if parts[cnt][0] != cnt + 1:
+            logger.warn("%s: No part %i found" % (exists['BookName'], cnt + 1))
             return book_filename
+        cnt += 1
 
     if abridged:
         abridged = ' (%s)' % abridged
@@ -216,24 +211,26 @@ def audioRename(bookid):
             if not os.path.isdir(dest_path):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
 
-    for part in parts:
-        pattern = seriesinfo['AudioFile']
-        pattern = pattern.replace(
-            '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
-            '$Total', str(len(parts)))
-        pattern = ' '.join(pattern.split()).strip()
+    with open(os.path.join(dest_path, 'playlist.ll'), 'w') as pl:
+        for part in parts:
+            pattern = seriesinfo['AudioFile']
+            pattern = pattern.replace(
+                '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
+                '$Total', str(len(parts)))
+            pattern = ' '.join(pattern.split()).strip()
+            pattern = pattern + os.path.splitext(part[3])[1]
+            pl.write(pattern + '\n')
+            n = os.path.join(r, pattern)
+            o = os.path.join(r, part[3])
+            if o != n:
+                try:
+                    n = safe_move(o, n)
+                    if part[0] == 1:
+                        book_filename = n  # return part 1 of set
+                    logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
 
-        n = os.path.join(r, pattern + os.path.splitext(part[3])[1])
-        o = os.path.join(r, part[3])
-        if o != n:
-            try:
-                n = safe_move(o, n)
-                if part[0] == 1:
-                    book_filename = n  # return part 1 of set
-                logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
-
-            except Exception as e:
-                logger.error('Unable to rename [%s] to [%s] %s %s' % (o, n, type(e).__name__, str(e)))
+                except Exception as e:
+                    logger.error('Unable to rename [%s] to [%s] %s %s' % (o, n, type(e).__name__, str(e)))
     return book_filename
 
 

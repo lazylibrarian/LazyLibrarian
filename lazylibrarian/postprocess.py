@@ -346,6 +346,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
             else:
                 logger.debug("[%s] is not a directory" % item)
 
+        if not dirlist:
+            logger.error("No download directories are configured")
+
         snatched = myDB.select('SELECT * from wanted WHERE Status="Snatched"')
         logger.debug('Found %s file%s marked "Snatched"' % (len(snatched), plural(len(snatched))))
         if len(snatched):
@@ -621,11 +624,12 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
 
                             controlValueDict = {"Title": book['BookID']}
                             if older:  # check this in case processing issues arriving out of order
-                                newValueDict = {"LastAcquired": today(), "IssueStatus": "Open"}
+                                newValueDict = {"LastAcquired": today(),
+                                                "IssueStatus": lazylibrarian.CONFIG['FOUND_STATUS']}
                             else:
                                 newValueDict = {"IssueDate": book['AuxInfo'], "LastAcquired": today(),
                                                 "LatestCover": os.path.splitext(dest_file)[0] + '.jpg',
-                                                "IssueStatus": "Open"}
+                                                "IssueStatus": lazylibrarian.CONFIG['FOUND_STATUS']}
                             myDB.upsert("magazines", newValueDict, controlValueDict)
 
                             iss_id = create_id("%s %s" % (book['BookID'], book['AuxInfo']))
@@ -846,7 +850,8 @@ def check_contents(source, downloadid, book_type, title):
 
     # Downloaders return varying amounts of info using varying names
     if not downloadfiles:  # empty
-        logger.debug("No filenames returned by %s for %s" % (source, title))
+        if source not in ['DIRECT', 'RTORRENT', 'NZBGET', 'SABNZBD']:  # these don't give us a contents list
+            logger.debug("No filenames returned by %s for %s" % (source, title))
     else:
         logger.debug("Checking files in %s" % title)
         for entry in downloadfiles:
@@ -1401,14 +1406,15 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
 
     controlValueDict = {"BookID": bookid}
     if book_type == 'AudioBook':
-        newValueDict = {"AudioFile": dest_file, "AudioStatus": "Open", "AudioLibrary": now()}
+        newValueDict = {"AudioFile": dest_file, "AudioStatus": lazylibrarian.CONFIG['FOUND_STATUS'],
+                        "AudioLibrary": now()}
         myDB.upsert("books", newValueDict, controlValueDict)
         if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and lazylibrarian.CONFIG['IMP_RENAME']:
             book_filename = audioRename(bookid)
             if dest_file != book_filename:
                 myDB.action('UPDATE books set AudioFile=? where BookID=?', (book_filename, bookid))
     else:
-        newValueDict = {"Status": "Open", "BookFile": dest_file, "BookLibrary": now()}
+        newValueDict = {"Status": lazylibrarian.CONFIG['FOUND_STATUS'], "BookFile": dest_file, "BookLibrary": now()}
         myDB.upsert("books", newValueDict, controlValueDict)
 
     # update authors book counts

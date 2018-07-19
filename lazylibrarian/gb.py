@@ -18,6 +18,7 @@ import re
 import traceback
 
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests
@@ -259,12 +260,12 @@ class GoogleBooks:
             cache_hits = 0
             not_cached = 0
             startindex = 0
-            resultcount = 0
             removedResults = 0
             duplicates = 0
             ignored = 0
             added_count = 0
             updated_count = 0
+            locked_count = 0
             book_ignore_count = 0
             total_count = 0
             number_results = 1
@@ -381,68 +382,38 @@ class GoogleBooks:
                                 ignored += 1
                                 continue
 
-                        rejected = 0
+                        ignorable = ['future', 'date', 'isbn']
+                        if lazylibrarian.CONFIG['NO_LANG']:
+                            ignorable.append('lang')
+                        rejected = None
                         check_status = False
-                        book_status = bookstatus  # new_book status, or new_author status
-                        audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
-                        added = today()
-                        locked = False
                         existing_book = None
                         bookname = book['name']
                         bookid = item['id']
                         if not bookname:
                             logger.debug('Rejecting bookid %s for %s, no bookname' % (bookid, authorname))
-                            removedResults += 1
-                            rejected = 1
+                            rejected = 'name', 'No bookname'
                         else:
                             bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
-                            # GoodReads sometimes has multiple bookids for the same book (same author/title, different
-                            # editions) and sometimes uses the same bookid if the book is the same but the title is
-                            # slightly different. Not sure if googlebooks does too, but we only want one...
-                            cmd = 'SELECT Status,AudioStatus,Manual,BookAdded FROM books WHERE BookID=?'
-                            existing_book = myDB.match(cmd, (bookid,))
-                            if existing_book:
-                                book_status = existing_book['Status']
-                                audio_status = existing_book['AudioStatus']
-                                locked = existing_book['Manual']
-                                added = existing_book['BookAdded']
-                                if locked is None:
-                                    locked = False
-                                elif locked.isdigit():
-                                    locked = bool(int(locked))
-                            else:
-                                if rejected in [3, 4, 5]:
-                                    book_status = 'Ignored'
-                                    audio_status = 'Ignored'
-                                else:
-                                    book_status = bookstatus  # new_book status, or new_author status
-                                    audio_status = audiostatus
-                                added = today()
-                                locked = False
-
-                        if not rejected and re.match('[^\w-]', bookname):  # remove books with bad characters in title
-                            logger.debug("[%s] removed book for bad characters" % bookname)
-                            removedResults += 1
-                            rejected = 2
+                            if re.match('[^\w-]', bookname):  # remove books with bad characters in title
+                                logger.debug("[%s] removed book for bad characters" % bookname)
+                                rejected = 'chars', 'Bad characters in bookname'
 
                         if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
                             # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
                             if book['date'] > today()[:len(book['date'])]:
                                 logger.debug('Rejecting %s, future publication date %s' % (bookname, book['date']))
-                                removedResults += 1
-                                rejected = 3
+                                rejected = 'future', 'Future publication date [%s]' % book['date']
 
                         if not rejected and lazylibrarian.CONFIG['NO_PUBDATE']:
                             if not book['date']:
                                 logger.debug('Rejecting %s, no publication date' % bookname)
-                                removedResults += 1
-                                rejected = 4
+                                rejected = 'date', 'No publication date'
 
                         if not rejected and lazylibrarian.CONFIG['NO_ISBN']:
                             if not isbnhead:
                                 logger.debug('Rejecting %s, no isbn' % bookname)
-                                removedResults += 1
-                                rejected = 5
+                                rejected = 'isbn', 'No ISBN'
 
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
@@ -452,27 +423,67 @@ class GoogleBooks:
                                 if match['BookID'] != bookid:  # we have a different book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                                  (match['BookID'], authorname, bookname, bookid))
-                                    rejected = 6
+                                    rejected = 'bookid', 'Got under different bookid %s' % bookid
                                     duplicates += 1
 
-                        if not rejected:
-                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
-                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
-                            match = myDB.match(cmd, (bookid,))
-                            if match:  # we have a book with this bookid already
-                                if bookname != match['BookName'] or authorname != match['AuthorName']:
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
-                                                 (bookid, authorname, bookname, match['AuthorName'], match['BookName']))
-                                else:
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
-                                                 (bookid, authorname, bookname))
-                                    check_status = True
-                                duplicates += 1
-                                rejected = 7
+                        cmd = 'SELECT AuthorName,BookName,AudioStatus,books.Status FROM books,authors'
+                        cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
+                        match = myDB.match(cmd, (bookid,))
+                        if match:  # we have a book with this bookid already
+                            if bookname != match['BookName'] or authorname != match['AuthorName']:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
+                                             (bookid, authorname, bookname, match['AuthorName'], match['BookName']))
+                            else:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
+                                             (bookid, authorname, bookname))
+                                check_status = True
+                            duplicates += 1
+                            rejected = 'got', 'Already got this book in database'
 
-                        if check_status or not rejected or (
-                                lazylibrarian.CONFIG['IMP_IGNORE'] and rejected in [3, 4, 5]):  # dates, isbn
-                            if not locked:
+                            # Make sure we don't reject books we have got
+                            if match['Status'] in ['Open', 'Have'] or match['AudioStatus'] in ['Open', 'Have']:
+                                rejected = None
+
+                        if rejected and rejected[0] not in ignorable:
+                            removedResults += 1
+                        if check_status or rejected is None or (
+                                lazylibrarian.CONFIG['IMP_IGNORE'] and rejected[0] in ignorable):  # dates, isbn
+
+                            cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName '
+                            cmd += 'FROM books WHERE BookID=?'
+                            existing = myDB.match(cmd, (bookid,))
+                            if existing:
+                                book_status = existing['Status']
+                                audio_status = existing['AudioStatus']
+                                if lazylibrarian.CONFIG['FOUND_STATUS'] == 'Open':
+                                    if book_status == 'Have' and existing['BookFile']:
+                                        book_status = 'Open'
+                                    if audio_status == 'Have' and existing['AudioFile']:
+                                        audio_status = 'Open'
+                                locked = existing['Manual']
+                                added = existing['BookAdded']
+                                if locked is None:
+                                    locked = False
+                                elif locked.isdigit():
+                                    locked = bool(int(locked))
+                            else:
+                                book_status = bookstatus  # new_book status, or new_author status
+                                audio_status = audiostatus
+                                added = today()
+                                locked = False
+
+                            if rejected:
+                                reason = rejected[1]
+                                if rejected[0] in ignorable:
+                                    book_status = 'Ignored'
+                                    audio_status = 'Ignored'
+                                    book_ignore_count += 1
+                            else:
+                                reason = ''
+
+                            if locked:
+                                locked_count += 1
+                            else:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,
@@ -490,13 +501,13 @@ class GoogleBooks:
                                     "BookLang": booklang,
                                     "Status": book_status,
                                     "AudioStatus": audio_status,
-                                    "BookAdded": added
+                                    "BookAdded": added,
+                                    "WorkID": '',
+                                    "ScanResult": reason
                                 }
-                                resultcount += 1
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 logger.debug("Book found: " + bookname + " " + book['date'])
-                                updated = False
                                 if 'nocover' in book['img'] or 'nophoto' in book['img']:
                                     # try to get a cover from another source
                                     workcover, source = getBookCover(bookid)
@@ -505,7 +516,6 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
-                                        updated = True
 
                                 elif book['img'] and book['img'].startswith('http'):
                                     link, success, _ = cache_img("book", bookid, book['img'], refresh=refresh)
@@ -513,7 +523,6 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
-                                        updated = True
                                     else:
                                         logger.debug('Failed to cache image for %s' % book['img'])
 
@@ -525,14 +534,12 @@ class GoogleBooks:
                                     if newserieslist:
                                         serieslist = newserieslist
                                         logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-                                        updated = True
                                 setSeries(serieslist, bookid)
 
                                 new_status = setStatus(bookid, serieslist, bookstatus)
 
                                 if not new_status == book_status:
                                     book_status = new_status
-                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -544,12 +551,10 @@ class GoogleBooks:
                                     logger.debug("[%s] Added book: %s [%s] status %s" %
                                                  (authorname, bookname, booklang, book_status))
                                     added_count += 1
-                                elif updated:
+                                else:
                                     logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                  (authorname, bookname, booklang, book_status))
                                     updated_count += 1
-                            else:
-                                book_ignore_count += 1
             except KeyError:
                 pass
 
@@ -581,13 +586,13 @@ class GoogleBooks:
             }
 
             myDB.upsert("authors", newValueDict, controlValueDict)
-
+            resultcount = added_count + updated_count
             logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-            logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
-            logger.debug("Removed %s bad character or no-name result%s for author" %
-                         (removedResults, plural(removedResults)))
-            logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
-            logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+            logger.debug("Found %s locked book%s" % (locked_count, plural(locked_count)))
+            logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
+            logger.debug("Removed %s incorrect/incomplete result%s" % (removedResults, plural(removedResults)))
+            logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
+            logger.debug("Ignored %s book%s" % (book_ignore_count, plural(book_ignore_count)))
             logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
             myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',

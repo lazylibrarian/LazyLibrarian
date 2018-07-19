@@ -18,6 +18,7 @@ from base64 import b16encode, b32decode, b64encode
 from hashlib import sha1
 
 try:
+    import urllib3
     import requests
 except ImportError:
     import lib.requests as requests

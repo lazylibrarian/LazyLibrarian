@@ -16,6 +16,7 @@ import lib.simplejson as json
 # lazylibrarian version of requests was not working with pushbullet.
 # Not clear why, see as issue #675
 try:
+    import urllib3
     import requests
     from requests.auth import HTTPBasicAuth
 except ImportError:

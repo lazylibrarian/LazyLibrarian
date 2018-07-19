@@ -36,7 +36,7 @@ from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthor
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibreTest, syncCalibreList, calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType
+    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType, zipAudio
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
@@ -59,14 +59,6 @@ from lib.deluge_client import DelugeRPCClient
 from lib.six import PY2
 from mako import exceptions
 from mako.lookup import TemplateLookup
-
-try:
-    import zipfile
-except ImportError:
-    if PY2:
-        import lib.zipfile as zipfile
-    else:
-        import lib3.zipfile as zipfile
 
 
 def serve_template(templatename, **kwargs):
@@ -1952,18 +1944,11 @@ class WebInterface(object):
             res = myDB.match('SELECT AudioFile,BookName from books WHERE BookID=?', (itemid,))
             if res:
                 basefile = res['AudioFile']
-                # zip up all the audiobook parts in a temporary file
+                # zip up all the audiobook parts
                 if basefile and os.path.isfile(basefile):
-                    parentdir = os.path.dirname(basefile)
-                    with tempfile.NamedTemporaryFile() as tmp:
-                        with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as myzip:
-                            for root, dirs, files in os.walk(parentdir):
-                                for fname in files:
-                                    myzip.write(os.path.join(root, fname), fname)
-                        # Reset file pointer
-                        tmp.seek(0)
-                        return serve_file(tmp.name, 'application/x-zip-compressed', 'attachment',
-                                          name=res['BookName'] + '.zip')
+                    target = zipAudio(parentdir, res['BookName'])
+                    return serve_file(target, 'application/x-zip-compressed', 'attachment',
+                                       name=res['BookName'] + '.zip')
 
         basefile = None
         if ftype == 'book':
@@ -2029,8 +2014,43 @@ class WebInterface(object):
                 if library == 'AudioBook':
                     bookfile = bookdata["AudioFile"]
                     if bookfile and os.path.isfile(bookfile):
-                        logger.debug('Opening %s %s' % (library, bookfile))
-                        return serve_file(bookfile, mimeType(bookfile), "attachment")
+                        parentdir = os.path.dirname(bookfile)
+                        index = os.path.join(parentdir, 'playlist.ll')
+                        if os.path.isfile(index):
+                            if booktype == 'zip':
+                                zipfile = zipAudio(parentdir, bookName)
+                                logger.debug('Opening %s %s' % (library, zipfile))
+                                return serve_file(zipfile, mimeType(zipfile), "attachment")
+                            idx = check_int(booktype, 0)
+                            if idx:
+                                with open(index, 'r') as f:
+                                    part = f.read().splitlines()[idx - 1]
+                                bookfile = os.path.join(parentdir, part)
+                                logger.debug('Opening %s %s' % (library, bookfile))
+                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                            cnt = sum(1 for line in open(index))
+                            if cnt <= 1:
+                                logger.debug('Opening %s %s' % (library, bookfile))
+                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                            else:
+                                msg = "Please select which part to download"
+                                item = 1
+                                partlist = ''
+                                while item <= cnt:
+                                    if partlist:
+                                        partlist += ' '
+                                    partlist += str(item)
+                                    item += 1
+                                    partlist += ' zip'
+                                safetitle = bookName.replace('&', '&amp;').replace("'", "")
+
+                            return serve_template(templatename="choosetype.html", prefix="AudioBook",
+                                                  title=safetitle, pop_message=msg,
+                                                  pop_types=partlist, bookid=bookid,
+                                                  valid=getList(partlist.replace(' ', ',')))
+                        else:
+                            logger.debug('Opening %s %s' % (library, bookfile))
+                            return serve_file(bookfile, mimeType(bookfile), "attachment")
                 else:
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]
@@ -2625,7 +2645,7 @@ class WebInterface(object):
             cmd = 'SELECT BookLink,BookImg,BookID,BookName from books where Status="Open" order by BookLibrary DESC'
             title = 'Recently Downloaded Books'
         else:
-            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books order by BookAdded DESC'
+            cmd = 'SELECT BookLink,BookImg,BookID,BookName from books where Status != "Ignored" order by BookAdded DESC'
             title = 'Recently Added Books'
         results = myDB.select(cmd)
         if not len(results):
@@ -3811,27 +3831,31 @@ class WebInterface(object):
         if '^' not in target:
             return ''
         status, rowid = target.split('^')
-        cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult,Source,DownloadID '
-        cmd += 'from wanted where rowid=?'
-        match = myDB.match(cmd, (rowid,))
-        dltype = match['AuxInfo']
-        if dltype not in ['eBook', 'AudioBook']:
-            if not dltype:
-                dltype = 'eBook'
-            else:
-                dltype = 'Magazine'
-        message = "Title: %s<br>" % match['NZBtitle']
-        message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
-        message += "Date: %s<br>" % match['NZBdate']
-        message += "Size: %s Mb<br>" % match['NZBsize']
-        message += "Provider: %s<br>" % match['NZBprov']
-        message += "Downloader: %s<br>" % match['Source']
-        message += "DownloadID: %s<br>" % match['DownloadID']
-        message += "URL: %s<br>" % match['NZBurl']
-        if status == 'Processed':
-            message += "File: %s<br>" % match['DLResult']
+        if status == 'Ignored':
+            match = myDB.match('select ScanResult from books WHERE bookid=?', (rowid,))
+            message = 'Reason: %s<br>' % match['ScanResult']
         else:
-            message += "Error: %s<br>" % match['DLResult']
+            cmd = 'select NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,DLResult,Source,DownloadID '
+            cmd += 'from wanted where rowid=?'
+            match = myDB.match(cmd, (rowid,))
+            dltype = match['AuxInfo']
+            if dltype not in ['eBook', 'AudioBook']:
+                if not dltype:
+                    dltype = 'eBook'
+                else:
+                    dltype = 'Magazine'
+            message = "Title: %s<br>" % match['NZBtitle']
+            message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
+            message += "Date: %s<br>" % match['NZBdate']
+            message += "Size: %s Mb<br>" % match['NZBsize']
+            message += "Provider: %s<br>" % match['NZBprov']
+            message += "Downloader: %s<br>" % match['Source']
+            message += "DownloadID: %s<br>" % match['DownloadID']
+            message += "URL: %s<br>" % match['NZBurl']
+            if status == 'Processed':
+                message += "File: %s<br>" % match['DLResult']
+            else:
+                message += "Error: %s<br>" % match['DLResult']
         return message
 
     @cherrypy.expose
