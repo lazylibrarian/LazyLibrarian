@@ -555,8 +555,6 @@ class GoogleBooks:
                                     logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                  (authorname, bookname, booklang, book_status))
                                     updated_count += 1
-                            else:
-                                book_ignore_count += 1
             except KeyError:
                 pass
 
