@@ -379,7 +379,6 @@ class GoodReads:
 
             valid_langs = getList(lazylibrarian.CONFIG['IMP_PREFLANG'])
 
-            resultsCount = 0
             removedResults = 0
             duplicates = 0
             ignored = 0
@@ -387,6 +386,7 @@ class GoodReads:
             updated_count = 0
             book_ignore_count = 0
             total_count = 0
+            locked_count = 0
             loopCount = 0
             cover_count = 0
             isbn_count = 0
@@ -589,6 +589,7 @@ class GoodReads:
                                 if bookLanguage not in valid_langs:
                                     rejected = 'lang', 'Invalid language [%s]' % bookLanguage
                                     logger.debug('Rejecting %s, %s' % (bookname, rejected[1]))
+                                    ignored += 1
 
                         if not rejected:
                             dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '',
@@ -667,18 +668,6 @@ class GoodReads:
                                 logger.debug('Rejecting %s for %s, %s' %
                                              (bookname, authorNameResult, rejected[1]))
 
-                        if not rejected:
-                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
-                            cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
-                            match = myDB.match(cmd, (bookname, authorNameResult.replace('"', '""')))
-                            if match:
-                                if match['BookID'] != bookid:
-                                    # we have a different bookid for this author/title already
-                                    duplicates += 1
-                                    rejected = 'bookid', 'Got %s under bookid %s' % (bookid, match['BookID'])
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
-                                                 (bookid, authorNameResult, bookname, match['BookID']))
-
                         cmd = 'SELECT AuthorName,BookName,AudioStatus,books.Status FROM books,authors'
                         cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
                         match = myDB.match(cmd, (bookid,))
@@ -703,11 +692,22 @@ class GoodReads:
                             if match['Status'] in ['Open', 'Have'] or match['AudioStatus'] in ['Open', 'Have']:
                                 rejected = None
 
+                        if not rejected:
+                            cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
+                            cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
+                            match = myDB.match(cmd, (bookname, authorNameResult.replace('"', '""')))
+                            if match:
+                                if match['BookID'] != bookid:
+                                    # we have a different bookid for this author/title already
+                                    duplicates += 1
+                                    rejected = 'bookid', 'Got %s under bookid %s' % (bookid, match['BookID'])
+                                    logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
+                                                 (bookid, authorNameResult, bookname, match['BookID']))
+
                         if rejected and rejected[0] not in ignorable:
                             removedResults += 1
                         if not rejected or (rejected and rejected[0] in ignorable and
                                             lazylibrarian.CONFIG['IMP_IGNORE']):
-                            updated = False
                             cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName '
                             cmd += 'FROM books WHERE BookID=?'
                             existing = myDB.match(cmd, (bookid,))
@@ -721,8 +721,6 @@ class GoodReads:
                                         audio_status = 'Open'
                                 locked = existing['Manual']
                                 added = existing['BookAdded']
-                                if bookname != existing['BookName']:
-                                    updated = True
                                 if locked is None:
                                     locked = False
                                 elif locked.isdigit():
@@ -743,7 +741,9 @@ class GoodReads:
                                 reason = ''
 
                             # Leave alone if locked
-                            if not locked:
+                            if locked:
+                                locked_count += 1
+                            else:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,
@@ -766,8 +766,6 @@ class GoodReads:
                                     "ScanResult": reason
                                 }
 
-                                resultsCount += 1
-
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 # logger.debug("Book found: %s %s" % (bookname, bookdate))
 
@@ -784,7 +782,6 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
-                                        updated = True
 
                                 elif bookimg and bookimg.startswith('http'):
                                     start = time.time()
@@ -796,7 +793,6 @@ class GoodReads:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
-                                        updated = True
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
@@ -808,7 +804,6 @@ class GoodReads:
                                     if newserieslist:
                                         serieslist = newserieslist
                                         logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-                                        updated = True
                                 setSeries(serieslist, bookid)
 
                                 if not rejected:
@@ -816,7 +811,6 @@ class GoodReads:
 
                                     if new_status != book_status:
                                         book_status = new_status
-                                        updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -828,11 +822,10 @@ class GoodReads:
                                     logger.debug("[%s] Added book: %s [%s] status %s" %
                                                  (authorname, bookname, bookLanguage, book_status))
                                     added_count += 1
-                                elif updated:
+                                else:
                                     logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                  (authorname, bookname, bookLanguage, book_status))
                                     updated_count += 1
-
                     loopCount += 1
                     if 0 < lazylibrarian.CONFIG['MAX_BOOKPAGES'] < loopCount:
                         resultxml = None
@@ -881,16 +874,16 @@ class GoodReads:
             }
             myDB.upsert("authors", newValueDict, controlValueDict)
 
-            # This is here because GoodReads sometimes has several entries with the same BookID!
-            modified_count = added_count + updated_count
+            resultcount = added_count + updated_count
             loopCount -= 1
             logger.debug("Found %s result%s in %s page%s" % (total_count, plural(total_count),
                                                              loopCount, plural(loopCount)))
+            logger.debug("Found %s locked book%s" % (locked_count, plural(locked_count)))
             logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
             logger.debug("Removed %s incorrect/incomplete result%s" % (removedResults, plural(removedResults)))
             logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
-            logger.debug("Marked %s book%s by author as Ignored" % (book_ignore_count, plural(book_ignore_count)))
-            logger.debug("Imported/Updated %s book%s in %d secs" % (modified_count, plural(modified_count),
+            logger.debug("Ignored %s book%s" % (book_ignore_count, plural(book_ignore_count)))
+            logger.debug("Imported/Updated %s book%s in %d secs" % (resultcount, plural(resultcount),
                                                                     int(time.time() - auth_start)))
             if cover_count:
                 logger.debug("Fetched %s cover%s in %.2f sec" % (cover_count, plural(cover_count), cover_time))

@@ -260,12 +260,12 @@ class GoogleBooks:
             cache_hits = 0
             not_cached = 0
             startindex = 0
-            resultcount = 0
             removedResults = 0
             duplicates = 0
             ignored = 0
             added_count = 0
             updated_count = 0
+            locked_count = 0
             book_ignore_count = 0
             total_count = 0
             number_results = 1
@@ -481,7 +481,9 @@ class GoogleBooks:
                             else:
                                 reason = ''
 
-                            if not locked:
+                            if locked:
+                                locked_count += 1
+                            else:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,
@@ -503,11 +505,9 @@ class GoogleBooks:
                                     "WorkID": '',
                                     "ScanResult": reason
                                 }
-                                resultcount += 1
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
                                 logger.debug("Book found: " + bookname + " " + book['date'])
-                                updated = False
                                 if 'nocover' in book['img'] or 'nophoto' in book['img']:
                                     # try to get a cover from another source
                                     workcover, source = getBookCover(bookid)
@@ -516,7 +516,6 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": workcover}
                                         myDB.upsert("books", newValueDict, controlValueDict)
-                                        updated = True
 
                                 elif book['img'] and book['img'].startswith('http'):
                                     link, success, _ = cache_img("book", bookid, book['img'], refresh=refresh)
@@ -524,7 +523,6 @@ class GoogleBooks:
                                         controlValueDict = {"BookID": bookid}
                                         newValueDict = {"BookImg": link}
                                         myDB.upsert("books", newValueDict, controlValueDict)
-                                        updated = True
                                     else:
                                         logger.debug('Failed to cache image for %s' % book['img'])
 
@@ -536,14 +534,12 @@ class GoogleBooks:
                                     if newserieslist:
                                         serieslist = newserieslist
                                         logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-                                        updated = True
                                 setSeries(serieslist, bookid)
 
                                 new_status = setStatus(bookid, serieslist, bookstatus)
 
                                 if not new_status == book_status:
                                     book_status = new_status
-                                    updated = True
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -555,7 +551,7 @@ class GoogleBooks:
                                     logger.debug("[%s] Added book: %s [%s] status %s" %
                                                  (authorname, bookname, booklang, book_status))
                                     added_count += 1
-                                elif updated:
+                                else:
                                     logger.debug("[%s] Updated book: %s [%s] status %s" %
                                                  (authorname, bookname, booklang, book_status))
                                     updated_count += 1
@@ -592,13 +588,13 @@ class GoogleBooks:
             }
 
             myDB.upsert("authors", newValueDict, controlValueDict)
-
+            resultcount = added_count + updated_count
             logger.debug("Found %s total book%s for author" % (total_count, plural(total_count)))
-            logger.debug("Removed %s unwanted language result%s for author" % (ignored, plural(ignored)))
-            logger.debug("Removed %s bad character or no-name result%s for author" %
-                         (removedResults, plural(removedResults)))
-            logger.debug("Removed %s duplicate result%s for author" % (duplicates, plural(duplicates)))
-            logger.debug("Found %s book%s by author marked as Ignored" % (book_ignore_count, plural(book_ignore_count)))
+            logger.debug("Found %s locked book%s" % (locked_count, plural(locked_count)))
+            logger.debug("Removed %s unwanted language result%s" % (ignored, plural(ignored)))
+            logger.debug("Removed %s incorrect/incomplete result%s" % (removedResults, plural(removedResults)))
+            logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
+            logger.debug("Ignored %s book%s" % (book_ignore_count, plural(book_ignore_count)))
             logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
             myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',

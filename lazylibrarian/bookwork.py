@@ -777,7 +777,7 @@ def isbn_from_words(words):
     myDB = database.DBConnection()
     res = myDB.match("SELECT ISBN from isbn WHERE Words=?", (words,))
     if res:
-        logger.debug('Found cached ISBN for %s' % (words))
+        logger.debug('Found cached ISBN for %s' % words)
         return res['ISBN']
 
     baseurl = "http://www.google.com/search?q=ISBN+"
@@ -793,13 +793,14 @@ def isbn_from_words(words):
     content, success = fetchURL(search_url, headers=headers)
     # noinspection Annotator
     RE_ISBN13 = re.compile(r'97[89]{1}(?:-?\d){10,16}|97[89]{1}[- 0-9]{10,16}')
-    RE_ISBN10 = re.compile(r'ISBN\x20(?=.{13}$)\d{1,5}([- ])\d{1,7}'
-                           r'\1\d{1,6}\1(\d|X)$|[- 0-9X]{10,16}')
+    RE_ISBN10 = re.compile(r'ISBN\x20(?=.{13}$)\d{1,5}([- ])\d{1,7}\1\d{1,6}\1(\d|X)$|[- 0-9X]{10,16}')
 
-    # take the first answer that's a plain isbn, no spaces, dashes etc.
+    # take the first valid looking answer
     res = RE_ISBN13.findall(content)
     logger.debug('Found %s ISBN13 for %s' % (len(res), words))
     for item in res:
+        if len(item) > 13:
+            item = item.replace('-', '').replace(' ', '')
         if len(item) == 13:
             myDB.action("INSERT into isbn (Words, ISBN) VALUES (?, ?)", (words, item))
             return item
@@ -807,9 +808,11 @@ def isbn_from_words(words):
     res = RE_ISBN10.findall(content)
     logger.debug('Found %s ISBN10 for %s' % (len(res), words))
     for item in res:
+        if len(item) > 10:
+            item = item.replace('-', '').replace(' ', '')
         if len(item) == 10:
             myDB.action("INSERT into isbn (Words, ISBN) VALUES (?, ?)", (words, item))
             return item
 
-    logger.debug('No ISBN found for %s' % words)
+    logger.debug('No valid ISBN found for %s' % words)
     return None
