@@ -413,7 +413,6 @@ class GoodReads:
                     for book in resultxml:
                         total_count += 1
                         rejected = None
-                        reason = ''
                         booksub = ''
                         series = ''
                         seriesNum = ''
@@ -680,38 +679,46 @@ class GoodReads:
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
                                                  (bookid, authorNameResult, bookname, match['BookID']))
 
-                        if not rejected:
-                            cmd = 'SELECT AuthorName,BookName,books.Status FROM books,authors'
-                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
-                            match = myDB.match(cmd, (bookid,))
-                            if match:
-                                # we have a book with this bookid already
-                                if match['BookName'] == 'Untitled' and bookname != 'Untitled':
-                                    # goodreads has updated the name
-                                    logger.debug('Renaming bookid %s for [%s][%s] to [%s]' %
-                                                 (bookid, authorNameResult, match['BookName'], bookname))
-                                elif bookname != match['BookName']:
-                                    rejected = 'bookname', 'Different bookname for this bookid [%s][%s]' % (
-                                                bookname, match['BookName'])
-                                    logger.debug('Rejecting bookid %s, %s' % (bookid, rejected[1]))
-                                elif authorNameResult != match['AuthorName']:
-                                    rejected = 'author', 'Different author for this bookid [%s][%s]' % (
-                                                authorNameResult, match['AuthorName'])
-                                    logger.debug('Rejecting bookid %s, %s' % (bookid, rejected[1]))
-                                else:
-                                    logger.debug('Bookid %s for [%s][%s] is in database marked %s' %
-                                                 (bookid, authorNameResult, bookname, match['Status']))
+                        cmd = 'SELECT AuthorName,BookName,AudioStatus,books.Status FROM books,authors'
+                        cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
+                        match = myDB.match(cmd, (bookid,))
+                        if match:
+                            # we have a book with this bookid already
+                            if match['BookName'] == 'Untitled' and bookname != 'Untitled':
+                                # goodreads has updated the name
+                                logger.debug('Renaming bookid %s for [%s][%s] to [%s]' %
+                                             (bookid, authorNameResult, match['BookName'], bookname))
+                            elif bookname != match['BookName']:
+                                rejected = 'bookname', 'Different bookname for this bookid [%s][%s]' % (
+                                            bookname, match['BookName'])
+                                logger.debug('Rejecting bookid %s, %s' % (bookid, rejected[1]))
+                            elif authorNameResult != match['AuthorName']:
+                                rejected = 'author', 'Different author for this bookid [%s][%s]' % (
+                                            authorNameResult, match['AuthorName'])
+                                logger.debug('Rejecting bookid %s, %s' % (bookid, rejected[1]))
+                            else:
+                                logger.debug('Bookid %s for [%s][%s] is in database marked %s' %
+                                             (bookid, authorNameResult, bookname, match['Status']))
+                            # Make sure we don't reject books we have got
+                            if match['Status'] in ['Open', 'Have'] or match['AudioStatus'] in ['Open', 'Have']:
+                                rejected = None
 
                         if rejected and rejected[0] not in ignorable:
                             removedResults += 1
                         if not rejected or (rejected and rejected[0] in ignorable and
-                                             lazylibrarian.CONFIG['IMP_IGNORE']):
+                                            lazylibrarian.CONFIG['IMP_IGNORE']):
                             updated = False
-                            cmd = 'SELECT Status,AudioStatus,Manual,BookAdded,BookName FROM books WHERE BookID=?'
+                            cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName '
+                            cmd += 'FROM books WHERE BookID=?'
                             existing = myDB.match(cmd, (bookid,))
                             if existing:
                                 book_status = existing['Status']
                                 audio_status = existing['AudioStatus']
+                                if lazylibrarian.CONFIG['FOUND_STATUS'] == 'Open':
+                                    if book_status == 'Have' and existing['BookFile']:
+                                        book_status = 'Open'
+                                    if audio_status == 'Have' and existing['AudioFile']:
+                                        audio_status = 'Open'
                                 locked = existing['Manual']
                                 added = existing['BookAdded']
                                 if bookname != existing['BookName']:

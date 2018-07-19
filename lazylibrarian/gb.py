@@ -387,10 +387,6 @@ class GoogleBooks:
                             ignorable.append('lang')
                         rejected = None
                         check_status = False
-                        book_status = bookstatus  # new_book status, or new_author status
-                        audio_status = lazylibrarian.CONFIG['NEWAUDIO_STATUS']
-                        added = today()
-                        locked = False
                         existing_book = None
                         bookname = book['name']
                         bookid = item['id']
@@ -399,29 +395,9 @@ class GoogleBooks:
                             rejected = 'name', 'No bookname'
                         else:
                             bookname = replace_all(unaccented(bookname), {':': '.', '"': '', '\'': ''}).strip()
-                            # GoodReads sometimes has multiple bookids for the same book (same author/title, different
-                            # editions) and sometimes uses the same bookid if the book is the same but the title is
-                            # slightly different. Not sure if googlebooks does too, but we only want one...
-                            cmd = 'SELECT Status,AudioStatus,Manual,BookAdded FROM books WHERE BookID=?'
-                            existing_book = myDB.match(cmd, (bookid,))
-                            if existing_book:
-                                book_status = existing_book['Status']
-                                audio_status = existing_book['AudioStatus']
-                                locked = existing_book['Manual']
-                                added = existing_book['BookAdded']
-                                if locked is None:
-                                    locked = False
-                                elif locked.isdigit():
-                                    locked = bool(int(locked))
-                            else:
-                                book_status = bookstatus  # new_book status, or new_author status
-                                audio_status = audiostatus
-                                added = today()
-                                locked = False
-
-                        if not rejected and re.match('[^\w-]', bookname):  # remove books with bad characters in title
-                            logger.debug("[%s] removed book for bad characters" % bookname)
-                            rejected = 'chars', 'Bad characters in bookname'
+                            if re.match('[^\w-]', bookname):  # remove books with bad characters in title
+                                logger.debug("[%s] removed book for bad characters" % bookname)
+                                rejected = 'chars', 'Bad characters in bookname'
 
                         if not rejected and lazylibrarian.CONFIG['NO_FUTURE']:
                             # googlebooks sometimes gives yyyy, sometimes yyyy-mm, sometimes yyyy-mm-dd
@@ -450,33 +426,61 @@ class GoogleBooks:
                                     rejected = 'bookid', 'Got under different bookid %s' % bookid
                                     duplicates += 1
 
-                        if not rejected:
-                            cmd = 'SELECT AuthorName,BookName FROM books,authors'
-                            cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
-                            match = myDB.match(cmd, (bookid,))
-                            if match:  # we have a book with this bookid already
-                                if bookname != match['BookName'] or authorname != match['AuthorName']:
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
-                                                 (bookid, authorname, bookname, match['AuthorName'], match['BookName']))
-                                else:
-                                    logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
-                                                 (bookid, authorname, bookname))
-                                    check_status = True
-                                duplicates += 1
-                                rejected = 'got', 'Already got this book in database'
+                        cmd = 'SELECT AuthorName,BookName,AudioStatus,books.Status FROM books,authors'
+                        cmd += ' WHERE authors.AuthorID = books.AuthorID AND BookID=?'
+                        match = myDB.match(cmd, (bookid,))
+                        if match:  # we have a book with this bookid already
+                            if bookname != match['BookName'] or authorname != match['AuthorName']:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got bookid for [%s][%s]' %
+                                             (bookid, authorname, bookname, match['AuthorName'], match['BookName']))
+                            else:
+                                logger.debug('Rejecting bookid %s for [%s][%s] already got this book in database' %
+                                             (bookid, authorname, bookname))
+                                check_status = True
+                            duplicates += 1
+                            rejected = 'got', 'Already got this book in database'
 
+                            # Make sure we don't reject books we have got
+                            if match['Status'] in ['Open', 'Have'] or match['AudioStatus'] in ['Open', 'Have']:
+                                rejected = None
+
+                        if rejected and rejected[0] not in ignorable:
+                            removedResults += 1
                         if check_status or rejected is None or (
                                 lazylibrarian.CONFIG['IMP_IGNORE'] and rejected[0] in ignorable):  # dates, isbn
+
+                            cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName '
+                            cmd += 'FROM books WHERE BookID=?'
+                            existing = myDB.match(cmd, (bookid,))
+                            if existing:
+                                book_status = existing['Status']
+                                audio_status = existing['AudioStatus']
+                                if lazylibrarian.CONFIG['FOUND_STATUS'] == 'Open':
+                                    if book_status == 'Have' and existing['BookFile']:
+                                        book_status = 'Open'
+                                    if audio_status == 'Have' and existing['AudioFile']:
+                                        audio_status = 'Open'
+                                locked = existing['Manual']
+                                added = existing['BookAdded']
+                                if locked is None:
+                                    locked = False
+                                elif locked.isdigit():
+                                    locked = bool(int(locked))
+                            else:
+                                book_status = bookstatus  # new_book status, or new_author status
+                                audio_status = audiostatus
+                                added = today()
+                                locked = False
+
                             if rejected:
                                 reason = rejected[1]
                                 if rejected[0] in ignorable:
                                     book_status = 'Ignored'
                                     audio_status = 'Ignored'
                                     book_ignore_count += 1
-                                else:
-                                    removedResults += 1
                             else:
                                 reason = ''
+
                             if not locked:
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
