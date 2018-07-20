@@ -2,17 +2,8 @@
 <feed xmlns="http://www.w3.org/2005/Atom"
       xmlns:xhtml="http://www.w3.org/1999/xhtml"
       xmlns:opds="http://opds-spec.org/2010/catalog"
+      xmlns:odl="http://opds-spec.org/odl" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/"
       xmlns:dcterms="http://purl.org/dc/terms/">
-<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
-  <ShortName>LazyLibrarian</ShortName>
-  <Description>Search LazyLibrarian Database</Description>
-  <InputEncoding>UTF-8</InputEncoding>
-  <OutputEncoding>UTF-8</OutputEncoding>
-  <Url type="text/html" template="/search?query={searchTerms}"/>
-  <Url type="application/atom+xml" template="/search.atom?query={searchTerms}"/>
-  <Url type="application/atom+xml;profile=opds-catalog;kind=acquisition" template="/search.atom?query={searchTerms}"/>
-  <Query role="example" searchTerms="robot" />
-</OpenSearchDescription>
     <title>${opds['title']}</title>
     <id>${opds['id']}</id>
     <updated>${opds['updated']}</updated>

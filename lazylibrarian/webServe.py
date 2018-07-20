@@ -69,7 +69,6 @@ def serve_template(templatename, **kwargs):
         logger.error("Unable to locate template [%s], reverting to legacy" % template_dir)
         lazylibrarian.CONFIG['HTTP_LOOK'] = 'legacy'
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
-
     _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
     # noinspection PyBroadException
     try:
@@ -78,8 +77,11 @@ def serve_template(templatename, **kwargs):
             return template.render(perm=0, message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
 
-        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        elif templatename == "opensearch.xml":
             template = _hplookup.get_template(templatename)
+            return template.render()
+
+        elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             # noinspection PyArgumentList
             return template.render(perm=lazylibrarian.perm_admin, **kwargs)
 
@@ -143,7 +145,6 @@ def serve_template(templatename, **kwargs):
 
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_admin:
             logger.debug("User %s: %s %s" % (username, perm, templatename))
-
         template = _hplookup.get_template(templatename)
         if templatename == "login.html":
             return template.render(perm=0, title="Redirected")

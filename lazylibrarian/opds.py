@@ -56,6 +56,8 @@ class OPDS(object):
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + '/opds'
             else:
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
+        # self.opdsroot = 'http://192.168.1.104:5299' + self.opdsroot
+        self.searchroot = self.opdsroot.replace('/opds', '')
 
     def checkParams(self, **kwargs):
 
@@ -98,7 +100,6 @@ class OPDS(object):
                 return serve_file(self.img, content_type='image/jpeg')
             if self.file and self.filename:
                 logger.debug('Downloading %s: %s' % (self.filename, self.file))
-                # return serve_download(path=self.file, name=self.filename)
                 return serve_file(self.file, mimeType(self.filename), 'attachment', name=self.filename)
             if isinstance(self.data, string_types):
                 return self.data
@@ -124,8 +125,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='self'))
-        links.append(getLink(href='%s?cmd=search' % self.opdsroot, ftype='application/opensearchdescription+xml',
-                             rel='search', title='Search'))
+        # links.append(getLink(href='%s?cmd=search&amp;query={searchTerms}&amp;index={startIndex?}' % self.opdsroot, ftype='application/opensearchdescription+xml', rel='search', title='Search LazyLibrarian'))
+        links.append(getLink(href='%s/opensearch.xml' % self.searchroot, ftype='application/opensearchdescription+xml', rel='search', title='Search LazyLibrarian'))
         entries.append(
             {
                 'title': 'Recent eBooks',
@@ -623,7 +624,7 @@ class OPDS(object):
         for book in page:
             title = makeUnicode(book['BookName'])
             entry = {'title': escape(title),
-                     'id': escape('issue:%s' % book['BookID']),
+                     'id': escape('book:%s' % book['BookID']),
                      'updated': opdstime(book['BookLibrary']),
                      'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
                      'kind': 'acquisition',
@@ -682,7 +683,7 @@ class OPDS(object):
         for book in page:
             title = makeUnicode(book['BookName'])
             entry = {'title': escape(title),
-                     'id': escape('issue:%s' % book['BookID']),
+                     'id': escape('audio:%s' % book['BookID']),
                      'updated': opdstime(book['AudioLibrary']),
                      'href': '%s?cmd=Serve&amp;audioid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
                      'kind': 'acquisition',

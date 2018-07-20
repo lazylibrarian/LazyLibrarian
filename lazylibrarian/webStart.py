@@ -98,6 +98,11 @@ def initialize(options=None):
             'tools.staticfile.on': True,
             # 'tools.staticfile.filename': "images/favicon.ico"
             'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'images', 'favicon.ico')
+        },
+        '/opensearch.xml': {
+            'tools.staticfile.on': True,
+            # 'tools.staticfile.filename': "images/favicon.ico"
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearch.xml')
         }
     }
 
