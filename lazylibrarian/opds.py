@@ -23,12 +23,12 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int
+from lazylibrarian.formatter import makeUnicode, check_int, plural, md5_utf8
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
-from lib.six import PY2, string_types
+from lib.six import string_types
 
 
 searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags']
@@ -56,6 +56,8 @@ class OPDS(object):
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + '/opds'
             else:
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
+
+        self.searchroot = self.opdsroot.replace('/opds', '')
 
     def checkParams(self, **kwargs):
 
@@ -89,16 +91,16 @@ class OPDS(object):
                 remote_ip = cherrypy.request.remote.ip
             logger.debug('Received OPDS command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
             if self.cmd == 'search':
-                if 't' not in self.kwargs or self.kwargs['t'] not in searchable:
-                    self.kwargs['t'] = 'RecentBooks'
-                self.cmd = self.kwargs['t']
+                if 't' in self.kwargs and self.kwargs['t'] in searchable:
+                    self.cmd = self.kwargs['t']
+                else:
+                    self.cmd = 'RecentBooks'
             methodToCall = getattr(self, "_" + self.cmd)
             _ = methodToCall(**self.kwargs)
             if self.img:
                 return serve_file(self.img, content_type='image/jpeg')
             if self.file and self.filename:
                 logger.debug('Downloading %s: %s' % (self.filename, self.file))
-                # return serve_download(path=self.file, name=self.filename)
                 return serve_file(self.file, mimeType(self.filename), 'attachment', name=self.filename)
             if isinstance(self.data, string_types):
                 return self.data
@@ -124,8 +126,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='self'))
-        links.append(getLink(href='%s?cmd=search' % self.opdsroot, ftype='application/opensearchdescription+xml',
-                             rel='search', title='Search'))
+        links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
         entries.append(
             {
                 'title': 'Recent eBooks',
@@ -204,13 +206,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        # logger.debug("Returning %s entries" % len(entries))
         self.data = feed
         return
 
     def _Authors(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS - Authors', 'id': 'Authors', 'updated': now()}
         links = []
@@ -219,6 +222,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Authors' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        links.append(getLink(href='%s/opensearchauthors.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Authors'))
         cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded from Authors WHERE "
         if 'query' in kwargs:
             cmd += "AuthorName LIKE '%" + kwargs['query'] + "%' AND "
@@ -230,17 +235,21 @@ class OPDS(object):
             havebooks = check_int(author['HaveBooks'], 0)
             lastupdated = author['DateAdded']
             name = makeUnicode(author['AuthorName'])
-            entries.append(
-                {
+            entry = {
                     'title': escape('%s (%s/%s)' % (name, havebooks, totalbooks)),
                     'id': escape('author:%s' % author['AuthorID']),
                     'updated': opdstime(lastupdated),
                     'content': escape('%s (%s)' % (name, havebooks)),
                     'href': '%s?cmd=Author&amp;authorid=%s' % (self.opdsroot, author['AuthorID']),
+                    'author': escape('%s' % name),
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-            )
+            # removed authorimg as it stops navigation ??
+            # if lazylibrarian.CONFIG['OPDS_METAINFO']:
+            #    entry['image'] = self.searchroot + '/' + author['AuthorImg']
+            entries.append(entry)
+
         if len(results) > (index + self.PAGE_SIZE):
             links.append(
                 getLink(href='%s?cmd=Authors&amp;index=%s' % (self.opdsroot, index + self.PAGE_SIZE),
@@ -252,13 +261,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s author%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 
     def _Magazines(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS - Magazines', 'id': 'Magazines', 'updated': now()}
         links = []
@@ -267,7 +277,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Magazines' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
-
+        links.append(getLink(href='%s/opensearchmagazines.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Magazines'))
         cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
         cmd += ' as Iss_Cnt from magazines '
         if 'query' in kwargs:
@@ -287,10 +298,9 @@ class OPDS(object):
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-                # If we add a magazine cover here we can't navigate??
-                # if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                #     res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
-                #     entry['image'] = res[0]
+                if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                    res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
+                    entry['image'] = self.searchroot + '/' + res[0]
                 entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
@@ -304,13 +314,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s magazine%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 
     def _Series(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS - Series', 'id': 'Series', 'updated': now()}
         links = []
@@ -319,6 +330,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Series' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        links.append(getLink(href='%s/opensearchseries.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Series'))
         cmd = "SELECT SeriesName,SeriesID,Have,Total from Series WHERE CAST(Have AS INTEGER) > 0 "
         if 'query' in kwargs:
             cmd += "AND SeriesName LIKE '%" + kwargs['query'] + "%' "
@@ -360,13 +373,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s series" % len(entries))
         self.data = feed
         return
 
     def _Magazine(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         if 'magid' not in kwargs:
             self.data = self._error_with_message('No Magazine Provided')
@@ -391,7 +405,7 @@ class OPDS(object):
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 fname = os.path.splitext(issue['IssueFile'])[0]
                 res = cache_img('magazine', issue['IssueID'], fname + '.jpg')
-                entry['image'] = res[0]
+                entry['image'] = self.searchroot + '/' + res[0]
             entries.append(entry)
 
         feed = {}
@@ -416,43 +430,53 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s issue%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 
     def _Author(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         if 'authorid' not in kwargs:
             self.data = self._error_with_message('No Author Provided')
             return
         links = []
         entries = []
-        cmd = "SELECT AuthorName from authors WHERE AuthorID='%s'"
-        author = myDB.match(cmd % kwargs['authorid'])
+        links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
+        author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (kwargs['authorid'],))
         author = makeUnicode(author['AuthorName'])
-        cmd = "SELECT BookName,BookDate,BookID,BookAdded,BookDesc,BookImg,BookFile from books WHERE "
+        cmd = "SELECT BookName,BookDate,BookID,BookAdded,BookDesc,BookImg,BookFile,AudioFile from books WHERE "
         if 'query' in kwargs:
             cmd += "BookName LIKE '%" + kwargs['query'] + "%' AND "
         cmd += "(Status='Open' or AudioStatus='Open') and AuthorID=? order by BookDate DESC"
         results = myDB.select(cmd, (kwargs['authorid'],))
         page = results[index:(index + self.PAGE_SIZE)]
+
         for book in page:
-            entry = {'title': escape('%s (%s)' % (book['BookName'], book['BookDate'])),
-                     'id': escape('book:%s' % book['BookID']),
-                     'updated': opdstime(book['BookAdded']),
-                     'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
-                     'kind': 'acquisition',
-                     'rel': 'file',
-                     'type': mimeType(book['BookFile'])}
-            if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                entry['image'] = book['BookImg']
-                entry['content'] = escape('%s - %s' % (book['BookName'], book['BookDesc']))
-                entry['author'] = escape('%s' % author)
-            else:
-                entry['content'] = escape('%s (%s)' % (book['BookName'], book['BookAdded']))
-            entries.append(entry)
+            mime_type = None
+            if book['BookFile']:
+                mime_type = mimeType(book['BookFile'])
+            elif book['AudioFile']:
+                mime_type = mimeType(book['AudioFile'])
+
+            if mime_type:
+                entry = {'title': escape('%s (%s)' % (book['BookName'], book['BookDate'])),
+                         'id': escape('book:%s' % book['BookID']),
+                         'updated': opdstime(book['BookAdded']),
+                         'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
+                         'kind': 'acquisition',
+                         'rel': 'file',
+                         'type': mime_type}
+                if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                    entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['content'] = escape('%s - %s' % (book['BookName'], book['BookDesc']))
+                    entry['author'] = escape('%s' % author)
+                else:
+                    entry['content'] = escape('%s (%s)' % (book['BookName'], book['BookAdded']))
+                entries.append(entry)
 
         feed = {}
         authorname = '%s (%s)' % (escape(author), len(entries))
@@ -475,16 +499,16 @@ class OPDS(object):
                                                                              quote_plus(kwargs['authorid']),
                                                                              index - self.PAGE_SIZE),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
-
         feed['links'] = links
         feed['entries'] = entries
         self.data = feed
+        logger.debug("Returning %s book%s" % (len(entries), plural(len(entries))))
         return
 
     def _Members(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         if 'seriesid' not in kwargs:
             self.data = self._error_with_message('No Series Provided')
@@ -492,7 +516,7 @@ class OPDS(object):
         links = []
         entries = []
         series = myDB.match("SELECT SeriesName from Series WHERE SeriesID=?", (kwargs['seriesid'],))
-        cmd = "SELECT BookName,BookDate,BookAdded,BookDesc,BookImg,BookFile,books.BookID,SeriesNum "
+        cmd = "SELECT BookName,BookDate,BookAdded,BookDesc,BookImg,BookFile,AudioFile,books.BookID,SeriesNum "
         cmd += "from books,member where (Status='Open' or AudioStatus='Open') and SeriesID=? "
         cmd += "and books.bookid = member.bookid order by CAST(SeriesNum AS INTEGER)"
         results = myDB.select(cmd, (kwargs['seriesid'],))
@@ -502,27 +526,33 @@ class OPDS(object):
         author = res['AuthorName']
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
-            if book['SeriesNum']:
-                snum = ' (%s)' % book['SeriesNum']
-            else:
-                snum = ''
-            entry = {'title': escape('%s%s' % (book['BookName'], snum)),
-                     'id': escape('book:%s' % book['BookID']),
-                     'updated': opdstime(book['BookAdded']),
-                     'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
-                     'kind': 'acquisition',
-                     'rel': 'file',
-                     'author': escape("%s" % author),
-                     'type': mimeType(book['BookFile'])}
+            mime_type = None
+            if book['BookFile']:
+                mime_type = mimeType(book['BookFile'])
+            elif book['AudioFile']:
+                mime_type = mimeType(book['AudioFile'])
+            if mime_type:
+                if book['SeriesNum']:
+                    snum = ' (%s)' % book['SeriesNum']
+                else:
+                    snum = ''
+                entry = {'title': escape('%s%s' % (book['BookName'], snum)),
+                         'id': escape('book:%s' % book['BookID']),
+                         'updated': opdstime(book['BookAdded']),
+                         'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
+                         'kind': 'acquisition',
+                         'rel': 'file',
+                         'author': escape("%s" % author),
+                         'type': mime_type}
 
-            if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                entry['image'] = book['BookImg']
-                entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
-                                                             book['SeriesNum'], book['BookDesc']))
-            else:
-                entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
-                                                             book['SeriesNum'], book['BookAdded']))
-            entries.append(entry)
+                if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                    entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
+                                                                 book['SeriesNum'], book['BookDesc']))
+                else:
+                    entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
+                                                                 book['SeriesNum'], book['BookAdded']))
+                entries.append(entry)
 
         feed = {}
         seriesname = '%s (%s) %s' % (escape(series['SeriesName']), len(entries), author)
@@ -546,13 +576,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s book%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 
     def _RecentMags(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS - Recent Magazines', 'id': 'Recent Magazines', 'updated': now()}
         links = []
@@ -561,7 +592,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=RecentMags' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
-
+        links.append(getLink(href='%s/opensearchmagazines.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Magazines'))
         cmd = "select Title,IssueID,IssueAcquired,IssueDate,IssueFile from issues "
         cmd += "where IssueFile != '' "
         if 'query' in kwargs:
@@ -578,12 +610,12 @@ class OPDS(object):
                      'href': '%s?cmd=Serve&amp;issueid=%s' % (self.opdsroot, quote_plus(mag['IssueID'])),
                      'kind': 'acquisition',
                      'rel': 'file',
-                     'author': title,
+                     'author': escape(title),
                      'type': mimeType(mag['IssueFile'])}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 fname = os.path.splitext(mag['IssueFile'])[0]
                 res = cache_img('magazine', mag['IssueID'], fname + '.jpg')
-                entry['image'] = res[0]
+                entry['image'] = self.searchroot + '/' + res[0]
             entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
@@ -597,13 +629,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s issue%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 
     def _RecentBooks(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS - Recent Books', 'id': 'Recent Books', 'updated': now()}
         links = []
@@ -612,7 +645,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=RecentBooks' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
-
+        links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
         cmd = "select BookName,BookID,BookLibrary,BookDate,BookImg,BookDesc,BookAdded,BookFile,AuthorID "
         cmd += "from books where Status='Open' "
         if 'query' in kwargs:
@@ -621,23 +655,29 @@ class OPDS(object):
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
-            title = makeUnicode(book['BookName'])
-            entry = {'title': escape(title),
-                     'id': escape('issue:%s' % book['BookID']),
-                     'updated': opdstime(book['BookLibrary']),
-                     'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
-                     'kind': 'acquisition',
-                     'rel': 'file',
-                     'type': mimeType(book['BookFile'])}
-            if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
-                author = makeUnicode(author['AuthorName'])
-                entry['image'] = book['BookImg']
-                entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
-                entry['author'] = escape('%s' % author)
-            else:
-                entry['content'] = escape('%s (%s)' % (title, book['BookAdded']))
-            entries.append(entry)
+            mime_type = None
+            if book['BookFile']:
+                mime_type = mimeType(book['BookFile'])
+            elif book['AudioFile']:
+                mime_type = mimeType(book['AudioFile'])
+            if mime_type:
+                title = makeUnicode(book['BookName'])
+                entry = {'title': escape(title),
+                         'id': escape('book:%s' % book['BookID']),
+                         'updated': opdstime(book['BookLibrary']),
+                         'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
+                         'kind': 'acquisition',
+                         'rel': 'file',
+                         'type': mime_type}
+                if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                    author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
+                    author = makeUnicode(author['AuthorName'])
+                    entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
+                    entry['author'] = escape('%s' % author)
+                else:
+                    entry['content'] = escape('%s (%s)' % (title, book['BookAdded']))
+                entries.append(entry)
 
             """
                 <link type="application/epub+zip" rel="http://opds-spec.org/acquisition"
@@ -657,13 +697,14 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s book%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 
     def _RecentAudio(self, **kwargs):
         index = 0
         if 'index' in kwargs:
-            index = int(kwargs['index'])
+            index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS - Recent AudioBooks', 'id': 'Recent AudioBooks', 'updated': now()}
         links = []
@@ -672,6 +713,8 @@ class OPDS(object):
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=RecentAudio' % self.opdsroot,
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
 
         cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookAdded,AuthorID from books WHERE "
         if 'query' in kwargs:
@@ -682,7 +725,7 @@ class OPDS(object):
         for book in page:
             title = makeUnicode(book['BookName'])
             entry = {'title': escape(title),
-                     'id': escape('issue:%s' % book['BookID']),
+                     'id': escape('audio:%s' % book['BookID']),
                      'updated': opdstime(book['AudioLibrary']),
                      'href': '%s?cmd=Serve&amp;audioid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
                      'kind': 'acquisition',
@@ -691,7 +734,7 @@ class OPDS(object):
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
                 author = makeUnicode(author['AuthorName'])
-                entry['image'] = book['BookImg']
+                entry['image'] = self.searchroot + '/' + book['BookImg']
                 entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
                 entry['author'] = escape('%s' % author)
             else:
@@ -709,6 +752,7 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
+        logger.debug("Returning %s result%s" % (len(entries), plural(len(entries))))
         self.data = feed
         return
 

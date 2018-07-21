@@ -940,6 +940,7 @@ def db_v33(myDB, upgradelog):
         myDB.action('ALTER TABLE pastissues ADD COLUMN DLResult TEXT')
     upgradelog.write("%s v33: complete\n" % time.ctime())
 
+
 def db_v34(myDB, upgradelog):
     if not has_column(myDB, "books", "ScanResult"):
         lazylibrarian.UPDATE_MSG = 'Adding ScanResult to books table'

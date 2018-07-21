@@ -53,6 +53,7 @@ CFG = ''
 DBFILE = None
 COMMIT_LIST = None
 SHOWLOGOUT = 1
+CHERRYPYLOG = 0
 
 # These are only used in startup
 SCHED = None
@@ -163,7 +164,7 @@ isbn_978_dict = {
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
-                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT',
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'CHERRYPYLOG',
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME']
 # default interface does not know about these items, so leaves them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
@@ -503,7 +504,7 @@ CONFIG_DEFINITIONS = {
     'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
     'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )'),
     'OPDS_ENABLED': ('bool', 'OPDS', 0),
-    'OPDS_AUTHENTICATION': (bool, 'OPDS', 0),
+    'OPDS_AUTHENTICATION': ('bool', 'OPDS', 0),
     'OPDS_USERNAME': ('str', 'OPDS', ''),
     'OPDS_PASSWORD': ('str', 'OPDS', ''),
     'OPDS_METAINFO': ('bool', 'OPDS', 0),

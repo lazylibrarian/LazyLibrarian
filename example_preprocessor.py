@@ -83,6 +83,8 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor
 
     if booktype == 'ebook' or booktype == 'test':
         sourcefile = None
+        basename = None
+        source_extn = None
         created = ''
         for fname in os.listdir(makeBytestr(bookfolder)):
             fname = makeUnicode(fname)
@@ -93,28 +95,31 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor
             elif extn == '.mobi':
                 sourcefile = fname
                 break
-        if not sourcefile:
-            sys.stderr.write("%s %s\n" % ("No suitable sourcefile found in", bookfolder))
-            pplog.write("%s: %s %s\n" % (time.ctime(), "No suitable sourcefile found in", bookfolder))
-            exit(1)
 
-        basename, source_extn = os.path.splitext(sourcefile)
         pplog.write("Wanted formats: %s\n" % str(wanted_formats))
-        for ftype in wanted_formats:
-            if not os.path.exists(os.path.join(bookfolder, basename + ftype)):
-                pplog.write("No %s\n" % ftype)
-                params = [converter, os.path.join(bookfolder, sourcefile), os.path.join(bookfolder, basename + ftype)]
-                try:
-                    res = subprocess.check_output(params, stderr=subprocess.STDOUT)
-                    if created:
-                        created += ' '
-                    created += ftype
-                except Exception as e:
-                    sys.stderr.write("%s\n" % e)
-                    pplog.write("%s: %s\n" % (time.ctime(), e))
-                    exit(1)
+        if not sourcefile:
+            if booktype == 'test':
+                print("No suitable sourcefile found in %s" % bookfolder)
             else:
-                pplog.write("Found %s\n" % ftype)
+                sys.stderr.write("%s %s\n" % ("No suitable sourcefile found in", bookfolder))
+            pplog.write("%s: %s %s\n" % (time.ctime(), "No suitable sourcefile found in", bookfolder))
+        else:
+            basename, source_extn = os.path.splitext(sourcefile)
+            for ftype in wanted_formats:
+                if not os.path.exists(os.path.join(bookfolder, basename + ftype)):
+                    pplog.write("No %s\n" % ftype)
+                    params = [converter, os.path.join(bookfolder, sourcefile), os.path.join(bookfolder, basename + ftype)]
+                    try:
+                        res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                        if created:
+                            created += ' '
+                        created += ftype
+                    except Exception as e:
+                        sys.stderr.write("%s\n" % e)
+                        pplog.write("%s: %s\n" % (time.ctime(), e))
+                        exit(1)
+                else:
+                    pplog.write("Found %s\n" % ftype)
 
         if delete_others:
             if keep_opf:
