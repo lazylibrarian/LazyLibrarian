@@ -23,12 +23,12 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int, plural
+from lazylibrarian.formatter import makeUnicode, check_int, plural, md5_utf8
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
-from lib.six import PY2, string_types
+from lib.six import string_types
 
 
 searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags']
@@ -235,17 +235,21 @@ class OPDS(object):
             havebooks = check_int(author['HaveBooks'], 0)
             lastupdated = author['DateAdded']
             name = makeUnicode(author['AuthorName'])
-            entries.append(
-                {
+            entry = {
                     'title': escape('%s (%s/%s)' % (name, havebooks, totalbooks)),
                     'id': escape('author:%s' % author['AuthorID']),
                     'updated': opdstime(lastupdated),
                     'content': escape('%s (%s)' % (name, havebooks)),
                     'href': '%s?cmd=Author&amp;authorid=%s' % (self.opdsroot, author['AuthorID']),
+                    'author': escape('%s' % name),
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-            )
+            # removed authorimg as it stops navigation ??
+            # if lazylibrarian.CONFIG['OPDS_METAINFO']:
+            #    entry['image'] = self.searchroot + '/' + author['AuthorImg']
+            entries.append(entry)
+
         if len(results) > (index + self.PAGE_SIZE):
             links.append(
                 getLink(href='%s?cmd=Authors&amp;index=%s' % (self.opdsroot, index + self.PAGE_SIZE),
@@ -294,10 +298,9 @@ class OPDS(object):
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-                # If we add a magazine cover here we can't navigate??
-                # if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                #     res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
-                #     entry['image'] = res[0]
+                if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                    res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
+                    entry['image'] = self.searchroot + '/' + res[0]
                 entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):

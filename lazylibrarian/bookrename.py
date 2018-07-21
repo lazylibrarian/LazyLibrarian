@@ -187,7 +187,7 @@ def audioRename(bookid):
                         part[0] = cnt
                         break
 
-    parts.sort(key=lambda part: part[0])
+    parts.sort(key=lambda x: x[0])
     # check all parts are present
     cnt = 0
     while cnt < len(parts):

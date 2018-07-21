@@ -18,7 +18,6 @@ import random
 import re
 import threading
 import time
-import tempfile
 import traceback
 from shutil import copyfile, rmtree
 from subprocess import Popen, PIPE
@@ -69,6 +68,7 @@ def serve_template(templatename, **kwargs):
         logger.error("Unable to locate template [%s], reverting to legacy" % template_dir)
         lazylibrarian.CONFIG['HTTP_LOOK'] = 'legacy'
         template_dir = os.path.join(str(interface_dir), lazylibrarian.CONFIG['HTTP_LOOK'])
+
     _hplookup = TemplateLookup(directories=[template_dir], input_encoding='utf-8')
     # noinspection PyBroadException
     try:
@@ -76,7 +76,9 @@ def serve_template(templatename, **kwargs):
             template = _hplookup.get_template("dbupdate.html")
             return template.render(perm=0, message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
-        elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+
+        if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            template = _hplookup.get_template(templatename)
             # noinspection PyArgumentList
             return template.render(perm=lazylibrarian.perm_admin, **kwargs)
 
@@ -1940,9 +1942,9 @@ class WebInterface(object):
                 basefile = res['AudioFile']
                 # zip up all the audiobook parts
                 if basefile and os.path.isfile(basefile):
-                    target = zipAudio(parentdir, res['BookName'])
+                    target = zipAudio(os.path.dirname(basefile), res['BookName'])
                     return serve_file(target, 'application/x-zip-compressed', 'attachment',
-                                       name=res['BookName'] + '.zip')
+                                      name=res['BookName'] + '.zip')
 
         basefile = None
         if ftype == 'book':
@@ -2022,6 +2024,7 @@ class WebInterface(object):
                                 bookfile = os.path.join(parentdir, part)
                                 logger.debug('Opening %s %s' % (library, bookfile))
                                 return serve_file(bookfile, mimeType(bookfile), "attachment")
+                            # noinspection PyUnusedLocal
                             cnt = sum(1 for line in open(index))
                             if cnt <= 1:
                                 logger.debug('Opening %s %s' % (library, bookfile))

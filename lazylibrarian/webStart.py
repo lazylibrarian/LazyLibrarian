@@ -145,8 +145,8 @@ def initialize(options=None):
         user_list = {}
         if len(options['opds_username']) > 0:
             user_list[options['opds_username']] = options['opds_password']
-        if options['http_password'] is not None and options['http_username'] != options['opds_username']:
-            user_list[options['http_username']] = options['http_password']
+        if options['http_pass'] is not None and options['http_user'] != options['opds_username']:
+            user_list[options['http_user']] = options['http_pass']
         conf['/opds'] = {'tools.auth_basic.on': True,
                          'tools.auth_basic.realm': 'LazyLibrarian OPDS',
                          'tools.auth_basic.checkpassword': cherrypy.lib.auth_basic.checkpassword_dict(user_list)}
@@ -175,8 +175,8 @@ def initialize(options=None):
 
     if lazylibrarian.CHERRYPYLOG:
         cherrypy.config.update({
-        'log.access_file': os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'cherrypy.access.log'),
-        'log.error_file': os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'cherrypy.error.log'),
+            'log.access_file': os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'cherrypy.access.log'),
+            'log.error_file': os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'cherrypy.error.log'),
         })
 
     cherrypy.engine.autoreload.subscribe()

@@ -224,7 +224,7 @@
                               %>
                               <label for="opds_authentication" title="OPDS requires username and password">
                               <input type="checkbox" id="opds_authentication" name="opds_authentication" value="1" ${checked} />
-                              OPDS Requires Credentials</label>
+                              OPDS Requires Credentials</label></br><small>If opds authentication is enabled and the user/pass below are blank the webserver user/pass will be used</br>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
                             </div>
                             <div id="opdscredentials">
                                 <div class="form-group">

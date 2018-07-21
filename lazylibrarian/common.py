@@ -41,6 +41,7 @@ import cherrypy
 
 # some mac versions include requests _without_ urllib3, our copy bundles it
 try:
+    # noinspection PyUnresolvedReferences
     import urllib3
     import requests
 except ImportError:
@@ -1176,6 +1177,7 @@ def cleanCache():
     result.append(msg)
     logger.debug(msg)
     return result
+
 
 def zipAudio(source, zipname):
     """ Zip up all the audiobook parts in source folder to zipname

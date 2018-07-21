@@ -53,7 +53,7 @@ CFG = ''
 DBFILE = None
 COMMIT_LIST = None
 SHOWLOGOUT = 1
-CHERRYPYLOG = 1
+CHERRYPYLOG = 0
 
 # These are only used in startup
 SCHED = None
@@ -504,7 +504,7 @@ CONFIG_DEFINITIONS = {
     'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
     'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )'),
     'OPDS_ENABLED': ('bool', 'OPDS', 0),
-    'OPDS_AUTHENTICATION': (bool, 'OPDS', 0),
+    'OPDS_AUTHENTICATION': ('bool', 'OPDS', 0),
     'OPDS_USERNAME': ('str', 'OPDS', ''),
     'OPDS_PASSWORD': ('str', 'OPDS', ''),
     'OPDS_METAINFO': ('bool', 'OPDS', 0),
