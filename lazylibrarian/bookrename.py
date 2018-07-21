@@ -338,7 +338,8 @@ def nameVars(bookid, abridged=''):
         so you can combine to make Book #1 - Lord of the Rings
         PadNum is zero padded numeric part or empty string
         SerName and SerNum are the unformatted base strings
-        PubYear is the publication year or empty string
+        PubYear is the publication year of the book or empty string
+        SerYear is the publication year of the first book in the series or empty string
         """
     mydict = {}
     myDB = database.DBConnection()
@@ -348,14 +349,25 @@ def nameVars(bookid, abridged=''):
         seriesid = res['SeriesID']
         serieslist = getList(res['SeriesNum'])
         pubyear = res['BookDate']
+        cmd = 'SELECT BookDate from member,books WHERE books.bookid = member.bookid and SeriesNum=1 and SeriesID=?'
+        res = myDB.match(cmd, (seriesid,))
+        if res:
+            seryear = res['BookDate']
+        else:
+            seryear = ''
     else:
         seriesid = ''
         serieslist = []
         pubyear = ''
+        seryear = ''
 
     if not pubyear or pubyear == '0000':
         pubyear = ''
     pubyear = pubyear[:4]  # googlebooks sometimes has month or full date
+
+    if not seryear or seryear == '0000':
+        seryear = ''
+    seryear = seryear[:4]
 
     seriesnum = ''
     seriesname = ''
@@ -401,6 +413,7 @@ def nameVars(bookid, abridged=''):
     if seriesname:
         fmtname = lazylibrarian.CONFIG['FMT_SERNAME'].replace('$SerName', seriesname).replace(
                                                               '$PubYear', pubyear).replace(
+                                                              '$SerYear', seryear).replace(
                                                               '$$', ' ')
     else:
         fmtname = ''
@@ -412,6 +425,7 @@ def nameVars(bookid, abridged=''):
     if seriesnum != '':  # allow 0
         fmtnum = lazylibrarian.CONFIG['FMT_SERNUM'].replace('$SerNum', seriesnum).replace(
                                                             '$PubYear', pubyear).replace(
+                                                            '$SerYear', seryear).replace(
                                                             '$PadNum', padnum).replace('$$', ' ')
     else:
         fmtnum = ''
@@ -425,6 +439,7 @@ def nameVars(bookid, abridged=''):
                                                              '$SerName', seriesname).replace(
                                                              '$PadNum', padnum).replace(
                                                              '$PubYear', pubyear).replace(
+                                                             '$SerYear', seryear).replace(
                                                              '$FmtName', fmtname).replace(
                                                              '$FmtNum', fmtnum).replace('$$', ' ')
         fmtfull = ' '.join(fmtfull.split())
@@ -438,6 +453,7 @@ def nameVars(bookid, abridged=''):
     mydict['SerName'] = seriesname
     mydict['SerNum'] = seriesnum
     mydict['PubYear'] = pubyear
+    mydict['SerYear'] = seryear
     mydict['Abridged'] = abridged
 
     cmd = 'select AuthorName,BookName from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
@@ -487,6 +503,7 @@ def replacevars(base, mydict):
         '$SerNum', mydict['SerNum']).replace(
         '$PadNum', mydict['PadNum']).replace(
         '$PubYear', mydict['PubYear']).replace(
+        '$SerYear', mydict['SerYear']).replace(
         '$Abridged', mydict['Abridged']).replace(
         '$$', ' ')
     return ' '.join(res.split()).strip()
