@@ -101,8 +101,23 @@ def initialize(options=None):
         },
         '/opensearch.xml': {
             'tools.staticfile.on': True,
-            # 'tools.staticfile.filename': "images/favicon.ico"
             'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearch.xml')
+        },
+        '/opensearchbooks.xml': {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchbooks.xml')
+        },
+        '/opensearchmagazines.xml': {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchmagazines.xml')
+        },
+        '/opensearchseries.xml': {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchseries.xml')
+        },
+        '/opensearchauthors.xml': {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchauthors.xml')
         }
     }
 
@@ -138,9 +153,31 @@ def initialize(options=None):
     else:
         conf['/opds'] = {'tools.auth_basic.on': False}
 
+    opensearch = os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearch.template')
+    if os.path.exists(opensearch):
+        with open(opensearch, 'r') as s:
+            data = s.read().splitlines()
+        # (title, function)
+        for item in [('Authors', 'Authors'),
+                     ('Magazines', 'RecentMags'),
+                     ('Books', 'RecentBooks'),
+                     ('Series', 'Series')]:
+            with open(opensearch.replace('.template', '%s.xml' % item[0].lower()), 'w') as t:
+                for l in data:
+                    t.write(l.replace('{label}', item[0]).replace(
+                                      '{func}', 't=%s&amp;' % item[1]).replace(
+                                      '{webroot}', options['http_root']))
+                    t.write('\n')
+
     # Prevent time-outs
     cherrypy.engine.timeout_monitor.unsubscribe()
     cherrypy.tree.mount(WebInterface(), str(options['http_root']), config=conf)
+
+    if lazylibrarian.CHERRYPYLOG:
+        cherrypy.config.update({
+        'log.access_file': os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'cherrypy.access.log'),
+        'log.error_file': os.path.join(lazylibrarian.CONFIG['LOGDIR'], 'cherrypy.error.log'),
+        })
 
     cherrypy.engine.autoreload.subscribe()
 

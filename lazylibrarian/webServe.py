@@ -76,11 +76,6 @@ def serve_template(templatename, **kwargs):
             template = _hplookup.get_template("dbupdate.html")
             return template.render(perm=0, message="Database upgrade in progress, please wait...",
                                    title="Database Upgrade", timer=5)
-
-        elif templatename == "opensearch.xml":
-            template = _hplookup.get_template(templatename)
-            return template.render()
-
         elif lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy' or not lazylibrarian.CONFIG['USER_ACCOUNTS']:
             # noinspection PyArgumentList
             return template.render(perm=lazylibrarian.perm_admin, **kwargs)
