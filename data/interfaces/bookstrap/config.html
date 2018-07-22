@@ -1747,34 +1747,40 @@
                     <label for="fmt_series">Series Pattern:</label>
                     <input type="text" id="fmt_series" name="fmt_series" value="${lazylibrarian.CONFIG['FMT_SERIES']}" class="form-control" placeholder="eg ($SerName #$SerNum)">
                     <span class="help-block">Options: $SerName, $FmtName, $SerNum, $FmtNum, $PadNum, $PubYear, $SerYear, $$, any string.</span>
+                    <small>Example:  <mark>${config['namevars']['FmtFull']}</mark></small>
                   </div>
                   <div class="form-group">
                     <label for="fmt_sername">Series Name Pattern:</label>
                     <input type="text" id="fmt_sername" name="fmt_sername" value="${lazylibrarian.CONFIG['FMT_SERNAME']}" class="form-control" placeholder="eg $SerName">
                     <span class="help-block">Options: $SerName, $PubYear, $SerYear, $$, any string.</span>
+                    <small>Example:  <mark>${config['namevars']['FmtName']}</mark></small>
                   </div>
                   <div class="form-group">
                     <label for="fmt_sernum">Series Number Pattern:</label>
                     <input type="text" id="fmt_sernum" name="fmt_sernum" value="${lazylibrarian.CONFIG['FMT_SERNUM']}" class="form-control" placeholder="eg Book #$SerNum">
                     <span class="help-block">Options: $SerNum, $PadNum, $PubYear, $SerYear, $$, any string.</span>
+                    <small>Example:  <mark>${config['namevars']['FmtNum']}</mark></small>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_folder">eBook/AudioBook Foldername Pattern:</label>
                     <input type="text" id="ebook_dest_folder" name="ebook_dest_folder" value="${lazylibrarian.CONFIG['EBOOK_DEST_FOLDER']}" class="form-control" placeholder="eBook Destination Folder">
                     <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $FmtName, $FmtNum, $PadNum, $PubYear, $SerYear, $Abridged, $$, any string.<br/>
                       <strong>Current limitation: Each title has to be in unique subfolder</strong></span>
+                    <small>Example:  <mark>${config['namevars']['FolderName']}</mark></small>
                   </div>
                   <div class="form-group">
                     <label for="ebook_dest_file">eBook Filename Pattern:</label>
                     <input type="text" id="ebook_dest_file" name="ebook_dest_file" value="${lazylibrarian.CONFIG['EBOOK_DEST_FILE']}" class="form-control" placeholder="eBook Destination File">
                     <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Fmtname, $FmtNum, $PadNum, $PubYear, $SerYear, $Abridged, $$, any string.<br/>
                       <strong>Current limitation: Each title has to be in unique subfolder</strong></span>
+                      <small>Example:  <mark>${config['namevars']['BookFile']}</mark></small>
                   </div>
                   <div class="form-group">
                     <label for="audiobook_dest_file">AudioBook Filename Pattern:</label>
                     <input type="text" id="audiobook_dest_file" name="audiobook_dest_file" value="${lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']}" class="form-control" placeholder="audioBook Destination File">
                     <span class="help-block">Options: $Author, $Title, $Series, $SerName, $SerNum, $Fmtname, $FmtNum, $PadNum, $PubYear, $SerYear, $Abridged, $Part, $Total, $$, any string.<br/>
                       <strong>Current limitation: Has to include $Title and $Part</strong></span>
+                      <small>Example:  <mark>${config['namevars']['AudioFile']}</mark></small>
                   </div>
                   <div class="checkbox">
                     <%

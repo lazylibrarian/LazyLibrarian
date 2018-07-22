@@ -342,6 +342,8 @@ def nameVars(bookid, abridged=''):
         SerYear is the publication year of the first book in the series or empty string
         """
     mydict = {}
+    seriesnum = ''
+    seriesname = ''
     myDB = database.DBConnection()
     cmd = 'SELECT SeriesID,SeriesNum,BookDate from member,books WHERE books.bookid = member.bookid and books.bookid=?'
     res = myDB.match(cmd, (bookid,))
@@ -355,6 +357,14 @@ def nameVars(bookid, abridged=''):
             seryear = res['BookDate']
         else:
             seryear = ''
+    elif bookid == 'test':
+        seriesid = '66175'
+        serieslist = ['3']
+        pubyear = '1955'
+        seryear = '1954'
+        seriesname = 'The Lord of the Rings'
+        mydict['Author'] = 'J.R.R. Tolkien'
+        mydict['Title'] = 'The Fellowship of the Ring'
     else:
         seriesid = ''
         serieslist = []
@@ -369,8 +379,6 @@ def nameVars(bookid, abridged=''):
         seryear = ''
     seryear = seryear[:4]
 
-    seriesnum = ''
-    seriesname = ''
     # might be "Book 3.5" or similar, just get the numeric part
     while serieslist:
         seriesnum = serieslist.pop()
@@ -396,7 +404,7 @@ def nameVars(bookid, abridged=''):
         except (ValueError, IndexError):
             padnum = ''
 
-    if seriesid:
+    if seriesid and bookid != 'test':
         cmd = 'SELECT SeriesName from series WHERE seriesid=?'
         res = myDB.match(cmd, (seriesid,))
         if res:
@@ -456,14 +464,15 @@ def nameVars(bookid, abridged=''):
     mydict['SerYear'] = seryear
     mydict['Abridged'] = abridged
 
-    cmd = 'select AuthorName,BookName from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
-    exists = myDB.match(cmd, (bookid,))
-    if exists:
-        mydict['Author'] = exists['AuthorName']
-        mydict['Title'] = exists['BookName']
-    else:
-        mydict['Author'] = ''
-        mydict['Title'] = ''
+    if bookid != 'test':
+        cmd = 'select AuthorName,BookName from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
+        exists = myDB.match(cmd, (bookid,))
+        if exists:
+            mydict['Author'] = exists['AuthorName']
+            mydict['Title'] = exists['BookName']
+        else:
+            mydict['Author'] = ''
+            mydict['Title'] = ''
 
     dest_path = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'], mydict)
     dest_path = replace_all(dest_path, __dic__)
@@ -487,6 +496,8 @@ def nameVars(bookid, abridged=''):
             if audiofile[slash + 1] != ' ':
                 audiofile = audiofile[:slash] + '_' + audiofile[slash + 1:]
         slash = audiofile.find('/', slash + 1)
+    if bookid == 'test':
+        audiofile = audiofile.replace('$Part', '03').replace('$Total', '12')
     mydict['AudioFile'] = audiofile
 
     return mydict

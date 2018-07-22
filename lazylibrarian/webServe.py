@@ -54,6 +54,7 @@ from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
 from lazylibrarian.rssfeed import genFeed
 from lazylibrarian.opds import OPDS
+from lazylibrarian.bookrename import nameVars
 from lib.deluge_client import DelugeRPCClient
 from lib.six import PY2
 from mako import exceptions
@@ -952,6 +953,7 @@ class WebInterface(object):
             "http_look_list": http_look_list,
             "status_list": status_list,
             "magazines_list": mags_list,
+            "namevars": nameVars('test'),
             "updated": time.ctime(check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0))
         }
         return serve_template(templatename="config.html", title="Settings", config=config)
