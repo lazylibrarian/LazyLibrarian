@@ -1085,10 +1085,22 @@
             <input type="text" placeholder="cover creation program" id="imp_convert" name="imp_convert" value="${lazylibrarian.CONFIG['IMP_CONVERT']}" size="26">
             <BR>
             <small>Program for creating magazine covers (see wiki for details)
-              <BR>Leave blank to use PythonMagick or Wand interfaces to ImageMagick, put
-              None  to disable cover creation</small>
+              <BR>Leave blank to use a local copy of ghostscript, or PythonMagick or Wand interfaces to ImageMagick</small>
           </td>
         </tr>
+          <td>
+            <div>
+              <%
+                    if lazylibrarian.CONFIG['IMP_MAGCOVER'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_magcover" name="imp_magcover" value=1 ${checked} />
+              <label> Create cover files for magazines</label>
+              <br>
+            </div>
+          </td>
           <td>
             <div>
               <%

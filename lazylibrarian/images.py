@@ -435,7 +435,7 @@ def getAuthorImage(authorid=None):
 
 
 def createMagCovers(refresh=False):
-    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
+    if not lazylibrarian.CONFIG['IMP_MAGCOVER']:
         logger.info('Cover creation is disabled in config')
         return
     myDB = database.DBConnection()
@@ -459,7 +459,7 @@ def createMagCovers(refresh=False):
 
 
 def createMagCover(issuefile=None, refresh=False):
-    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':  # special flag to say "no covers required"
+    if not lazylibrarian.CONFIG['IMP_MAGCOVER']:
         return
     if issuefile is None or not os.path.isfile(issuefile):
         logger.debug('No issuefile %s' % issuefile)

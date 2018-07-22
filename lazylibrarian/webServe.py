@@ -2717,8 +2717,7 @@ class WebInterface(object):
             if len(rowlist):
                 for mag in rowlist:
                     magimg = mag['LatestCover']
-                    # special flag to say "no covers required"
-                    if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
+                    if not lazylibrarian.CONFIG['IMP_MAGCOVER'] or not magimg or not os.path.isfile(magimg):
                         magimg = 'images/nocover.jpg'
                     else:
                         myhash = md5_utf8(magimg)
@@ -2816,8 +2815,7 @@ class WebInterface(object):
         if magazines:
             for mag in magazines:
                 magimg = mag['LatestCover']
-                # special flag to say "no covers required"
-                if lazylibrarian.CONFIG['IMP_CONVERT'] == 'None' or not magimg or not os.path.isfile(magimg):
+                if not lazylibrarian.CONFIG['IMP_MAGCOVER'] or not magimg or not os.path.isfile(magimg):
                     magimg = 'images/nocover.jpg'
                 else:
                     myhash = md5_utf8(magimg)
@@ -2984,7 +2982,7 @@ class WebInterface(object):
                 mod_issues.append(this_issue)
             logger.debug("Found %s cover%s" % (covercount, plural(covercount)))
 
-            if not lazylibrarian.CONFIG['MAG_IMG'] or lazylibrarian.CONFIG['IMP_CONVERT'] == 'None':
+            if not lazylibrarian.CONFIG['MAG_IMG'] or not lazylibrarian.CONFIG['IMP_MAGCOVER']:
                 covercount = 0
 
         return serve_template(templatename="issues.html", title=safetitle, issues=mod_issues, covercount=covercount)

@@ -332,7 +332,7 @@ def bookRename(bookid):
 def nameVars(bookid, abridged=''):
     """ Return name variables for a bookid as a dict of formatted strings
         The strings are configurable, but by default...
-        FmtFull returns ( Lord of the Rings 2 )
+        Series returns ( Lord of the Rings 2 )
         FmtName returns Lord of the Rings (with added Num part if that's not numeric, eg Lord of the Rings Book One)
         FmtNum  returns Book #1 -    (or empty string if no numeric part)
         so you can combine to make Book #1 - Lord of the Rings
@@ -443,20 +443,20 @@ def nameVars(bookid, abridged=''):
         fmtnum = ''
 
     if fmtnum != '' or fmtname:
-        fmtfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+        fmtseries = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
                                                              '$SerName', seriesname).replace(
                                                              '$PadNum', padnum).replace(
                                                              '$PubYear', pubyear).replace(
                                                              '$SerYear', seryear).replace(
                                                              '$FmtName', fmtname).replace(
                                                              '$FmtNum', fmtnum).replace('$$', ' ')
-        fmtfull = ' '.join(fmtfull.split())
+        fmtseries = ' '.join(fmtseries.split())
     else:
-        fmtfull = ''
+        fmtseries = ''
 
     mydict['FmtName'] = fmtname
     mydict['FmtNum'] = fmtnum
-    mydict['FmtFull'] = fmtfull
+    mydict['Series'] = fmtseries
     mydict['PadNum'] = padnum
     mydict['SerName'] = seriesname
     mydict['SerNum'] = seriesnum
@@ -507,7 +507,7 @@ def replacevars(base, mydict):
     res = base.replace(
         '$Author', mydict['Author']).replace(
         '$Title', mydict['Title']).replace(
-        '$Series', mydict['FmtFull']).replace(
+        '$Series', mydict['Series']).replace(
         '$FmtName', mydict['FmtName']).replace(
         '$FmtNum', mydict['FmtNum']).replace(
         '$SerName', mydict['SerName']).replace(
