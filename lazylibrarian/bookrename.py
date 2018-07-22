@@ -332,7 +332,7 @@ def bookRename(bookid):
 def nameVars(bookid, abridged=''):
     """ Return name variables for a bookid as a dict of formatted strings
         The strings are configurable, but by default...
-        FmtFull returns ( Lord of the Rings 2 )
+        Series returns ( Lord of the Rings 2 )
         FmtName returns Lord of the Rings (with added Num part if that's not numeric, eg Lord of the Rings Book One)
         FmtNum  returns Book #1 -    (or empty string if no numeric part)
         so you can combine to make Book #1 - Lord of the Rings
@@ -342,6 +342,8 @@ def nameVars(bookid, abridged=''):
         SerYear is the publication year of the first book in the series or empty string
         """
     mydict = {}
+    seriesnum = ''
+    seriesname = ''
     myDB = database.DBConnection()
     cmd = 'SELECT SeriesID,SeriesNum,BookDate from member,books WHERE books.bookid = member.bookid and books.bookid=?'
     res = myDB.match(cmd, (bookid,))
@@ -355,6 +357,14 @@ def nameVars(bookid, abridged=''):
             seryear = res['BookDate']
         else:
             seryear = ''
+    elif bookid == 'test':
+        seriesid = '66175'
+        serieslist = ['3']
+        pubyear = '1955'
+        seryear = '1954'
+        seriesname = 'The Lord of the Rings'
+        mydict['Author'] = 'J.R.R. Tolkien'
+        mydict['Title'] = 'The Fellowship of the Ring'
     else:
         seriesid = ''
         serieslist = []
@@ -369,8 +379,6 @@ def nameVars(bookid, abridged=''):
         seryear = ''
     seryear = seryear[:4]
 
-    seriesnum = ''
-    seriesname = ''
     # might be "Book 3.5" or similar, just get the numeric part
     while serieslist:
         seriesnum = serieslist.pop()
@@ -396,7 +404,7 @@ def nameVars(bookid, abridged=''):
         except (ValueError, IndexError):
             padnum = ''
 
-    if seriesid:
+    if seriesid and bookid != 'test':
         cmd = 'SELECT SeriesName from series WHERE seriesid=?'
         res = myDB.match(cmd, (seriesid,))
         if res:
@@ -435,20 +443,20 @@ def nameVars(bookid, abridged=''):
         fmtnum = ''
 
     if fmtnum != '' or fmtname:
-        fmtfull = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
+        fmtseries = lazylibrarian.CONFIG['FMT_SERIES'].replace('$SerNum', seriesnum).replace(
                                                              '$SerName', seriesname).replace(
                                                              '$PadNum', padnum).replace(
                                                              '$PubYear', pubyear).replace(
                                                              '$SerYear', seryear).replace(
                                                              '$FmtName', fmtname).replace(
                                                              '$FmtNum', fmtnum).replace('$$', ' ')
-        fmtfull = ' '.join(fmtfull.split())
+        fmtseries = ' '.join(fmtseries.split())
     else:
-        fmtfull = ''
+        fmtseries = ''
 
     mydict['FmtName'] = fmtname
     mydict['FmtNum'] = fmtnum
-    mydict['FmtFull'] = fmtfull
+    mydict['Series'] = fmtseries
     mydict['PadNum'] = padnum
     mydict['SerName'] = seriesname
     mydict['SerNum'] = seriesnum
@@ -456,14 +464,15 @@ def nameVars(bookid, abridged=''):
     mydict['SerYear'] = seryear
     mydict['Abridged'] = abridged
 
-    cmd = 'select AuthorName,BookName from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
-    exists = myDB.match(cmd, (bookid,))
-    if exists:
-        mydict['Author'] = exists['AuthorName']
-        mydict['Title'] = exists['BookName']
-    else:
-        mydict['Author'] = ''
-        mydict['Title'] = ''
+    if bookid != 'test':
+        cmd = 'select AuthorName,BookName from books,authors where books.AuthorID = authors.AuthorID and bookid=?'
+        exists = myDB.match(cmd, (bookid,))
+        if exists:
+            mydict['Author'] = exists['AuthorName']
+            mydict['Title'] = exists['BookName']
+        else:
+            mydict['Author'] = ''
+            mydict['Title'] = ''
 
     dest_path = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FOLDER'], mydict)
     dest_path = replace_all(dest_path, __dic__)
@@ -487,6 +496,8 @@ def nameVars(bookid, abridged=''):
             if audiofile[slash + 1] != ' ':
                 audiofile = audiofile[:slash] + '_' + audiofile[slash + 1:]
         slash = audiofile.find('/', slash + 1)
+    if bookid == 'test':
+        audiofile = audiofile.replace('$Part', '03').replace('$Total', '12')
     mydict['AudioFile'] = audiofile
 
     return mydict
@@ -496,7 +507,7 @@ def replacevars(base, mydict):
     res = base.replace(
         '$Author', mydict['Author']).replace(
         '$Title', mydict['Title']).replace(
-        '$Series', mydict['FmtFull']).replace(
+        '$Series', mydict['Series']).replace(
         '$FmtName', mydict['FmtName']).replace(
         '$FmtNum', mydict['FmtNum']).replace(
         '$SerName', mydict['SerName']).replace(
