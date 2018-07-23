@@ -116,7 +116,7 @@ class EmailNotifier:
         if not lazylibrarian.CONFIG['USE_EMAIL'] and not force:
             return False
 
-        if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD']:
+        if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] or force:
             files = None
             event = notifyStrings[NOTIFY_DOWNLOAD]
             logger.debug('Email send attachment is %s' % lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'])
