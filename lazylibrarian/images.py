@@ -15,6 +15,7 @@ import os
 import traceback
 import platform
 import subprocess
+import json
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -99,10 +100,11 @@ def getBookCover(bookID=None, src=None):
             3. LibraryThing cover image (if you have a dev key)
             4. LibraryThing whatwork (if available)
             5. Goodreads search (if book was imported from goodreads)
-            6. Google isbn search (if google has a link to book for sale)
-            7. Google images search (if lazylibrarian config allows)
+            6. OpenLibrary image
+            7. Google isbn search (if google has a link to book for sale)
+            8. Google images search (if lazylibrarian config allows)
 
-        src = cache, cover, goodreads, librarything, whatwork, googleisbn, googleimage
+        src = cache, cover, goodreads, librarything, whatwork, googleisbn, openlibrary, googleimage
         Return None if no cover available. """
     if not bookID:
         logger.error("getBookCover- No bookID")
@@ -237,7 +239,7 @@ def getBookCover(bookID=None, src=None):
             if src:
                 return None, src
 
-        cmd = 'select BookName,AuthorName,BookLink from books,authors where bookID=?'
+        cmd = 'select BookName,AuthorName,BookLink,BookISBN from books,authors where bookID=?'
         cmd += ' and books.AuthorID = authors.AuthorID'
         item = myDB.match(cmd, (bookID,))
         safeparams = ''
@@ -290,6 +292,51 @@ def getBookCover(bookID=None, src=None):
                         logger.debug("No image found in goodreads page for %s" % bookID)
                 else:
                     logger.debug("Error getting goodreads page %s, [%s]" % (booklink, result))
+            if src:
+                return None, src
+
+        # try to get a cover from openlibrary
+        if not src or src == 'openlibrary':
+            if item['BookISBN']:
+                baseurl = 'https://openlibrary.org/api/books?format=json&jscmd=data&bibkeys=ISBN:'
+                result, success = fetchURL(baseurl + item['BookISBN'])
+                if success:
+                    try:
+                        source = json.loads(result)  # type: dict
+                    except Exception as e:
+                        logger.debug("OpenLibrary json error: %s" % e)
+                        source = []
+
+                    img = ''
+                    if source:
+                        # noinspection PyUnresolvedReferences
+                        k = source.keys()[0]
+                        try:
+                            img = source[k]['cover']['medium']
+                        except KeyError:
+                            try:
+                                img = source[k]['cover']['large']
+                            except KeyError:
+                                logger.debug("No openlibrary image for %s" % item['BookISBN'])
+
+                    if img and img.startswith('http') and 'nocover' not in img and 'nophoto' not in img:
+                        if src == 'openlibrary':
+                            coverlink, success, _ = cache_img("book", bookID + '_ol', img)
+                        else:
+                            coverlink, success, _ = cache_img("book", bookID, img, refresh=True)
+
+                        data = ''
+                        coverfile = os.path.join(lazylibrarian.DATADIR, coverlink)
+                        if os.path.isfile(coverfile):
+                            with open(coverfile, 'rb') as f:
+                                data = f.read()
+                        if len(data) < 50:
+                            logger.debug('Got an empty openlibrary image for %s [%s]' % (bookID, coverlink))
+                        elif success:
+                            logger.debug("Caching openlibrary cover for %s %s" % (item['AuthorName'], item['BookName']))
+                            return coverlink, 'openlibrary'
+                else:
+                    logger.debug("OpenLibrary error: %s" % result)
             if src:
                 return None, src
 
