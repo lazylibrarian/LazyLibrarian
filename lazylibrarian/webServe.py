@@ -2243,7 +2243,8 @@ class WebInterface(object):
         seriesdict = myDB.select(cmd, (bookid,))
         if bookdata:
             covers = []
-            for source in ['current', 'cover', 'goodreads', 'librarything', 'whatwork', 'googleisbn', 'googleimage']:
+            for source in ['current', 'cover', 'goodreads', 'librarything', 'whatwork',
+                            'openlibrary', 'googleisbn', 'googleimage']:
                 cover, _ = getBookCover(bookid, source)
                 if cover:
                     covers.append([source, cover])
@@ -2325,6 +2326,8 @@ class WebInterface(object):
                     covertype = '_ww'
                 elif cover == 'goodreads':
                     covertype = '_gr'
+                elif cover == 'openlibrary':
+                    covertype = '_ol'
                 elif cover == 'googleisbn':
                     covertype = '_gi'
                 elif cover == 'googleimage':

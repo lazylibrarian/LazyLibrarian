@@ -555,6 +555,16 @@ class GoodReads:
                                                         isbnhead = ''
                                                 # if bookLanguage and not isbnhead:
                                                 #     print(BOOK_URL)
+
+                                                # might as well get the original publication year
+                                                # noinspection PyBroadException
+                                                try:
+                                                    res = BOOK_rootxml.find('./book/work/original_publication_year').text
+                                                    if check_year(res, past=1800, future=0):
+                                                        bookdate = res
+                                                except Exception:
+                                                    pass
+
                                         except Exception as e:
                                             logger.error("%s getting book xml: %s" % (type(e).__name__, str(e)))
 
@@ -639,8 +649,15 @@ class GoodReads:
 
                             series, seriesNum = bookSeries(seriesdetails)
 
-                            # seems the author/list page only contains one author per book
-                            # even if the book/show page has multiple?
+                            # 1. The author/list page only contains one author per book even if the book/show page
+                            #    and html show multiple authors
+                            # 2. The author/list page doesn't always include the publication date even if the
+                            #    book/show page and html include it
+                            # 3. The author/list page gives the publication date of the "best book" edition
+                            #    and does not include the original publication date, though the book/show page
+                            #    and html often show it
+                            # We can't call book/show for every book because of api limits, and we can't scrape
+                            # the html as it breaks goodreads terms of service
                             authors = book.find('authors')
                             anames = authors.getiterator('author')
                             amatch = False
