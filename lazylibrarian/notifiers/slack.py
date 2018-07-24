@@ -57,8 +57,10 @@ class SlackNotifier:
         headers = {"Content-Type": "application/json"}
 
         postdata = '{"username": "LazyLibrarian", '
-        postdata += '"attachments": [{"text": "%s", "thumb_url": ' % message
-        postdata += '"https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png"}], '
+#        postdata += '"attachments": [{"text": "%s", "thumb_url": ' % message
+#        postdata += '"https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png"}], '
+#   Removed attachment approach to text and icon_url in slack formatting cleanup effort - bbq 20180724
+        postdata += '"icon_url": "https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png",
         postdata += '"text":"%s"}' % event
         r = requests.request(method,
                              url,
