@@ -1425,7 +1425,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     elif book_type != 'eBook':  # only do autoadd/img/opf for ebooks
         return
 
-    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
+    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookRate'
     cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
     data = myDB.match(cmd, (bookid,))
     if not data:
@@ -1548,7 +1548,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
                 # we can pass an opf with all the info, and a cover image
                 myDB = database.DBConnection()
-                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
+                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookRate'
                 cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
                 data = myDB.match(cmd, (bookid,))
                 if not data:
@@ -1813,6 +1813,7 @@ def processMAGOPF(issuefile, title, issue, issueID, overwrite=False):
         'BookLang': 'eng',
         'BookImg': global_name + '.jpg',
         'BookPub': '',
+        'BookRate': None,
         'Series': title,
         'Series_index': issue
     }  # type: dict
@@ -1826,6 +1827,9 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         logger.debug('%s already exists. Did not create one.' % opfpath)
         setperm(opfpath)
         return opfpath, False
+
+   # Horrible hack to work around the limitations of sqlite3's row object
+    data = {k: data[k] for k in data.keys()}
 
     bookid = data['BookID']
     if bookid.isdigit():
@@ -1890,6 +1894,9 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
     if 'BookDesc' in data:
         opfinfo += '        <dc:description>%s</dc:description>\n' % data['BookDesc']
+
+    if 'BookRate' in data:
+        opfinfo += '        <calibre:rating>%s</calibre:rating>\n' % data['BookRate']
 
     if seriesname:
         opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % seriesname
