@@ -1756,14 +1756,14 @@ def processAutoAdd(src_path=None, booktype='book'):
     return True
 
 
-def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
+def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None, overwrite=False):
     """ cache the bookimg from url or filename, and optionally copy it to bookdir """
     if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
         logger.debug('Not creating coverfile, bookonly is set')
         return
 
     jpgfile = jpg_file(dest_path)
-    if jpgfile:
+    if not overwrite and jpgfile:
         logger.debug('Cover %s already exists' % jpgfile)
         setperm(jpgfile)
         return
