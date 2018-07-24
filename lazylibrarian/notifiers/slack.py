@@ -61,7 +61,7 @@ class SlackNotifier:
 #        postdata += '"https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png"}], '
 #   Removed attachment approach to text and icon_url in slack formatting cleanup effort - bbq 20180724
         postdata += '"icon_url": "https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png", '
-        postdata += '"text":"%s"}' % event
+        postdata += '"text":"%s %s"}' % (message, event)
         r = requests.request(method,
                              url,
                              data=postdata,
