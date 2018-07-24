@@ -42,7 +42,7 @@ from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_tota
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan
 from lazylibrarian.manualbook import searchItem
-from lazylibrarian.postprocess import processDir, processAlternate, processOPF
+from lazylibrarian.postprocess import processDir, processAlternate, processOPF, processIMG
 from lazylibrarian.providers import get_capabilities
 from lazylibrarian.rssfeed import genFeed
 from lazylibrarian.searchbook import search_book
@@ -380,7 +380,7 @@ class Api(object):
         else:
             self.id = kwargs['id']
             myDB = database.DBConnection()
-            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookFile'
+            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookFile,BookRate'
             cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
             res = myDB.match(cmd, (kwargs['id'],))
             if not res:
@@ -394,6 +394,7 @@ class Api(object):
             refresh = False
             if 'refresh' in kwargs:
                 refresh = True
+            processIMG(dest_path, kwargs['id'], res['BookImg'], global_name, refresh)
             self.data = processOPF(dest_path, res, global_name, refresh)
 
     @staticmethod
