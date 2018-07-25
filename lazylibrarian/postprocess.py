@@ -1896,7 +1896,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         opfinfo += '        <dc:description>%s</dc:description>\n' % data['BookDesc']
 
     if 'BookRate' in data:
-        opfinfo += '        <calibre:rating>%s</calibre:rating>\n' % int(round(data['BookRate']))
+        opfinfo += '        <meta content="%s" name="calibre:rating"/>\n' % int(round(data['BookRate']))
 
     if seriesname:
         opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % seriesname
