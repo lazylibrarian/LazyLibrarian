@@ -352,9 +352,9 @@ def nameVars(bookid, abridged=''):
         serieslist = getList(res['SeriesNum'])
         pubyear = res['BookDate']
         cmd = 'SELECT BookDate from member,books WHERE books.bookid = member.bookid and SeriesNum=1 and SeriesID=?'
-        res = myDB.match(cmd, (seriesid,))
-        if res:
-            seryear = res['BookDate']
+        resDate = myDB.match(cmd, (seriesid,))
+        if resDate:
+            seryear = resDate['BookDate']
         else:
             seryear = ''
     elif bookid == 'test':
