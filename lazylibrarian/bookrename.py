@@ -12,6 +12,7 @@
 
 
 import os
+import string
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -415,7 +416,7 @@ def nameVars(bookid, abridged=''):
                     seriesname = "%s %s" % (seriesname, serieslist)
 
     seriesname = ' '.join(seriesname.split())  # strip extra spaces
-    if seriesname.isspace():  # but don't return just whitespace
+    if only_punctuation(seriesname):  # but don't return just whitespace or punctuation
         seriesname = ''
 
     if seriesname:
@@ -427,7 +428,7 @@ def nameVars(bookid, abridged=''):
         fmtname = ''
 
     fmtname = ' '.join(fmtname.split())
-    if fmtname.isspace():
+    if only_punctuation(fmtname):
         fmtname = ''
 
     if seriesnum != '':  # allow 0
@@ -439,7 +440,7 @@ def nameVars(bookid, abridged=''):
         fmtnum = ''
 
     fmtnum = ' '.join(fmtnum.split())
-    if fmtnum.isspace():
+    if only_punctuation(fmtnum):
         fmtnum = ''
 
     if fmtnum != '' or fmtname:
@@ -450,8 +451,11 @@ def nameVars(bookid, abridged=''):
                                                              '$SerYear', seryear).replace(
                                                              '$FmtName', fmtname).replace(
                                                              '$FmtNum', fmtnum).replace('$$', ' ')
-        fmtseries = ' '.join(fmtseries.split())
     else:
+        fmtseries = ''
+
+    fmtseries = ' '.join(fmtseries.split())
+    if only_punctuation(fmtseries):
         fmtseries = ''
 
     mydict['FmtName'] = fmtname
@@ -501,6 +505,13 @@ def nameVars(bookid, abridged=''):
     mydict['AudioFile'] = audiofile
 
     return mydict
+
+
+def only_punctuation(value):
+    for c in value:
+        if c not in string.punctuation and c not in string.whitespace:
+            return False
+    return True
 
 
 def replacevars(base, mydict):

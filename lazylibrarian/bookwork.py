@@ -23,7 +23,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.cache import fetchURL, gr_xml_request
 from lazylibrarian.common import proxyList
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
-    check_int, replace_all
+    check_int, replace_all, check_year
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
 
@@ -139,10 +139,18 @@ def setSeries(serieslist=None, bookid=None):
                     seriesid = str(res + 1)
                 myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)',
                             (seriesid, item[2], "Active", 0, 0), suppress='UNIQUE')
-                # don't ask what other books are in the series - leave for user to query if series wanted
-                # _ = getSeriesMembers(match['SeriesID'])
+
+            members = getSeriesMembers(match['SeriesID'])
             book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
             if seriesid and book:
+                for member in members:
+                    if member[3] == book['WorkID']:
+                        if check_year(member[5], past=1800, future=0):
+                            controlValueDict = {"BookID": bookid}
+                            newValueDict = {"BookDate": member[5]}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                        break
+
                 controlValueDict = {"BookID": bookid, "SeriesID": seriesid}
                 newValueDict = {"SeriesNum": item[1], "WorkID": book['WorkID']}
                 myDB.upsert("member", newValueDict, controlValueDict)
@@ -541,6 +549,7 @@ def getSeriesAuthors(seriesid):
             authorname = member[2]
             # workid = member[3]
             authorid = member[4]
+            # pubyear = member[5]
             bookname = replace_all(bookname, dic)
             if not authorid:
                 # goodreads gives us all the info we need, librarything/google doesn't
@@ -635,7 +644,7 @@ def getSeriesMembers(seriesID=None):
     results = []
     if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
         params = {"format": "xml", "key": lazylibrarian.CONFIG['GR_API']}
-        URL = 'https://www.goodreads.com/series/' + seriesID + '?' + urlencode(params)
+        URL = 'https://www.goodreads.com/series/%s?%s' % (seriesID, urlencode(params))
         try:
             rootxml, in_cache = gr_xml_request(URL)
             if rootxml is None:
@@ -656,14 +665,15 @@ def getSeriesMembers(seriesID=None):
                                     ('bookname', 'work/best_book/title'),
                                     ('authorname', 'work/best_book/author/name'),
                                     ('workid', 'work/id'),
-                                    ('authorid', 'work/best_book/author/id')
+                                    ('authorid', 'work/best_book/author/id'),
+                                    ('pubyear', 'work/original_publication_year')
                                     ]:
                 if book.find(location) is not None:
                     mydict[mykey] = book.find(location).text
                 else:
                     mydict[mykey] = ""
             results.append([mydict['order'], mydict['bookname'], mydict['authorname'],
-                            mydict['workid'], mydict['authorid']])
+                            mydict['workid'], mydict['authorid'], mydict['pubyear']])
     else:
         data = getBookWork(None, "SeriesPage", seriesID)
         if data:

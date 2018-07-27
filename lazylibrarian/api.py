@@ -380,8 +380,8 @@ class Api(object):
         else:
             self.id = kwargs['id']
             myDB = database.DBConnection()
-            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookFile,BookRate'
-            cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,'
+            cmd += 'BookFile,BookRate from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
             res = myDB.match(cmd, (kwargs['id'],))
             if not res:
                 self.data = 'No data found for bookid %s' % kwargs['id']

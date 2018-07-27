@@ -1828,7 +1828,7 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         setperm(opfpath)
         return opfpath, False
 
-   # Horrible hack to work around the limitations of sqlite3's row object
+    # Horrible hack to work around the limitations of sqlite3's row object
     data = {k: data[k] for k in data.keys()}
 
     bookid = data['BookID']
