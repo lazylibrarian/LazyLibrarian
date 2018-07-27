@@ -1425,7 +1425,7 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
     elif book_type != 'eBook':  # only do autoadd/img/opf for ebooks
         return
 
-    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
+    cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookRate'
     cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
     data = myDB.match(cmd, (bookid,))
     if not data:
@@ -1548,7 +1548,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             if not lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
                 # we can pass an opf with all the info, and a cover image
                 myDB = database.DBConnection()
-                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub'
+                cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookRate'
                 cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
                 data = myDB.match(cmd, (bookid,))
                 if not data:
@@ -1756,14 +1756,14 @@ def processAutoAdd(src_path=None, booktype='book'):
     return True
 
 
-def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None):
+def processIMG(dest_path=None, bookid=None, bookimg=None, global_name=None, overwrite=False):
     """ cache the bookimg from url or filename, and optionally copy it to bookdir """
     if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY']:
         logger.debug('Not creating coverfile, bookonly is set')
         return
 
     jpgfile = jpg_file(dest_path)
-    if jpgfile:
+    if not overwrite and jpgfile:
         logger.debug('Cover %s already exists' % jpgfile)
         setperm(jpgfile)
         return
@@ -1826,6 +1826,9 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
         logger.debug('%s already exists. Did not create one.' % opfpath)
         setperm(opfpath)
         return opfpath, False
+
+    # Horrible hack to work around the limitations of sqlite3's row object
+    data = {k: data[k] for k in data.keys()}
 
     bookid = data['BookID']
     if bookid.isdigit():
@@ -1890,6 +1893,9 @@ def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
 
     if 'BookDesc' in data:
         opfinfo += '        <dc:description>%s</dc:description>\n' % data['BookDesc']
+
+    if 'BookRate' in data:
+        opfinfo += '        <meta content="%s" name="calibre:rating"/>\n' % int(round(data['BookRate']))
 
     if seriesname:
         opfinfo += '        <meta content="%s" name="calibre:series"/>\n' % seriesname
