@@ -145,7 +145,7 @@ def setSeries(serieslist=None, bookid=None):
             if seriesid and book:
                 for member in members:
                     if member[3] == book['WorkID']:
-                        if check_year(member[5], past=1800, future= 0):
+                        if check_year(member[5], past=1800, future=0):
                             controlValueDict = {"BookID": bookid}
                             newValueDict = {"BookDate": member[5]}
                             myDB.upsert("books", newValueDict, controlValueDict)
@@ -549,7 +549,7 @@ def getSeriesAuthors(seriesid):
             authorname = member[2]
             # workid = member[3]
             authorid = member[4]
-            pubyear = member[5]
+            # pubyear = member[5]
             bookname = replace_all(bookname, dic)
             if not authorid:
                 # goodreads gives us all the info we need, librarything/google doesn't

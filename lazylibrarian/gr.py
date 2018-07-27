@@ -559,7 +559,8 @@ class GoodReads:
                                                 # might as well get the original publication year
                                                 # noinspection PyBroadException
                                                 try:
-                                                    res = BOOK_rootxml.find('./book/work/original_publication_year').text
+                                                    res = BOOK_rootxml.find(
+                                                        './book/work/original_publication_year').text
                                                     if check_year(res, past=1800, future=0):
                                                         bookdate = res
                                                 except Exception:
