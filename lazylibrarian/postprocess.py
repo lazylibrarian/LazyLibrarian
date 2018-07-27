@@ -1813,6 +1813,7 @@ def processMAGOPF(issuefile, title, issue, issueID, overwrite=False):
         'BookLang': 'eng',
         'BookImg': global_name + '.jpg',
         'BookPub': '',
+        'BookRate': None,
         'Series': title,
         'Series_index': issue
     }  # type: dict

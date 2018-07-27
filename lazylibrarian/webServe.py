@@ -1799,11 +1799,13 @@ class WebInterface(object):
         else:
             if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
                 GB = GoogleBooks(bookid)
-                _ = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid, "Wanted"]).start()
+                t = threading.Thread(target=GB.find_book, name='GB-BOOK', args=[bookid, "Wanted"])
+                t.start()
             else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
                 GR = GoodReads(bookid)
-                _ = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid, "Wanted"]).start()
-
+                t = threading.Thread(target=GR.find_book, name='GR-BOOK', args=[bookid, "Wanted"])
+                t.start()
+            t.join(timeout=10)  # 10 s to add book before redirect
         if lazylibrarian.CONFIG['IMP_AUTOSEARCH']:
             books = [{"bookid": bookid}]
             self.startBookSearch(books)
