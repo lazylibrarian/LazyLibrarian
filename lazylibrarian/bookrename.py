@@ -345,20 +345,10 @@ def nameVars(bookid, abridged=''):
     mydict = {}
     seriesnum = ''
     seriesname = ''
+
     myDB = database.DBConnection()
-    cmd = 'SELECT SeriesID,SeriesNum,BookDate from member,books WHERE books.bookid = member.bookid and books.bookid=?'
-    res = myDB.match(cmd, (bookid,))
-    if res:
-        seriesid = res['SeriesID']
-        serieslist = getList(res['SeriesNum'])
-        pubyear = res['BookDate']
-        cmd = 'SELECT BookDate from member,books WHERE books.bookid = member.bookid and SeriesNum=1 and SeriesID=?'
-        resDate = myDB.match(cmd, (seriesid,))
-        if resDate:
-            seryear = resDate['BookDate']
-        else:
-            seryear = ''
-    elif bookid == 'test':
+
+    if bookid == 'test':
         seriesid = '66175'
         serieslist = ['3']
         pubyear = '1955'
@@ -366,33 +356,50 @@ def nameVars(bookid, abridged=''):
         seriesname = 'The Lord of the Rings'
         mydict['Author'] = 'J.R.R. Tolkien'
         mydict['Title'] = 'The Fellowship of the Ring'
+        res = {}
     else:
-        seriesid = ''
-        serieslist = []
-        pubyear = ''
-        seryear = ''
+        cmd = 'SELECT SeriesID,SeriesNum from member,books WHERE books.bookid = member.bookid and books.bookid=?'
+        res = myDB.match(cmd, (bookid,))
+        if res:
+            seriesid = res['SeriesID']
+            serieslist = getList(res['SeriesNum'])
+            # might be "Book 3.5" or similar, just get the numeric part
+            while serieslist:
+                seriesnum = serieslist.pop()
+                seriesnum = seriesnum.lstrip('#')
+                try:
+                    _ = float(seriesnum)
+                    break
+                except ValueError:
+                    seriesnum = ''
+                    pass
 
-    if not pubyear or pubyear == '0000':
-        pubyear = ''
-    pubyear = pubyear[:4]  # googlebooks sometimes has month or full date
+            cmd = 'SELECT BookDate from member,books WHERE books.bookid = member.bookid and SeriesNum=1 and SeriesID=?'
+            resDate = myDB.match(cmd, (seriesid,))
+            if resDate:
+                seryear = resDate['BookDate']
+                if not seryear or seryear == '0000':
+                    seryear = ''
+                seryear = seryear[:4]
+            else:
+                seryear = ''
+        else:
+            seriesid = ''
+            serieslist = []
+            seryear = ''
 
-    if not seryear or seryear == '0000':
-        seryear = ''
-    seryear = seryear[:4]
-
-    # might be "Book 3.5" or similar, just get the numeric part
-    while serieslist:
-        seriesnum = serieslist.pop()
-        seriesnum = seriesnum.lstrip('#')
-        try:
-            _ = float(seriesnum)
-            break
-        except ValueError:
-            seriesnum = ''
-            pass
+        cmd = 'SELECT BookDate from books WHERE bookid=?'
+        resDate = myDB.match(cmd, (bookid,))
+        if resDate:
+            pubyear = resDate['BookDate']
+            if not pubyear or pubyear == '0000':
+                pubyear = ''
+            pubyear = pubyear[:4]  # googlebooks sometimes has month or full date
+        else:
+            pubyear = ''
 
     padnum = ''
-    if res and seriesnum == '':  # allow zero as valid seriesnum
+    if res and seriesnum == '':
         # couldn't figure out number, keep everything we got, could be something like "Book Two"
         serieslist = res['SeriesNum']
     elif seriesnum.isdigit():
@@ -410,7 +417,7 @@ def nameVars(bookid, abridged=''):
         res = myDB.match(cmd, (seriesid,))
         if res:
             seriesname = res['SeriesName']
-            if seriesnum == '':  # allow zero as a seriesnum
+            if seriesnum == '':
                 # add what we got back to end of series name
                 if seriesname and serieslist:
                     seriesname = "%s %s" % (seriesname, serieslist)
@@ -483,27 +490,10 @@ def nameVars(bookid, abridged=''):
     mydict['FolderName'] = stripspaces(dest_path)
 
     bookfile = replacevars(lazylibrarian.CONFIG['EBOOK_DEST_FILE'], mydict)
-    # replace all '/' not surrounded by whitespace with '_' as '/' is a directory separator
-    # but also used in some multi-book titles
-    slash = bookfile.find('/')
-    while slash > 0:
-        if bookfile[slash - 1] != ' ':
-            if bookfile[slash + 1] != ' ':
-                bookfile = bookfile[:slash] + '_' + bookfile[slash + 1:]
-        slash = bookfile.find('/', slash + 1)
-    mydict['BookFile'] = bookfile
-
+    # replace all '/' with '_' as '/' is a directory separator but also used in some multi-book titles
+    mydict['BookFile'] = bookfile.replace(os.sep, '_')
     audiofile = replacevars(lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'], mydict)
-    slash = audiofile.find('/')
-    while slash > 0:
-        if audiofile[slash - 1] != ' ':
-            if audiofile[slash + 1] != ' ':
-                audiofile = audiofile[:slash] + '_' + audiofile[slash + 1:]
-        slash = audiofile.find('/', slash + 1)
-    if bookid == 'test':
-        audiofile = audiofile.replace('$Part', '03').replace('$Total', '12')
-    mydict['AudioFile'] = audiofile
-
+    mydict['AudioFile'] = audiofile.replace(os.sep, '_')
     return mydict
 
 

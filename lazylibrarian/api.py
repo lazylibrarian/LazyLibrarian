@@ -31,7 +31,7 @@ from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, set
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
-    logHeader
+    logHeader, authorUpdate
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table
 from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr, replace_all
 from lazylibrarian.gb import GoogleBooks
@@ -91,6 +91,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'ignoreAuthor': '&id= ignore author by AuthorID',
             'unignoreAuthor': '&id= unignore author by AuthorID',
             'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
+            'authorUpdate': 'update the oldest author, if any are overdue',
             'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, refresh cache',
             'forceLibraryScan': '[&wait] [&remove] [&dir=] [&id=] rescan whole or part book library',
             'forceAudioBookScan': '[&wait] [&remove] [&dir=] [&id=] rescan whole or part audiobook library',
@@ -725,6 +726,12 @@ class Api(object):
         controlValueDict = {'AuthorID': self.id}
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
+
+    def _authorUpdate(self, **kwargs):
+        try:
+            self.data = authorUpdate(restart=False)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _refreshAuthor(self, **kwargs):
         refresh = False

@@ -2246,7 +2246,7 @@ class WebInterface(object):
         if bookdata:
             covers = []
             for source in ['current', 'cover', 'goodreads', 'librarything', 'whatwork',
-                            'openlibrary', 'googleisbn', 'googleimage']:
+                           'openlibrary', 'googleisbn', 'googleimage']:
                 cover, _ = getBookCover(bookid, source)
                 if cover:
                     covers.append([source, cover])
