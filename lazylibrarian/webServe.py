@@ -683,8 +683,9 @@ class WebInterface(object):
             # Also the authorname we get is for _any_ of the series authors
             # maybe should be the author of the first book in the series?
             cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
-            cmd += 'Have,Total from series,authors,seriesauthors'
+            cmd += 'Have,Total from series,authors,seriesauthors,member'
             cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+            cmd += ' and member.seriesid=series.seriesid and seriesnum=1'
             args = []
             if whichStatus not in ['All', 'None']:
                 cmd += ' and series.Status=?'
@@ -703,16 +704,8 @@ class WebInterface(object):
             if len(rowlist):
                 for row in rowlist:  # iterate through the sqlite3.Row objects
                     entry = list(row)
-                    # get the author of the first book in the series
-                    cmd = "select books.bookid,seriesnum,authorname from member,authors,books where "
-                    cmd += " books.authorid=authors.authorid and member.bookid=books.bookid "
-                    cmd += "and seriesnum != '' and seriesid=? order by seriesnum;"
-                    author = myDB.match(cmd, (entry[0],))
-                    if author:
-                        if lazylibrarian.CONFIG['SORT_SURNAME']:
-                            entry[1] = surnameFirst(author[2])
-                        else:
-                            entry[1] = author[2]
+                    if lazylibrarian.CONFIG['SORT_SURNAME']:
+                        entry[1] = surnameFirst(entry[1])
                     rows.append(entry)  # add the rowlist to the masterlist
 
                 if sSearch:
