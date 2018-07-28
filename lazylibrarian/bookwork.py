@@ -140,7 +140,7 @@ def setSeries(serieslist=None, bookid=None):
                 myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)',
                             (seriesid, item[2], "Active", 0, 0), suppress='UNIQUE')
 
-            members = getSeriesMembers(match['SeriesID'])
+            members = getSeriesMembers(seriesid)
             book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
             if seriesid and book:
                 for member in members:
