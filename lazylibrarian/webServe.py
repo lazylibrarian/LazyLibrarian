@@ -680,6 +680,8 @@ class WebInterface(object):
             myDB = database.DBConnection()
             # We pass series.SeriesID twice for datatables as the render function modifies it
             # and we need it in two columns. There is probably a better way...
+            # Also the authorname we get is for _any_ of the series authors
+            # maybe should be the author of the first book in the series?
             cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
             cmd += 'Have,Total from series,authors,seriesauthors'
             cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
@@ -699,11 +701,18 @@ class WebInterface(object):
 
             # turn the sqlite rowlist into a list of lists
             if len(rowlist):
-                # the masterlist to be filled with the row data
                 for row in rowlist:  # iterate through the sqlite3.Row objects
                     entry = list(row)
-                    if lazylibrarian.CONFIG['SORT_SURNAME']:
-                        entry[1] = surnameFirst(entry[1])
+                    # get the author of the first book in the series
+                    cmd = "select books.bookid,seriesnum,authorname from member,authors,books where "
+                    cmd += " books.authorid=authors.authorid and member.bookid=books.bookid "
+                    cmd += "and seriesnum != '' and seriesid=? order by seriesnum;"
+                    author = myDB.match(cmd, (entry[0],))
+                    if author:
+                        if lazylibrarian.CONFIG['SORT_SURNAME']:
+                            entry[1] = surnameFirst(author[2])
+                        else:
+                            entry[1] = author[2]
                     rows.append(entry)  # add the rowlist to the masterlist
 
                 if sSearch:
