@@ -552,7 +552,7 @@ def scheduleJob(action='Start', target=None):
                 logger.debug("No authorupdate scheduled")
 
 
-def authorUpdate():
+def authorUpdate(restart=True):
     threadname = threading.currentThread().name
     if "Thread-" in threadname:
         threading.currentThread().name = "AUTHORUPDATE"
@@ -573,7 +573,8 @@ def authorUpdate():
                 lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
             else:
                 logger.debug(msg)
-            scheduleJob("Restart", "authorUpdate")
+            if restart:
+                scheduleJob("Restart", "authorUpdate")
             return msg
     except Exception:
         logger.error('Unhandled exception in AuthorUpdate: %s' % traceback.format_exc())
