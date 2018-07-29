@@ -822,7 +822,7 @@ class GoodReads:
                                     if newserieslist:
                                         serieslist = newserieslist
                                         logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-                                setSeries(serieslist, bookid)
+                                    setSeries(serieslist, bookid)
 
                                 if not rejected:
                                     new_status = setStatus(bookid, serieslist, bookstatus)
@@ -1091,7 +1091,7 @@ class GoodReads:
             if newserieslist:
                 serieslist = newserieslist
                 logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-        setSeries(serieslist, bookid)
+            setSeries(serieslist, bookid)
 
         worklink = getWorkPage(bookid)
         if worklink:

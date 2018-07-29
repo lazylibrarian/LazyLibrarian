@@ -140,7 +140,7 @@ def setSeries(serieslist=None, bookid=None):
                 myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)',
                             (seriesid, item[2], "Active", 0, 0), suppress='UNIQUE')
 
-            members = getSeriesMembers(match['SeriesID'])
+            members = getSeriesMembers(seriesid)
             book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
             if seriesid and book:
                 for member in members:
@@ -648,7 +648,7 @@ def getSeriesMembers(seriesID=None):
         try:
             rootxml, in_cache = gr_xml_request(URL)
             if rootxml is None:
-                logger.debug("Error requesting series %s" % seriesID)
+                logger.debug("Error requesting series %s: %s" % (seriesID, URL))
                 return []
         except Exception as e:
             logger.error("%s finding series %s: %s" % (type(e).__name__, seriesID, str(e)))
@@ -731,8 +731,13 @@ def getWorkSeries(bookID=None):
                     serieslist.append((seriesid, seriesnum, seriesname))
                     match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
                     if not match:
-                        myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
-                                    (seriesid, seriesname, "Active", 0, 0))
+                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
+                        if not match:
+                            myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
+                                        (seriesid, seriesname, "Active", 0, 0))
+                        else:
+                            logger.warn("Name mismatch for series %s, [%s][%s]" % (
+                                        seriesid, seriesname, match['SeriesName']))
                     elif match['SeriesID'] != seriesid:
                         myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
     else:

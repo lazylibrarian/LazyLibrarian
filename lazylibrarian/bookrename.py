@@ -363,16 +363,6 @@ def nameVars(bookid, abridged=''):
         if res:
             seriesid = res['SeriesID']
             serieslist = getList(res['SeriesNum'])
-            # might be "Book 3.5" or similar, just get the numeric part
-            while serieslist:
-                seriesnum = serieslist.pop()
-                seriesnum = seriesnum.lstrip('#')
-                try:
-                    _ = float(seriesnum)
-                    break
-                except ValueError:
-                    seriesnum = ''
-                    pass
 
             cmd = 'SELECT BookDate from member,books WHERE books.bookid = member.bookid and SeriesNum=1 and SeriesID=?'
             resDate = myDB.match(cmd, (seriesid,))
@@ -397,6 +387,17 @@ def nameVars(bookid, abridged=''):
             pubyear = pubyear[:4]  # googlebooks sometimes has month or full date
         else:
             pubyear = ''
+
+    # might be "Book 3.5" or similar, just get the numeric part
+    while serieslist:
+        seriesnum = serieslist.pop()
+        seriesnum = seriesnum.lstrip('#')
+        try:
+            _ = float(seriesnum)
+            break
+        except ValueError:
+            seriesnum = ''
+            pass
 
     padnum = ''
     if res and seriesnum == '':

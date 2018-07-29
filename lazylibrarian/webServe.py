@@ -681,8 +681,9 @@ class WebInterface(object):
             # We pass series.SeriesID twice for datatables as the render function modifies it
             # and we need it in two columns. There is probably a better way...
             cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
-            cmd += 'Have,Total from series,authors,seriesauthors'
+            cmd += 'Have,Total from series,authors,seriesauthors,member'
             cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
+            cmd += ' and member.seriesid=series.seriesid and seriesnum=1'
             args = []
             if whichStatus not in ['All', 'None']:
                 cmd += ' and series.Status=?'
@@ -699,7 +700,6 @@ class WebInterface(object):
 
             # turn the sqlite rowlist into a list of lists
             if len(rowlist):
-                # the masterlist to be filled with the row data
                 for row in rowlist:  # iterate through the sqlite3.Row objects
                     entry = list(row)
                     if lazylibrarian.CONFIG['SORT_SURNAME']:
