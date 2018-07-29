@@ -648,7 +648,7 @@ def getSeriesMembers(seriesID=None):
         try:
             rootxml, in_cache = gr_xml_request(URL)
             if rootxml is None:
-                logger.debug("Error requesting series %s" % seriesID)
+                logger.debug("Error requesting series %s: %s" % (seriesID, URL))
                 return []
         except Exception as e:
             logger.error("%s finding series %s: %s" % (type(e).__name__, seriesID, str(e)))
