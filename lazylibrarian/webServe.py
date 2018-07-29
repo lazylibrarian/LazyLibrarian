@@ -680,8 +680,6 @@ class WebInterface(object):
             myDB = database.DBConnection()
             # We pass series.SeriesID twice for datatables as the render function modifies it
             # and we need it in two columns. There is probably a better way...
-            # Also the authorname we get is for _any_ of the series authors
-            # maybe should be the author of the first book in the series?
             cmd = 'SELECT series.SeriesID,AuthorName,SeriesName,series.Status,seriesauthors.AuthorID,series.SeriesID,'
             cmd += 'Have,Total from series,authors,seriesauthors,member'
             cmd += ' where authors.AuthorID=seriesauthors.AuthorID and series.SeriesID=seriesauthors.SeriesID'
