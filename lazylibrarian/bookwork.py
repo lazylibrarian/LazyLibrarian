@@ -731,8 +731,13 @@ def getWorkSeries(bookID=None):
                     serieslist.append((seriesid, seriesnum, seriesname))
                     match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
                     if not match:
-                        myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
-                                    (seriesid, seriesname, "Active", 0, 0))
+                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
+                        if not match:
+                            myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
+                                        (seriesid, seriesname, "Active", 0, 0))
+                        else:
+                            logger.warn("Name mismatch for series %s, [%s][%s]" % (
+                                        seriesid, seriesname, match['SeriesName']))
                     elif match['SeriesID'] != seriesid:
                         myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
     else:
