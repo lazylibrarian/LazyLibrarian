@@ -163,7 +163,7 @@ class OPDS(object):
                 'rel': 'subsection',
             }
         )
-        authors = myDB.select("SELECT authorname from authors order by authorname")
+        authors = myDB.select("SELECT authorname from authors WHERE Status != 'Ignored' order by authorname")
         if len(authors) > 0:
             count = len(authors)
             entries.append(
@@ -191,7 +191,7 @@ class OPDS(object):
                     'rel': 'subsection',
                 }
             )
-        magazines = myDB.select("SELECT title from magazines order by title")
+        magazines = myDB.select("SELECT title from magazines WHERE LastAcquired != '' order by title")
         if len(magazines) > 0:
             count = len(magazines)
             entries.append(
