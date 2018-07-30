@@ -24,7 +24,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getWorkSeries, getWorkPage, deleteEmptySeries, \
-    setSeries, setStatus, isbn_from_words, thingLang
+    setSeries, setStatus, isbn_from_words, thingLang, get_book_pubdate
 from lazylibrarian.images import getBookCover
 from lazylibrarian.cache import gr_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
@@ -420,6 +420,7 @@ class GoodReads:
                         find_field = "id"
                         bookisbn = ""
                         isbnhead = ""
+                        originalpubdate = ""
 
                         bookdict = self.get_bookdict(book)
 
@@ -444,18 +445,6 @@ class GoodReads:
                         if not rejected and re.match('[^\w-]', bookname):  # reject books with bad characters in title
                             logger.debug("removed result [" + bookname + "] for bad characters")
                             rejected = 'chars', 'Bad characters in bookname'
-
-                        if not rejected:
-                            if lazylibrarian.CONFIG['NO_FUTURE']:
-                                if bookdate > today()[:4]:
-                                    rejected = 'future', 'Future publication date [%s]' % bookdate
-                                    logger.debug('Rejecting %s, %s' % (bookname, rejected[1]))
-
-                        if not rejected:
-                            if lazylibrarian.CONFIG['NO_PUBDATE']:
-                                if not bookdate or bookdate == '0000':
-                                    rejected = 'date', 'No publication date'
-                                    logger.debug('Rejecting %s, %s' % (bookname, rejected[1]))
 
                         if not rejected:
                             if not bookimg or 'nocover' in bookimg:
@@ -556,13 +545,14 @@ class GoodReads:
                                                 # if bookLanguage and not isbnhead:
                                                 #     print(BOOK_URL)
 
-                                                # might as well get the original publication year
+                                                # might as well get the original publication year from here
                                                 # noinspection PyBroadException
                                                 try:
                                                     res = BOOK_rootxml.find(
                                                         './book/work/original_publication_year').text
                                                     if check_year(res, past=1800, future=0):
                                                         bookdate = res
+                                                        originalpubdate = res
                                                 except Exception:
                                                     pass
 
@@ -726,8 +716,8 @@ class GoodReads:
                             removedResults += 1
                         if not rejected or (rejected and rejected[0] in ignorable and
                                             lazylibrarian.CONFIG['IMP_IGNORE']):
-                            cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName '
-                            cmd += 'FROM books WHERE BookID=?'
+                            cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName,'
+                            cmd += 'OriginalPubDate FROM books WHERE BookID=?'
                             existing = myDB.match(cmd, (bookid,))
                             if existing:
                                 book_status = existing['Status']
@@ -743,11 +733,53 @@ class GoodReads:
                                     locked = False
                                 elif locked.isdigit():
                                     locked = bool(int(locked))
+                                if not originalpubdate:
+                                    originalpubdate = existing['OriginalPubDate']
                             else:
                                 book_status = bookstatus  # new_book status, or new_author status
                                 audio_status = audiostatus
                                 added = today()
                                 locked = False
+
+                            if not rejected:
+                                serieslist = []
+                                if series:
+                                    serieslist = [('', seriesNum, cleanName(unaccented(series), '&/'))]
+                                if lazylibrarian.CONFIG['ADD_SERIES']:
+                                    newserieslist = getWorkSeries(workid)
+                                    if newserieslist:
+                                        serieslist = newserieslist
+                                        logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
+                                    _api_hits, originalpubdate = setSeries(serieslist, bookid, authorid, workid)
+                                    api_hits += _api_hits
+                                    # setSeries will return the OriginalPubDate from the series page
+                                    # if goodreads knows it, so set a dummy value so we know not to ask again
+                                    if not originalpubdate:
+                                        originalpubdate = '0000'
+
+                                new_status = setStatus(bookid, serieslist, bookstatus)
+                                if new_status != book_status:
+                                    book_status = new_status
+
+                            if not originalpubdate:  # already set with language code or series or existing book
+                                originalpubdate, in_cache = get_book_pubdate(bookid)
+                                if not in_cache:
+                                    api_hits += 1
+
+                            if originalpubdate and originalpubdate != '0000':
+                                bookdate = originalpubdate
+
+                            if not rejected:
+                                if lazylibrarian.CONFIG['NO_FUTURE']:
+                                    if bookdate > today()[:4]:
+                                        rejected = 'future', 'Future publication date [%s]' % bookdate
+                                        logger.debug('Rejecting %s, %s' % (bookname, rejected[1]))
+
+                            if not rejected:
+                                if lazylibrarian.CONFIG['NO_PUBDATE']:
+                                    if not bookdate or bookdate == '0000':
+                                        rejected = 'date', 'No publication date'
+                                        logger.debug('Rejecting %s, %s' % (bookname, rejected[1]))
 
                             if rejected:
                                 reason = rejected[1]
@@ -781,7 +813,8 @@ class GoodReads:
                                     "AudioStatus": audio_status,
                                     "BookAdded": added,
                                     "WorkID": workid,
-                                    "ScanResult": reason
+                                    "ScanResult": reason,
+                                    "OriginalPubDate": originalpubdate
                                 }
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
@@ -813,22 +846,6 @@ class GoodReads:
                                         myDB.upsert("books", newValueDict, controlValueDict)
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
-
-                                serieslist = []
-                                if series:
-                                    serieslist = [('', seriesNum, cleanName(unaccented(series), '&/'))]
-                                if lazylibrarian.CONFIG['ADD_SERIES']:
-                                    newserieslist = getWorkSeries(workid)
-                                    if newserieslist:
-                                        serieslist = newserieslist
-                                        logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-                                    setSeries(serieslist, bookid)
-
-                                if not rejected:
-                                    new_status = setStatus(bookid, serieslist, bookstatus)
-
-                                    if new_status != book_status:
-                                        book_status = new_status
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
@@ -953,10 +970,15 @@ class GoodReads:
             reason = 'Language [%s] does not match preference' % bookLanguage
             logger.warn('Book %s, %s' % (bookname, reason))
 
-        if rootxml.find('./book/publication_year').text is None:
-            bookdate = "0000"
+        if rootxml.find('./book/work/original_publication_year').text is None:
+            originalpubdate = ''
+            if rootxml.find('./book/publication_year').text is None:
+                bookdate = "0000"
+            else:
+                bookdate = rootxml.find('./book/publication_year').text
         else:
-            bookdate = rootxml.find('./book/publication_year').text
+            originalpubdate = rootxml.find('./book/work/original_publication_year').text
+            bookdate = originalpubdate
 
         if lazylibrarian.CONFIG['NO_PUBDATE']:
             if not bookdate or bookdate == '0000':
@@ -1059,7 +1081,8 @@ class GoodReads:
             "AudioStatus": audiostatus,
             "BookAdded": today(),
             "WorkID": workid,
-            "ScanResult": reason
+            "ScanResult": reason,
+            "OriginalPubDate": originalpubdate
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)

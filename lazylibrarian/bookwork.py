@@ -116,11 +116,14 @@ def setAllBookSeries():
     return msg
 
 
-def setSeries(serieslist=None, bookid=None):
+def setSeries(serieslist=None, bookid=None, authorid=None, workid=None):
     """ set series details in series/member tables from the supplied dict
         and a displayable summary in book table
-        serieslist is a tuple (SeriesID, SeriesNum, SeriesName) """
+        serieslist is a tuple (SeriesID, SeriesNum, SeriesName)
+        Return how many api hits and the original publication date if known """
     myDB = database.DBConnection()
+    api_hits = 0
+    originalpubdate = ''
     if bookid:
         # delete any old series-member entries
         myDB.action('DELETE from member WHERE BookID=?', (bookid,))
@@ -128,36 +131,51 @@ def setSeries(serieslist=None, bookid=None):
             match = myDB.match('SELECT SeriesID from series where SeriesName=? COLLATE NOCASE', (item[2],))
             if match:
                 seriesid = match['SeriesID']
+                members, _api_hits = getSeriesMembers(seriesid, item[2])
+                api_hits += _api_hits
             else:
                 # new series, need to set status and get SeriesID
                 if item[0]:
                     seriesid = item[0]
+                    members, _api_hits = getSeriesMembers(seriesid, item[2])
+                    api_hits += _api_hits
                 else:
                     # no seriesid so generate it (row count + 1)
                     cnt = myDB.match("select count(*) as counter from series")
                     res = check_int(cnt['counter'], 0)
                     seriesid = str(res + 1)
+                    members = []
                 myDB.action('INSERT into series VALUES (?, ?, ?, ?, ?)',
                             (seriesid, item[2], "Active", 0, 0), suppress='UNIQUE')
 
-            members = getSeriesMembers(seriesid)
-            book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
-            if seriesid and book:
+            if not workid or not authorid:
+                book = myDB.match('SELECT AuthorID,WorkID from books where BookID=?', (bookid,))
+                if book:
+                    authorid = book['AuthorID']
+                    workid = book['WorkID']
+            if seriesid and authorid and workid:
                 for member in members:
-                    if member[3] == book['WorkID']:
+                    if member[3] == workid:
                         if check_year(member[5], past=1800, future=0):
                             controlValueDict = {"BookID": bookid}
-                            newValueDict = {"BookDate": member[5]}
+                            newValueDict = {"BookDate": member[5], "OriginalPubDate": member[5]}
                             myDB.upsert("books", newValueDict, controlValueDict)
+                            originalpubdate = member[5]
                         break
 
                 controlValueDict = {"BookID": bookid, "SeriesID": seriesid}
-                newValueDict = {"SeriesNum": item[1], "WorkID": book['WorkID']}
+                newValueDict = {"SeriesNum": item[1], "WorkID": workid}
                 myDB.upsert("member", newValueDict, controlValueDict)
                 myDB.action('INSERT INTO seriesauthors ("SeriesID", "AuthorID") VALUES (?, ?)',
-                            (seriesid, book['AuthorID']), suppress='UNIQUE')
+                            (seriesid, authorid), suppress='UNIQUE')
             else:
-                logger.debug('Unable to set series for book %s, %s' % (bookid, item))
+                if not authorid:
+                    logger.debug('Unable to set series for book %s, no authorid' % bookid)
+                elif not workid:
+                    logger.debug('Unable to set series for book %s, no workid' % bookid)
+                elif not seriesid:
+                    logger.debug('Unable to set series for book %s, no seriesid' % bookid)
+                return api_hits, originalpubdate
 
         series = ''
         for item in serieslist:
@@ -167,6 +185,7 @@ def setSeries(serieslist=None, bookid=None):
                 series += '<br>'
             series += newseries
         myDB.action('UPDATE books SET SeriesDisplay=? WHERE BookID=?', (series, bookid))
+        return api_hits, originalpubdate
 
 
 def setStatus(bookid=None, serieslist=None, default=None):
@@ -538,7 +557,7 @@ def getSeriesAuthors(seriesid):
     start = int(result['counter'])
     result = myDB.match('select SeriesName from series where SeriesID=?', (seriesid,))
     seriesname = result['SeriesName']
-    members = getSeriesMembers(seriesid)
+    members, api_hits = getSeriesMembers(seriesid, seriesname)
     dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '', "'": "", '"': ''}
 
     if members:
@@ -563,6 +582,8 @@ def getSeriesAuthors(seriesid):
                 set_url = base_url + searchterm + '&' + urlencode(params)
                 try:
                     rootxml, in_cache = gr_xml_request(set_url)
+                    if not in_cache:
+                        api_hits += 1
                     if rootxml is None:
                         logger.warn('Error getting XML for %s' % searchname)
                     else:
@@ -597,6 +618,8 @@ def getSeriesAuthors(seriesid):
                         searchterm = quote_plus(searchname)
                         set_url = base_url + searchterm + '&' + urlencode(params)
                         rootxml, in_cache = gr_xml_request(set_url)
+                        if not in_cache:
+                            api_hits += 1
                         if rootxml is None:
                             logger.warn('Error getting XML for %s' % searchname)
                         else:
@@ -636,29 +659,32 @@ def getSeriesAuthors(seriesid):
     return newauth
 
 
-def getSeriesMembers(seriesID=None):
+def getSeriesMembers(seriesID=None, seriesname=None):
     """ Ask librarything or goodreads for details on all books in a series
         order, bookname, authorname, workid, authorid
         (workid and authorid are goodreads only)
         Return as a list of lists """
     results = []
+    api_hits = 0
     if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
         params = {"format": "xml", "key": lazylibrarian.CONFIG['GR_API']}
         URL = 'https://www.goodreads.com/series/%s?%s' % (seriesID, urlencode(params))
         try:
             rootxml, in_cache = gr_xml_request(URL)
+            if not in_cache:
+                api_hits += 1
             if rootxml is None:
-                logger.debug("Error requesting series %s: %s" % (seriesID, URL))
-                return []
+                logger.debug("Series %s:%s not recognised at goodreads" % (seriesID, seriesname))
+                return [], api_hits
         except Exception as e:
             logger.error("%s finding series %s: %s" % (type(e).__name__, seriesID, str(e)))
-            return []
+            return [], api_hits
 
         works = rootxml.find('series/series_works')
         books = works.getiterator('series_work')
         if books is None:
             logger.warn('No books found for %s' % seriesID)
-            return []
+            return [], api_hits
         for book in books:
             mydict = {}
             for mykey, location in [('order', 'user_position'),
@@ -675,6 +701,7 @@ def getSeriesMembers(seriesID=None):
             results.append([mydict['order'], mydict['bookname'], mydict['authorname'],
                             mydict['workid'], mydict['authorid'], mydict['pubyear']])
     else:
+        api_hits = 0
         data = getBookWork(None, "SeriesPage", seriesID)
         if data:
             try:
@@ -696,7 +723,7 @@ def getSeriesMembers(seriesID=None):
             except IndexError:
                 if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
                     logger.debug('Error in series table for series %s' % seriesID)
-    return results
+    return results, api_hits
 
 
 def getWorkSeries(bookID=None):
@@ -763,6 +790,30 @@ def getWorkSeries(bookID=None):
                 pass
 
     return serieslist
+
+
+def get_book_pubdate(bookid, refresh=False):
+    URL = 'https://www.goodreads.com/book/show/' + bookid + '.xml?key=' + lazylibrarian.CONFIG['GR_API']
+    bookdate = "0000"
+    try:
+        rootxml, in_cache = gr_xml_request(URL, useCache=not refresh)
+    except Exception as e:
+        logger.error("%s fetching book publication date: %s" % (type(e).__name__, str(e)))
+        return bookdate, in_cache
+
+    if rootxml is None:
+        logger.debug("Error requesting book publication date")
+        return bookdate, in_cache
+
+    try:
+        bookdate = rootxml.find('book/work/original_publication_year').text
+        if bookdate is None:
+            bookdate = '0000'
+    except (KeyError, AttributeError):
+        logger.error("Error reading pubdate for GoodReads bookid %s pubdate [%s]" % (bookid, bookdate))
+
+    logger.debug("GoodReads bookid %s pubdate [%s]" % (bookid, bookdate))
+    return bookdate, in_cache
 
 
 def thingLang(isbn):

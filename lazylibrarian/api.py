@@ -729,7 +729,7 @@ class Api(object):
         newValueDict = {'Status': 'Active'}
         myDB.upsert("authors", newValueDict, controlValueDict)
 
-    def _authorUpdate(self, **kwargs):
+    def _authorUpdate(self):
         try:
             self.data = authorUpdate(restart=False)
         except Exception as e:

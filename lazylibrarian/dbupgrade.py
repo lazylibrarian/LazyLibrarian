@@ -79,8 +79,9 @@ def upgrade_needed():
     # 32 add counters to series table
     # 33 add DLResult to wanted table
     # 34 add ScanResult to books table, and new isbn table
+    # 35 add OriginalPubDate to books table
 
-    db_current_version = 34
+    db_current_version = 35
 
     if db_version < db_current_version:
         return db_current_version
@@ -148,7 +149,8 @@ def dbupgrade(db_current_version):
                                 'BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
                                 'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
                                 'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
-                                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT)')
+                                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
+                                'OriginalPubDate TEXT)')
                     myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
                                 'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
                                 'Source TEXT, DownloadID TEXT, DLResult TEXT)')
@@ -948,3 +950,10 @@ def db_v34(myDB, upgradelog):
         myDB.action('ALTER TABLE books ADD COLUMN ScanResult TEXT')
         myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
     upgradelog.write("%s v34: complete\n" % time.ctime())
+
+def db_v35(myDB, upgradelog):
+    if not has_column(myDB, "books", "OriginalPubDate"):
+        lazylibrarian.UPDATE_MSG = 'Adding OriginalPubDate to books table'
+        upgradelog.write("%s v34: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE books ADD COLUMN OriginalPubDate TEXT')
+    upgradelog.write("%s v35: complete\n" % time.ctime())
