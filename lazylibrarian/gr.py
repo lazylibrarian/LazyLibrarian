@@ -761,7 +761,7 @@ class GoodReads:
                                 if new_status != book_status:
                                     book_status = new_status
 
-                            if not originalpubdate:  # already set with language code or series or existing book
+                            if not originalpubdate:  # already set with language code or series or existing book?
                                 originalpubdate, in_cache = get_book_pubdate(bookid)
                                 if not in_cache:
                                     api_hits += 1
@@ -918,16 +918,27 @@ class GoodReads:
             logger.debug("Removed %s incorrect/incomplete result%s" % (removedResults, plural(removedResults)))
             logger.debug("Removed %s duplicate result%s" % (duplicates, plural(duplicates)))
             logger.debug("Ignored %s book%s" % (book_ignore_count, plural(book_ignore_count)))
-            logger.debug("Imported/Updated %s book%s in %d secs" % (resultcount, plural(resultcount),
-                                                                    int(time.time() - auth_start)))
+            logger.debug("Imported/Updated %s book%s in %d secs using %s api hit%s" %
+                         (resultcount, plural(resultcount), int(time.time() - auth_start),
+                          api_hits, plural(api_hits)))
             if cover_count:
                 logger.debug("Fetched %s cover%s in %.2f sec" % (cover_count, plural(cover_count), cover_time))
             if isbn_count:
                 logger.debug("Fetched %s ISBN in %.2f sec" % (isbn_count, isbn_time))
 
-            myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
-                         cache_hits, ignored, removedResults, not_cached, duplicates))
+            controlValueDict = {"authorname": authorname.replace('"', '""')}
+            newValueDict = {
+                            "GR_book_hits": api_hits,
+                            "GR_lang_hits": gr_lang_hits,
+                            "LT_lang_hits": lt_lang_hits,
+                            "GB_lang_change": gb_lang_change,
+                            "cache_hits": cache_hits,
+                            "bad_lang": ignored,
+                            "bad_char": removedResults,
+                            "uncached": not_cached,
+                            "duplicates": duplicates
+                            }
+            myDB.upsert("stats", newValueDict, controlValueDict)
 
             if refresh:
                 logger.info("[%s] Book processing complete: Added %s book%s / Updated %s book%s" %
