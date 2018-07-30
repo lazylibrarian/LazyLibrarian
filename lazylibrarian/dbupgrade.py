@@ -951,6 +951,7 @@ def db_v34(myDB, upgradelog):
         myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
     upgradelog.write("%s v34: complete\n" % time.ctime())
 
+
 def db_v35(myDB, upgradelog):
     if not has_column(myDB, "books", "OriginalPubDate"):
         lazylibrarian.UPDATE_MSG = 'Adding OriginalPubDate to books table'

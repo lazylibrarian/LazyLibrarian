@@ -799,7 +799,7 @@ def get_book_pubdate(bookid, refresh=False):
         rootxml, in_cache = gr_xml_request(URL, useCache=not refresh)
     except Exception as e:
         logger.error("%s fetching book publication date: %s" % (type(e).__name__, str(e)))
-        return bookdate, in_cache
+        return bookdate, False
 
     if rootxml is None:
         logger.debug("Error requesting book publication date")
