@@ -571,6 +571,7 @@ def authorUpdate(restart=True):
                 logger.info(msg)
                 authorid = author['AuthorID']
                 lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
+                msg = 'Updated author %s' % author['AuthorName']
             else:
                 logger.debug(msg)
             if restart:
