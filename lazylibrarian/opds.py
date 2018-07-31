@@ -23,7 +23,7 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int, plural, md5_utf8
+from lazylibrarian.formatter import makeUnicode, check_int, plural  #, md5_utf8
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
