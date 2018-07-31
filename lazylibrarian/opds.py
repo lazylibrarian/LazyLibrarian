@@ -300,9 +300,10 @@ class OPDS(object):
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-                if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                    res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
-                    entry['image'] = self.searchroot + '/' + res[0]
+                # disabled cover image as it stops navigation?
+                # if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                #     res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
+                #     entry['image'] = self.searchroot + '/' + res[0]
                 entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
