@@ -165,14 +165,6 @@ def main():
     # There is no point putting in any logging above this line, as its not set till after initialize.
     lazylibrarian.initialize()
 
-    # Set the install type (win,git,source) &
-    # check the version when the application starts
-    versioncheck.checkForUpdates()
-
-    logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
-        lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'],
-        lazylibrarian.CONFIG['INSTALL_TYPE']))
-
     if lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'] == 0:
         logger.debug('Automatic update checks are disabled')
         # pretend we're up to date so we don't keep warning the user
@@ -180,6 +172,14 @@ def main():
         lazylibrarian.CONFIG['LATEST_VERSION'] = lazylibrarian.CONFIG['CURRENT_VERSION']
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 0
     else:
+        # Set the install type (win,git,source) &
+        # check the version when the application starts
+        versioncheck.checkForUpdates()
+
+        logger.debug('Current Version [%s] - Latest remote version [%s] - Install type [%s]' % (
+            lazylibrarian.CONFIG['CURRENT_VERSION'], lazylibrarian.CONFIG['LATEST_VERSION'],
+            lazylibrarian.CONFIG['INSTALL_TYPE']))
+
         if check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0) == 0:
             if lazylibrarian.CONFIG['CURRENT_VERSION'] == lazylibrarian.CONFIG['LATEST_VERSION']:
                 if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:

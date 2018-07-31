@@ -23,7 +23,7 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int, plural, md5_utf8
+from lazylibrarian.formatter import makeUnicode, check_int, plural  #, md5_utf8
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
@@ -300,9 +300,10 @@ class OPDS(object):
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-                if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                    res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
-                    entry['image'] = self.searchroot + '/' + res[0]
+                # disabled cover image as it stops navigation?
+                # if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                #     res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
+                #     entry['image'] = self.searchroot + '/' + res[0]
                 entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
