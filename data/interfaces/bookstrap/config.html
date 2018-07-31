@@ -152,6 +152,7 @@
                       <input type="checkbox" id="single_user" name="single_user" value="1" ${checked} />
                       Single user bypass login</label>
                     </div>
+                    <small>Enabling/Disabling user accounts or changing webserver user/pass requires restart</small><br>
                     <fieldset id="admin_options">
                     <div class="form-group">
                       <label for="admin_email" class="control-label">Contact Email:</label>
@@ -214,6 +215,7 @@
                           <input type="checkbox" id="opds_enabled" name="opds_enabled" value="1" ${checked} />
                           Enable OPDS</label>
                         </div>
+                        <small>Enabling/Disabling OPDS or changing credentials requires restart</small><br>
                         <fieldset id="opdsoptions">
                             <div class="checkbox">
                               <%
