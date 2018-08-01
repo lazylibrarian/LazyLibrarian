@@ -7,7 +7,8 @@
     <div id="subhead_menu">
       <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
       <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-sync"></i> Restart</a>
-      <button class="button btn btn-sm btn-primary" type="button" value="checkforupdates" id="checkforupdates"><i class="fa fa-list-ol"></i> Check Version</button>
+      <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Job Status</button>
+      <button class="button btn btn-sm btn-primary" type="button" value="checkforupdates" id="checkforupdates"><i class="fa fa-list-alt"></i> Check Version</button>
       %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
       <a class="button btn btn-sm btn-primary" href="userAdmin" data-toggle="tooltip" data-placement="bottom" title="Manage user accounts"><i class="fa fa-user"></i> User Admin</a>
       %endif
@@ -2016,10 +2017,6 @@
                   </div>
               </div>
             </div>
-            <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Show Jobs</button>
-            <button class="button btn btn-sm btn-warning" type="button" value="Restart Jobs" id="restart_Jobs"><i class="fa fa-sync"></i> Restart Jobs</button>
-            <button class="button btn btn-sm btn-danger" type="button" value="Stop Jobs" id="stop_Jobs"><i class="fa fa-power-off"></i> Stop Jobs</button>
-            <br>
             <br>
           </div>
         </div>
@@ -3393,39 +3390,19 @@
         $('#show_Jobs').on('click', function(e) {
             $.get('show_Jobs', function(data) {
                 bootbox.dialog({
-                    title: 'Jobs Status',
+                    title: 'Job Status',
                     message: '<pre>'+data+'</pre>',
                     buttons: {
-                        primary: {
-                            label: "Close",
-                            className: 'btn-primary'
-                        }
-                    }
-                });
-            });
-        });
-
-        $('#stop_Jobs').on('click', function(e) {
-            $.get('stop_Jobs', function(data) {
-                bootbox.dialog({
-                    title: 'Stop Jobs',
-                    message: '<pre>'+data+'</pre>',
-                    buttons: {
-                        primary: {
-                            label: "Close",
-                            className: 'btn-primary'
-                        }
-                    }
-                });
-            });
-        });
-
-        $('#restart_Jobs').on('click', function(e) {
-            $.get('restart_Jobs', function(data) {
-                bootbox.dialog({
-                    title: 'Restarted Jobs',
-                    message: '<pre>'+data+'</pre>',
-                    buttons: {
+                        stopit: {
+                            label: "<i class=\"fa fa-ban\"></i> Stop Jobs",
+                            className: 'btn-warning',
+                            callback: function(result){ $.get("stop_Jobs", function(e) {}); }
+                        },
+                        restart: {
+                            label: "<i class=\"fa fa-sync\"></i> Restart Jobs",
+                            className: 'btn-info',
+                            callback: function(result){ $.get("restart_Jobs", function(e) {}); }
+                        },
                         primary: {
                             label: "Close",
                             className: 'btn-primary'

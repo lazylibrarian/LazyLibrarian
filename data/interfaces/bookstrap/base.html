@@ -194,31 +194,35 @@
               % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
                   msg = '<div class="input-group">Running a local updated version. Push changes to GITHub or rollback to Master release</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the warning for 24 hours" id="ignoreUpdate">Ignore</a></div>'
               % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
-                  msg = '<div class="input-group">New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+                  msg = '<div class="input-group">New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release" id="doUpdate">Update</a></div>'
               % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
-                  msg = '<div class="input-group">New version available. You are one commit behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+                  msg = '<div class="input-group">New version available. You are one commit behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release" id="doUpdate">Update</a></div>'
               % endif
           % endif
       % endif
 
       $(document).ready(function() {
-      if (readCookie('ignoreUpdate') != null) { msg = '' }
+        if (readCookie('ignoreUpdate') != null) { msg = '' }
 
-      if (msg != '') {
-        $.notify({
-            icon: "images/ll48.png",
-            title: '<strong>'+title+'</strong>',
-            message: msg
-        },{
-            icon_type: 'image'
-        },{
-              type: 'warning'
-          });
-      }
+        if (msg != '') {
+          $.notify({
+              icon: "images/ll48.png",
+              title: '<strong>'+title+'</strong>',
+              message: msg
+          },{
+              icon_type: 'image'
+          },{
+                type: 'warning'
+            });
+        }
 
-      $('#ignoreUpdate').click(function() {
-          createCookie("ignoreUpdate", true, 1);
-      });
+        $('#ignoreUpdate').click(function() {
+            createCookie("ignoreUpdate", true, 1);
+        });
+
+        $('#doUpdate').click(function () {
+            createCookie("ignoreUpdate", true, 0.01);  // suppress popup while updating
+        });
       });
 
       // Initialise tooltips

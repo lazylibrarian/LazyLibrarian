@@ -538,6 +538,7 @@ def scheduleJob(action='Start', target=None):
                     minutes = maxage * 60 * 24
                     # minutes = int(minutes / overdue)
                     minutes = int(minutes / total)
+                    minutes -= 5  # average update time
 
                 if minutes < 10:  # set a minimum interval of 10 minutes so we don't upset goodreads/librarything api
                     minutes = 10
@@ -717,11 +718,11 @@ def showJobs():
             dtnow = datetime.datetime.now()
             for author in authors:
                 diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-                if diff < maxage:
+                if diff <= maxage:
                     break
                 overdue += 1
             if not overdue:
-                result.append("There are no authors to update")
+                result.append("There are no authors overdue update")
             else:
                 result.append("Found %s author%s from %s overdue update" % (
                              overdue, plural(overdue), total))

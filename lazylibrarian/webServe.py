@@ -3611,7 +3611,7 @@ class WebInterface(object):
     @cherrypy.expose
     def show_Jobs(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
-        # show the current status of LL cron jobs in the log
+        # show the current status of LL cron jobs
         resultlist = showJobs()
         result = ''
         for line in resultlist:
@@ -3621,14 +3621,12 @@ class WebInterface(object):
     @cherrypy.expose
     def restart_Jobs(self):
         restartJobs(start='Restart')
-        # and list the new run-times in the log
-        return self.show_Jobs()
+        # return self.show_Jobs()
 
     @cherrypy.expose
     def stop_Jobs(self):
         restartJobs(start='Stop')
-        # and list the new run-times in the log
-        return self.show_Jobs()
+        # return self.show_Jobs()
 
     # LOGGING ###########################################################
 
