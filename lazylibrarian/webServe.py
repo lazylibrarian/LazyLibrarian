@@ -1750,10 +1750,10 @@ class WebInterface(object):
                                    row[6], dateFormat(row[15], lazylibrarian.CONFIG['DATE_FORMAT']),
                                    row[14], row[16], flag]
                         if kwargs['source'] == "Manage":
-                            cmd = "SELECT Time,Interval from failedsearch WHERE Bookid=? AND Library='AudioBook'"
+                            cmd = "SELECT Time,Interval,Count from failedsearch WHERE Bookid=? AND Library='AudioBook'"
                             searches = myDB.match(cmd, (row[6],))
                             if searches:
-                                thisrow.append(searches['Interval'])
+                                thisrow.append("%s/%s" % (searches['Count'], searches['Interval']))
                                 thisrow.append(time.strftime("%d %b %Y", time.localtime(searches['Time'])))
                             else:
                                 thisrow.append('0')
@@ -1764,10 +1764,10 @@ class WebInterface(object):
                                    row[6], dateFormat(row[13], lazylibrarian.CONFIG['DATE_FORMAT']),
                                    row[5], row[16], flag]
                         if kwargs['source'] == "Manage":
-                            cmd = "SELECT Time,Interval from failedsearch WHERE Bookid=? AND Library='eBook'"
+                            cmd = "SELECT Time,Interval,Count from failedsearch WHERE Bookid=? AND Library='eBook'"
                             searches = myDB.match(cmd, (row[6],))
                             if searches:
-                                thisrow.append(searches['Interval'])
+                                thisrow.append("%s/%s" % (searches['Count'], searches['Interval']))
                                 try:
                                     thisrow.append(time.strftime("%d %b %Y", time.localtime(float(searches['Time']))))
                                 except (ValueError, TypeError):

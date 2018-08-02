@@ -162,25 +162,19 @@ def search_book(books=None, library=None):
                 modelist.remove('rss')
 
         if lazylibrarian.CONFIG['DELAYSEARCH']:
-            res = myDB.match("SELECT Next from failedsearch WHERE BookID='0000'")
-            if res:
-                search_counter = check_int(res['Next'], 1) + 1
-            else:
-                search_counter = 2
-            myDB.upsert("failedsearch", {'Next': search_counter, 'Time': time.time()}, {'BookID': '0000'})
-
             for book in searchlist:
                 # have we searched for the book before
                 res = myDB.match('SELECT * FROM failedsearch WHERE BookID=? AND Library=?',
                                  (book['bookid'], book['library']))
                 if res:
-                    num = check_int(res['Next'], 0)
-                    if num:
-                        # only search every num searches
-                        if search_counter < num:
-                            logger.debug("Only searching for %s %s every %s" %
-                                         (book['bookid'], book['library'], res['Interval']))
-                            searchlist.remove(book)
+                    skipped = check_int(res['Count'], 0)
+                    interval = check_int(res['Interval'], 0)
+                    if skipped < interval:
+                        logger.debug("Only searching for %s %s every %s" %
+                                     (book['bookid'], book['library'], res['Interval']))
+                        searchlist.remove(book)
+                        myDB.action("UPDATE failedsearch SET Count=? WHERE WHERE BookID=? AND Library=?",
+                                    (skipped + 1, book['bookid'], book['library']))
 
         book_count = 0
         for book in searchlist:
@@ -324,16 +318,13 @@ def search_book(books=None, library=None):
                 res = myDB.match('SELECT * FROM failedsearch WHERE BookID=? AND Library=?',
                                  (book['bookid'], book['library']))
                 if res:
-                    interval = check_int(res['Interval'], 1) + 1
+                    interval = check_int(res['Interval'], 0)
                 else:
-                    interval = 2
+                    interval = 0
 
-                res = myDB.match("SELECT Next from failedsearch WHERE BookID='0000'")
-                if res:
-                    search_counter = check_int(res['Next'], 1)
-                    myDB.upsert("failedsearch",
-                                {'Next': search_counter + interval, 'Interval': interval, 'Time': time.time()},
-                                {'BookID': book['bookid'], 'Library': book['library']})
+                myDB.upsert("failedsearch",
+                            {'Count': 0, 'Interval': interval + 1, 'Time': time.time()},
+                            {'BookID': book['bookid'], 'Library': book['library']})
 
         logger.info("Search for Wanted items complete, found %s book%s" % (book_count, plural(book_count)))
 

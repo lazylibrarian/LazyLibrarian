@@ -191,7 +191,7 @@ def dbupgrade(db_current_version):
                                 'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
                     myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                                'Interval TEXT, Next TEXT,' +
+                                'Interval TEXT, Count TEXT,' +
                                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                                 'ON DELETE CASCADE)')
 
@@ -1048,7 +1048,7 @@ def db_v37(myDB, upgradelog):
 
     myDB.action('ALTER TABLE failedsearch RENAME TO temp_table')
     myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                'Interval TEXT, Next TEXT,' +
+                'Interval TEXT, Count TEXT,' +
                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                 'ON DELETE CASCADE)')
     myDB.action('INSERT INTO failedsearch SELECT * FROM temp_table')
