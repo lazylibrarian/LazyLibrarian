@@ -191,7 +191,7 @@ def dbupgrade(db_current_version):
                                 'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
                     myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                                'Interval TEXT, Count TEXT,' +
+                                'Interval INTEGER, Count INTEGER,' +
                                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                                 'ON DELETE CASCADE)')
 
@@ -984,7 +984,7 @@ def db_v36(myDB, upgradelog):
     if not has_column(myDB, "failedsearch", "Time"):
         lazylibrarian.UPDATE_MSG = 'Creating failed search table'
         upgradelog.write("%s v36: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-        myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, Interval TEXT, Next TEXT)')
+        myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, Interval INTEGER, Count INTEGER)')
     upgradelog.write("%s v36: complete\n" % time.ctime())
 
 
@@ -1048,7 +1048,7 @@ def db_v37(myDB, upgradelog):
 
     myDB.action('ALTER TABLE failedsearch RENAME TO temp_table')
     myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                'Interval TEXT, Count TEXT,' +
+                'Interval INTEGER, Count INTEGER,' +
                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                 'ON DELETE CASCADE)')
     myDB.action('INSERT INTO failedsearch SELECT * FROM temp_table')
