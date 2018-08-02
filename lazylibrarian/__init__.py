@@ -176,7 +176,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
-                     'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO']
+                     'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
+                     'DELAYSEARCH']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -394,6 +395,7 @@ CONFIG_DEFINITIONS = {
     'WISHLIST_INTERVAL': ('int', 'SearchScan', '24'),
     'VERSIONCHECK_INTERVAL': ('int', 'SearchScan', '24'),
     'GOODREADS_INTERVAL': ('int', 'SearchScan', '48'),
+    'DELAYSEARCH': ('bool', 'SearchScan', 0),
     'FULL_SCAN': ('bool', 'LibraryScan', 0),
     'ADD_AUTHOR': ('bool', 'LibraryScan', 1),
     'ADD_SERIES': ('bool', 'LibraryScan', 1),

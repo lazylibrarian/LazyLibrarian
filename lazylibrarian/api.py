@@ -679,8 +679,7 @@ class Api(object):
         myDB = database.DBConnection()
         myDB.action('DELETE from magazines WHERE Title=?', (self.id,))
         myDB.action('DELETE from wanted WHERE BookID=?', (self.id,))
-        myDB.action('DELETE from issues WHERE Title=?', (self.id,))
-
+        
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
@@ -1132,8 +1131,7 @@ class Api(object):
             AuthorName = authorsearch[0]['AuthorName']
             logger.debug("Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
-            myDB.action('DELETE from books WHERE AuthorID=?', (kwargs['id'],))
-
+            
     def _writeCFG(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
