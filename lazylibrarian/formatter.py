@@ -178,6 +178,14 @@ def today():
     return yyyymmdd
 
 
+def seconds_to_midnight():
+    """Get the number of seconds to midnight."""
+    tomorrow = datetime.datetime.now() + datetime.timedelta(1)
+    midnight = datetime.datetime(year=tomorrow.year, month=tomorrow.month,
+                                 day=tomorrow.day, hour=0, minute=0, second=0)
+    return (midnight - datetime.datetime.now()).seconds
+
+
 def age(histdate):
     """
     Return how many days since histdate

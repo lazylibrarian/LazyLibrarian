@@ -2749,6 +2749,12 @@
                   else:
                     hidden = ''
                 %>
+                <%
+                  if 'APILIMIT' in provider:
+                    apilimit = provider['APILIMIT']
+                  else:
+                    apilimit = 0
+                %>
                 <div class="col-md-6">
                 <legend ${hidden}>${provider['DISPNAME']}</legend>
                 <div class="checkbox">
@@ -2795,6 +2801,10 @@
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="newznab_${loop.index}_audiocat" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="newznab_${loop.index}_audiocat" name="newznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
+                </div>
+                <div class="form-group col-md-6" ${hidden}>
+                  <label for="newznab_${loop.index}_apilimit" class="control-label">API Limit:</label>
+                  <input type="text" placeholder="API Limit" id="newznab_${loop.index}_apilimit" name="newznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
                 </div>
                 %endfor
@@ -2853,6 +2863,10 @@
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="torznab_${loop.index}_audiocat" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="torznab_${loop.index}_audiocat" name="torznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
+                </div>
+                <div class="form-group col-md-6" ${hidden}>
+                  <label for="torznab_${loop.index}_apilimit" class="control-label">API Limit:</label>
+                  <input type="text" placeholder="API Limit" id="torznab_${loop.index}_apilimit" name="torznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
               </div>
             %endfor

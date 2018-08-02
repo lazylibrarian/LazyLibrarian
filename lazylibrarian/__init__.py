@@ -768,6 +768,7 @@ def config_read(reloaded=False):
                              "EXTENDED": check_setting('str', newz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', newz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', newz_name, 'manual', 0),
+                             "APILIMIT": check_setting('int', newz_name, 'apilimit', 0),
                              "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0)
                              })
         count += 1
@@ -806,6 +807,7 @@ def config_read(reloaded=False):
                              "EXTENDED": check_setting('str', torz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', torz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', torz_name, 'manual', 0),
+                             "APILIMIT": check_setting('int', torz_name, 'apilimit', 0),
                              "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0)
                              })
         count += 1
@@ -984,7 +986,7 @@ def config_write(part=None):
 
     if not part or part.startswith('Newznab') or part.startswith('Torznab'):
         NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH', 'AUDIOSEARCH',
-                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL']
+                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL', 'APILIMIT']
         for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
             new_list = []
             # strip out any empty slots
@@ -1134,6 +1136,7 @@ def add_newz_slot():
                  "EXTENDED": '1',
                  "UPDATED": '',
                  "MANUAL": 0,
+                 "APILIMIT": 0,
                  "DLPRIORITY": 0
                  }
         NEWZNAB_PROV.append(empty)
@@ -1164,6 +1167,7 @@ def add_torz_slot():
                  "EXTENDED": '1',
                  "UPDATED": '',
                  "MANUAL": 0,
+                 "APILIMIT": 0,
                  "DLPRIORITY": 0
                  }
         TORZNAB_PROV.append(empty)

@@ -18,7 +18,8 @@ import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.directparser import GEN
-from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, makeUnicode
+from lazylibrarian.formatter import age, today, plural, cleanName, unaccented, getList, check_int, \
+    makeUnicode, seconds_to_midnight
 from lazylibrarian.torrentparser import KAT, TPB, WWT, ZOO, TDL, LIME
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
@@ -252,6 +253,7 @@ def get_capabilities(provider, force=False):
                 provider['MAGSEARCH'] = ''
                 provider['AUDIOSEARCH'] = ''
                 provider['UPDATED'] = today()
+                provider['APILIMIT'] = 0
                 lazylibrarian.config_write(provider['NAME'])
         elif data is not None:
             logger.debug("Parsing xml for capabilities of %s" % URL)
@@ -355,8 +357,9 @@ def ProviderIsBlocked(name):
     return False
 
 
-def BlockProvider(who, why):
-    delay = check_int(lazylibrarian.CONFIG['BLOCKLIST_TIMER'], 3600)
+def BlockProvider(who, why, delay=0):
+    if not delay:
+        delay = check_int(lazylibrarian.CONFIG['BLOCKLIST_TIMER'], 3600)
     if len(why) > 40:
         why = why[:40] + '...'
     if delay == 0:
@@ -388,6 +391,19 @@ def IterateOverNewzNabSites(book=None, searchType=None):
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverNewzNabSites] - %s is BLOCKED' % provider['HOST'])
             else:
+                if check_int(provider['APILIMIT'], 0):
+                    if 'APICOUNT' in provider:
+                        res = check_int(provider['APICOUNT'], 0)
+                    else:
+                        res = 0
+                    if res >= check_int(provider['APILIMIT'], 0):
+                        BlockProvider(provider['HOST'], 'Reached Daily API limit (%s)' %
+                                      provider['APILIMIT'], delay=seconds_to_midnight())
+                        provider['APICOUNT'] = 0
+                    else:
+                        provider['APICOUNT'] = res + 1
+
+            if not ProviderIsBlocked(provider['HOST']):
                 provider = get_capabilities(provider)
                 providers += 1
                 logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
@@ -398,6 +414,19 @@ def IterateOverNewzNabSites(book=None, searchType=None):
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverNewzNabSites] - %s is BLOCKED' % provider['HOST'])
             else:
+                if check_int(provider['APILIMIT'], 0):
+                    if 'APICOUNT' in provider:
+                        res = check_int(provider['APICOUNT'], 0)
+                    else:
+                        res = 0
+                    if res >= check_int(provider['APILIMIT'], 0):
+                        BlockProvider(provider['HOST'], 'Reached Daily API limit (%s)' %
+                                      provider['APILIMIT'], delay=seconds_to_midnight())
+                        provider['APICOUNT'] = 0
+                    else:
+                        provider['APICOUNT'] = res + 1
+
+            if not ProviderIsBlocked(provider['HOST']):
                 provider = get_capabilities(provider)
                 providers += 1
                 logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
