@@ -347,6 +347,14 @@ def get_capabilities(provider, force=False):
 
 def ProviderIsBlocked(name):
     """ Check if provider is blocked because of previous errors """
+    # Reset api counters if it's a new day
+    if lazylibrarian.NABAPICOUNT != today():
+        lazylibrarian.NABAPICOUNT = today()
+        for provider in lazylibrarian.NEWZNAB_PROV:
+            provider['APICOUNT'] = 0
+        for provider in lazylibrarian.TORZNAB_PROV:
+            provider['APICOUNT'] = 0
+
     timenow = int(time.time())
     for entry in lazylibrarian.PROVIDER_BLOCKLIST:
         if entry["name"] == name:
@@ -399,7 +407,6 @@ def IterateOverNewzNabSites(book=None, searchType=None):
                     if res >= check_int(provider['APILIMIT'], 0):
                         BlockProvider(provider['HOST'], 'Reached Daily API limit (%s)' %
                                       provider['APILIMIT'], delay=seconds_to_midnight())
-                        provider['APICOUNT'] = 0
                     else:
                         provider['APICOUNT'] = res + 1
 
@@ -422,7 +429,6 @@ def IterateOverNewzNabSites(book=None, searchType=None):
                     if res >= check_int(provider['APILIMIT'], 0):
                         BlockProvider(provider['HOST'], 'Reached Daily API limit (%s)' %
                                       provider['APILIMIT'], delay=seconds_to_midnight())
-                        provider['APICOUNT'] = 0
                     else:
                         provider['APICOUNT'] = res + 1
 

@@ -173,7 +173,7 @@ def search_book(books=None, library=None):
                         logger.debug("Only searching for %s %s every %s" %
                                      (book['bookid'], book['library'], res['Interval']))
                         searchlist.remove(book)
-                        myDB.action("UPDATE failedsearch SET Count=? WHERE WHERE BookID=? AND Library=?",
+                        myDB.action("UPDATE failedsearch SET Count=? WHERE BookID=? AND Library=?",
                                     (skipped + 1, book['bookid'], book['library']))
 
         book_count = 0
@@ -314,7 +314,7 @@ def search_book(books=None, library=None):
                 if downloadResult(highest, book) > 1:
                     book_count += 1  # we found it
                 myDB.action("DELETE from failedsearch WHERE BookID=? AND Library=?", (book['bookid'], book['library']))
-            elif lazylibrarian.CONFIG['DELAYSEARCH']:
+            elif len(modelist) and lazylibrarian.CONFIG['DELAYSEARCH']:
                 res = myDB.match('SELECT * FROM failedsearch WHERE BookID=? AND Library=?',
                                  (book['bookid'], book['library']))
                 if res:

@@ -83,6 +83,7 @@ MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
 TORZNAB_PROV = []
+NABAPICOUNT = ''
 RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
 PROVIDER_BLOCKLIST = []
@@ -708,7 +709,7 @@ def initialize():
 # noinspection PyUnresolvedReferences
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
-        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
+        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, NABAPICOUNT
     # legacy name conversion
     if not CFG.has_option('General', 'ebook_dir'):
         ebook_dir = check_setting('str', 'General', 'destination_dir', '')
@@ -769,6 +770,7 @@ def config_read(reloaded=False):
                              "UPDATED": check_setting('str', newz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', newz_name, 'manual', 0),
                              "APILIMIT": check_setting('int', newz_name, 'apilimit', 0),
+                             "APICOUNT": 0,
                              "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0)
                              })
         count += 1
@@ -808,6 +810,7 @@ def config_read(reloaded=False):
                              "UPDATED": check_setting('str', torz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', torz_name, 'manual', 0),
                              "APILIMIT": check_setting('int', torz_name, 'apilimit', 0),
+                             "APICOUNT": 0,
                              "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0)
                              })
         count += 1
@@ -1137,6 +1140,7 @@ def add_newz_slot():
                  "UPDATED": '',
                  "MANUAL": 0,
                  "APILIMIT": 0,
+                 "APICOUNT": 0,
                  "DLPRIORITY": 0
                  }
         NEWZNAB_PROV.append(empty)
@@ -1168,6 +1172,7 @@ def add_torz_slot():
                  "UPDATED": '',
                  "MANUAL": 0,
                  "APILIMIT": 0,
+                 "APICOUNT": 0,
                  "DLPRIORITY": 0
                  }
         TORZNAB_PROV.append(empty)

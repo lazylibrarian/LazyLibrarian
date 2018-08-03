@@ -2739,7 +2739,7 @@
         <div role="tabpanel" class="tab-pane" id="capabilities">
           <div class="configtable">
               <div>
-              You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
+              You only need to alter category settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider. API limit is not read from the provider and is not affected by lock.
               </div>
             <div class="row">
                 %for provider in lazylibrarian.NEWZNAB_PROV:
@@ -2768,7 +2768,7 @@
                     <input type="checkbox" id="newznab_${loop.index}_manual" name="newznab_${loop.index}_manual" value="1" ${checked}  ${hidden}/>
                     Tick to lock settings</label>
                 </div>
-                <input type="text" id="newznab_${loop.index}_name_" name="newznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="newznab_${loop.index}_name" name="newznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
                 <input type="text" id="newznab_${loop.index}_updated" name="newznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="newznab_${loop.index}_generalsearch" class="control-label">General Search:</label>
@@ -2803,7 +2803,7 @@
                   <input type="text" placeholder="AudioBook Categories" id="newznab_${loop.index}_audiocat" name="newznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="newznab_${loop.index}_apilimit" class="control-label">API Limit:</label>
+                  <label for="newznab_${loop.index}_apilimit" class="control-label">Daily API Limit: (used ${provider['APICOUNT']} today)</label>
                   <input type="text" placeholder="API Limit" id="newznab_${loop.index}_apilimit" name="newznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
                 </div>
@@ -2828,7 +2828,7 @@
                   %>
                   <label for="torznab_${loop.index}_manual" class="control-label" ${hidden}>
                     <input type="checkbox" id="torznab_${loop.index}_manual" name="torznab_${loop.index}_manual" value="1" ${checked} ${hidden}/>
-                    Tick to prevent reloading values from provider</label>
+                    Tick to lock settings</label>
                 </div>
                 <input type="text" id="torznab_${loop.index}_name" name="torznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
                 <input type="text" id="torznab_${loop.index}_updated" name="torznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
@@ -2865,7 +2865,7 @@
                   <input type="text" placeholder="AudioBook Categories" id="torznab_${loop.index}_audiocat" name="torznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
-                  <label for="torznab_${loop.index}_apilimit" class="control-label">API Limit:</label>
+                  <label for="torznab_${loop.index}_apilimit" class="control-label">Daily API Limit: (used ${provider['APICOUNT']} today)</label>
                   <input type="text" placeholder="API Limit" id="torznab_${loop.index}_apilimit" name="torznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
               </div>
