@@ -1002,7 +1002,10 @@ def db_v37(myDB, upgradelog):
                 'OriginalPubDate TEXT,' +
                 ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO books SELECT * FROM temp_table')
+    myDB.action('INSERT INTO books SELECT AuthorID,BookName,BookSub,BookDesc,BookGenre,BookIsbn,BookPub,' +
+                'BookRate,BookImg,BookPages,BookLink,BookID,BookFile,BookDate,BookLang,BookAdded,Status,WorkPage,' +
+                'Manual,SeriesDisplay,BookLibrary,AudioFile,AudioLibrary,AudioStatus,WorkID,ScanResult,' +
+                'OriginalPubDate FROM temp_table')
     myDB.action('DROP TABLE temp_table')
 
     myDB.action('ALTER TABLE wanted RENAME TO temp_table')
@@ -1011,7 +1014,8 @@ def db_v37(myDB, upgradelog):
                 'Source TEXT, DownloadID TEXT, DLResult TEXT,' +
                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO wanted SELECT * FROM temp_table')
+    myDB.action('INSERT INTO wanted SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,' +
+                'Source,DownloadID,DLResult FROM temp_table')
     myDB.action('DROP TABLE temp_table')
 
     myDB.action('ALTER TABLE issues RENAME TO temp_table')
@@ -1019,7 +1023,7 @@ def db_v37(myDB, upgradelog):
                 'IssueDate TEXT, IssueFile TEXT,' +
                 ' CONSTRAINT fk_m FOREIGN KEY (Title) REFERENCES magazines (Title) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO issues SELECT * FROM temp_table')
+    myDB.action('INSERT INTO issues SELECT Title,IssueID,IssueAcquired,IssueDate,IssueFile FROM temp_table')
     myDB.action('DROP TABLE temp_table')
 
     myDB.action('ALTER TABLE member RENAME TO temp_table')
@@ -1028,22 +1032,24 @@ def db_v37(myDB, upgradelog):
                 'ON DELETE CASCADE, ' +
                 ' CONSTRAINT fk_s FOREIGN KEY (SeriesID) REFERENCES series (SeriesID) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO member SELECT * FROM temp_table')
+    myDB.action('INSERT INTO member SELECT SeriesID,BookID,WorkID,SeriesNum FROM temp_table')
     myDB.action('DROP TABLE temp_table')
 
     myDB.action('ALTER TABLE seriesauthors RENAME TO temp_table')
     myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, ' +
                 'UNIQUE (SeriesID,AuthorID),' +
                 ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
+                'ON DELETE CASCADE, ' +
+                ' CONSTRAINT fk_s FOREIGN KEY (SeriesID) REFERENCES series (SeriesID) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO seriesauthors SELECT * FROM temp_table')
+    myDB.action('INSERT INTO seriesauthors SELECT SeriesID,AuthorID FROM temp_table')
     myDB.action('DROP TABLE temp_table')
 
     myDB.action('ALTER TABLE sync RENAME TO temp_table')
     myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT,' +
                 ' CONSTRAINT fk_u FOREIGN KEY (UserID) REFERENCES users (UserID) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO sync SELECT * FROM temp_table')
+    myDB.action('INSERT INTO sync SELECT UserID,Label,Date,SyncList FROM temp_table')
     myDB.action('DROP TABLE temp_table')
 
     myDB.action('ALTER TABLE failedsearch RENAME TO temp_table')
@@ -1051,6 +1057,6 @@ def db_v37(myDB, upgradelog):
                 'Interval INTEGER, Count INTEGER,' +
                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                 'ON DELETE CASCADE)')
-    myDB.action('INSERT INTO failedsearch SELECT * FROM temp_table')
+    myDB.action('INSERT INTO failedsearch SELECT BookID,Library,Time,Interval,Count FROM temp_table')
     myDB.action('DROP TABLE temp_table')
     upgradelog.write("%s v37: complete\n" % time.ctime())
