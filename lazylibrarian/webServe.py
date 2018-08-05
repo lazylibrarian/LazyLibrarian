@@ -666,7 +666,7 @@ class WebInterface(object):
             iDisplayLength = int(iDisplayLength)
             lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-            whichStatus = 'NonEmpty'
+            whichStatus = 'All'
             if kwargs['whichStatus']:
                 whichStatus = kwargs['whichStatus']
 
@@ -687,8 +687,10 @@ class WebInterface(object):
             args = []
             if whichStatus == 'Empty':
                 cmd += ' and CAST(Have AS INTEGER) = 0'
-            elif whichStatus == 'NonEmpty':
+            elif whichStatus == 'Partial':
                 cmd += ' and CAST(Have AS INTEGER) > 0'
+            elif whichStatus == 'Complete':
+                cmd += ' and CAST(Have AS INTEGER) > 0 and CAST(Have AS INTEGER) = CAST(Total AS INTEGER)'
             elif whichStatus not in ['All', 'None']:
                 cmd += ' and series.Status=?'
                 args.append(whichStatus)

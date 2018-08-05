@@ -338,10 +338,11 @@ def setWorkID(books=None):
                         workid = item.text
                         if not workid:
                             logger.debug("No workid returned for %s" % books[cnt])
-                        controlValueDict = {"BookID": books[cnt]}
-                        newValueDict = {"WorkID": workid}
-                        myDB.upsert("books", newValueDict, controlValueDict)
-                        counter += 1
+                        else:
+                            counter += 1
+                            controlValueDict = {"BookID": books[cnt]}
+                            newValueDict = {"WorkID": workid}
+                            myDB.upsert("books", newValueDict, controlValueDict)
                         cnt += 1
 
         except Exception as e:
