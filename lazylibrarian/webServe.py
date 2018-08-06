@@ -666,7 +666,7 @@ class WebInterface(object):
             iDisplayLength = int(iDisplayLength)
             lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
-            whichStatus = 'NonEmpty'
+            whichStatus = 'All'
             if kwargs['whichStatus']:
                 whichStatus = kwargs['whichStatus']
 
@@ -687,8 +687,10 @@ class WebInterface(object):
             args = []
             if whichStatus == 'Empty':
                 cmd += ' and CAST(Have AS INTEGER) = 0'
-            elif whichStatus == 'NonEmpty':
+            elif whichStatus == 'Partial':
                 cmd += ' and CAST(Have AS INTEGER) > 0'
+            elif whichStatus == 'Complete':
+                cmd += ' and CAST(Have AS INTEGER) > 0 and CAST(Have AS INTEGER) = CAST(Total AS INTEGER)'
             elif whichStatus not in ['All', 'None']:
                 cmd += ' and series.Status=?'
                 args.append(whichStatus)
@@ -951,6 +953,14 @@ class WebInterface(object):
                     'DateType': datetype
                 })
 
+        # Reset api counters if it's a new day
+        if lazylibrarian.NABAPICOUNT != today():
+            lazylibrarian.NABAPICOUNT = today()
+            for provider in lazylibrarian.NEWZNAB_PROV:
+                provider['APICOUNT'] = 0
+            for provider in lazylibrarian.TORZNAB_PROV:
+                provider['APICOUNT'] = 0
+
         # Don't pass the whole config, no need to pass the
         # lazylibrarian.globals
         config = {
@@ -1106,6 +1116,8 @@ class WebInterface(object):
             lazylibrarian.NEWZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'newznab_%i_manual' % count, False))
             if interface != 'legacy':
+                lazylibrarian.NEWZNAB_PROV[count]['APILIMIT'] = check_int(kwargs.get(
+                    'newznab_%i_apilimit' % count, 0), 0)
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'newznab_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.NEWZNAB_PROV[count]['DISPNAME'] = kwargs.get(
@@ -1141,6 +1153,8 @@ class WebInterface(object):
             lazylibrarian.TORZNAB_PROV[count]['MANUAL'] = bool(kwargs.get(
                 'torznab_%i_manual' % count, False))
             if interface != 'legacy':
+                lazylibrarian.TORZNAB_PROV[count]['APILIMIT'] = check_int(kwargs.get(
+                    'torznab_%i_apilimit' % count, 0), 0)
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'torznab_%i_dlpriority' % count, 0), 0)
                 lazylibrarian.TORZNAB_PROV[count]['DISPNAME'] = kwargs.get(
@@ -1226,13 +1240,9 @@ class WebInterface(object):
                                             (book['BookFile'], type(e).__name__, str(e)))
 
                     myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
-                    myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
-                    myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
                 elif action == "Remove":
                     logger.info("Removing author: %s" % check['AuthorName'])
                     myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
-                    myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (authorid,))
-                    myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
 
         raise cherrypy.HTTPRedirect(redirect)
 
@@ -1322,8 +1332,6 @@ class WebInterface(object):
             AuthorName = authorsearch['AuthorName']
             logger.info("Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID=?', (AuthorID,))
-            myDB.action('DELETE from seriesauthors WHERE AuthorID=?', (AuthorID,))
-            myDB.action('DELETE from books WHERE AuthorID=?', (AuthorID,))
         raise cherrypy.HTTPRedirect("home")
 
     @cherrypy.expose
@@ -1752,13 +1760,36 @@ class WebInterface(object):
 
                     # Need to pass bookid and status twice as datatables modifies first one
                     if status_type == 'audiostatus':
-                        d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
-                                  row[6], dateFormat(row[15], lazylibrarian.CONFIG['DATE_FORMAT']),
-                                  row[14], row[16], flag])
+                        thisrow = [row[6], row[0], row[1], title, row[12], bookrate, row[4], row[14], row[11],
+                                   row[6], dateFormat(row[15], lazylibrarian.CONFIG['DATE_FORMAT']),
+                                   row[14], row[16], flag]
+                        if kwargs['source'] == "Manage":
+                            cmd = "SELECT Time,Interval,Count from failedsearch WHERE Bookid=? AND Library='AudioBook'"
+                            searches = myDB.match(cmd, (row[6],))
+                            if searches:
+                                thisrow.append("%s/%s" % (searches['Count'], searches['Interval']))
+                                thisrow.append(time.strftime("%d %b %Y", time.localtime(searches['Time'])))
+                            else:
+                                thisrow.append('0')
+                                thisrow.append('')
+                        d.append(thisrow)
                     else:
-                        d.append([row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
-                                  row[6], dateFormat(row[13], lazylibrarian.CONFIG['DATE_FORMAT']),
-                                  row[5], row[16], flag])
+                        thisrow = [row[6], row[0], row[1], title, row[12], bookrate, row[4], row[5], row[11],
+                                   row[6], dateFormat(row[13], lazylibrarian.CONFIG['DATE_FORMAT']),
+                                   row[5], row[16], flag]
+                        if kwargs['source'] == "Manage":
+                            cmd = "SELECT Time,Interval,Count from failedsearch WHERE Bookid=? AND Library='eBook'"
+                            searches = myDB.match(cmd, (row[6],))
+                            if searches:
+                                thisrow.append("%s/%s" % (searches['Count'], searches['Interval']))
+                                try:
+                                    thisrow.append(time.strftime("%d %b %Y", time.localtime(float(searches['Time']))))
+                                except (ValueError, TypeError):
+                                    thisrow.append('')
+                            else:
+                                thisrow.append('0')
+                                thisrow.append('')
+                        d.append(thisrow)
                 rows = d
 
             if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
@@ -2491,6 +2522,9 @@ class WebInterface(object):
                         if 'Audio' in library:
                             myDB.upsert("books", {'AudioStatus': action}, {'BookID': bookid})
                             logger.debug('AudioStatus set to "%s" for "%s"' % (action, bookname))
+                elif action in ["NoDelay"]:
+                    myDB.action("delete from failedsearch WHERE BookID=? AND Library=?", (bookid, library))
+                    logger.debug('%s delay set to zero for %s' % (library, bookid))
                 elif action in ["Remove", "Delete"]:
                     bookdata = myDB.match(
                         'SELECT AuthorID,Bookname,BookFile,AudioFile from books WHERE BookID=?', (bookid,))
@@ -2549,7 +2583,6 @@ class WebInterface(object):
                         if authorcheck:
                             if authorcheck['Status'] not in ['Active', 'Wanted']:
                                 myDB.action('delete from books where bookid=?', (bookid,))
-                                myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
                             elif 'eBook' in library:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
@@ -2559,7 +2592,6 @@ class WebInterface(object):
                                 logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
                         else:
                             myDB.action('delete from books where bookid=?', (bookid,))
-                            myDB.action('delete from wanted where bookid=?', (bookid,))
                             logger.info('Removed "%s" from database' % bookname)
 
         if check_totals:
@@ -3318,7 +3350,6 @@ class WebInterface(object):
             if action == "Remove" or action == "Delete":
                 myDB.action('DELETE from magazines WHERE Title=?', (title,))
                 myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
-                myDB.action('DELETE from issues WHERE Title=?', (title,))
                 myDB.action('DELETE from wanted where BookID=?', (title,))
                 logger.info('Magazine %s removed from database' % title)
             if action == "Reset":
@@ -3538,12 +3569,14 @@ class WebInterface(object):
         except KeyError:
             pass
 
-        if 'Remote-Addr' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['Remote-Addr']
-        elif 'X-Forwarded-For' in cherrypy.request.headers:
+        if 'X-Forwarded-For' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
         elif 'X-Host' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
+        elif 'Host' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['Host']  # nginx
+        elif 'Remote-Addr' in cherrypy.request.headers:
+            remote_ip = cherrypy.request.headers['Remote-Addr']
         else:
             remote_ip = cherrypy.request.remote.ip
 

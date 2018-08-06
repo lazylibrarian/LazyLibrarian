@@ -884,6 +884,7 @@ class GoodReads:
                         if all(False for _ in resultxml):  # returns True if iterator is empty
                             resultxml = None
 
+            self.verify_ids(authorid)
             deleteEmptySeries()
             cmd = 'SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID=?'
             cmd += ' AND Status != "Ignored" order by BookDate DESC'
@@ -949,6 +950,74 @@ class GoodReads:
 
         except Exception:
             logger.error('Unhandled exception in GR.get_author_books: %s' % traceback.format_exc())
+
+    def verify_ids(self, authorid):
+        """ GoodReads occasionally consolidates bookids/workids and renumbers so check if changed... """
+        myDB = database.DBConnection()
+        cmd = "select BookID,BookName from books WHERE AuthorID=?"
+        books = myDB.select(cmd, (authorid,))
+        counter = 0
+        logger.debug('Checking BookID/WorkID for %s book%s' % (len(books), plural(len(books))))
+        page = ''
+        pages = []
+        for book in books:
+            bookid = book['BookID']
+            if not bookid:
+                logger.warn("No bookid for %s" % book['BookName'])
+            else:
+                if page:
+                    page = page + ','
+                page = page + bookid
+                counter += 1
+                if counter == 50:
+                    counter = 0
+                    pages.append(page)
+                    page = ''
+        if page:
+            pages.append(page)
+
+        found = 0
+        differ = 0
+        notfound = []
+        pagecount = 0
+        for page in pages:
+            pagecount += 1
+            URL = 'https://www.goodreads.com/book/id_to_work_id/' + page + '?' + urlencode(self.params)
+            try:
+                rootxml, in_cache = gr_xml_request(URL, useCache=False)
+                if rootxml is None:
+                    logger.debug("Error requesting id_to_work_id page")
+                else:
+                    resultxml = rootxml.find('work-ids')
+                    if len(resultxml):
+                        ids = resultxml.getiterator('item')
+                        books = getList(page)
+                        cnt = 0
+                        for item in ids:
+                            workid = item.text
+                            if not workid:
+                                notfound.append(books[cnt])
+                                logger.debug("No workid returned for %s" % books[cnt])
+                            else:
+                                found += 1
+                                res = myDB.match("SELECT WorkID from books WHERE bookid=?", (books[cnt],))
+                                if res:
+                                    if res['WorkID'] != workid:
+                                        differ += 1
+                                        logger.debug("Updating workid for %s from [%s] to [%s]" % (
+                                                     books[cnt], res['WorkID'], workid))
+                                        controlValueDict = {"BookID": books[cnt]}
+                                        newValueDict = {"WorkID": workid}
+                                        myDB.upsert("books", newValueDict, controlValueDict)
+                            cnt += 1
+
+            except Exception as e:
+                logger.error("%s parsing id_to_work_id page: %s" % (type(e).__name__, str(e)))
+        logger.debug("BookID/WorkID Found %d, Differ %d, Missing %d" % (found, differ, len(notfound)))
+        for bookid in notfound:
+          res = myDB.match("SELECT BookName from books WHERE bookid=?", (bookid,))
+          if res:
+            logger.warn("Unknown goodreads bookid %s: %s" % (bookid, res['BookName']))
 
     def find_book(self, bookid=None, bookstatus=None, audiostatus=None):
         myDB = database.DBConnection()

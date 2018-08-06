@@ -27,7 +27,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookrename import audioRename, nameVars
 from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors
+    getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors, setWorkID
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
@@ -141,6 +141,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
             'setAllBookSeries': '[&wait] Set the series details from goodreads or librarything workpages',
             'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
+            'setWorkID': '[&wait] [&bookids] Set WorkID for all books that dont have one, or bookids',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory',
@@ -679,7 +680,6 @@ class Api(object):
         myDB = database.DBConnection()
         myDB.action('DELETE from magazines WHERE Title=?', (self.id,))
         myDB.action('DELETE from wanted WHERE BookID=?', (self.id,))
-        myDB.action('DELETE from issues WHERE Title=?', (self.id,))
 
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -864,6 +864,15 @@ class Api(object):
             self.data = setWorkPages()
         else:
             threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
+
+    def _setWorkID(self, **kwargs):
+        ids = None
+        if 'bookids' in kwargs:
+            ids = kwargs['bookids']
+        if 'wait' in kwargs:
+            self.data = setWorkID(ids)
+        else:
+            threading.Thread(target=setWorkID, name='API-SETWORKID', args=[ids]).start()
 
     def _setAllBookSeries(self, **kwargs):
         if 'wait' in kwargs:
@@ -1132,7 +1141,6 @@ class Api(object):
             AuthorName = authorsearch[0]['AuthorName']
             logger.debug("Removing all references to author: %s" % AuthorName)
             myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
-            myDB.action('DELETE from books WHERE AuthorID=?', (kwargs['id'],))
 
     def _writeCFG(self, **kwargs):
         if 'name' not in kwargs:

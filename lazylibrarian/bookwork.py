@@ -23,7 +23,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.cache import fetchURL, gr_xml_request
 from lazylibrarian.common import proxyList
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
-    check_int, replace_all, check_year
+    check_int, replace_all, check_year, getList
 from lib.fuzzywuzzy import fuzz
 from lib.six import PY2
 
@@ -97,19 +97,24 @@ def setBookAuthors(book):
 def setAllBookSeries():
     """ Try to set series details for all books """
     myDB = database.DBConnection()
-    books = myDB.select('select BookID,WorkID from books where Manual is not "1"')
+    books = myDB.select('select BookID,WorkID,BookName from books where Manual is not "1"')
     counter = 0
     if books:
         logger.info('Checking series for %s book%s' % (len(books), plural(len(books))))
         for book in books:
             if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
                 workid = book['WorkID']
+                if not workid:
+                    logger.debug("No workid for book %s: %s" % (book['BookID'], book['BookName']))
             else:
                 workid = book['BookID']
-            serieslist = getWorkSeries(workid)
-            if serieslist:
-                counter += 1
-                setSeries(serieslist, book['BookID'])
+                if not workid:
+                    logger.debug("No bookid for book: %s" % book['BookName'])
+            if workid:
+                serieslist = getWorkSeries(workid)
+                if serieslist:
+                    counter += 1
+                    setSeries(serieslist, book['BookID'])
     deleteEmptySeries()
     msg = 'Updated %s book%s' % (counter, plural(counter))
     logger.info('Series check complete: ' + msg)
@@ -279,6 +284,72 @@ def setWorkPages():
     else:
         msg = 'No missing WorkPages'
         logger.debug(msg)
+    return msg
+
+
+def setWorkID(books=None):
+    """ Set the goodreads workid for any books that don't already have one
+        books is a comma separated list of bookids or if empty, select from database
+        Paginate requests to reduce api hits """
+
+    myDB = database.DBConnection()
+    pages = []
+    if books:
+        page = books
+        pages.append(page)
+    else:
+        cmd = "select BookID,BookName from books where WorkID='' or WorkID is null"
+        books = myDB.select(cmd)
+        if books:
+            counter = 0
+            logger.debug('Setting WorkID for %s book%s' % (len(books), plural(len(books))))
+            page = ''
+            for book in books:
+                bookid = book['BookID']
+                if not bookid:
+                    logger.debug("No bookid for %s" % book['BookName'])
+                else:
+                    if page:
+                        page = page + ','
+                    page = page + bookid
+                    counter += 1
+                    if counter == 50:
+                        counter = 0
+                        pages.append(page)
+                        page = ''
+            if page:
+                pages.append(page)
+
+    counter = 0
+    params = {"key": lazylibrarian.CONFIG['GR_API']}
+    for page in pages:
+        URL = 'https://www.goodreads.com/book/id_to_work_id/' + page + '?' + urlencode(params)
+        try:
+            rootxml, in_cache = gr_xml_request(URL, useCache=False)
+            if rootxml is None:
+                logger.debug("Error requesting id_to_work_id page")
+            else:
+                resultxml = rootxml.find('work-ids')
+                if len(resultxml):
+                    ids = resultxml.getiterator('item')
+                    books = getList(page)
+                    cnt = 0
+                    for item in ids:
+                        workid = item.text
+                        if not workid:
+                            logger.debug("No workid returned for %s" % books[cnt])
+                        else:
+                            counter += 1
+                            controlValueDict = {"BookID": books[cnt]}
+                            newValueDict = {"WorkID": workid}
+                            myDB.upsert("books", newValueDict, controlValueDict)
+                        cnt += 1
+
+        except Exception as e:
+            logger.error("%s parsing id_to_work_id page: %s" % (type(e).__name__, str(e)))
+
+    msg = 'Updated %s id%s' % (counter, plural(counter))
+    logger.debug("setWorkID complete: " + msg)
     return msg
 
 
@@ -754,19 +825,20 @@ def getWorkSeries(bookID=None):
                     continue
                 if seriesname and seriesid:
                     seriesname = cleanName(unaccented(seriesname), '&/')
-                    seriesnum = cleanName(unaccented(seriesnum))
-                    serieslist.append((seriesid, seriesnum, seriesname))
-                    match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
-                    if not match:
-                        match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
+                    if seriesname:
+                        seriesnum = cleanName(unaccented(seriesnum))
+                        serieslist.append((seriesid, seriesnum, seriesname))
+                        match = myDB.match('SELECT SeriesID from series WHERE SeriesName=?', (seriesname,))
                         if not match:
-                            myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
-                                        (seriesid, seriesname, "Active", 0, 0))
-                        else:
-                            logger.warn("Name mismatch for series %s, [%s][%s]" % (
-                                        seriesid, seriesname, match['SeriesName']))
-                    elif match['SeriesID'] != seriesid:
-                        myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
+                            match = myDB.match('SELECT SeriesName from series WHERE SeriesID=?', (seriesid,))
+                            if not match:
+                                myDB.action('INSERT INTO series VALUES (?, ?, ?, ?, ?)',
+                                            (seriesid, seriesname, "Active", 0, 0))
+                            else:
+                                logger.warn("Name mismatch for series %s, [%s][%s]" % (
+                                            seriesid, seriesname, match['SeriesName']))
+                        elif match['SeriesID'] != seriesid:
+                            myDB.action('UPDATE series SET SeriesID=? WHERE SeriesName=?', (seriesid, seriesname))
     else:
         work = getBookWork(bookID, "Series")
         if work:
@@ -783,7 +855,8 @@ def getWorkSeries(bookID=None):
                             series = series.strip()
                         seriesname = cleanName(unaccented(series), '&/')
                         seriesnum = cleanName(unaccented(seriesnum))
-                        serieslist.append(('', seriesnum, seriesname))
+                        if seriesname:
+                            serieslist.append(('', seriesnum, seriesname))
                     except IndexError:
                         pass
             except IndexError:

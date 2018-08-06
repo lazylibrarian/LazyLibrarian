@@ -70,7 +70,7 @@ def upgrade_needed():
     # 23 add user accounts
     # 24 add HaveRead and ToRead to user accounts
     # 25 add index for magazine issues (title) for new dbchanges
-    # 26 add Sync table
+    # 26 create Sync table
     # 27 add indexes for book/author/wanted status
     # 28 add CalibreRead and CalibreToRead columns to user table
     # 29 add goodreads workid to books table
@@ -80,8 +80,10 @@ def upgrade_needed():
     # 33 add DLResult to wanted table
     # 34 add ScanResult to books table, and new isbn table
     # 35 add OriginalPubDate to books table
+    # 36 create failedsearch table
+    # 37 add delete cascade to tables
 
-    db_current_version = 35
+    db_current_version = 37
 
     if db_version < db_current_version:
         return db_current_version
@@ -150,30 +152,48 @@ def dbupgrade(db_current_version):
                                 'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
                                 'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
                                 'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
-                                'OriginalPubDate TEXT)')
+                                'OriginalPubDate TEXT,' +
+                                ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
+                                'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
                                 'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
-                                'Source TEXT, DownloadID TEXT, DLResult TEXT)')
+                                'Source TEXT, DownloadID TEXT, DLResult TEXT,' +
+                                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
+                                'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, ' +
                                 'MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, ' +
                                 'Reject TEXT, LatestCover TEXT, DateType TEXT)')
                     myDB.action('CREATE TABLE languages (isbn TEXT, lang TEXT)')
                     myDB.action('CREATE TABLE issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, ' +
-                                'IssueDate TEXT, IssueFile TEXT)')
+                                'IssueDate TEXT, IssueFile TEXT,' +
+                                ' CONSTRAINT fk_m FOREIGN KEY (Title) REFERENCES magazines (Title) ' +
+                                'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE stats (authorname text, GR_book_hits int, GR_lang_hits int, ' +
                                 'LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, ' +
                                 'uncached int, duplicates int)')
                     myDB.action('CREATE TABLE series (SeriesID INTEGER UNIQUE, SeriesName TEXT, Status TEXT, ' +
                                 'Have TEXT, Total TEXT)')
-                    myDB.action('CREATE TABLE member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, SeriesNum TEXT)')
+                    myDB.action('CREATE TABLE member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, SeriesNum TEXT,' +
+                                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
+                                'ON DELETE CASCADE, ' +
+                                ' CONSTRAINT fk_s FOREIGN KEY (SeriesID) REFERENCES series (SeriesID) ' +
+                                'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, ' +
-                                'UNIQUE (SeriesID,AuthorID))')
+                                'UNIQUE (SeriesID,AuthorID),' +
+                                ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
+                                'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE downloads (Count INTEGER, Provider TEXT)')
                     myDB.action('CREATE TABLE users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, Password TEXT, ' +
                                 'Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, ' +
                                 'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT)')
-                    myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT)')
+                    myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT,' +
+                                ' CONSTRAINT fk_u FOREIGN KEY (UserID) REFERENCES users (UserID) ' +
+                                'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
+                    myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
+                                'Interval INTEGER, Count INTEGER,' +
+                                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
+                                'ON DELETE CASCADE)')
 
                     # pastissues table has same layout as wanted table, code below is to save typos if columns change
                     res = myDB.match("SELECT sql FROM sqlite_master WHERE type='table' AND name='wanted'")
@@ -955,6 +975,88 @@ def db_v34(myDB, upgradelog):
 def db_v35(myDB, upgradelog):
     if not has_column(myDB, "books", "OriginalPubDate"):
         lazylibrarian.UPDATE_MSG = 'Adding OriginalPubDate to books table'
-        upgradelog.write("%s v34: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        upgradelog.write("%s v35: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('ALTER TABLE books ADD COLUMN OriginalPubDate TEXT')
     upgradelog.write("%s v35: complete\n" % time.ctime())
+
+
+def db_v36(myDB, upgradelog):
+    if not has_column(myDB, "failedsearch", "Time"):
+        lazylibrarian.UPDATE_MSG = 'Creating failed search table'
+        upgradelog.write("%s v36: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, Interval INTEGER, Count INTEGER)')
+    upgradelog.write("%s v36: complete\n" % time.ctime())
+
+
+def db_v37(myDB, upgradelog):
+    lazylibrarian.UPDATE_MSG = 'Adding delete cascade constraint to existing tables'
+    upgradelog.write("%s v37: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+    myDB.action('DROP TABLE IF EXISTS temp_table')
+    myDB.action('ALTER TABLE books RENAME TO temp_table')
+    myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
+                'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, ' +
+                'BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
+                'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
+                'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
+                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
+                'OriginalPubDate TEXT,' +
+                ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO books SELECT AuthorID,BookName,BookSub,BookDesc,BookGenre,BookIsbn,BookPub,' +
+                'BookRate,BookImg,BookPages,BookLink,BookID,BookFile,BookDate,BookLang,BookAdded,Status,WorkPage,' +
+                'Manual,SeriesDisplay,BookLibrary,AudioFile,AudioLibrary,AudioStatus,WorkID,ScanResult,' +
+                'OriginalPubDate FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+
+    myDB.action('ALTER TABLE wanted RENAME TO temp_table')
+    myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
+                'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
+                'Source TEXT, DownloadID TEXT, DLResult TEXT,' +
+                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO wanted SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,' +
+                'Source,DownloadID,DLResult FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+
+    myDB.action('ALTER TABLE issues RENAME TO temp_table')
+    myDB.action('CREATE TABLE issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, ' +
+                'IssueDate TEXT, IssueFile TEXT,' +
+                ' CONSTRAINT fk_m FOREIGN KEY (Title) REFERENCES magazines (Title) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO issues SELECT Title,IssueID,IssueAcquired,IssueDate,IssueFile FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+
+    myDB.action('ALTER TABLE member RENAME TO temp_table')
+    myDB.action('CREATE TABLE member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, SeriesNum TEXT,' +
+                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
+                'ON DELETE CASCADE, ' +
+                ' CONSTRAINT fk_s FOREIGN KEY (SeriesID) REFERENCES series (SeriesID) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO member SELECT SeriesID,BookID,WorkID,SeriesNum FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+
+    myDB.action('ALTER TABLE seriesauthors RENAME TO temp_table')
+    myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, ' +
+                'UNIQUE (SeriesID,AuthorID),' +
+                ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
+                'ON DELETE CASCADE, ' +
+                ' CONSTRAINT fk_s FOREIGN KEY (SeriesID) REFERENCES series (SeriesID) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO seriesauthors SELECT SeriesID,AuthorID FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+
+    myDB.action('ALTER TABLE sync RENAME TO temp_table')
+    myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT,' +
+                ' CONSTRAINT fk_u FOREIGN KEY (UserID) REFERENCES users (UserID) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO sync SELECT UserID,Label,Date,SyncList FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+
+    myDB.action('ALTER TABLE failedsearch RENAME TO temp_table')
+    myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
+                'Interval INTEGER, Count INTEGER,' +
+                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
+                'ON DELETE CASCADE)')
+    myDB.action('INSERT INTO failedsearch SELECT BookID,Library,Time,Interval,Count FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+    upgradelog.write("%s v37: complete\n" % time.ctime())

@@ -83,6 +83,7 @@ MONTHNAMES = []
 CACHEDIR = ''
 NEWZNAB_PROV = []
 TORZNAB_PROV = []
+NABAPICOUNT = ''
 RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
 PROVIDER_BLOCKLIST = []
@@ -176,7 +177,8 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
-                     'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO']
+                     'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
+                     'DELAYSEARCH']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -394,6 +396,7 @@ CONFIG_DEFINITIONS = {
     'WISHLIST_INTERVAL': ('int', 'SearchScan', '24'),
     'VERSIONCHECK_INTERVAL': ('int', 'SearchScan', '24'),
     'GOODREADS_INTERVAL': ('int', 'SearchScan', '48'),
+    'DELAYSEARCH': ('bool', 'SearchScan', 0),
     'FULL_SCAN': ('bool', 'LibraryScan', 0),
     'ADD_AUTHOR': ('bool', 'LibraryScan', 1),
     'ADD_SERIES': ('bool', 'LibraryScan', 1),
@@ -706,7 +709,7 @@ def initialize():
 # noinspection PyUnresolvedReferences
 def config_read(reloaded=False):
     global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
-        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
+        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, NABAPICOUNT
     # legacy name conversion
     if not CFG.has_option('General', 'ebook_dir'):
         ebook_dir = check_setting('str', 'General', 'destination_dir', '')
@@ -766,6 +769,8 @@ def config_read(reloaded=False):
                              "EXTENDED": check_setting('str', newz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', newz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', newz_name, 'manual', 0),
+                             "APILIMIT": check_setting('int', newz_name, 'apilimit', 0),
+                             "APICOUNT": 0,
                              "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0)
                              })
         count += 1
@@ -804,6 +809,8 @@ def config_read(reloaded=False):
                              "EXTENDED": check_setting('str', torz_name, 'extended', '1'),
                              "UPDATED": check_setting('str', torz_name, 'updated', ''),
                              "MANUAL": check_setting('bool', torz_name, 'manual', 0),
+                             "APILIMIT": check_setting('int', torz_name, 'apilimit', 0),
+                             "APICOUNT": 0,
                              "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0)
                              })
         count += 1
@@ -982,7 +989,7 @@ def config_write(part=None):
 
     if not part or part.startswith('Newznab') or part.startswith('Torznab'):
         NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH', 'AUDIOSEARCH',
-                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL']
+                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL', 'APILIMIT']
         for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
             new_list = []
             # strip out any empty slots
@@ -1132,6 +1139,8 @@ def add_newz_slot():
                  "EXTENDED": '1',
                  "UPDATED": '',
                  "MANUAL": 0,
+                 "APILIMIT": 0,
+                 "APICOUNT": 0,
                  "DLPRIORITY": 0
                  }
         NEWZNAB_PROV.append(empty)
@@ -1162,6 +1171,8 @@ def add_torz_slot():
                  "EXTENDED": '1',
                  "UPDATED": '',
                  "MANUAL": 0,
+                 "APILIMIT": 0,
+                 "APICOUNT": 0,
                  "DLPRIORITY": 0
                  }
         TORZNAB_PROV.append(empty)

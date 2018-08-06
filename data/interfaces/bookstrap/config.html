@@ -227,7 +227,7 @@
                               %>
                               <label for="opds_authentication" title="OPDS requires username and password">
                               <input type="checkbox" id="opds_authentication" name="opds_authentication" value="1" ${checked} />
-                              OPDS Requires Credentials</label></br><small>If opds authentication is enabled and the user/pass below are blank the webserver user/pass will be used</br>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
+                              OPDS Requires Credentials</label><br><small>If opds authentication is enabled and the user/pass below are blank the webserver user/pass will be used<br>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
                             </div>
                             <div id="opdscredentials">
                                 <div class="form-group">
@@ -248,7 +248,7 @@
                               %>
                               <label for="opds_metainfo" title="OPDS extra metainfo">
                               <input type="checkbox" id="opds_metainfo" name="opds_metainfo" value="1" ${checked} />
-                              OPDS Include MetaInfo</label></br><small>This will include book summary, cover, author details</small>
+                              OPDS Include MetaInfo</label><br><small>This will include book summary, cover, author details</small>
                             </div>
                         </fieldset>
                     </fieldset>
@@ -613,6 +613,17 @@
                     <label for="blacklist_processed">
                       <input type="checkbox" id="blacklist_processed" name="blacklist_processed" value="1" ${checked} />
                       Blacklist processed downloads in history table</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['DELAYSEARCH'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="delaysearch">
+                      <input type="checkbox" id="delaysearch" name="delaysearch" value="1" ${checked} />
+                      Increase delay for previously failed searches</label>
                   </div>
                 </fieldset>
               </div>
@@ -1650,7 +1661,6 @@
                     <span class="help-block">Path to preprocessor to run before importing books into the library</span>
                     <input type="button" value="Test preprocessor" id="testpreprocessor" class="btn btn-default" />
                   </div>
-                </fieldset>
                 <legend>Calibre</legend>
                   <fieldset>
                   <div class="form-group">
@@ -2395,11 +2405,11 @@
                         Notify on download?</label>
                     </div>
                     <div class="form-group">
-                      <label for="growl_host="control-label">Growl Host</label>
+                      <label for="growl_host" class="control-label">Growl Host</label>
                       <input type="text" id="growl_host" name="growl_host" value="${lazylibrarian.CONFIG['GROWL_HOST']}" class="form-control" placeholder="eg localhost:23053">
                     </div>
                     <div class="form-group">
-                      <label for="growl_password="control-label">Growl Password</label>
+                      <label for="growl_password" class="control-label">Growl Password</label>
                       <input type="text" id="growl_password" name="growl_password" value="${lazylibrarian.CONFIG['GROWL_PASSWORD']}" class="form-control" placeholder="none">
                     </div>
                     <div class="form-group">
@@ -2729,7 +2739,7 @@
         <div role="tabpanel" class="tab-pane" id="capabilities">
           <div class="configtable">
               <div>
-              You only need to change these settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider.
+              You only need to alter category settings if auto-detection fails or returns incorrect values. If you make any alterations, tick the lock button to prevent reloading values from the provider. API limit is not read from the provider and is not affected by lock.
               </div>
             <div class="row">
                 %for provider in lazylibrarian.NEWZNAB_PROV:
@@ -2738,6 +2748,12 @@
                     hidden = 'hidden="hidden"'
                   else:
                     hidden = ''
+                %>
+                <%
+                  if 'APILIMIT' in provider:
+                    apilimit = provider['APILIMIT']
+                  else:
+                    apilimit = 0
                 %>
                 <div class="col-md-6">
                 <legend ${hidden}>${provider['DISPNAME']}</legend>
@@ -2752,7 +2768,7 @@
                     <input type="checkbox" id="newznab_${loop.index}_manual" name="newznab_${loop.index}_manual" value="1" ${checked}  ${hidden}/>
                     Tick to lock settings</label>
                 </div>
-                <input type="text" id="newznab_${loop.index}_name_" name="newznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
+                <input type="text" id="newznab_${loop.index}_name" name="newznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
                 <input type="text" id="newznab_${loop.index}_updated" name="newznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="newznab_${loop.index}_generalsearch" class="control-label">General Search:</label>
@@ -2786,6 +2802,10 @@
                   <label for="newznab_${loop.index}_audiocat" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="newznab_${loop.index}_audiocat" name="newznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
                 </div>
+                <div class="form-group col-md-6" ${hidden}>
+                  <label for="newznab_${loop.index}_apilimit" class="control-label">Daily API Limit: (used ${provider['APICOUNT']} today)</label>
+                  <input type="text" placeholder="API Limit" id="newznab_${loop.index}_apilimit" name="newznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
+                </div>
                 </div>
                 %endfor
             </div>
@@ -2808,7 +2828,7 @@
                   %>
                   <label for="torznab_${loop.index}_manual" class="control-label" ${hidden}>
                     <input type="checkbox" id="torznab_${loop.index}_manual" name="torznab_${loop.index}_manual" value="1" ${checked} ${hidden}/>
-                    Tick to prevent reloading values from provider</label>
+                    Tick to lock settings</label>
                 </div>
                 <input type="text" id="torznab_${loop.index}_name" name="torznab_${loop.index}_name" value="${provider['NAME']}" class="hidden">
                 <input type="text" id="torznab_${loop.index}_updated" name="torznab_${loop.index}_updated" value="${provider['UPDATED']}" class="hidden">
@@ -2843,6 +2863,10 @@
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="torznab_${loop.index}_audiocat" class="control-label">AudioBook Categories:</label>
                   <input type="text" placeholder="AudioBook Categories" id="torznab_${loop.index}_audiocat" name="torznab_${loop.index}_audiocat" value="${provider['AUDIOCAT']}" class="form-control">
+                </div>
+                <div class="form-group col-md-6" ${hidden}>
+                  <label for="torznab_${loop.index}_apilimit" class="control-label">Daily API Limit: (used ${provider['APICOUNT']} today)</label>
+                  <input type="text" placeholder="API Limit" id="torznab_${loop.index}_apilimit" name="torznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
               </div>
             %endfor
