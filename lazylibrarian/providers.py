@@ -32,39 +32,46 @@ else:
 
 
 def test_provider(name, host=None, api=None):
-    logger.debug("Testing provider %s" % name)
     book = {'searchterm': 'Agatha+Christie', 'library': 'eBook'}
     if name == 'TPB':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['TPB_HOST'] = host
         return TPB(book, test=True), "Pirate Bay"
     if name == 'WWT':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['WWT_HOST'] = host
         return WWT(book, test=True), "WorldWideTorrents"
     if name == 'KAT':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['KAT_HOST'] = host
         return KAT(book, test=True), "KickAss Torrents"
     if name == 'ZOO':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['ZOO_HOST'] = host
         return ZOO(book, test=True), "Zooqle"
     if name == 'LIME':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['LIME_HOST'] = host
         return LIME(book, test=True), "LimeTorrents"
     if name == 'TDL':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['TDL_HOST'] = host
         return TDL(book, test=True), "TorrentDownloads"
     if name == 'GEN':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['GEN_HOST'] = host
         if api:
             lazylibrarian.CONFIG['GEN_SEARCH'] = api
         return GEN(book, prov='GEN', test=True), "LibGen 1"
     if name == 'GEN2':
+        logger.debug("Testing provider %s" % name)
         if host:
             lazylibrarian.CONFIG['GEN2_HOST'] = host
         if api:
@@ -75,6 +82,9 @@ def test_provider(name, host=None, api=None):
             prov = name.split('_')[1]
             for provider in lazylibrarian.RSS_PROV:
                 if provider['NAME'] == 'RSS_%s' % prov:
+                    if provider['DISPNAME']:
+                        name = provider['DISPNAME']
+                    logger.debug("Testing provider %s" % name)
                     if not host:
                         host = provider['HOST']
                     if 'goodreads' in host and 'list_rss' in host:
@@ -98,6 +108,9 @@ def test_provider(name, host=None, api=None):
             prov = name.split('_')[1]
             for provider in lazylibrarian.TORZNAB_PROV:
                 if provider['NAME'] == 'Torznab%s' % prov:
+                    if provider['DISPNAME']:
+                        name = provider['DISPNAME']
+                    logger.debug("Testing provider %s" % name)
                     if provider['MANUAL']:
                         logger.debug("Capabilities are set to manual for %s" % provider['NAME'])
                     else:
@@ -121,6 +134,9 @@ def test_provider(name, host=None, api=None):
             prov = name.split('_')[1]
             for provider in lazylibrarian.NEWZNAB_PROV:
                 if provider['NAME'] == 'Newznab%s' % prov:
+                    if provider['DISPNAME']:
+                        name = provider['DISPNAME']
+                    logger.debug("Testing provider %s" % name)
                     if provider['MANUAL']:
                         logger.debug("Capabilities are set to manual for %s" % provider['NAME'])
                     else:

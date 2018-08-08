@@ -686,11 +686,11 @@ class WebInterface(object):
             cmd += ' and member.seriesid=series.seriesid and seriesnum=1'
             args = []
             if whichStatus == 'Empty':
-                cmd += ' and CAST(Have AS INTEGER) = 0'
+                cmd += ' and Have = 0'
             elif whichStatus == 'Partial':
-                cmd += ' and CAST(Have AS INTEGER) > 0'
+                cmd += ' and Have > 0'
             elif whichStatus == 'Complete':
-                cmd += ' and CAST(Have AS INTEGER) > 0 and CAST(Have AS INTEGER) = CAST(Total AS INTEGER)'
+                cmd += ' and Have > 0 and Have = Total'
             elif whichStatus not in ['All', 'None']:
                 cmd += ' and series.Status=?'
                 args.append(whichStatus)
