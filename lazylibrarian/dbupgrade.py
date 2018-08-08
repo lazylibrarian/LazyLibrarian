@@ -82,8 +82,9 @@ def upgrade_needed():
     # 35 add OriginalPubDate to books table
     # 36 create failedsearch table
     # 37 add delete cascade to tables
+    # 38 change series count and total to integers
 
-    db_current_version = 37
+    db_current_version = 38
 
     if db_version < db_current_version:
         return db_current_version
@@ -143,14 +144,14 @@ def dbupgrade(db_current_version):
                     # new set of database tables
                     myDB.action('CREATE TABLE authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, ' +
                                 'AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, ' +
-                                'LastBookImg TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER, ' +
-                                'TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER, ' +
-                                'Manual TEXT, GRfollow TEXT)')
+                                'LastBookImg TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER DEFAULT 0, ' +
+                                'TotalBooks INTEGER DEFAULT 0, AuthorBorn TEXT, AuthorDeath TEXT, ' +
+                                'UnignoredBooks INTEGER DEFAULT 0, Manual TEXT, GRfollow TEXT)')
                     myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
-                                'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, ' +
-                                'BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
-                                'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
-                                'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
+                                'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER DEFAULT 0, ' +
+                                'BookImg TEXT, BookPages INTEGER DEFAULT 0, BookLink TEXT, BookID TEXT UNIQUE, ' +
+                                'BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, ' +
+                                'WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
                                 'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
                                 'OriginalPubDate TEXT,' +
                                 ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
@@ -172,7 +173,7 @@ def dbupgrade(db_current_version):
                                 'LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, ' +
                                 'uncached int, duplicates int)')
                     myDB.action('CREATE TABLE series (SeriesID INTEGER UNIQUE, SeriesName TEXT, Status TEXT, ' +
-                                'Have TEXT, Total TEXT)')
+                                'Have INTEGER DEFAULT 0, Total INTEGER DEFAULT 0)')
                     myDB.action('CREATE TABLE member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, SeriesNum TEXT,' +
                                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                                 'ON DELETE CASCADE, ' +
@@ -182,16 +183,16 @@ def dbupgrade(db_current_version):
                                 'UNIQUE (SeriesID,AuthorID),' +
                                 ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
                                 'ON DELETE CASCADE)')
-                    myDB.action('CREATE TABLE downloads (Count INTEGER, Provider TEXT)')
+                    myDB.action('CREATE TABLE downloads (Count INTEGER DEFAULT 0, Provider TEXT)')
                     myDB.action('CREATE TABLE users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, Password TEXT, ' +
-                                'Email TEXT, Name TEXT, Perms INTEGER, HaveRead TEXT, ToRead TEXT, ' +
+                                'Email TEXT, Name TEXT, Perms INTEGER DEFAULT 0, HaveRead TEXT, ToRead TEXT, ' +
                                 'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT)')
                     myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT,' +
                                 ' CONSTRAINT fk_u FOREIGN KEY (UserID) REFERENCES users (UserID) ' +
                                 'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
                     myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                                'Interval INTEGER, Count INTEGER,' +
+                                'Interval INTEGER DEFAULT 0, Count INTEGER DEFAULT 0,' +
                                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                                 'ON DELETE CASCADE)')
 
@@ -281,9 +282,9 @@ def db_v3(myDB, upgradelog):
         logger.debug(lazylibrarian.UPDATE_MSG)
         myDB.action('CREATE TABLE IF NOT EXISTS temp_books (AuthorID TEXT, AuthorName TEXT, \
                     AuthorLink TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, \
-                    BookPub TEXT, BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, \
-                    BookID TEXT UNIQUE, BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, \
-                    Series TEXT, SeriesNum TEXT, WorkPage TEXT)')
+                    BookPub TEXT, BookRate INTEGER DEFAULT 0, BookImg TEXT, BookPages INTEGER DEFAULT 0, \
+                    BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, BookDate TEXT, BookLang TEXT, \
+                    BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, WorkPage TEXT)')
         myDB.action('INSERT INTO temp_books SELECT AuthorID,AuthorName,AuthorLink,BookName,BookSub, \
                     BookDesc,BookGenre,BookIsbn,BookPub,BookRate,BookImg,BookPages,BookLink,BookID, \
                     BookFile,BookDate,BookLang,BookAdded,Status,Series,SeriesNum,WorkPage FROM books')
@@ -605,9 +606,9 @@ def db_v15(myDB, upgradelog):
         lazylibrarian.UPDATE_MSG = 'Removing seriesnum from books table'
         myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, AuthorName TEXT, \
                     AuthorLink TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, \
-                    BookPub TEXT, BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, \
-                    BookID TEXT UNIQUE, BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, \
-                    Series TEXT, WorkPage TEXT, Manual TEXT)')
+                    BookPub TEXT, BookRate INTEGER DEFAULT 0, BookImg TEXT, BookPages INTEGER DEFAULT 0, \
+                    BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, BookDate TEXT, BookLang TEXT, \
+                    BookAdded TEXT, Status TEXT, Series TEXT, WorkPage TEXT, Manual TEXT)')
         myDB.action('INSERT INTO temp_table SELECT AuthorID, AuthorName, AuthorLink, BookName, \
                     BookSub, BookDesc, BookGenre, BookIsbn, BookPub, BookRate, BookImg, BookPages, BookLink, BookID, \
                     BookFile, BookDate, BookLang, BookAdded, Status, Series, WorkPage, Manual from books')
@@ -624,9 +625,9 @@ def db_v16(myDB, upgradelog):
         upgradelog.write("%s v16: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         myDB.action('CREATE TABLE IF NOT EXISTS temp_table (AuthorID TEXT, \
                     BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-                    BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, \
-                    BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, \
-                    Manual TEXT)')
+                    BookRate INTEGER DEFAULT 0, BookImg TEXT, BookPages INTEGER DEFAULT 0, BookLink TEXT, \
+                    BookID TEXT UNIQUE, BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, \
+                    Status TEXT, WorkPage TEXT, Manual TEXT)')
         myDB.action('INSERT INTO temp_table SELECT AuthorID, BookName, BookSub, \
                     BookDesc, BookGenre, BookIsbn, BookPub, BookRate, BookImg, BookPages, BookLink, BookID, \
                     BookFile, BookDate, BookLang, BookAdded, Status, WorkPage, Manual from books')
@@ -761,7 +762,7 @@ def db_v21(myDB, upgradelog):
         myDB.action('UPDATE books SET AudioStatus="Skipped"')
         lazylibrarian.UPDATE_MSG = 'Creating downloads table'
         upgradelog.write("%s v21: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-        myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER, Provider TEXT)')
+        myDB.action('CREATE TABLE IF NOT EXISTS downloads (Count INTEGER DEFAULT 0, Provider TEXT)')
         downloads = myDB.select('SELECT NZBprov from wanted WHERE Status="Processed"')
         for download in downloads:
             entry = myDB.match('SELECT Count FROM downloads where Provider=?', (download['NZBprov'],))
@@ -789,7 +790,7 @@ def db_v23(myDB, upgradelog):
         upgradelog.write("%s v23: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
         cmd = 'CREATE TABLE IF NOT EXISTS users '
         cmd += '(UserID TEXT UNIQUE, UserName TEXT UNIQUE, Password TEXT, Email TEXT, '
-        cmd += 'Name TEXT, Perms INTEGER)'
+        cmd += 'Name TEXT, Perms INTEGER DEFAULT 0)'
         myDB.action(cmd)
         cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
         user = lazylibrarian.CONFIG['HTTP_USER']
@@ -984,7 +985,8 @@ def db_v36(myDB, upgradelog):
     if not has_column(myDB, "failedsearch", "Time"):
         lazylibrarian.UPDATE_MSG = 'Creating failed search table'
         upgradelog.write("%s v36: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
-        myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, Interval INTEGER, Count INTEGER)')
+        myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
+                    'Interval INTEGER DEFAULT 0, Count INTEGER DEFAULT 0)')
     upgradelog.write("%s v36: complete\n" % time.ctime())
 
 
@@ -994,8 +996,8 @@ def db_v37(myDB, upgradelog):
     myDB.action('DROP TABLE IF EXISTS temp_table')
     myDB.action('ALTER TABLE books RENAME TO temp_table')
     myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
-                'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER, BookImg TEXT, ' +
-                'BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
+                'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER DEFAULT 0, BookImg TEXT, ' +
+                'BookPages INTEGER DEFAULT 0, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, ' +
                 'BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, WorkPage TEXT, ' +
                 'Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
                 'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
@@ -1054,9 +1056,22 @@ def db_v37(myDB, upgradelog):
 
     myDB.action('ALTER TABLE failedsearch RENAME TO temp_table')
     myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                'Interval INTEGER, Count INTEGER,' +
+                'Interval INTEGER DEFAULT 0, Count INTEGER DEFAULT 0,' +
                 ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
                 'ON DELETE CASCADE)')
     myDB.action('INSERT INTO failedsearch SELECT BookID,Library,Time,Interval,Count FROM temp_table')
     myDB.action('DROP TABLE temp_table')
     upgradelog.write("%s v37: complete\n" % time.ctime())
+
+
+def db_v38(myDB, upgradelog):
+    lazylibrarian.UPDATE_MSG = 'Changing counters in series table to integers'
+    upgradelog.write("%s v38: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+    myDB.action('DROP TABLE IF EXISTS temp_table')
+    myDB.action('ALTER TABLE series RENAME TO temp_table')
+    myDB.action('CREATE TABLE series (SeriesID INTEGER UNIQUE, SeriesName TEXT, Status TEXT, ' +
+                'Have INTEGER DEFAULT 0, Total INTEGER DEFAULT 0)')
+    myDB.action('INSERT INTO series SELECT SeriesID,SeriesName,Status,CAST(Have as INTEGER),CAST(Total as INTEGER)' +
+                ' FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+    upgradelog.write("%s v38: complete\n" % time.ctime())
