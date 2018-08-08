@@ -794,7 +794,11 @@ def logHeader():
     header += 'Loglevel: %s\n' % lazylibrarian.LOGLEVEL
     header += 'Sys_Encoding: %s\n' % lazylibrarian.SYS_ENCODING
     for item in lazylibrarian.CONFIG_GIT:
-        header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
+        if item == 'GIT_UPDATED':
+            timestamp = check_int(lazylibrarian.CONFIG[item], 0)
+            header += '%s: %s\n' % (item.lower(), time.ctime(timestamp))
+        else:
+            header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
     # noinspection PyDeprecation
     header += "Distribution: %s\n" % str(platform.dist())
