@@ -757,7 +757,7 @@ class GoodReads:
                                     if not originalpubdate:
                                         originalpubdate = '0000'
 
-                                new_status = setStatus(bookid, serieslist, bookstatus)
+                                new_status = setStatus(bookid, serieslist, book_status)
                                 if new_status != book_status:
                                     book_status = new_status
 
