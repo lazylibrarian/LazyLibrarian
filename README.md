@@ -76,6 +76,7 @@ rpm deb and snap packages here : https://github.com/DobyTang/LazyLibrarian/relea
 The snap package is confined to users home directory, so all books and downloads need to be accessible from there too.
 Install the snap package with flags --dangerous --devmode  
 AUR package available here: https://aur.archlinux.org/packages/lazylibrarian/  
+QNAP LazyLibrarian is now available for the QNAP NAS via sherpa. https://forum.qnap.com/viewtopic.php?f=320&t=132373v
 
 ## Docker packages
 armhf version here : https://hub.docker.com/r/lsioarmhf/lazylibrarian/  
