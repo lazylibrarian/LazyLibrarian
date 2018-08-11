@@ -110,9 +110,13 @@ def TPB(book=None, test=False):
                         except ValueError:
                             seeders = 0
 
+                        # no point in asking for magnet link if not enough seeders
                         if minimumseeders < seeders:
-                            # no point in asking for magnet link if not enough seeders
-                            magurl = '%s/%s' % (host, magnet)
+                            # some tpb proxies return absolute path, some return relative
+                            if magnet.startswith('http'):
+                                magurl = magnet
+                            else:
+                                magurl = '%s/%s' % (host, magnet)
                             result, success = fetchURL(magurl)
                             if not success:
                                 logger.debug('Error fetching url %s, %s' % (magurl, result))
@@ -136,7 +140,7 @@ def TPB(book=None, test=False):
                                     'tor_type': 'magnet',
                                     'priority': lazylibrarian.CONFIG['TPB_DLPRIORITY']
                                 })
-                                logger.debug('Found %s. Size: %s' % (title, size))
+                                logger.debug('Found %s. Size: %s: %s' % (title, size, magnet))
                                 next_page = True
                         else:
                             logger.debug('Found %s but %s seeder%s' % (title, seeders, plural(seeders)))
