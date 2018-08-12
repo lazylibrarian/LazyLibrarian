@@ -249,6 +249,29 @@
         else { document.getElementById("markBooks").submit(); }
     }
 
+    function bookinfo(bookid) {
+        $.get('bookdesc', {'bookid': bookid},
+        function(data) {
+            var $textAndPic = $('<div></div>');
+            $textAndPic.append('<img src="./cache/book/' + bookid + '.jpg" />');
+            var res = data.split('^');
+            var title = res[0]
+            var desc = res[1]
+            $textAndPic.append('<br>' + desc + ' <br />');
+            bootbox.dialog({
+                size: "large",
+                title: title,
+                message: $textAndPic,
+                buttons: {
+                   primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            });
+        });
+    };
+
     // Read a page's GET URL variables and return them as an associative array.
     function getUrlVars() {
         var vars = [], hash;

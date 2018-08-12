@@ -21,6 +21,7 @@ import time
 import traceback
 from shutil import copyfile, rmtree
 from subprocess import Popen, PIPE
+from xml.etree import ElementTree
 
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, unquote_plus, urlsplit, urlunsplit
@@ -1740,6 +1741,11 @@ class WebInterface(object):
                     elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
                         sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
                     title = row[2]
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
+                        if len(title) > 70:
+                            title = title[:70]
+                            title = title.rsplit(' ', 1)[0] + '...'
+                        title = '<button onclick="bookinfo(\'' + row[6] + '\')" class="button btn btn-xs btn-primary" type="button">' + title + '</button>'
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                     title = title + '<br>' + sitelink + '&nbsp;' + worklink
@@ -3861,6 +3867,21 @@ class WebInterface(object):
                       'aaData': rows,
                       }
             return mydict
+
+    @cherrypy.expose
+    def bookdesc(self, bookid=None):
+        myDB = database.DBConnection()
+        if not bookid:
+            return ' ^ '
+        res = myDB.match("SELECT BookName,BookDesc from books WHERE bookid=?", (bookid,))
+        if not res:
+            return ' ^ '
+        text = res['BookDesc']
+        try:
+            text = ''.join(ElementTree.fromstring(text).itertext())
+        except Exception as e:
+            pass
+        return res['BookName'] + '^' + text
 
     @cherrypy.expose
     def dlinfo(self, target=None):
