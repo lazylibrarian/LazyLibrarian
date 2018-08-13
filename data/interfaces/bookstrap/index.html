@@ -121,7 +121,7 @@
                          return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
                      { targets: [2], 'render': function(data, type, row) {
                      %if perm&lazylibrarian.perm_authorbooks:
-                        btn = '<a href="authorPage?AuthorID=' + row[10] + '">' + row[1] + '</a>'
+                        btn = '<button class="button btn btn-link" type="button"><a href="authorPage?AuthorID=' + row[10] + '">' + row[1] + '</a></button>'
                      %else:
                         btn = '<a>' + row[1] + '</a>'
                      %endif
@@ -129,9 +129,9 @@
                      },
                      { targets: [3], 'render': function(data, type, row) {
                         if (row[2] == null) {return ''};
-                         return '<a href="' + row[7] + '" target="_new">' + row[2] + '</a>';} },
-                         //return '<button onclick="bookinfo(\'' + row[9] +
-                         //   '\')" class="button btn btn-xs btn-primary" type="button">' + row[2] + '</button>'
+                         //return '<a href="' + row[7] + '" target="_new">' + row[2] + '</a>';} },
+                         return '<button onclick="bookinfo(\'' + row[11] +
+                            '\')" class="button btn btn-link" type="button">' + row[2] + '</button>';} },
                      { targets: [4], 'render': function(data, type, row) {
                          return row[3];} },
                      { targets: [5], 'render': function(data, type, row) {

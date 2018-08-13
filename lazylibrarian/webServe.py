@@ -21,7 +21,6 @@ import time
 import traceback
 from shutil import copyfile, rmtree
 from subprocess import Popen, PIPE
-from xml.etree import ElementTree
 
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, unquote_plus, urlsplit, urlunsplit
@@ -196,7 +195,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
             cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
-            cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID from authors '
+            cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID,LastBookID from authors '
             if lazylibrarian.IGNORED_AUTHORS:
                 cmd += 'where Status == "Ignored" '
             else:
@@ -1745,7 +1744,7 @@ class WebInterface(object):
                         if len(title) > 70:
                             title = title[:70]
                             title = title.rsplit(' ', 1)[0] + '...'
-                        title = '<button onclick="bookinfo(\'' + row[6] + '\')" class="button btn btn-xs btn-primary" type="button">' + title + '</button>'
+                        title = '<button onclick="bookinfo(\'' + row[6] + '\')" class="button btn btn-link" type="button">' + title + '</button>'
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                     title = title + '<br>' + sitelink + '&nbsp;' + worklink
@@ -3870,17 +3869,17 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookdesc(self, bookid=None):
+        global lastauthor
         myDB = database.DBConnection()
         if not bookid:
-            return ' ^ '
-        res = myDB.match("SELECT BookName,BookDesc from books WHERE bookid=?", (bookid,))
+            return 'No BookID^No BookID'
+        res = myDB.match("SELECT BookName,BookDesc,AuthorID from books WHERE bookid=?", (bookid,))
         if not res:
-            return ' ^ '
+            return 'BookID not found^No Details'
         text = res['BookDesc']
-        try:
-            text = ''.join(ElementTree.fromstring(text).itertext())
-        except Exception as e:
-            pass
+        if not text:
+            text = "No Description"
+        lastauthor = res['AuthorID']
         return res['BookName'] + '^' + text
 
     @cherrypy.expose

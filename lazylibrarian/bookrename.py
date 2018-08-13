@@ -69,34 +69,33 @@ def audioRename(bookid):
             cnt += 1
             audio_file = f
             try:
-                id3r = TinyTag.get(os.path.join(r, f))
-                performer = id3r.artist
-                composer = id3r.composer
-                albumartist = id3r.albumartist
-                book = id3r.album
-                title = id3r.title
-                track = id3r.track
-                total = id3r.track_total
+                audio_path = os.path.join(r, f)
+                performer = ''
+                composer = ''
+                book = ''
+                albumartist = ''
+                track = 0
+                if TinyTag.is_supported(audio_path):
+                    id3r = TinyTag.get(audio_path)
+                    performer = id3r.artist
+                    composer = id3r.composer
+                    albumartist = id3r.albumartist
+                    book = id3r.album
+                    title = id3r.title
+                    track = id3r.track
+                    total = id3r.track_total
 
-                track = check_int(track, 0)
-                total = check_int(total, 0)
+                    track = check_int(track, 0)
+                    total = check_int(total, 0)
 
-                if performer:
-                    performer = performer.strip()
-                else:
-                    performer = ''
-                if composer:
-                    composer = composer.strip()
-                else:
-                    composer = ''
-                if book:
-                    book = book.strip()
-                else:
-                    book = ''
-                if albumartist:
-                    albumartist = albumartist.strip()
-                else:
-                    albumartist = ''
+                    if performer:
+                        performer = performer.strip()
+                    if composer:
+                        composer = composer.strip()
+                    if book:
+                        book = book.strip()
+                    if albumartist:
+                        albumartist = albumartist.strip()
 
                 if composer:  # if present, should be author
                     author = composer
