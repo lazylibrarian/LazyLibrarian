@@ -1086,8 +1086,12 @@ def db_v39(myDB, upgradelog):
         myDB.action('ALTER TABLE authors ADD COLUMN LastBookID TEXT')
 
     authors = myDB.select('SELECT AuthorID,AuthorName from authors')
+    tot = len(authors)
+    start_time = time.time()
+    cnt = 0
     for author in authors:
-        lazylibrarian.UPDATE_MSG = 'Updating last book for %s' % author['AuthorName']
+        cnt += 1
+        lazylibrarian.UPDATE_MSG = 'Updating last book for %s: %s' % (author['AuthorName'],
+                                                                      calc_eta(start_time, tot, cnt))
         update_totals(author['AuthorID'])
-
     upgradelog.write("%s v39: complete\n" % time.ctime())
