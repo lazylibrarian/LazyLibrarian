@@ -58,9 +58,9 @@ def audioRename(bookid):
 
     cnt = 0
     parts = []
+    total = 0
     author = ''
     book = ''
-    total = 0
     audio_file = ''
     abridged = ''
     for f in os.listdir(makeBytestr(r)):
@@ -72,9 +72,11 @@ def audioRename(bookid):
                 audio_path = os.path.join(r, f)
                 performer = ''
                 composer = ''
-                book = ''
                 albumartist = ''
+                book = ''
+                title = ''
                 track = 0
+                total = 0
                 if TinyTag.is_supported(audio_path):
                     id3r = TinyTag.get(audio_path)
                     performer = id3r.artist

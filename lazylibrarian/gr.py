@@ -1017,10 +1017,11 @@ class GoodReads:
             except Exception as e:
                 logger.error("%s parsing id_to_work_id page: %s" % (type(e).__name__, str(e)))
         logger.debug("BookID/WorkID Found %d, Differ %d, Missing %d" % (found, differ, len(notfound)))
+
         for bookid in notfound:
-          res = myDB.match("SELECT BookName from books WHERE bookid=?", (bookid,))
-          if res:
-            logger.warn("Unknown goodreads bookid %s: %s" % (bookid, res['BookName']))
+            res = myDB.match("SELECT BookName from books WHERE bookid=?", (bookid,))
+            if res:
+                logger.warn("Unknown goodreads bookid %s: %s" % (bookid, res['BookName']))
 
     def find_book(self, bookid=None, bookstatus=None, audiostatus=None):
         myDB = database.DBConnection()

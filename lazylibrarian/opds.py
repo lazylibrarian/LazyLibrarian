@@ -15,7 +15,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
-# Adapted for LazyLibrarian from Mylar
+#  Adapted for LazyLibrarian from Mylar
 
 import lazylibrarian
 from lazylibrarian import logger, database
@@ -23,7 +23,7 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int, plural  #, md5_utf8
+from lazylibrarian.formatter import makeUnicode, check_int, plural
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences

@@ -1077,6 +1077,7 @@ def db_v38(myDB, upgradelog):
     myDB.action('DROP TABLE temp_table')
     upgradelog.write("%s v38: complete\n" % time.ctime())
 
+
 def db_v39(myDB, upgradelog):
     if not has_column(myDB, "authors", "LastBookID"):
         lazylibrarian.UPDATE_MSG = 'Updating author table to hold LastBookID setting'

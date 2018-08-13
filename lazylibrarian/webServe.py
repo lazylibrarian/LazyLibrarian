@@ -1744,7 +1744,9 @@ class WebInterface(object):
                         if len(title) > 70:
                             title = title[:70]
                             title = title.rsplit(' ', 1)[0] + '...'
-                        title = '<button onclick="bookinfo(\'' + row[6] + '\')" class="button btn btn-link" type="button">' + title + '</button>'
+                        titlebutton = '<button onclick="bookinfo(\'' + row[6]
+                        titlebutton += '\')" class="button btn btn-link" type="button">'
+                        title = titlebutton + title + '</button>'
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                     title = title + '<br>' + sitelink + '&nbsp;' + worklink
