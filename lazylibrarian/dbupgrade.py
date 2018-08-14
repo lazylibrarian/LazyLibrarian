@@ -22,7 +22,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.common import restartJobs, pwd_generator
 from lazylibrarian.formatter import plural, makeUnicode, makeBytestr, md5_utf8
-from lazylibrarian.importer import addAuthorToDB
+from lazylibrarian.importer import addAuthorToDB, update_totals
 
 
 def upgrade_needed():
@@ -83,8 +83,9 @@ def upgrade_needed():
     # 36 create failedsearch table
     # 37 add delete cascade to tables
     # 38 change series count and total to integers
+    # 39 add LastBookID to author table
 
-    db_current_version = 38
+    db_current_version = 39
 
     if db_version < db_current_version:
         return db_current_version
@@ -146,7 +147,7 @@ def dbupgrade(db_current_version):
                                 'AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, ' +
                                 'LastBookImg TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER DEFAULT 0, ' +
                                 'TotalBooks INTEGER DEFAULT 0, AuthorBorn TEXT, AuthorDeath TEXT, ' +
-                                'UnignoredBooks INTEGER DEFAULT 0, Manual TEXT, GRfollow TEXT)')
+                                'UnignoredBooks INTEGER DEFAULT 0, Manual TEXT, GRfollow TEXT, LastBookID TEXT)')
                     myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
                                 'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER DEFAULT 0, ' +
                                 'BookImg TEXT, BookPages INTEGER DEFAULT 0, BookLink TEXT, BookID TEXT UNIQUE, ' +
@@ -1075,3 +1076,22 @@ def db_v38(myDB, upgradelog):
                 ' FROM temp_table')
     myDB.action('DROP TABLE temp_table')
     upgradelog.write("%s v38: complete\n" % time.ctime())
+
+
+def db_v39(myDB, upgradelog):
+    if not has_column(myDB, "authors", "LastBookID"):
+        lazylibrarian.UPDATE_MSG = 'Updating author table to hold LastBookID setting'
+        upgradelog.write("%s v39: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        logger.debug(lazylibrarian.UPDATE_MSG)
+        myDB.action('ALTER TABLE authors ADD COLUMN LastBookID TEXT')
+
+    authors = myDB.select('SELECT AuthorID,AuthorName from authors')
+    tot = len(authors)
+    start_time = time.time()
+    cnt = 0
+    for author in authors:
+        cnt += 1
+        lazylibrarian.UPDATE_MSG = 'Updating last book for %s: %s' % (author['AuthorName'],
+                                                                      calc_eta(start_time, tot, cnt))
+        update_totals(author['AuthorID'])
+    upgradelog.write("%s v39: complete\n" % time.ctime())

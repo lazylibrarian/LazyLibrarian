@@ -21,7 +21,7 @@
         <div class="form-group">
           <label class="sr-only">Search</label>
           <div class="input-group">
-            <input type="text"  id="name" name="name" placeholder="Title / Author / ISBN" name="title" class="form-control input-sm col-xs-12">
+            <input type="search" id="name" name="name" placeholder="Title / Author / ISBN" class="form-control input-sm col-xs-12">
             <span class="input-group-btn">
               <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
             </span>
@@ -100,6 +100,9 @@
   <script type="text/javascript">
     $(document).ready(function()
     {
+        $('input.deletable').wrap('<span class="deleteicon" />').after($('<span/>').click(function() {
+            $(this).prev('input').val('').trigger('change').focus();
+        }));
         var show = ""+${lazylibrarian.CONFIG['AUTHOR_IMG']};
             if ( show != '1' ) { showimg = false }
             else { showimg = true }
@@ -121,7 +124,7 @@
                          return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
                      { targets: [2], 'render': function(data, type, row) {
                      %if perm&lazylibrarian.perm_authorbooks:
-                        btn = '<a href="authorPage?AuthorID=' + row[10] + '">' + row[1] + '</a>'
+                        btn = '<button class="button btn btn-link" type="button"><a href="authorPage?AuthorID=' + row[10] + '">' + row[1] + '</a></button>'
                      %else:
                         btn = '<a>' + row[1] + '</a>'
                      %endif
@@ -129,7 +132,9 @@
                      },
                      { targets: [3], 'render': function(data, type, row) {
                         if (row[2] == null) {return ''};
-                         return '<a href="' + row[7] + '" target="_new">' + row[2] + '</a>';} },
+                         //return '<a href="' + row[7] + '" target="_new">' + row[2] + '</a>';} },
+                         return '<button onclick="bookinfo(\'' + row[11] +
+                            '\')" class="button btn btn-link" type="button">' + row[2] + '</button>';} },
                      { targets: [4], 'render': function(data, type, row) {
                          return row[3];} },
                      { targets: [5], 'render': function(data, type, row) {
@@ -218,6 +223,28 @@
         else { document.getElementById("markAuthors").submit(); }
     }
 
+    function bookinfo(bookid) {
+        $.get('bookdesc', {'bookid': bookid},
+        function(data) {
+            var $textAndPic = $('<div></div>');
+            $textAndPic.append('<img src="./cache/book/' + bookid + '.jpg" />');
+            var res = data.split('^');
+            var title = res[0]
+            var desc = res[1]
+            $textAndPic.append('<br>' + desc + ' <br />');
+            bootbox.dialog({
+                size: "large",
+                title: title,
+                message: $textAndPic,
+                buttons: {
+                   primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            });
+        });
+    };
 
   </script>
 </%def>

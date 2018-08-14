@@ -561,7 +561,7 @@ class GoogleBooks:
             deleteEmptySeries()
             logger.debug('[%s] The Google Books API was hit %s time%s to populate book list' %
                          (authorname, api_hits, plural(api_hits)))
-            cmd = 'SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID=?'
+            cmd = 'SELECT BookName, BookLink, BookDate, BookImg, BookID from books WHERE AuthorID=?'
             cmd += ' AND Status != "Ignored" order by BookDate DESC'
             lastbook = myDB.match(cmd, (authorid,))
 
@@ -569,11 +569,13 @@ class GoogleBooks:
                 lastbookname = lastbook['BookName']
                 lastbooklink = lastbook['BookLink']
                 lastbookdate = lastbook['BookDate']
+                lastbookid = lastbook['BookID']
                 lastbookimg = lastbook['BookImg']
             else:
                 lastbookname = ""
                 lastbooklink = ""
                 lastbookdate = ""
+                lastbookid = ""
                 lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
@@ -582,6 +584,7 @@ class GoogleBooks:
                 "LastBook": lastbookname,
                 "LastLink": lastbooklink,
                 "LastDate": lastbookdate,
+                "LastBookID": lastbookid,
                 "LastBookImg": lastbookimg
             }
 

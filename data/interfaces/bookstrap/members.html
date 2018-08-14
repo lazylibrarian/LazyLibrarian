@@ -94,7 +94,8 @@
             <td class="hidden"></td>
             %endif
             <td class="bookart text-center hidden-xs"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
-            <td class="bookname">${result['BookName']}<br>
+            <td class="bookname">
+            <button onclick="bookinfo(${result['BookID']})" class="button btn btn-link" type="button">${result['BookName']}</button><br>
               <a href="${result['BookLink']}" target="_new"><small><i>GoodReads</i></small></a>&nbsp;
               <a href="${result['WorkPage']}" target="_new"><small><i>LibraryThing</i></small></a>&nbsp;
               %if perm&lazylibrarian.perm_edit:
@@ -164,5 +165,6 @@
             column.visible( ! column.visible() );
         } );
     });
+
   </script>
 </%def>

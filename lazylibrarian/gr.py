@@ -886,18 +886,20 @@ class GoodReads:
 
             self.verify_ids(authorid)
             deleteEmptySeries()
-            cmd = 'SELECT BookName, BookLink, BookDate, BookImg from books WHERE AuthorID=?'
+            cmd = 'SELECT BookName, BookLink, BookDate, BookImg, BookID from books WHERE AuthorID=?'
             cmd += ' AND Status != "Ignored" order by BookDate DESC'
             lastbook = myDB.match(cmd, (authorid,))
             if lastbook:
                 lastbookname = lastbook['BookName']
                 lastbooklink = lastbook['BookLink']
                 lastbookdate = lastbook['BookDate']
+                lastbookid = lastbook['BookID']
                 lastbookimg = lastbook['BookImg']
             else:
                 lastbookname = ""
                 lastbooklink = ""
                 lastbookdate = ""
+                lastbookid = ""
                 lastbookimg = ""
 
             controlValueDict = {"AuthorID": authorid}
@@ -906,6 +908,7 @@ class GoodReads:
                 "LastBook": lastbookname,
                 "LastLink": lastbooklink,
                 "LastDate": lastbookdate,
+                "LastBookID": lastbookid,
                 "LastBookImg": lastbookimg
             }
             myDB.upsert("authors", newValueDict, controlValueDict)
@@ -1014,10 +1017,11 @@ class GoodReads:
             except Exception as e:
                 logger.error("%s parsing id_to_work_id page: %s" % (type(e).__name__, str(e)))
         logger.debug("BookID/WorkID Found %d, Differ %d, Missing %d" % (found, differ, len(notfound)))
+
         for bookid in notfound:
-          res = myDB.match("SELECT BookName from books WHERE bookid=?", (bookid,))
-          if res:
-            logger.warn("Unknown goodreads bookid %s: %s" % (bookid, res['BookName']))
+            res = myDB.match("SELECT BookName from books WHERE bookid=?", (bookid,))
+            if res:
+                logger.warn("Unknown goodreads bookid %s: %s" % (bookid, res['BookName']))
 
     def find_book(self, bookid=None, bookstatus=None, audiostatus=None):
         myDB = database.DBConnection()

@@ -195,7 +195,7 @@ class WebInterface(object):
             lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
             cmd = 'SELECT AuthorImg,AuthorName,LastBook,LastDate,Status'
-            cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID from authors '
+            cmd += ',AuthorLink,LastLink,HaveBooks,UnignoredBooks,AuthorID,LastBookID from authors '
             if lazylibrarian.IGNORED_AUTHORS:
                 cmd += 'where Status == "Ignored" '
             else:
@@ -1740,6 +1740,13 @@ class WebInterface(object):
                     elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
                         sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
                     title = row[2]
+                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
+                        if len(title) > 70:
+                            title = title[:70]
+                            title = title.rsplit(' ', 1)[0] + '...'
+                        titlebutton = '<button onclick="bookinfo(\'' + row[6]
+                        titlebutton += '\')" class="button btn btn-link" type="button">'
+                        title = titlebutton + title + '</button>'
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                     title = title + '<br>' + sitelink + '&nbsp;' + worklink
@@ -3861,6 +3868,21 @@ class WebInterface(object):
                       'aaData': rows,
                       }
             return mydict
+
+    @cherrypy.expose
+    def bookdesc(self, bookid=None):
+        global lastauthor
+        myDB = database.DBConnection()
+        if not bookid:
+            return 'No BookID^No BookID'
+        res = myDB.match("SELECT BookName,BookDesc,AuthorID from books WHERE bookid=?", (bookid,))
+        if not res:
+            return 'BookID not found^No Details'
+        text = res['BookDesc']
+        if not text:
+            text = "No Description"
+        lastauthor = res['AuthorID']
+        return res['BookName'] + '^' + text
 
     @cherrypy.expose
     def dlinfo(self, target=None):

@@ -350,7 +350,7 @@ def update_totals(AuthorID):
         logger.debug('Update_totals - authorid [%s] not found' % AuthorID)
         return
 
-    cmd = 'SELECT BookName, BookLink, BookDate from books WHERE AuthorID=?'
+    cmd = 'SELECT BookName, BookLink, BookDate, BookID from books WHERE AuthorID=?'
     cmd += ' AND Status != "Ignored" order by BookDate DESC'
     lastbook = myDB.match(cmd, (AuthorID,))
 
@@ -367,6 +367,7 @@ def update_totals(AuthorID):
         "HaveBooks": totals['have'],
         "LastBook": lastbook['BookName'] if lastbook else None,
         "LastLink": lastbook['BookLink'] if lastbook else None,
+        "LastBookID": lastbook['BookID'] if lastbook else None,
         "LastDate": lastbook['BookDate'] if lastbook else None
     }
     myDB.upsert("authors", newValueDict, controlValueDict)
