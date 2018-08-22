@@ -116,7 +116,7 @@
                     return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                 { targets: [2], 'render': function(data, type, row) {
                   %if perm&lazylibrarian.perm_authorbooks:
-                    btn = '<a href="authorPage?AuthorID=' + row[8] + '">' + data + '</a>'
+                    btn = '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</button>'
                   %else:
                     btn = '<a>' + data + '</a>'
                   %endif

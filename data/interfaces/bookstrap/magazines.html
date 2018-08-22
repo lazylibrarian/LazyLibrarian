@@ -112,19 +112,19 @@
                         'visible': showimg,
                         'render': function(data, type, row) {
                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                    { targets: [2], 'render': function(data, type, row) {
+                        return '<button class="button btn btn-link" type="button" onclick="window.location.href=\'openMag?bookid=' + row[0] + '\'">' + row[2] + '</button>'
+                        ;} },
                     { targets: [7], 'render': function(data, type, row) {
                         var btn = data
                         if ( btn.indexOf('Open') >= 0 ) {
+                                btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + 
+                                        row[0] + '" target="_self"><i class="fa fa-book"></i>'
                                 %if lazylibrarian.CONFIG['MAG_SINGLE']:
-                                    if ( row[3] == 1) {
-                                           btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + row[0] +
-                                            '" target="_self"><i class="fa fa-book"></i> Open</a>' }
-                                    else {
-                                        btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + row[0] +
-                                            '" target="_self"><i class="fa fa-book"></i> Show</a>' }
+                                    if ( row[3] == 1) { btn = btn + ' Open</a>' }
+                                    else { btn = btn + ' Show</a>' }
                                 %else:
-                                    btn = '<a class="button green btn btn-xs btn-primary" href="openMag?bookid=' + row[0] +
-                                        '" target="_self"><i class="fa fa-book"></i> Show</a>'
+                                    btn = btn + ' Show</a>'
                                 %endif
                            }
                         else if ( btn.indexOf('Wanted') >= 0 ) {
