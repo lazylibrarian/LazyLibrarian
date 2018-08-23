@@ -228,14 +228,14 @@
                         'render': function(data, type, row) {
                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                     { targets: [2], 'render': function(data, type, row) {
-                        return '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</button>';} },
+                        return '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</button>';}
+                    },
                     { targets: [3], 'render': function(data, type, row) {
-                        var pre = row[3].split('">');
-                        var post = pre[1].split('</');
+                        var pre = data.split('<');
                         var limit = window.innerWidth / 30;
-                        var title = truncateOnWord(post[0], limit);
-                        if (title == post[0]) { return row[3]; }
-                        return pre[0] + '" title="' + post[0] + '">' + title + '</' + post[1] ;
+                        var title = truncateOnWord(pre[0], limit);
+                        btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn btn-link" type="button" '
+                        return btn + ' title="' + pre[0] + '">' + title + '</button><' + pre[1] ;
                         }
                     },
                     { targets: [4], 'render': function(data, type, row){
