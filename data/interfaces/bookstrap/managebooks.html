@@ -219,8 +219,10 @@
                 "order": [[ 2, 'asc' ]],
                 "columnDefs":[
                     { targets: 'no-sort', orderable: false },
-                    { targets: [0], 'render': function(data, type, row) {
-                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                    { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
                     { targets: [1],
                         'visible': showimg,
                         'render': function(data, type, row) {
@@ -238,14 +240,22 @@
                         }
                         return output.join('<br>');
                     }},
-                    { targets: [5], 'render': function(data, type, row) {
+                    { targets: [5],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
                         return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
+                    { targets: [6],
+                        'class': 'text-center'},
                     %if lazylibrarian.CONFIG['DELAYSEARCH'] == True:
                         %if whichStatus == 'Wanted':
-                            { targets: [7], 'render': function(data, type, row) {
-                                return row[14];} },
-                            { targets: [8], 'render': function(data, type, row) {
-                                return row[15];} }
+                            { targets: [7],
+                                'class': 'text-center',
+                                'render': function(data, type, row) {
+                                    return row[14];} },
+                            { targets: [8],
+                                'class': 'text-center',
+                                'render': function(data, type, row) {
+                                    return row[15];} }
                         %endif
                     %endif
                     ],
@@ -263,14 +273,6 @@
                 "bServerSide": true,
                 "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&library=${library}&source=Manage',
                 "bFilter": true,
-                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    $('td', nRow).eq(0).addClass('text-center');
-                    $('td', nRow).eq(5).addClass('text-center');
-                    $('td', nRow).eq(6).addClass('text-center');
-                    $('td', nRow).eq(7).addClass('text-center');
-                    $('td', nRow).eq(8).addClass('text-center');
-                    return nRow;
-                },
             });
         $('.dataTables_filter input').attr("placeholder", "Results filter");
         //$(window).resize(function() {oTable.draw(false)});

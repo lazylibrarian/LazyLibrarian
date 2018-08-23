@@ -108,8 +108,10 @@
             "order": [[ 2, 'asc' ]],
             "columnDefs":[
                 { targets: 'no-sort', orderable: false },
-                { targets: [0], 'render': function(data, type, row) {
-                    return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                { targets: [0],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
                 { targets: [1],
                     'visible': showimg,
                     'render': function(data, type, row) {
@@ -133,13 +135,21 @@
                     }
                     return output.join('<br>');
                 }},
-                { targets: [5], 'render': function(data, type, row) {
-                    return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
-                { targets: [7], 'render': function(data, type, row) {
+                { targets: [5],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                        return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
+                { targets: [6],
+                    'class': 'text-center'},
+                { targets: [7],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
                     var str = row[10];
                     if (str === "null"){ str = ""}
                     return str ;} },
-                { targets: [8], 'render': function(data, type, row) {
+                { targets: [8],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
                     var btn = row[11]
                     var flag = row[13]
                     btn = btn + flag
@@ -178,14 +188,9 @@
             "sAjaxSource": 'getBooks?source=Audio&library=AudioBook&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                %if perm&lazylibrarian.perm_status:
-                $('td', nRow).eq(0).addClass("text-center");
-                %else:
-                $('td', nRow).eq(0).addClass("hidden");
+                %if perm&lazylibrarian.perm_status == 0:
+                  $('td', nRow).eq(0).addClass("hidden");
                 %endif
-                $('td', nRow).eq(5).addClass('text-center');
-                $('td', nRow).eq(6).addClass('text-center');
-                $('td', nRow).eq(7).addClass('text-center');
                 // hide cover,stars,date on small devices
                 //$('td', nRow).eq(1).addClass('hidden-xs');
                 //$('td', nRow).eq(5).addClass('hidden-xs');
