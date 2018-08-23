@@ -145,7 +145,7 @@ def dbupgrade(db_current_version):
                     # new set of database tables
                     myDB.action('CREATE TABLE authors (AuthorID TEXT UNIQUE, AuthorName TEXT UNIQUE, ' +
                                 'AuthorImg TEXT, AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, ' +
-                                'LastBookImg TEXT, LastLink Text, LastDate TEXT, HaveBooks INTEGER DEFAULT 0, ' +
+                                'LastBookImg TEXT, LastLink TEXT, LastDate TEXT, HaveBooks INTEGER DEFAULT 0, ' +
                                 'TotalBooks INTEGER DEFAULT 0, AuthorBorn TEXT, AuthorDeath TEXT, ' +
                                 'UnignoredBooks INTEGER DEFAULT 0, Manual TEXT, GRfollow TEXT, LastBookID TEXT)')
                     myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
