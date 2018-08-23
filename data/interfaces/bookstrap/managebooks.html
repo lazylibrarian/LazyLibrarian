@@ -234,8 +234,10 @@
                         var pre = data.split('<');
                         var limit = window.innerWidth / 30;
                         var title = truncateOnWord(pre[0], limit);
+                        var tail = data.slice(pre[0].length);
                         btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn btn-link" type="button" '
-                        return btn + ' title="' + pre[0] + '">' + title + '</button><' + pre[1] ;
+                        if (title == pre[0]) { return btn + '>' + title + '</button>' + tail ; }
+                        return btn + ' title="' + pre[0] + '">' + title + '</button>' + tail ;
                         }
                     },
                     { targets: [4], 'render': function(data, type, row){
