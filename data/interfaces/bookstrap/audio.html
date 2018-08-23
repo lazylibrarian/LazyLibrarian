@@ -124,6 +124,15 @@
                   %endif
                   return btn ;}
                 },
+                { targets: [3], 'render': function(data, type, row) {
+                    var pre = row[3].split('">');
+                    var post = pre[1].split('</');
+                    var limit = window.innerWidth / 30;
+                    var title = truncateOnWord(post[0], limit);
+                    if (title == post[0]) { return row[3]; }
+                    return pre[0] + '" title="' + post[0] + '">' + title + '</' + post[1] ;
+                    }
+                },
                 { targets: [4], 'render': function(data, type, row){
                     if (row[12] === null ) { return data; }
                     if (row[12] === '' ) { return row[4]; }

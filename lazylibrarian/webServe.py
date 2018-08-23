@@ -1765,9 +1765,9 @@ class WebInterface(object):
                         sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
                     title = row[2]
                     if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
-                        if len(title) > 70:
-                            title = title[:70]
-                            title = title.rsplit(' ', 1)[0] + '...'
+                        #if len(title) > 60:
+                        #    title = title[:60]
+                        #    title = title.rsplit(' ', 1)[0] + '...'
                         titlebutton = '<button onclick="bookinfo(\'' + row[6]
                         titlebutton += '\')" class="button btn btn-link" type="button">'
                         title = titlebutton + title + '</button>'
