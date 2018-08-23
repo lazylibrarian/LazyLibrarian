@@ -108,19 +108,29 @@
             "order": [[ 2, 'asc' ]],
             "columnDefs":[
                 { targets: 'no-sort', orderable: false },
-                { targets: [0], 'render': function(data, type, row) {
-                    return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                { targets: [0],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
                 { targets: [1],
                     'visible': showimg,
                     'render': function(data, type, row) {
                     return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                 { targets: [2], 'render': function(data, type, row) {
                   %if perm&lazylibrarian.perm_authorbooks:
-                    btn = '<a href="authorPage?AuthorID=' + row[8] + '">' + data + '</a>'
+                    btn = '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</button>'
                   %else:
                     btn = '<a>' + data + '</a>'
                   %endif
                   return btn ;}
+                },
+                { targets: [3], 'render': function(data, type, row) {
+                    var pre = data.split('<');
+                    var limit = window.innerWidth / 30;
+                    var title = truncateOnWord(pre[0], limit);
+                    btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn btn-link" type="button" '
+                    return btn + ' title="' + pre[0] + '">' + title + '</button><' + pre[1] ;
+                    }
                 },
                 { targets: [4], 'render': function(data, type, row){
                     if (row[12] === null ) { return data; }
@@ -133,13 +143,21 @@
                     }
                     return output.join('<br>');
                 }},
-                { targets: [5], 'render': function(data, type, row) {
-                    return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
-                { targets: [7], 'render': function(data, type, row) {
+                { targets: [5],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                        return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
+                { targets: [6],
+                    'class': 'text-center'},
+                { targets: [7],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
                     var str = row[10];
                     if (str === "null"){ str = ""}
                     return str ;} },
-                { targets: [8], 'render': function(data, type, row) {
+                { targets: [8],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
                     var btn = row[11]
                     var flag = row[13]
                     btn = btn + flag
@@ -178,14 +196,9 @@
             "sAjaxSource": 'getBooks?source=Audio&library=AudioBook&booklang=${booklang}',
             "bFilter": true,
             "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                %if perm&lazylibrarian.perm_status:
-                $('td', nRow).eq(0).addClass("text-center");
-                %else:
-                $('td', nRow).eq(0).addClass("hidden");
+                %if perm&lazylibrarian.perm_status == 0:
+                  $('td', nRow).eq(0).addClass("hidden");
                 %endif
-                $('td', nRow).eq(5).addClass('text-center');
-                $('td', nRow).eq(6).addClass('text-center');
-                $('td', nRow).eq(7).addClass('text-center');
                 // hide cover,stars,date on small devices
                 //$('td', nRow).eq(1).addClass('hidden-xs');
                 //$('td', nRow).eq(5).addClass('hidden-xs');

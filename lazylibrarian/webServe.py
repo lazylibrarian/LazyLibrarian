@@ -201,6 +201,10 @@ class WebInterface(object):
             else:
                 cmd += 'where Status != "Ignored" '
             cmd += 'order by AuthorName COLLATE NOCASE'
+
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getIndex %s" % cmd)
+
             rowlist = myDB.select(cmd)
             # At his point we want to sort and filter _before_ adding the html as it's much quicker
             # turn the sqlite rowlist into a list of lists
@@ -241,6 +245,8 @@ class WebInterface(object):
                     nrow.append(bar)
                     rows.append(nrow)  # add each rowlist to the masterlist
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
                 else:
                     filtered = rows
@@ -249,6 +255,9 @@ class WebInterface(object):
                     sortcolumn = int(iSortCol_0)
                 else:
                     sortcolumn = int(iSortCol_0) - 1
+
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
 
                 filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
@@ -699,6 +708,10 @@ class WebInterface(object):
                 args.append(AuthorID)
             cmd += ' GROUP BY series.seriesID'
             cmd += ' order by AuthorName,SeriesName'
+
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getSeries %s: %s" % (cmd, str(args)))
+
             if args:
                 rowlist = myDB.select(cmd, tuple(args))
             else:
@@ -713,11 +726,15 @@ class WebInterface(object):
                     rows.append(entry)  # add the rowlist to the masterlist
 
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
                 else:
                     filtered = rows
 
                 sortcolumn = int(iSortCol_0)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
 
                 for row in filtered:
                     have = check_int(row[6], 0)
@@ -1651,6 +1668,9 @@ class WebInterface(object):
                 cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid,'
                 cmd += ' booklang, booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, '
                 cmd += ' audiostatus, audiolibrary'
+
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getBooks %s: %s" % (cmd, str(args)))
             rowlist = myDB.select(cmd, tuple(args))
 
             # At his point we want to sort and filter _before_ adding the html as it's much quicker
@@ -1665,6 +1685,8 @@ class WebInterface(object):
                     rows.append(entry)  # add each rowlist to the masterlist
 
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     if library is not None:
                         if library == 'AudioBook':
                             searchFields = ['AuthorName', 'BookName', 'BookDate', 'AudioStatus',
@@ -1687,6 +1709,8 @@ class WebInterface(object):
 
                 # table headers and column headers do not match at this point
                 sortcolumn = int(iSortCol_0)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
 
                 if sortcolumn < 4:  # author, title
                     sortcolumn -= 1
@@ -1706,7 +1730,7 @@ class WebInterface(object):
                     sortcolumn -= 2
 
                 if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
-                    logger.debug("Sortcolumn %s" % sortcolumn)
+                    logger.debug("final sortcolumn %d" % sortcolumn)
 
                 if sortcolumn in [12, 13, 15]:  # series, date
                     self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
@@ -1740,13 +1764,6 @@ class WebInterface(object):
                     elif 'books.google.com' in row[9] or 'market.android.com' in row[9]:
                         sitelink = '<a href="%s" target="_new"><small><i>GoogleBooks</i></small></a>' % row[9]
                     title = row[2]
-                    if lazylibrarian.CONFIG['HTTP_LOOK'] != 'legacy':
-                        if len(title) > 70:
-                            title = title[:70]
-                            title = title.rsplit(' ', 1)[0] + '...'
-                        titlebutton = '<button onclick="bookinfo(\'' + row[6]
-                        titlebutton += '\')" class="button btn btn-link" type="button">'
-                        title = titlebutton + title + '</button>'
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                     title = title + '<br>' + sitelink + '&nbsp;' + worklink
@@ -2760,6 +2777,7 @@ class WebInterface(object):
             myDB = database.DBConnection()
             cmd = 'select magazines.*,(select count(*) as counter from issues where magazines.title = issues.title)'
             cmd += ' as Iss_Cnt from magazines order by Title'
+
             rowlist = myDB.select(cmd)
 
             if len(rowlist):
@@ -2791,11 +2809,15 @@ class WebInterface(object):
                         rowlist.append(entry)  # add each rowlist to the masterlist
 
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
                 else:
                     filtered = rowlist
 
                 sortcolumn = int(iSortCol_0)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
 
                 if sortcolumn in [4, 5]:  # dates
                     self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
@@ -2936,11 +2958,15 @@ class WebInterface(object):
                         rowlist.append(entry)  # add each rowlist to the masterlist
 
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     filtered = [x for x in rowlist if sSearch.lower() in str(x).lower()]
                 else:
                     filtered = rowlist
 
                 sortcolumn = int(iSortCol_0)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
 
                 if sortcolumn in [2, 3]:  # dates
                     self.natural_sort(filtered, key=lambda y: y[sortcolumn] if y[sortcolumn] is not None else '',
@@ -3065,6 +3091,9 @@ class WebInterface(object):
             if 'mag' in kwargs and kwargs['mag'] != 'None':
                 cmd += ' AND BookID=?'
                 args.append(kwargs['mag'].replace('&amp;', '&'))
+
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("getPastIssues %s: %s" % (cmd, str(args)))
             rowlist = myDB.select(cmd, tuple(args))
             if len(rowlist):
                 for row in rowlist:  # iterate through the sqlite3.Row objects
@@ -3084,11 +3113,16 @@ class WebInterface(object):
                     rows.append(thisrow)  # add each rowlist to the masterlist
 
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
                 else:
                     filtered = rows
 
                 sortcolumn = int(iSortCol_0)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
+
                 filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
 
                 if iDisplayLength < 0:  # display = all
@@ -3728,11 +3762,16 @@ class WebInterface(object):
             lazylibrarian.CONFIG['DISPLAYLENGTH'] = iDisplayLength
 
             if sSearch:
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("filter %s" % sSearch)
                 filtered = [x for x in lazylibrarian.LOGLIST[::] if sSearch.lower() in str(x).lower()]
             else:
                 filtered = lazylibrarian.LOGLIST[::]
 
             sortcolumn = int(iSortCol_0)
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                logger.debug("sortcolumn %d" % sortcolumn)
+
             filtered.sort(key=lambda y: y[sortcolumn], reverse=sSortDir_0 == "desc")
             if iDisplayLength < 0:  # display = all
                 rows = filtered
@@ -3820,11 +3859,16 @@ class WebInterface(object):
                         rows.append(nrow)  # add the rowlist to the masterlist
 
                 if sSearch:
+                    if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                        logger.debug("filter %s" % sSearch)
                     filtered = [x for x in rows if sSearch.lower() in str(x).lower()]
                 else:
                     filtered = rows
 
                 sortcolumn = int(iSortCol_0)
+                if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
+                    logger.debug("sortcolumn %d" % sortcolumn)
+
                 if sortcolumn == 6:
                     sortcolumn = 9
 

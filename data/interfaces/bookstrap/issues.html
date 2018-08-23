@@ -78,16 +78,23 @@
                 "stateSave": true,
                 "order": [[ 2, 'desc']],
                 "columnDefs": [{ targets: 'no-sort', orderable: false },
-                    { targets: [0], 'render': function(data, type, row) {
-                        return '<input type="checkbox" name="' + row[4] + '" class="checkbox" />';} },
+                    { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + row[4] + '" class="checkbox" />';} },
                     { targets: [1],
+                        'class': 'text-center',
                         'visible': showimg,
                         'render': function(data, type, row) {
                         return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
-                    { targets: [4], 'render': function(data, type, row) {
-                            btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + data +
-                                    '" target="_self"><i class="fa fa-book"></i> Open</a>'
-                            return btn;} },
+                    { targets: [2, 3],
+                        'class': 'text-center'},
+                    { targets: [4],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                        btn = '<a class="button green btn btn-xs btn-warning" href="openMag?bookid=' + data +
+                                '" target="_self"><i class="fa fa-book"></i> Open</a>'
+                        return btn;} },
                 ],
                 "oLanguage": {
                     "sSearch": "Filter: ",
@@ -104,15 +111,9 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "bFilter": true,
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    %if perm&lazylibrarian.perm_status:
-                    $('td', nRow).eq(0).addClass("text-center");
-                    %else:
-                    $('td', nRow).eq(0).addClass("hidden");
+                    %if perm&lazylibrarian.perm_status == 0:
+                        $('td', nRow).eq(0).addClass("hidden");
                     %endif
-                    $('td', nRow).eq(1).addClass('text-center');
-                    $('td', nRow).eq(2).addClass('text-center');
-                    $('td', nRow).eq(3).addClass('text-center');
-                    $('td', nRow).eq(4).addClass("text-center");
                     return nRow;
                 },
             });

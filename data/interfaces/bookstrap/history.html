@@ -114,11 +114,15 @@
                         if ( ftype == 'None' ) {ftype = 'eBook'}
                         if ( ftype.match(/^[0-9.-]+$/) != null ) {ftype = 'Magazine'}
                         return ftype;} },
-                    { targets: [4], 'render': function(data, type, row) {
-                        return '<a data-toggle="tooltip" title="' + row[11] + '">' + row[4] + '</a>';} },
+                    { targets: [4],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<a data-toggle="tooltip" title="' + row[11] + '">' + row[4] + '</a>';} },
                     { targets: [5], 'render': function(data, type, row) {
                         return '<div class="text-right">' + data + '</div>';} },
-                    { targets: [6], 'render': function(data, type, row) {
+                    { targets: [6],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
                         if ( row[9] <= 0 ) {
                           %if perm&lazylibrarian.perm_status:
                             bar = '<button onclick="dlinfo(\'' + data + '^' + row[10] +
@@ -154,8 +158,6 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    $('td', nRow).eq(4).addClass('text-center');
-                    $('td', nRow).eq(6).addClass('text-center');
                     $('td', nRow).eq(7).addClass('hidden');
                     return nRow;
                 },

@@ -76,8 +76,10 @@
                 "stateSave": true,
                 "columnDefs":
                     [ { targets: 'no-sort', orderable: false },
-                      { targets: [0], 'render': function(data, type, row) {
-                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
+                      { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
                       }
                     ]
                 ,

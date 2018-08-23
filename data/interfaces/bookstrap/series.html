@@ -108,28 +108,33 @@
                 "stateSave": true,
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
-                    { targets: [0], 'render': function(data, type, row) {
-                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
+                    { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + data + '" class="checkbox" />';}
+                    },
+                    { targets: [1], 'render': function(data, type, row) {
+                    %if perm&lazylibrarian.perm_authorbooks:
+                        return '<a href=\'authorPage?AuthorID=' + row[4] + '\'">' + row[1] + '</a>';}
+                    %else:
+                        return row[1]
+                    %endif
                     },
                     { targets: [2], 'render': function(data, type, row) {
                         return '<a href="seriesMembers?seriesid=' + row[5] + '" target="_new">' + row[2] + '</a>';}
                     },
                     { targets: [3], 'render': function(data, type, row) {
-                        percent = row[8]
-                        if (percent <= 25) {css = 'danger'}
-                        else if (percent <= 50) {css = 'warning'}
-                        else if (percent <= 75) {css = 'info'}
-                        else {css = 'success'};
-                        bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' +
-                        css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + percent +
-                        '" aria-valuemin="0" aria-valuemax="100" style="width: ' + percent +
-                        '%;"><span class="sr-only">' + percent +
-                        '% Complete</span><span class="progressbar-front-text">' + row[6] + '/' + row[7] +
-                        '</span></div></div>';
-                        return bar;}
+                        var pre = row[3].split('<');
+                        var limit = window.innerWidth / 30;
+                        var title = truncateOnWord(pre[0], limit);
+                        btn = '<button onclick="bookinfo(\'' + row[0] + '\')" class="button btn btn-link" type="button" '
+                        return btn + ' title="' + pre[0] + '">' + title + '</button><' + pre[1] ;
+                        }
                     },
-                    { targets: [4], 'render': function(data, type, row) {
-                        return  row[3];}
+                    { targets: [4],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return  row[3];}
                     }
                     ],
                 "oLanguage": {
@@ -147,13 +152,9 @@
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    %if perm&lazylibrarian.perm_status:
-                    $('td', nRow).eq(0).addClass("text-center");
-                    %else:
-                    $('td', nRow).eq(0).addClass("hidden");
+                    %if perm&lazylibrarian.perm_status == 0:
+                      $('td', nRow).eq(0).addClass("hidden");
                     %endif
-                    //$('td', nRow).eq(3).addClass("text-center");
-                    $('td', nRow).eq(4).addClass("text-center");
                     // hide author,status on small devices
                     //$('td', nRow).eq(1).addClass('hidden-xs');
                     //$('td', nRow).eq(3).addClass('hidden-xs');

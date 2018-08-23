@@ -115,16 +115,18 @@
                 "order": [[ 2, 'asc']],
                 "columnDefs":
                     [{ targets: 'no-sort', orderable: false },
-                     { targets: [0], 'render': function(data, type, row) {
-                        return '<input type="checkbox" name="' + row[10] + '" class="checkbox" />';}
+                     { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + row[10] + '" class="checkbox" />';}
                      },
                      { targets: [1],
                          'visible': showimg,
                          'render': function(data, type, row) {
-                         return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
+                            return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
                      { targets: [2], 'render': function(data, type, row) {
                      %if perm&lazylibrarian.perm_authorbooks:
-                        btn = '<button class="button btn btn-link" type="button"><a href="authorPage?AuthorID=' + row[10] + '">' + row[1] + '</a></button>'
+                        btn = '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[10] + '\'">' + row[1] + '</button>'
                      %else:
                         btn = '<a>' + row[1] + '</a>'
                      %endif
@@ -132,12 +134,15 @@
                      },
                      { targets: [3], 'render': function(data, type, row) {
                         if (row[2] == null) {return ''};
-                         //return '<a href="' + row[7] + '" target="_new">' + row[2] + '</a>';} },
-                         return '<button onclick="bookinfo(\'' + row[11] +
-                            '\')" class="button btn btn-link" type="button">' + row[2] + '</button>';} },
-                     { targets: [4], 'render': function(data, type, row) {
-                         return row[3];} },
-                     { targets: [5], 'render': function(data, type, row) {
+                            return '<button onclick="bookinfo(\'' + row[11] +
+                                '\')" class="button btn btn-link" type="button">' + row[2] + '</button>';} },
+                     { targets: [4],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return row[3];} },
+                     { targets: [5],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
                         var have = +row[8] || 0;
                         var tot = +row[9] || 0;
                         var percent = (have * 100 / tot);
@@ -152,8 +157,10 @@
                         '% Complete</span><span class="progressbar-front-text">' + have + '/' + tot +
                         '</span></div></div>';
                         return bar;} },
-                     { targets: [6], 'render': function(data, type, row) {
-                         return row[5];} },
+                     { targets: [6],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return row[5];} },
                      { type: 'natural-nohtml', targets: 5 }],
                 "oLanguage": {
                     "sSearch": "Filter: ",
@@ -169,14 +176,9 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    %if perm&lazylibrarian.perm_status:
-                    $('td', nRow).eq(0).addClass("text-center");
-                    %else:
-                    $('td', nRow).eq(0).addClass("hidden");
+                    %if perm&lazylibrarian.perm_status == 0:
+                      $('td', nRow).eq(0).addClass("hidden");
                     %endif
-                    $('td', nRow).eq(4).addClass('text-center');
-                    $('td', nRow).eq(5).addClass('text-center');
-                    $('td', nRow).eq(6).addClass('text-center');
                     return nRow;
                 },
                 "aaSorting": [[2, 'asc']],
