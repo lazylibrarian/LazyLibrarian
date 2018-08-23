@@ -673,6 +673,14 @@ def initialize():
                 version = 0
             logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
 
+            authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
+            if authors:
+                msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))
+                logger.debug(msg)
+                for author in authors:
+                    authorid = author["AuthorID"]
+                    myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                    myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
         except Exception as e:
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
 

@@ -219,7 +219,7 @@ def dbupgrade(db_current_version):
 
                 # Now do any non-version-specific tidying
                 try:
-                    authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
+                    authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
                     if authors:
                         msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))
                         logger.debug(msg)
