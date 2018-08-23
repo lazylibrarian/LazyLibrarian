@@ -253,7 +253,7 @@
                 count += word.length;
                 return count <= limit;
             }).join('');
-            if (str.length == result.length) {return str};
+            if (str.length - result.length <= 4) {return str};
             return result + ' ...'
         }
 
