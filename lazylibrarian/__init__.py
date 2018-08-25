@@ -937,7 +937,7 @@ def config_write(part=None):
     for key in list(CONFIG_DEFINITIONS.keys()):
         item_type, section, default = CONFIG_DEFINITIONS[key]
         if key in ['WALL_COLUMNS', 'DISPLAY_LENGTH']:  # may be modified by user interface but not on config page
-            value = CONFIG[key]
+            value = check_int(CONFIG[key], 5)
         elif part and section != part:
             value = CFG.get(section, key.lower())  # keep the old value
             # if CONFIG['LOGLEVEL'] > 2:
@@ -957,15 +957,17 @@ def config_write(part=None):
             # if CONFIG['LOGLEVEL'] > 2:
             #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
 
-        if PY2 and isinstance(value, text_type):
-            try:
-                value = value.encode(SYS_ENCODING)
-            except UnicodeError:
-                logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
-                value = unaccented_str(value)
+        if isinstance(value, text_type):
+            if PY2:
+                try:
+                    value = value.encode(SYS_ENCODING)
+                except UnicodeError:
+                    logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
+                    value = unaccented_str(value)
+            value = value.strip()
 
         if key in ['SEARCH_BOOKINTERVAL', 'SEARCH_MAGINTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL',
-                   'SEARCHRSS_INTERVAL', 'GOODREADS_INTERVAL', 'WISHLIST_INTERAL']:
+                   'SEARCHRSS_INTERVAL', 'GOODREADS_INTERVAL', 'WISHLIST_INTERVAL']:
             oldvalue = CFG.get(section, key.lower())
             if value != oldvalue:
                 if key == 'SEARCH_BOOKINTERVAL':
@@ -1021,7 +1023,10 @@ def config_write(part=None):
             for provider in new_list:
                 check_section(provider['NAME'])
                 for item in NAB_ITEMS:
-                    CFG.set(provider['NAME'], item, provider[item])
+                    value = provider[item]
+                    if isinstance(value, text_type):
+                        value = value.strip()
+                    CFG.set(provider['NAME'], item, value)
 
             if entry[1] == 'Newznab':
                 NEWZNAB_PROV = new_list
@@ -1059,7 +1064,10 @@ def config_write(part=None):
         for provider in new_list:
             check_section(provider['NAME'])
             for item in RSS_ITEMS:
-                CFG.set(provider['NAME'], item, provider[item])
+                value = provider[item]
+                if isinstance(value, text_type):
+                    value = value.strip()
+                CFG.set(provider['NAME'], item, value)
 
         RSS_PROV = new_list
         add_rss_slot()
