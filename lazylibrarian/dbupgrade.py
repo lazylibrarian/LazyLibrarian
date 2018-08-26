@@ -217,21 +217,8 @@ def dbupgrade(db_current_version):
                     upgrade_function(myDB, upgradelog)
                     index += 1
 
-                # Now do any non-version-specific tidying
-                try:
-                    authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
-                    if authors:
-                        msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))
-                        logger.debug(msg)
-                        upgradelog.write("%s: %s\n" % (time.ctime(), msg))
-                        for author in authors:
-                            authorid = author["AuthorID"]
-                            myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
-                            myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
-                except Exception as e:
-                    msg = 'Delete unnamed author error: %s %s' % (type(e).__name__, str(e))
-                    logger.error(msg)
-                    upgradelog.write("%s: %s\n" % (time.ctime(), msg))
+                # a few quick sanity checks...
+                check_db(myDB)
 
                 myDB.action('PRAGMA user_version=%s' % db_current_version)
                 lazylibrarian.UPDATE_MSG = 'Cleaning Database'
@@ -250,6 +237,23 @@ def dbupgrade(db_current_version):
             upgradelog.write("%s: %s\n" % (time.ctime(), msg))
             logger.error(msg)
             lazylibrarian.UPDATE_MSG = ''
+
+
+def check_db(myDB):
+    try:
+        cmd = 'UPDATE books SET BookLang="Unknown" WHERE BookLang is NULL '
+        cmd += 'or instr(BookLang, "<") or instr(BookLang, "invalid")'
+        myDB.action(cmd)
+        authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
+        if authors:
+            msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))
+            logger.debug(msg)
+            for author in authors:
+                authorid = author["AuthorID"]
+                myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+    except Exception as e:
+        msg = 'Error: %s %s' % (type(e).__name__, str(e))
+        logger.error(msg)
 
 
 def db_v2(myDB, upgradelog):

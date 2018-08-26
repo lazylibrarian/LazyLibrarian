@@ -902,7 +902,7 @@ def thingLang(isbn):
         r = requests.get(BOOK_URL, timeout=timeout, proxies=proxies)
         resp = r.text
         logger.debug("LibraryThing reports language [%s] for %s" % (resp, isbn))
-        if resp != 'invalid' and resp != 'unknown':
+        if 'invalid' not in resp and 'unknown' not in resp and '<' not in resp:
             booklang = resp
     except Exception as e:
         logger.error("%s finding language: %s" % (type(e).__name__, str(e)))
