@@ -362,7 +362,12 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_RTORRENT'] and lazylibrarian.CONFIG['RTORRENT_HOST']:
         logger.debug("Sending %s to rTorrent" % tor_title)
         Source = "RTORRENT"
-        downloadID, res = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
+        if torrent:
+            logger.debug("Sending %s data to rtorrent" % tor_title)
+            downloadID, res = rtorrent.addTorrent(tor_title, hashid, data=torrent)
+        else:
+            logger.debug("Sending %s url to rtorrent" % tor_title)
+            downloadID, res = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
         if downloadID:
             tor_title = rtorrent.getName(downloadID)
 

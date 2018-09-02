@@ -831,39 +831,55 @@ def logHeader():
         header += "unrar: missing: %s\n" % str(e)
 
     header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION', None)
+    X509 = None
+    cryptography = None
     try:
         # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
         # attribute is only present on those versions.
         # noinspection PyUnresolvedReferences
         import OpenSSL
-        # noinspection PyUnresolvedReferences
-        from OpenSSL.crypto import X509
+    except ImportError:
+        header += "pyOpenSSL: module missing\n"
+        OpenSSL = None
+
+    if OpenSSL:
+        try:
+            # noinspection PyUnresolvedReferences
+            from OpenSSL.crypto import X509
+        except ImportError:
+            header += "pyOpenSSL.crypto X509: module missing\n"
+
+    if X509:
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
             header += "pyOpenSSL: module missing required functionality. Try upgrading to v0.14 or newer. You have "
         header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__', None)
-        from OpenSSL import SSL
-    except ImportError:
-        header += "pyOpenSSL: module missing\n"
 
-    try:
-        import OpenSSL.SSL
-    except (ImportError, AttributeError) as e:
-        header += 'OpenSSL missing module/attribute: %s\n' % e
+    if OpenSSL:
+        try:
+            import OpenSSL.SSL
+        except (ImportError, AttributeError) as e:
+            header += 'pyOpenSSL missing SSL module/attribute: %s\n' % e
 
-    try:
-        # get_extension_for_class method added in `cryptography==1.1`; not available in older versions
-        # but need cryptography >= 1.3.4 for access from pyopenssl >= 0.14
-        # noinspection PyUnresolvedReferences
-        import cryptography
-        # noinspection PyUnresolvedReferences
-        from cryptography.x509.extensions import Extensions
-        if getattr(Extensions, "get_extension_for_class", None) is None:
-            header += "cryptography: module missing required functionality."
-            header += " Try upgrading to v1.3.4 or newer. You have "
-        header += "cryptography: %s\n" % getattr(cryptography, '__version__', None)
-    except ImportError:
-        header += "cryptography: module missing\n"
+    if OpenSSL:
+        try:
+            # get_extension_for_class method added in `cryptography==1.1`; not available in older versions
+            # but need cryptography >= 1.3.4 for access from pyopenssl >= 0.14
+            # noinspection PyUnresolvedReferences
+            import cryptography
+        except ImportError:
+            header += "cryptography: module missing\n"
+
+    if cryptography:
+        try:
+            # noinspection PyUnresolvedReferences
+            from cryptography.x509.extensions import Extensions
+            if getattr(Extensions, "get_extension_for_class", None) is None:
+                header += "cryptography: module missing required functionality."
+                header += " Try upgrading to v1.3.4 or newer. You have "
+            header += "cryptography: %s\n" % getattr(cryptography, '__version__', None)
+        except ImportError:
+            header += "cryptography Extensions: module missing\n"
 
     # noinspection PyBroadException
     try:

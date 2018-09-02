@@ -850,20 +850,20 @@ def check_contents(source, downloadid, book_type, title):
 
     # Downloaders return varying amounts of info using varying names
     if not downloadfiles:  # empty
-        if source not in ['DIRECT', 'RTORRENT', 'NZBGET', 'SABNZBD']:  # these don't give us a contents list
+        if source not in ['DIRECT', 'NZBGET', 'SABNZBD']:  # these don't give us a contents list
             logger.debug("No filenames returned by %s for %s" % (source, title))
     else:
         logger.debug("Checking files in %s" % title)
         for entry in downloadfiles:
             fname = ''
             fsize = 0
-            if 'path' in entry:  # deluge
+            if 'path' in entry:  # deluge, rtorrent
                 fname = entry['path']
             if 'name' in entry:  # transmission, qbittorrent
                 fname = entry['name']
             if 'filename' in entry:  # utorrent, synology
                 fname = entry['filename']
-            if 'size' in entry:  # deluge, qbittorrent, synology
+            if 'size' in entry:  # deluge, qbittorrent, synology, rtorrent
                 fsize = entry['size']
             if 'filesize' in entry:  # utorrent
                 fsize = entry['filesize']
@@ -1046,8 +1046,8 @@ def getDownloadFiles(source, downloadid):
             dlfiles = transmission.getTorrentFiles(downloadid)
         elif source == 'UTORRENT':
             dlfiles = utorrent.listTorrent(downloadid)
-        # elif source == 'RTORRENT':
-        #     dlfiles = rtorrent.getFiles(downloadid)
+        elif source == 'RTORRENT':
+            dlfiles = rtorrent.getFiles(downloadid)
         elif source == 'SYNOLOGY_TOR':
             dlfiles = synology.getFiles(downloadid)
         elif source == 'QBITTORRENT':
@@ -1157,8 +1157,17 @@ def getDownloadProgress(source, downloadid):
                 myDB.action(cmd, ("UTORRENT returned error status %d" % status, downloadid, source))
                 progress = -1
 
-        # elif source == 'RTORRENT':
-        #     progress, message = rtorrent.getProgress(downloadid)
+        elif source == 'RTORRENT':
+            progress, status = rtorrent.getProgress(downloadid)
+            if progress == -1:
+                logger.debug('%s not found at %s' % (downloadid, source))
+            if status == 'finished':
+                progress = 100
+            elif status == 'error':
+                myDB = database.DBConnection()
+                cmd = 'UPDATE wanted SET Status="Aborted",DLResult=? WHERE DownloadID=? and Source=?'
+                myDB.action(cmd, ("rTorrent returned error", downloadid, source))
+                progress = -1
 
         elif source == 'SYNOLOGY_TOR':
             progress, status = synology.getProgress(downloadid)

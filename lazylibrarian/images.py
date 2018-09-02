@@ -20,9 +20,10 @@ import json
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getBookWork
-from lazylibrarian.formatter import plural, makeUnicode, makeBytestr, safe_unicode
+from lazylibrarian.formatter import plural, makeUnicode, makeBytestr, safe_unicode, check_int, md5_utf8
 from lazylibrarian.common import safe_copy, setperm
 from lazylibrarian.cache import cache_img, fetchURL
+from shutil import copyfile
 from lib.six import PY2, text_type
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus
@@ -505,17 +506,17 @@ def createMagCovers(refresh=False):
     return "Checked covers for %s issue%s" % (cnt, plural(cnt))
 
 
-def createMagCover(issuefile=None, refresh=False):
+def createMagCover(issuefile=None, refresh=False, pagenum=1):
     if not lazylibrarian.CONFIG['IMP_MAGCOVER']:
-        return
+        return 'unwanted'
     if issuefile is None or not os.path.isfile(issuefile):
         logger.debug('No issuefile %s' % issuefile)
-        return
+        return 'failed'
 
     base, extn = os.path.splitext(issuefile)
     if not extn:
         logger.debug('Unable to create cover for %s, no extension?' % issuefile)
-        return
+        return 'failed'
 
     coverfile = base + '.jpg'
 
@@ -524,7 +525,7 @@ def createMagCover(issuefile=None, refresh=False):
             os.remove(coverfile)
         else:
             logger.debug('Cover for %s exists' % issuefile)
-            return  # quit if cover already exists and we didn't want to refresh
+            return  'exists'  # quit if cover already exists and we didn't want to refresh
 
     logger.debug('Creating cover for %s' % issuefile)
     data = ''  # result from unzip or unrar
@@ -563,7 +564,7 @@ def createMagCover(issuefile=None, refresh=False):
                         f.write(img)
                     else:
                         f.write(img.encode())
-                return
+                return 'ok'
             else:
                 logger.debug("Failed to find image in %s" % issuefile)
         except Exception as why:
@@ -628,7 +629,9 @@ def createMagCover(issuefile=None, refresh=False):
                     logger.debug("Found %s [%s] version %s" % (generator, GS, res))
                     generator = "%s version %s" % (generator, res)
                     issuefile = issuefile.split('[')[0]
-                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1", "-dLastPage=1",
+                    params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER",
+                              "-dFirstPage=%d"  % check_int(pagenum, 1),
+                              "-dLastPage=%d" % check_int(pagenum, 1),
                               "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
 
                     res = subprocess.check_output(params, stderr=subprocess.STDOUT)
@@ -655,7 +658,7 @@ def createMagCover(issuefile=None, refresh=False):
             try:
                 if interface == 'wand':
                     generator = "wand interface"
-                    with Image(filename=issuefile + '[0]') as img:
+                    with Image(filename=issuefile + '[' + str(check_int(pagenum, 1) - 1) + ']') as img:
                         img.save(filename=coverfile)
 
                 elif interface == 'pythonmagick':
@@ -666,7 +669,7 @@ def createMagCover(issuefile=None, refresh=False):
                         issuefile = makeBytestr(issuefile)
                     if type(coverfile) is text_type:
                         coverfile = makeBytestr(coverfile)
-                    img.read(issuefile + '[0]')
+                    img.read(issuefile + '[' + str(check_int(pagenum, 1) - 1) + ']')
                     img.write(coverfile)
 
                 else:
@@ -691,8 +694,10 @@ def createMagCover(issuefile=None, refresh=False):
                             logger.debug("Found gs [%s] version %s" % (GS, res))
                             generator = "%s version %s" % (generator, res)
                             issuefile = issuefile.split('[')[0]
-                            params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER", "-dFirstPage=1",
-                                      "-dLastPage=1", "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
+                            params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER",
+                                      "-dFirstPage=%d" % check_int(pagenum, 1),
+                                      "-dLastPage=%d" % check_int(pagenum, 1) ,
+                                      "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
                             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                             res = makeUnicode(res).strip()
                             if not os.path.isfile(coverfile):
@@ -703,8 +708,12 @@ def createMagCover(issuefile=None, refresh=False):
 
         if os.path.isfile(coverfile):
             setperm(coverfile)
-            logger.debug("Created cover for %s using %s" % (issuefile, generator))
-            return
+            logger.debug("Created cover (page %d) for %s using %s" % (check_int(pagenum, 1), issuefile, generator))
+            myhash = md5_utf8(coverfile)
+            hashname = os.path.join(lazylibrarian.CACHEDIR, 'magazine', '%s.jpg' % myhash)
+            copyfile(coverfile, hashname)
+            setperm(hashname)
+            return hashname
 
     # if not recognised extension or cover creation failed
     try:
@@ -712,4 +721,4 @@ def createMagCover(issuefile=None, refresh=False):
         setperm(coverfile)
     except Exception as why:
         logger.error("Failed to copy nocover file, %s %s" % (type(why).__name__, str(why)))
-    return
+    return 'Failed'
