@@ -831,7 +831,8 @@ def logHeader():
         header += "unrar: missing: %s\n" % str(e)
 
     header += "openssl: %s\n" % getattr(ssl, 'OPENSSL_VERSION', None)
-    more_ssl = True
+    X509 = None
+    cryptography = None
     try:
         # pyOpenSSL 0.14 and above use cryptography for OpenSSL bindings. The _x509
         # attribute is only present on those versions.
@@ -839,31 +840,28 @@ def logHeader():
         import OpenSSL
     except ImportError:
         header += "pyOpenSSL: module missing\n"
-        more_ssl = False
+        OpenSSL = None
 
-    if more_ssl:
+    if OpenSSL:
         try:
             # noinspection PyUnresolvedReferences
             from OpenSSL.crypto import X509
         except ImportError:
             header += "pyOpenSSL.crypto X509: module missing\n"
-            more_ssl = False
 
-    if more_ssl:
+    if X509:
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
             header += "pyOpenSSL: module missing required functionality. Try upgrading to v0.14 or newer. You have "
-            more_ssl = False
         header += "pyOpenSSL: %s\n" % getattr(OpenSSL, '__version__', None)
 
-    if more_ssl:
+    if OpenSSL:
         try:
             import OpenSSL.SSL
         except (ImportError, AttributeError) as e:
             header += 'pyOpenSSL missing SSL module/attribute: %s\n' % e
-            more_ssl = False
 
-    if more_ssl:
+    if OpenSSL:
         try:
             # get_extension_for_class method added in `cryptography==1.1`; not available in older versions
             # but need cryptography >= 1.3.4 for access from pyopenssl >= 0.14
@@ -871,9 +869,8 @@ def logHeader():
             import cryptography
         except ImportError:
             header += "cryptography: module missing\n"
-            more_ssl = False
 
-    if more_ssl:
+    if cryptography:
         try:
             # noinspection PyUnresolvedReferences
             from cryptography.x509.extensions import Extensions
