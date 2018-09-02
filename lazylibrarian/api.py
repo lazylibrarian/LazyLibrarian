@@ -37,7 +37,8 @@ from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, 
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.grsync import grfollow, grsync
-from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers
+from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers, \
+    createMagCover
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.magazinescan import magazineScan
@@ -80,6 +81,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getIssues': '&name= list issues of named magazine',
             'getIssueName': '&name= get name of issue from path/filename',
             'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
+            'createMagCover': '&file= [&refresh] [&page=] create cover for magazine issue, optional page number',
             'forceMagSearch': '[&wait] search for all wanted magazines',
             'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
             'forceRSSSearch': '[&wait] search all entries in rss feeds',
@@ -614,6 +616,19 @@ class Api(object):
             self.data = createMagCovers(refresh=refresh)
         else:
             threading.Thread(target=createMagCovers, name='API-MAGCOVERS', args=[refresh]).start()
+
+    def _createMagCover(self, **kwargs):
+        if 'file' not in kwargs:
+            self.data = 'Missing parameter: file'
+            return
+        if 'refresh' in kwargs:
+            refresh = True
+        else:
+            refresh = False
+        if 'page' in kwargs:
+            self.data = createMagCover(issuefile=kwargs['file'], refresh=refresh, pagenum=kwargs['page'])
+        else:
+            self.data = createMagCover(issuefile=kwargs['file'], refresh=refresh)
 
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:

@@ -838,7 +838,7 @@ def logHeader():
         # noinspection PyUnresolvedReferences
         import OpenSSL
     except ImportError:
-        header += "OpenSSL: module missing\n"
+        header += "pyOpenSSL: module missing\n"
         more_ssl = False
 
     if more_ssl:
@@ -846,7 +846,7 @@ def logHeader():
             # noinspection PyUnresolvedReferences
             from OpenSSL.crypto import X509
         except ImportError:
-            header += "OpenSSL.crypto X509: module missing\n"
+            header += "pyOpenSSL.crypto X509: module missing\n"
             more_ssl = False
 
     if more_ssl:
@@ -860,7 +860,7 @@ def logHeader():
         try:
             import OpenSSL.SSL
         except (ImportError, AttributeError) as e:
-            header += 'OpenSSL missing SSL module/attribute: %s\n' % e
+            header += 'pyOpenSSL missing SSL module/attribute: %s\n' % e
             more_ssl = False
 
     if more_ssl:
