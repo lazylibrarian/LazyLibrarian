@@ -143,6 +143,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
             'setWorkID': '[&wait] [&bookids] Set WorkID for all books that dont have one, or bookids',
             'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
+            'includeAlternate': '[&wait] [&dir=] Include books from named or alternate folder and any subfolders',
             'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
             'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory',
             'grSync': '&status= &shelf= Sync books with given status to a goodreads shelf',
@@ -1362,6 +1363,17 @@ class Api(object):
             self.data = processAlternate(usedir)
         else:
             threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[usedir]).start()
+
+    def _includeAlternate(self, **kwargs):
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        else:
+            startdir = lazylibrarian.CONFIG['ALTERNATE_DIR']
+        if 'wait' in kwargs:
+            self.data = LibraryScan(startdir, 'eBook', None, False)
+        else:
+            threading.Thread(target=LibraryScan, name='API-INCLUDEALT',
+                             args=[startdir, 'eBook', None, False]).start()
 
     def _importCSVwishlist(self, **kwargs):
         if 'dir' in kwargs:
