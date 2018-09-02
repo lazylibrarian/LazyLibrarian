@@ -54,27 +54,17 @@ def getServer():
         return False
 
 
-def addTorrent(tor_url, hashID):
+def addTorrent(tor_url, hashID, data=None):
     server = getServer()
     if server is False:
         return False, 'rTorrent unable to connect to server'
-
-    directory = lazylibrarian.CONFIG['RTORRENT_DIR']
-
-    # if tor_url.startswith('magnet') and directory:
-    #    can't send magnets to rtorrent with a directory - not working correctly
-    #    convert magnet to torrent instead
-    #    tor_name = 'meta-' + hashID + '.torrent'
-    #    tor_file = os.path.join(lazylibrarian.CONFIG['TORRENT_DIR'], tor_name)
-    #    torrent = magnet2torrent(tor_url, tor_file)
-    #    if torrent is False:
-    #       return False
-    #    tor_url = torrent
-
-    # socket.setdefaulttimeout(10)  # shouldn't need timeout again as we already talked to server
-
     try:
-        _ = server.load(tor_url)  # response isn't anything useful, always 0
+        if data:
+            logger.debug('Sending rTorrent content [%s...]' % str(data)[:40])
+            _ = server.load_raw(xmlrpc_client.Binary(data))
+        else:
+            logger.debug('Sending rTorrent url [%s...]' % str(tor_url)[:40])
+            _ = server.load(tor_url)  # response isn't anything useful, always 0
         # need a short pause while rtorrent loads it
         RETRIES = 5
         while RETRIES:
@@ -89,41 +79,62 @@ def addTorrent(tor_url, hashID):
         if label:
             server.d.set_custom1(hashID, label)
 
+        directory = lazylibrarian.CONFIG['RTORRENT_DIR']
         if directory:
             server.d.set_directory(hashID, directory)
 
         server.d.start(hashID)
 
-        # socket.setdefaulttimeout(None)  # reset timeout
-
     except Exception as e:
-        # socket.setdefaulttimeout(None)  # reset timeout if failed
         res = "rTorrent Error: %s: %s" % (type(e).__name__, str(e))
         logger.error(res)
         return False, res
 
-    # For each torrent in the main view
+    # wait a while for download to start, that's when rtorrent fills in the name
+    name = getName(hashID)
+    if name:
+        directory = server.d.get_directory(hashID)
+        label = server.d.get_custom1(hashID)
+        if label:
+            logger.debug('rTorrent downloading %s to %s with label %s' % (name, directory, label))
+        else:
+            logger.debug('rTorrent downloading %s to %s' % (name, directory))
+        return hashID, ''
+    return False, 'rTorrent hashid not found'
+
+
+def getProgress(hashID):
+    server = getServer()
+    if server is False:
+        return 0, 'error'
     mainview = server.download_list("", "main")
     for tor in mainview:
-        if tor.upper() == hashID.upper():  # this is us
-            # wait a while for download to start, that's when rtorrent fills in the name
-            RETRIES = 5
-            name = ''
-            while RETRIES:
-                name = server.d.get_name(tor)
-                if tor.upper() not in name:
-                    break
-                sleep(5)
-                RETRIES -= 1
+        if tor.upper() == hashID.upper():
+            if server.d.complete(tor):
+                return 100, 'finished'
+            return int((server.d.bytes_done(tor) * 100) / server.d.size_bytes(tor)), 'OK'
+    return -1, ''
 
-            directory = server.d.get_directory(tor)
-            label = server.d.get_custom1(tor)
-            if label:
-                logger.debug('rtorrent downloading %s to %s with label %s' % (name, directory, label))
-            else:
-                logger.debug('rtorrent downloading %s to %s' % (name, directory))
-            return hashID, ''
-    return False, 'rTorrent hashid not found'
+
+def getFiles(hashID):
+    server = getServer()
+    if server is False:
+        return []
+
+    mainview = server.download_list("", "main")
+    for tor in mainview:
+        if tor.upper() == hashID.upper():
+            size_files = server.d.size_files(tor)
+            cnt = 0
+            files = []
+            while cnt < size_files:
+                target = "%s:f%d" % (tor, cnt)
+                path = server.f.path(target)
+                size = server.f.size_bytes(target)
+                files.append({"path": path, "size": size})
+                cnt += 1
+            return files
+    return []
 
 
 def getName(hashID):

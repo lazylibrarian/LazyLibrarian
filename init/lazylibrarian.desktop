@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=LazyLibrarian
+Comment=LazyLibrarian ebook and magazine manager
+Exec=/usr/bin/lazylibrarian
+Icon=/opt/lazylibrarian/data/images/ll.png
+Terminal=false
+Type=Application
+Encoding=UTF-8
+Categories=Network;Application;
+Path=
