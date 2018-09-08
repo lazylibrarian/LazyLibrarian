@@ -31,6 +31,8 @@ from lib.six.moves.urllib_parse import urlparse, urlunparse
 #
 session_id = None
 host_url = None
+rpc_version = 0
+tr_version = 0
 
 
 def addTorrent(link, directory=None, metainfo=None):
@@ -61,7 +63,7 @@ def addTorrent(link, directory=None, metainfo=None):
             logger.debug("Torrent sent to Transmission successfully")
             return retid, ''
 
-    res = 'Transmission returned status %s' % response['result']
+    res = 'Transmission returned %s' % response['result']
     logger.debug(res)
     return False, res
 
@@ -178,11 +180,32 @@ def setSeedRatio(torrentid, ratio):
     if not response:
         return False
 
+# Pre RPC v14 status codes
+#   {
+#        1: 'check pending',
+#        2: 'checking',
+#        4: 'downloading',
+#        8: 'seeding',
+#        16: 'stopped',
+#    }
+#    RPC v14 status codes
+#    {
+#        0: 'stopped',
+#        1: 'check pending',
+#        2: 'checking',
+#        3: 'download pending',
+#        4: 'downloading',
+#        5: 'seed pending',
+#        6: 'seeding',
+#        7: 'isolated', # no connection to peers
+#    }
+
 
 def removeTorrent(torrentid, remove_data=False):
+    global rpc_version
 
     method = 'torrent-get'
-    arguments = {'ids': [torrentid], 'fields': ['isFinished', 'name']}
+    arguments = {'ids': [torrentid], 'fields': ['isFinished', 'name', 'status']}
 
     response, _ = torrentAction(method, arguments)  # type: dict
     if not response:
@@ -191,9 +214,16 @@ def removeTorrent(torrentid, remove_data=False):
     try:
         finished = response['arguments']['torrents'][0]['isFinished']
         name = response['arguments']['torrents'][0]['name']
-
+        status = response['arguments']['torrents'][0]['status']
+        remove = False
         if finished:
             logger.debug('%s has finished seeding, removing torrent and data' % name)
+            remove = True
+        elif not lazylibrarian.CONFIG['TRANSMISSION_SEED_WAIT']:
+            if (rpc_version < 14 and status == 8) or (rpc_version >= 14 and status in [5, 6]):
+                logger.debug('%s is seeding, removing torrent and data anyway' % name)
+                remove = True
+        if remove:
             method = 'torrent-remove'
             if remove_data:
                 arguments = {'delete-local-data': True, 'ids': [torrentid]}
@@ -202,7 +232,7 @@ def removeTorrent(torrentid, remove_data=False):
             _, _ = torrentAction(method, arguments)
             return True
         else:
-            logger.debug('%s has not finished seeding yet, torrent will not be removed' % name)
+            logger.debug('%s has not finished seeding, torrent will not be removed' % name)
     except IndexError:
         # no torrents, already removed?
         return True
@@ -214,20 +244,21 @@ def removeTorrent(torrentid, remove_data=False):
 
 
 def checkLink():
-    global session_id
-    method = 'session-stats'
-    arguments = {}
+    global session_id, host_url, rpc_version, tr_version
+    method = 'session-get'
+    arguments = {'fields': ['version', 'rpc-version']}
     session_id = None
+    host_url = None
+    rpc_version = 0
+    tr_version = 0
     response, _ = torrentAction(method, arguments)  # type: dict
     if response:
-        if response['result'] == 'success':
-            # does transmission handle labels?
-            return "Transmission login successful"
+        return "Transmission login successful, v%s, rpc v%s" % (tr_version, rpc_version)
     return "Transmission login FAILED\nCheck debug log"
 
 
 def torrentAction(method, arguments):
-    global session_id, host_url
+    global session_id, host_url, rpc_version, tr_version
 
     username = lazylibrarian.CONFIG['TRANSMISSION_USER']
     password = lazylibrarian.CONFIG['TRANSMISSION_PASS']
@@ -295,7 +326,19 @@ def torrentAction(method, arguments):
             logger.error(res)
             return False, res
 
-    # Prepare next request
+    if not tr_version or not rpc_version:
+        headers = {'x-transmission-session-id': session_id}
+        data = {'method': 'session-get', 'arguments': {'fields': ['version', 'rpc-version']}}
+        response = requests.post(host_url, json=data, headers=headers, proxies=proxies,
+                                 auth=auth, timeout=timeout)
+
+        if response and str(response.status_code).startswith('2'):
+            res = response.json()
+            tr_version = res['arguments']['version']
+            rpc_version = res['arguments']['rpc-version']
+            logger.debug("Transmission v%s, rpc v%s" % (tr_version, rpc_version))
+
+    # Prepare real request
     headers = {'x-transmission-session-id': session_id}
     data = {'method': method, 'arguments': arguments}
     try:

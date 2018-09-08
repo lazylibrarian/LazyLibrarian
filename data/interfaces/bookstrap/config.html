@@ -944,6 +944,17 @@
                         <input type="text" id="transmission_dir" name="transmission_dir" value="${lazylibrarian.CONFIG['TRANSMISSION_DIR']}" class="form-control" placeholder="Transmission Download Directory">
                         <span class="help-block">Leave blank to use transmission default</span>
                       </div>
+                      <div class="checkbox">
+                        <%
+                          if lazylibrarian.CONFIG['TRANSMISSION_SEED_WAIT'] == True:
+                              checked = 'checked="checked"'
+                          else:
+                              checked = ''
+                        %>
+                        <label for="transmission_seed_wait" class="control-label">
+                        <input type="checkbox" id="transmission_seed_wait" name="transmission_seed_wait" value="1" ${checked} />
+                        Do not delete if still seeding</label>
+                      </div>
                     </div>
                     <div class="form-group col-md-6">
                       <label for="testTransmission" class="control-label">Transmission Connection:</label><br>
