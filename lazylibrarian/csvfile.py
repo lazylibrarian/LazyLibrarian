@@ -118,7 +118,8 @@ def restore_table(table, savedir=None, status=None):
                                     "Reject": makeUnicode(item['Reject']),
                                     "Status": item['Status'],
                                     "MagazineAdded": item['MagazineAdded'],
-                                    "IssueStatus": item['IssueStatus']}
+                                    "IssueStatus": item['IssueStatus'],
+                                    "CoverPage": item['CoverPage']}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     count += 1
 

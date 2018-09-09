@@ -949,7 +949,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         mags_list = []
 
-        magazines = myDB.select('SELECT Title,Reject,Regex,DateType from magazines ORDER by Title COLLATE NOCASE')
+        magazines = myDB.select(
+                        'SELECT Title,Reject,Regex,DateType,CoverPage from magazines ORDER by Title COLLATE NOCASE')
 
         if magazines:
             for mag in magazines:
@@ -963,11 +964,13 @@ class WebInterface(object):
                 datetype = mag['DateType']
                 if datetype is None:
                     datetype = ""
+                coverpage = check_int(mag['CoverPage'], 1)
                 mags_list.append({
                     'Title': title,
                     'Reject': reject,
                     'Regex': regex,
-                    'DateType': datetype
+                    'DateType': datetype,
+                    'CoverPage': coverpage
                 })
 
         # Reset api counters if it's a new day

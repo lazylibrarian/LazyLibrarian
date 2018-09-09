@@ -179,7 +179,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
                      'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
-                     'DELAYSEARCH', 'TRANSMISSION_SEED_WAIT']
+                     'DELAYSEARCH', 'SEED_WAIT']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -309,6 +309,7 @@ CONFIG_DEFINITIONS = {
     'TOR_DOWNLOADER_DELUGE': ('bool', 'TORRENT', 0),
     'NUMBEROFSEEDERS': ('int', 'TORRENT', 10),
     'KEEP_SEEDING': ('bool', 'TORRENT', 1),
+    'SEED_WAIT': ('bool', 'TORRENT', 1),
     'PREFER_MAGNET': ('bool', 'TORRENT', 1),
     'TORRENT_DIR': ('str', 'TORRENT', ''),
     'RTORRENT_HOST': ('str', 'RTORRENT', ''),
@@ -332,7 +333,6 @@ CONFIG_DEFINITIONS = {
     'TRANSMISSION_USER': ('str', 'TRANSMISSION', ''),
     'TRANSMISSION_PASS': ('str', 'TRANSMISSION', ''),
     'TRANSMISSION_DIR': ('str', 'TRANSMISSION', ''),
-    'TRANSMISSION_SEED_WAIT': ('bool', 'TRANSMISSION', 1),
     'DELUGE_CERT': ('str', 'DELUGE', ''),
     'DELUGE_HOST': ('str', 'DELUGE', ''),
     'DELUGE_PORT': ('int', 'DELUGE', 0),

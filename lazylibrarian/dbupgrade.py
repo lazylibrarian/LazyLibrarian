@@ -84,8 +84,9 @@ def upgrade_needed():
     # 37 add delete cascade to tables
     # 38 change series count and total to integers
     # 39 add LastBookID to author table
+    # 40 add CoverPage to magazines table
 
-    db_current_version = 39
+    db_current_version = 40
 
     if db_version < db_current_version:
         return db_current_version
@@ -164,7 +165,7 @@ def dbupgrade(db_current_version):
                                 'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, ' +
                                 'MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, ' +
-                                'Reject TEXT, LatestCover TEXT, DateType TEXT)')
+                                'Reject TEXT, LatestCover TEXT, DateType TEXT, CoverPage INTEGER DEFAULT 1)')
                     myDB.action('CREATE TABLE languages (isbn TEXT, lang TEXT)')
                     myDB.action('CREATE TABLE issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, ' +
                                 'IssueDate TEXT, IssueFile TEXT,' +
@@ -1099,3 +1100,12 @@ def db_v39(myDB, upgradelog):
                                                                       calc_eta(start_time, tot, cnt))
         update_totals(author['AuthorID'])
     upgradelog.write("%s v39: complete\n" % time.ctime())
+
+
+def db_v40(myDB, upgradelog):
+    if not has_column(myDB, "magazines", "CoverPage"):
+        lazylibrarian.UPDATE_MSG = 'Updating magazines to hold CoverPage setting'
+        upgradelog.write("%s v40: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        logger.debug(lazylibrarian.UPDATE_MSG)
+        myDB.action('ALTER TABLE magazines ADD COLUMN CoverPage INTEGER DEFAULT 1')
+    upgradelog.write("%s v40: complete\n" % time.ctime())

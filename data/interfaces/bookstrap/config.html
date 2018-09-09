@@ -3,7 +3,7 @@
     import lazylibrarian
 %>
 <%def name="headerIncludes()">
-  <div id="subhead_container">
+<div id="subhead_container">
     <div id="subhead_menu">
       <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
       <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-sync"></i> Restart</a>
@@ -14,7 +14,8 @@
       <a class="button btn btn-sm btn-primary" href="userAdmin" data-toggle="tooltip" data-placement="bottom" title="Manage user accounts"><i class="fa fa-user"></i> User Admin</a>
       %endif
      <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Checking, please wait...</button>
-  </div>
+    </div>
+</div>
 </%def>
 <%def name="body()">
   <!-- ensure the browser sends form-submission data in the UTF-8 encoding,
@@ -47,17 +48,15 @@
                 <div class="col-md-6">
                   <fieldset>
                     <legend>Server Details</legend>
-                    <div class="form-group">
-                      <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
-                      <label for="http_host" class="control-label">Hostname:</label>
+                    <input type="text" id="current_tab" name="current_tab" value="${lazylibrarian.CURRENT_TAB}" class="hidden">
+                    <div class="input-group">
+                      <span class="input-group-addon">Host</span>
                       <input type="text" id="http_host" name="http_host" value="${lazylibrarian.CONFIG['HTTP_HOST']}" class="form-control" placeholder="Hostname">
+                      <span class="input-group-addon">Port</span>
+                      <input type="number" id="http_port" name="http_port" value="${lazylibrarian.CONFIG['HTTP_PORT']}" class="form-control" placeholder="Port Number (Default 5299)">
                     </div>
-                    <div class="form-group">
-                      <label for="http_port" class="control-label">Port:</label>
-                      <input type="text" id="http_port" name="http_port" value="${lazylibrarian.CONFIG['HTTP_PORT']}" class="form-control" placeholder="Port Number (Default 5299)">
-                    </div>
-                    <div class="form-group">
-                      <label for="http_root" class="control-label">Web Root:</label>
+                    <div class="input-group">
+                      <span class="input-group-addon">Web Root</span>
                       <input type="text" id="http_root" name="http_root" value="${lazylibrarian.CONFIG['HTTP_ROOT']}" class="form-control" placeholder="Web Root">
                     </div>
                     <div class="checkbox">
@@ -92,31 +91,24 @@
                         <input type="text" id="https_key" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" class="form-control" placeholder="https key">
                       </div>
                     </fieldset>
-                    <div class="form-group">
-                      <label for="logdir" class="control-label">Logdir:</label>
+                    <div class="input-group">
+                      <span class="input-group-addon">Logdir</span>
                       <input type="text" id="logdir" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" class="form-control" placeholder="Log Dir">
                     </div>
-                    <div class="form-group">
-                      <label for="loglimit" class="control-label">Log Limit:</label>
-                      <input type="text" id="loglimit" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" class="form-control"             placeholder="Log Limit">
-                      <span class="help-block">Size of on-screen log, smaller is faster and uses less memory</span>
+                    <div class="input-group">
+                      <span class="input-group-addon">Log Files</span>
+                      <input type="number" id="logfiles" name="logfiles" value="${lazylibrarian.CONFIG['LOGFILES']}" class="form-control"             placeholder="Number of files">
+                      <span class="input-group-addon">Log Lines</span>
+                      <input type="number" id="loglimit" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" class="form-control"             placeholder="Number of lines">
                     </div>
-                    <div class="form-group">
-                      <label for="logfiles" class="control-label">Log Files:</label>
-                      <input type="text" id="logfiles" name="logfiles" value="${lazylibrarian.CONFIG['LOGFILES']}" class="form-control"             placeholder="Log Files">
-                      <span class="help-block">Number of logfiles to rotate</span>
-                    </div>
-                    <div class="form-group">
-                      <label for="logsize" class="control-label">Log Size:</label>
-                      <input type="text" id="logsize" name="logsize" value="${lazylibrarian.CONFIG['LOGSIZE']}" class="form-control"             placeholder="Log Size">
-                      <span class="help-block">Maximum size of each logfile</span>
-                    </div>
-                    <div class="form-group">
-                      <label for="loglevel">Log Level:</label>
-                      <input type="text" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="Log      Level">
-                      <span class="help-block">0=Errors/Warnings, 1=Normal, 2=Debug, >2 Reserved</span>
+                    <div class="input-group">
+                      <span class="input-group-addon">Log Size</span>
+                      <input type="number" id="logsize" name="logsize" value="${lazylibrarian.CONFIG['LOGSIZE']}" class="form-control"             placeholder="Log File Size">
+                      <span class="input-group-addon">Log Level</span>
+                      <input type="number" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="0=quiet,1=Normal,2=Debug">
                     </div>
                   </fieldset>
+                  <br>
                   <fieldset>
                     <legend>Proxy Details</legend>
                     <div class="form-group">
@@ -130,6 +122,53 @@
                       <span class="help-block">Comma separated list http, https, etc</span>
                     </div>
                   </fieldset>
+                    <fieldset>
+                    <legend>OPDS Server</legend>
+                        <div class="checkbox">
+                          <%
+                            if lazylibrarian.CONFIG['OPDS_ENABLED'] == True:
+                                checked = 'checked="checked"'
+                            else:
+                                checked = ''
+                          %>
+                          <label for="opds_enabled" title="Allow remote applications to interface with LazyLibrarian">
+                          <input type="checkbox" id="opds_enabled" name="opds_enabled" value="1" ${checked} />
+                          Enable OPDS</label>
+                        </div>
+                        <small>Enabling/Disabling OPDS or changing credentials requires restart</small><br>
+                        <fieldset id="opdsoptions">
+                            <div class="checkbox">
+                              <%
+                                if lazylibrarian.CONFIG['OPDS_AUTHENTICATION'] == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                              %>
+                              <label for="opds_authentication" title="OPDS requires username and password">
+                              <input type="checkbox" id="opds_authentication" name="opds_authentication" value="1" ${checked} />
+                              OPDS Requires Credentials</label><br><small>If opds authentication is enabled and the user/pass below are blank the webserver user/pass will be used<br>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
+                            </div>
+                            <div id="opdscredentials">
+                              <div class="input-group">
+                                <span class="input-group-addon">Username</span>
+                                <input type="text" id="opds_username" name="opds_username" value="${lazylibrarian.CONFIG['OPDS_USERNAME']}" class="form-control" placeholder="Username">
+                                <span class="input-group-addon">Password</span>
+                                <input type="password" id="opds_password" name="opds_password" value="${lazylibrarian.CONFIG['OPDS_PASSWORD']}" class="form-control" placeholder="Password">
+                              </div>
+                            </div>
+                            <div class="checkbox">
+                              <%
+                                if lazylibrarian.CONFIG['OPDS_METAINFO'] == True:
+                                    checked = 'checked="checked"'
+                                else:
+                                    checked = ''
+                              %>
+                              <label for="opds_metainfo" title="OPDS extra metainfo">
+                              <input type="checkbox" id="opds_metainfo" name="opds_metainfo" value="1" ${checked} />
+                              OPDS Include MetaInfo</label><br><small>This will include book summary, cover, author details</small>
+                            </div>
+                        </fieldset>
+                    </fieldset>
                 </div>
                 <div class="col-md-6">
                   <fieldset>
@@ -162,15 +201,15 @@
                     </div>
                     </fieldset>
                     <fieldset id="webserver_options">
-                    <div class="form-group">
-                      <label for="http_user">WebServer Username:</label>
+                    WebServer Options:
+                    <div class="input-group">
+                      <span class="input-group-addon">Username</span>
                       <input type="text" id="http_user" name="http_user" value="${lazylibrarian.CONFIG['HTTP_USER']}" class="form-control" placeholder="Username">
-                    </div>
-                    <div class="form-group">
-                      <label for="http_pass" class="control-label">Webserver Password:</label>
+                      <span class="input-group-addon">Password</span>
                       <input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" class="form-control" placeholder="Password">
                     </div>
                     </fieldset>
+                    <br>
                   </fieldset>
                   <fieldset>
                     <legend>Startup</legend>
@@ -205,57 +244,44 @@
                         <small>Current API key: <strong>${lazylibrarian.CONFIG['API_KEY']}</strong></small>
                       </div>
                     </fieldset>
-                    <fieldset>
-                        <div class="checkbox">
-                          <%
-                            if lazylibrarian.CONFIG['OPDS_ENABLED'] == True:
-                                checked = 'checked="checked"'
-                            else:
-                                checked = ''
-                          %>
-                          <label for="opds_enabled" title="Allow remote applications to interface with LazyLibrarian">
-                          <input type="checkbox" id="opds_enabled" name="opds_enabled" value="1" ${checked} />
-                          Enable OPDS</label>
-                        </div>
-                        <small>Enabling/Disabling OPDS or changing credentials requires restart</small><br>
-                        <fieldset id="opdsoptions">
-                            <div class="checkbox">
-                              <%
-                                if lazylibrarian.CONFIG['OPDS_AUTHENTICATION'] == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                              %>
-                              <label for="opds_authentication" title="OPDS requires username and password">
-                              <input type="checkbox" id="opds_authentication" name="opds_authentication" value="1" ${checked} />
-                              OPDS Requires Credentials</label><br><small>If opds authentication is enabled and the user/pass below are blank the webserver user/pass will be used<br>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
-                            </div>
-                            <div id="opdscredentials">
-                                <div class="form-group">
-                                    <label>OPDS Username</label>
-                                    <input type="text" name="opds_username" value="${lazylibrarian.CONFIG['OPDS_USERNAME']}" size="30">
-                                </div>
-                                <div class="form-group">
-                                    <label>OPDS Password</label>
-                                    <input type="password" name="opds_password" value="${lazylibrarian.CONFIG['OPDS_PASSWORD']| h}" size="30">
-                                </div>
-                            </div>
-                            <div class="checkbox">
-                              <%
-                                if lazylibrarian.CONFIG['OPDS_METAINFO'] == True:
-                                    checked = 'checked="checked"'
-                                else:
-                                    checked = ''
-                              %>
-                              <label for="opds_metainfo" title="OPDS extra metainfo">
-                              <input type="checkbox" id="opds_metainfo" name="opds_metainfo" value="1" ${checked} />
-                              OPDS Include MetaInfo</label><br><small>This will include book summary, cover, author details</small>
-                            </div>
-                        </fieldset>
-                    </fieldset>
                   </fieldset>
                   <fieldset>
                     <legend>Appearance</legend>
+                    <div class="form-group">
+                      <label for="http_look">Interface:</label>
+                      <select id="http_look" name="http_look" class="form-control">
+                        %for http_look in config['http_look_list']:
+                        <%
+                        if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
+                            selected = 'selected="selected"'
+                        else:
+                            selected = ''
+                        %>
+                        <option value="${http_look}" ${selected}>${http_look}</option>
+                        %endfor
+                      </select>
+                    </div>
+                    <div class="checkbox hidden"> <!-- Not really required? -->
+                      <label for="bookstrap" class="control-label">
+                        <input type="checkbox" name="use_bookstrap" id="bookstrap" value="1" ${checked} />
+                        Use Bookstrap</label>
+                    </div>
+                    <fieldset id="bookstrap_options">
+                      <div class="form_group">
+                        <label for="bookstrap_theme" class="control-label">Bootswatch Theme:</label>
+                        <select name="bookstrap_theme" id="bookstrap_theme" class="form-control">
+                          %for bookstrap_theme in lazylibrarian.BOOKSTRAP_THEMELIST:
+                          <%
+                            if bookstrap_theme == lazylibrarian.CONFIG['BOOKSTRAP_THEME']:
+                                selected = 'selected="selected"'
+                            else:
+                                selected = ''
+                          %>
+                          <option value="${bookstrap_theme}" ${selected}>${bookstrap_theme}</option>
+                          %endfor
+                        </select>
+                      </div>
+                    </fieldset>
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
@@ -355,41 +381,6 @@
                         <input type="checkbox" id="sort_surname" name="sort_surname" value="1" ${checked} />
                         Show author surname first</label>
                     </div>
-                    <div class="form-group">
-                      <label for="http_look">Interface:</label>
-                      <select id="http_look" name="http_look" class="form-control">
-                        %for http_look in config['http_look_list']:
-                        <%
-                        if http_look == lazylibrarian.CONFIG['HTTP_LOOK']:
-                            selected = 'selected="selected"'
-                        else:
-                            selected = ''
-                        %>
-                        <option value="${http_look}" ${selected}>${http_look}</option>
-                        %endfor
-                      </select>
-                    </div>
-                    <div class="checkbox hidden"> <!-- Not really required? -->
-                      <label for="bookstrap" class="control-label">
-                        <input type="checkbox" name="use_bookstrap" id="bookstrap" value="1" ${checked} />
-                        Use Bookstrap</label>
-                    </div>
-                    <fieldset id="bookstrap_options">
-                      <div class="form_group">
-                        <label for="bookstrap_theme" class="control-label">Bootswatch Theme:</label>
-                        <select name="bookstrap_theme" id="bookstrap_theme" class="form-control">
-                          %for bookstrap_theme in lazylibrarian.BOOKSTRAP_THEMELIST:
-                          <%
-                            if bookstrap_theme == lazylibrarian.CONFIG['BOOKSTRAP_THEME']:
-                                selected = 'selected="selected"'
-                            else:
-                                selected = ''
-                          %>
-                          <option value="${bookstrap_theme}" ${selected}>${bookstrap_theme}</option>
-                          %endfor
-                        </select>
-                      </div>
-                    </fieldset>
                   </fieldset>
                 </div>
               </div>
@@ -458,7 +449,7 @@
                       <div class="form-group">
                         <label for="goodreads_interval" class="control-label">Goodreads Sync Interval:</label>
                         <div class="input-group">
-                          <input type="text" id="goodreads_interval" name="goodreads_interval" value="${lazylibrarian.CONFIG['GOODREADS_INTERVAL']}" class="form-control" placeholder="Goodreads Sync interval (hours)" >
+                          <input type="number" id="goodreads_interval" name="goodreads_interval" value="${lazylibrarian.CONFIG['GOODREADS_INTERVAL']}" class="form-control" placeholder="Goodreads Sync interval (hours)" >
                           <span class="input-group-addon">Hours</span>
                         </div>
                       </div>
@@ -683,7 +674,7 @@
                         </div>
                         <div class="form-group col-md-4">
                           <label for="sab_port" class="control-label">SABnzbd Port:</label>
-                          <input type="text" id="sab_port" name="sab_port" value="${lazylibrarian.CONFIG['SAB_PORT']}" class="form-control"     placeholder="SABnzbd Port">
+                          <input type="number" id="sab_port" name="sab_port" value="${lazylibrarian.CONFIG['SAB_PORT']}" class="form-control"     placeholder="SABnzbd Port">
                         </div>
                       </div>
                       <div class="row">
@@ -735,7 +726,7 @@
                         </div>
                         <div class="form-group col-md-4">
                           <label for="nzbget_port" class="control-label">Port</label>
-                          <input type="text" id="nzbget_port" name="nzbget_port" value="${lazylibrarian.CONFIG['NZBGET_PORT']}" class="form-control" placeholder="NZBGet Port">
+                          <input type="number" id="nzbget_port" name="nzbget_port" value="${lazylibrarian.CONFIG['NZBGET_PORT']}" class="form-control" placeholder="NZBGet Port">
                         </div>
                         <div class="form-group col-md-6">
                           <label for="nzbget_user" class="control-label">Username</label>
@@ -781,7 +772,7 @@
                         </div>
                         <div class="form-group col-md-4">
                           <label for="synology_port" class="control-label">Port</label>
-                          <input type="text" id="synology_port" name="synology_port" value="${lazylibrarian.CONFIG['SYNOLOGY_PORT']}" class="form-control" placeholder="Synology Port">
+                          <input type="number" id="synology_port" name="synology_port" value="${lazylibrarian.CONFIG['SYNOLOGY_PORT']}" class="form-control" placeholder="Synology Port">
                         </div>
                         <div class="form-group col-md-6">
                           <label for="synology_user" class="control-label">Username</label>
@@ -843,9 +834,10 @@
                         <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" class="form-control" placeholder="NZB Blackhole Directory">
                       </div>
                     </fieldset>
-                    <div class="form-group">
-                      <label for="usenet_retention" class="control-label">Retention Max Age:</label>
-                      <input type="text" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention Maximum Age">
+                    <div class="input-group">
+                      <span class="input-group-addon">Usenet Retention</span>
+                      <input type="number" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention Maximum Age">
+                      <span class="input-group-addon">Days</span>
                     </div>
                   </fieldset>
                 </fieldset>
@@ -874,7 +866,7 @@
                       </div>
                       <div class="form-group col-md-4">
                         <label for="deluge_port" class="control-label">Daemon or webUI Port:</label>
-                        <input type="text" id="deluge_port" name="deluge_port" value="${lazylibrarian.CONFIG['DELUGE_PORT']}" class="form-control" placeholder="Deluge Port">
+                        <input type="number" id="deluge_port" name="deluge_port" value="${lazylibrarian.CONFIG['DELUGE_PORT']}" class="form-control" placeholder="Deluge Port">
                       </div>
                     </div>
                     <div class="row">
@@ -929,7 +921,7 @@
                       </div>
                       <div class="form-group col-md-4">
                         <label for="transmission_port" class="control-label">Transmission Port :</label>
-                        <input type="text" id="transmission_port" name="transmission_port" value="${lazylibrarian.CONFIG['TRANSMISSION_PORT']}" class="form-control" placeholder="Transmission port">
+                        <input type="number" id="transmission_port" name="transmission_port" value="${lazylibrarian.CONFIG['TRANSMISSION_PORT']}" class="form-control" placeholder="Transmission port">
                       </div>
                       <div class="form-group col-md-6">
                         <label for="transmission_user" class="control-label">Username :</label>
@@ -943,17 +935,6 @@
                         <label for="transmission_dir" class="control-label">Download directory :</label>
                         <input type="text" id="transmission_dir" name="transmission_dir" value="${lazylibrarian.CONFIG['TRANSMISSION_DIR']}" class="form-control" placeholder="Transmission Download Directory">
                         <span class="help-block">Leave blank to use transmission default</span>
-                      </div>
-                      <div class="checkbox">
-                        <%
-                          if lazylibrarian.CONFIG['TRANSMISSION_SEED_WAIT'] == True:
-                              checked = 'checked="checked"'
-                          else:
-                              checked = ''
-                        %>
-                        <label for="transmission_seed_wait" class="control-label">
-                        <input type="checkbox" id="transmission_seed_wait" name="transmission_seed_wait" value="1" ${checked} />
-                        Do not delete if still seeding</label>
                       </div>
                     </div>
                     <div class="form-group col-md-6">
@@ -1028,7 +1009,7 @@
                       </div>
                       <div class="form-group col-md-4">
                         <label for="utorrent_port" class="control-label">uTorrent Port:</label>
-                        <input type="text" id="utorrent_port" name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" class="form-control" placeholder="uTorrent Port">
+                        <input type="number" id="utorrent_port" name="utorrent_port" value="${lazylibrarian.CONFIG['UTORRENT_PORT']}" class="form-control" placeholder="uTorrent Port">
                       </div>
                       <div class="form-group col-md-6">
                         <label for="utorrent_user" class="control-label">Username:</label>
@@ -1070,7 +1051,7 @@
                         </div>
                         <div class="form-group col-md-4">
                           <label for="qbittorrent_port" class="control-label">qBitTorrent Port:</label>
-                          <input type="text" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" class="form-control" placeholder="qBitTorrent Port">
+                          <input type="number" id="qbittorrent_port" name="qbittorrent_port" value="${lazylibrarian.CONFIG['QBITTORRENT_PORT']}" class="form-control" placeholder="qBitTorrent Port">
                         </div>
                         <div class="form-group col-md-6">
                           <label for="qbittorrent_user" class="control-label">Username:</label>
@@ -1137,10 +1118,9 @@
                         <input type="checkbox" id="prefer_magnet" name="prefer_magnet" value="1" ${checked} />
                         Prefer magnet links to torrent files</label>
                     </div>
-                    <div class="form-group">
-                      <label for="numberofseeders" class="control-label">Minimum seeders:</label>
-                      <input type="text" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" class="form-control" placeholder="Number of Seeders">
-                      <span class="help-block">Number of minimum seeders a torrent must have to be accepted</span>
+                    <div class="input-group">
+                      <span class="input-group-addon">Minimum Seeders</span>
+                      <input type="number" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" class="form-control" placeholder="Minimum number of seeders">
                     </div>
                     <div class="checkbox">
                       <%
@@ -1152,6 +1132,17 @@
                       <label for="keep_seeding" class="control-label">
                         <input type="checkbox" id="keep_seeding" name="keep_seeding" value="1" ${checked} />
                         Keep seeding after processing</label>
+                    </div>
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['SEED_WAIT'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="seed_wait" class="control-label">
+                      <input type="checkbox" id="seed_wait" name="seed_wait" value="1" ${checked} />
+                      Do not delete if still seeding</label>
                     </div>
                   </fieldset>
                 </fieldset>
@@ -1196,7 +1187,7 @@
                       </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
-                      <input type="text" id="newznab_${loop.index}_dlpriority" name="newznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <input type="number" id="newznab_${loop.index}_dlpriority" name="newznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                       <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab_${loop.index}"> Test</button>
                       </span>
@@ -1239,7 +1230,7 @@
                     </div>
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
-                      <input type="text" id="torznab_${loop.index}_dlpriority" name="torznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <input type="number" id="torznab_${loop.index}_dlpriority" name="torznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                       <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab_${loop.index}"> Test</button>
                       </span>
@@ -1282,7 +1273,7 @@
                       %>
                     <div class="input-group">
                       <span class="input-group-addon">${label}</span>
-                      <input type="text" id="rss_${loop.index}_dlpriority" name="rss_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <input type="number" id="rss_${loop.index}_dlpriority" name="rss_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
                       <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss_${loop.index}"> Test</button>
                       </span>
@@ -1311,7 +1302,7 @@
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
-                        <input type="text" id="kat_dlpriority" name="kat_dlpriority" value="${lazylibrarian.CONFIG['KAT_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="kat_dlpriority" name="kat_dlpriority" value="${lazylibrarian.CONFIG['KAT_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="KAT"> Test</button>
                         </span>
@@ -1333,7 +1324,7 @@
                       </div>
                       <div class="input-group">
                       <span class="input-group-addon">Priority</span>
-                        <input type="text" id="tpb_dlpriority" name="tpb_dlpriority" value="${lazylibrarian.CONFIG['TPB_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="tpb_dlpriority" name="tpb_dlpriority" value="${lazylibrarian.CONFIG['TPB_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TPB"> Test</button>
                         </span>
@@ -1355,7 +1346,7 @@
                       </div>
                       <div class="input-group">
                       <span class="input-group-addon">Priority</span>
-                        <input type="text" id="wwt_dlpriority" name="wwt_dlpriority" value="${lazylibrarian.CONFIG['WWT_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="wwt_dlpriority" name="wwt_dlpriority" value="${lazylibrarian.CONFIG['WWT_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="WWT"> Test</button>
                         </span>
@@ -1377,7 +1368,7 @@
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
-                        <input type="text" id="zoo_dlpriority" name="zoo_dlpriority" value="${lazylibrarian.CONFIG['ZOO_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="zoo_dlpriority" name="zoo_dlpriority" value="${lazylibrarian.CONFIG['ZOO_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="ZOO"> Test</button>
                         </span>
@@ -1399,7 +1390,7 @@
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
-                        <input type="text" id="tdl_dlpriority" name="tdl_dlpriority" value="${lazylibrarian.CONFIG['TDL_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="tdl_dlpriority" name="tdl_dlpriority" value="${lazylibrarian.CONFIG['TDL_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TDL"> Test</button>
                         </span>
@@ -1421,7 +1412,7 @@
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
-                        <input type="text" id="lime_dlpriority" name="lime_dlpriority" value="${lazylibrarian.CONFIG['LIME_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="lime_dlpriority" name="lime_dlpriority" value="${lazylibrarian.CONFIG['LIME_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="LIME"> Test</button>
                         </span>
@@ -1455,7 +1446,7 @@
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
-                        <input type="text" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN"> Test</button>
                         </span>
@@ -1485,7 +1476,7 @@
                       </div>
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
-                        <input type="text" id="gen2_dlpriority" name="gen2_dlpriority" value="${lazylibrarian.CONFIG['GEN2_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <input type="number" id="gen2_dlpriority" name="gen2_dlpriority" value="${lazylibrarian.CONFIG['GEN2_DLPRIORITY']}" class="form-control" placeholder="0">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN2"> Test</button>
                         </span>
@@ -1512,42 +1503,42 @@
                   <div class="form-group">
                     <label for="search_bookinterval" class="control-label">Book Search Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="search_bookinterval" name="search_bookinterval" value="${lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL']}" class="form-control" placeholder="Book search interval (mins)">
+                      <input type="number" id="search_bookinterval" name="search_bookinterval" value="${lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL']}" class="form-control" placeholder="Book search interval (mins)">
                       <span class="input-group-addon">Minutes</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="search_maginterval" class="control-label">Magazine Search Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="search_maginterval" name="search_maginterval" value="${lazylibrarian.CONFIG['SEARCH_MAGINTERVAL']}" class="form-control" placeholder="Magazine search interval (mins)">
+                      <input type="number" id="search_maginterval" name="search_maginterval" value="${lazylibrarian.CONFIG['SEARCH_MAGINTERVAL']}" class="form-control" placeholder="Magazine search interval (mins)">
                       <span class="input-group-addon">Minutes</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="searchrss_interval" class="control-label">RSS Search Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="searchrss_interval" name="searchrss_interval" value="${lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']}" class="form-control" placeholder="RSS search interval (mins)">
+                      <input type="number" id="searchrss_interval" name="searchrss_interval" value="${lazylibrarian.CONFIG['SEARCHRSS_INTERVAL']}" class="form-control" placeholder="RSS search interval (mins)">
                       <span class="input-group-addon">Minutes</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="wishlist_interval" class="control-label">Wishlist Search Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="wishlist_interval" name="wishlist_interval" value="${lazylibrarian.CONFIG['WISHLIST_INTERVAL']}" class="form-control" placeholder="Wishlist search interval (hours)">
+                      <input type="number" id="wishlist_interval" name="wishlist_interval" value="${lazylibrarian.CONFIG['WISHLIST_INTERVAL']}" class="form-control" placeholder="Wishlist search interval (hours)">
                       <span class="input-group-addon">Hours</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label class="control-label">Post-Processing Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="scan_interval" name="scan_interval" value="${lazylibrarian.CONFIG['SCAN_INTERVAL']}" class="form-control" placeholder="Post processing interval (mins)">
+                      <input type="number" id="scan_interval" name="scan_interval" value="${lazylibrarian.CONFIG['SCAN_INTERVAL']}" class="form-control" placeholder="Post processing interval (mins)">
                       <span class="input-group-addon">Minutes</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="versioncheck_interval" class="control-label">Version Check Interval:</label>
                     <div class="input-group">
-                      <input type="text" id="versioncheck_interval" name="versioncheck_interval" value="${lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']}" class="form-control" placeholder="Version check interval (hours)" >
+                      <input type="number" id="versioncheck_interval" name="versioncheck_interval" value="${lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL']}" class="form-control" placeholder="Version check interval (hours)" >
                       <span class="input-group-addon">Hours</span>
                     </div>
                     <%
@@ -1686,6 +1677,7 @@
                         <input type="checkbox" id="calibre_use_server" name="calibre_use_server" value="1" ${checked} />
                         Use Calibre Content Server</label>
                   </div>
+                  </fieldset>
                   <fieldset id="calibre_options">
                   <div class="form-group">
                     <label for="calibre_server">Calibre Server:</label>
@@ -1740,26 +1732,6 @@
               </div>
               <div class="col-md-4">
                 <fieldset>
-                  <legend>Folders</legend>
-                  <div class="form-group">
-                    <label for="download_dir" class="control-label">Download Directories:</label>
-                    <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
-                    <span class="help-block">Comma separated list of folders where downloaders place books</span>
-                  </div>
-                  <div class="form-group">
-                    <label for="ebook_dir" class="control-label">eBook Library Folder:</label>
-                    <input type="text" id="ebook_dir" name="ebook_dir" value="${lazylibrarian.CONFIG['EBOOK_DIR']}" class="form-control" placeholder="eBook Library Folder">
-                  </div>
-                  <div class="form-group">
-                    <label for="audio_dir" class="control-label">AudioBook Library Folder:</label>
-                    <input type="text" id="audio_dir" name="audio_dir" value="${lazylibrarian.CONFIG['AUDIO_DIR']}" class="form-control" placeholder="AudioBook Library Folder">
-                  </div>
-                  <div class="form-group">
-                    <label for="alternate_dir" class="control-label">Alternate Import/Export Folder:</label>
-                    <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" class="form-control" placeholder="Alternate Directory">
-                    <span class="help-block">Directory for wishlists and manually importing books<br>
-                      <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span>
-                  </div>
                   <legend>Name Formatting</legend>
                     <span class="help-block">Note: Calibre may override ebook folder and filename patterns</span>
                   <div class="form-group">
@@ -1846,71 +1818,79 @@
                       <BR><strong>Current limitations: Issue Filename must contain IssueDate
                       <BR>If Issue Filename does not contain Title, Foldername is used as Title</strong></span>
                   </div>
-                  <div class="checkbox">
-                    <%
-                        if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                    %>
-                    <label for="mag_single" class="control-label">
-                      <input type="checkbox" id="mag_single" name="mag_single" value="1" ${checked} />
-                      Quick open single issues of magazines</label>
-                      <span class="help-block">If only one issue available, open it</span>
-                  </div>
                 </fieldset>
               </div>
               <div class="col-md-4">
                 <fieldset>
+                  <legend>Folders</legend>
+                  <div class="form-group">
+                    <label for="download_dir" class="control-label">Download Directories:</label>
+                    <input type="text" id="download_dir" name="download_dir" value="${lazylibrarian.CONFIG['DOWNLOAD_DIR']}" class="form-control" placeholder="Download Directory">
+                    <span class="help-block">Comma separated list of folders where downloaders place books</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="ebook_dir" class="control-label">eBook Library Folder:</label>
+                    <input type="text" id="ebook_dir" name="ebook_dir" value="${lazylibrarian.CONFIG['EBOOK_DIR']}" class="form-control" placeholder="eBook Library Folder">
+                  </div>
+                  <div class="form-group">
+                    <label for="audio_dir" class="control-label">AudioBook Library Folder:</label>
+                    <input type="text" id="audio_dir" name="audio_dir" value="${lazylibrarian.CONFIG['AUDIO_DIR']}" class="form-control" placeholder="AudioBook Library Folder">
+                  </div>
+                  <div class="form-group">
+                    <label for="alternate_dir" class="control-label">Alternate Import/Export Folder:</label>
+                    <input type="text" id="alternate_dir" name="alternate_dir" value="${lazylibrarian.CONFIG['ALTERNATE_DIR']}" class="form-control" placeholder="Alternate Directory">
+                    <span class="help-block">Directory for wishlists and manually importing books<br>
+                      <strong>If "keep original files" is not set, LazyLibrarian can delete this folder after import</strong></span>
+                  </div>
                   <legend>Miscellaneous</legend>
                   <div class="form-group">
                     <label for="cache_age" class="control-label">Cache expire after:</label>
                     <div class="input-group">
-                      <input type="text" id="cache_age" name="cache_age" value="${lazylibrarian.CONFIG['CACHE_AGE']}" class="form-control" placeholder="Max. Cache Age (days)">
+                      <input type="number" id="cache_age" name="cache_age" value="${lazylibrarian.CONFIG['CACHE_AGE']}" class="form-control" placeholder="Max. Cache Age (days)">
                       <span class="input-group-addon">Days</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="mag_age" class="control-label">Max Magazine Issue Age:</label>
                     <div class="input-group">
-                      <input type="text" id="mag_age" name="mag_age" value="${lazylibrarian.CONFIG['MAG_AGE']}" class="form-control" placeholder="Max. Magazine Age (days)">
+                      <input type="number" id="mag_age" name="mag_age" value="${lazylibrarian.CONFIG['MAG_AGE']}" class="form-control" placeholder="Max. Magazine Age (days)">
                       <span class="input-group-addon">Days</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="task_age" class="control-label">Remove failed tasks after:</label>
                     <div class="input-group">
-                      <input type="text" id="task_age" name="task_age" value="${lazylibrarian.CONFIG['TASK_AGE']}" class="form-control" placeholder="Cancel after (hours)">
+                      <input type="number" id="task_age" name="task_age" value="${lazylibrarian.CONFIG['TASK_AGE']}" class="form-control" placeholder="Cancel after (hours)">
                       <span class="input-group-addon">Hours</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="match_ratio">Search Match Ratio:</label>
                     <div class="input-group">
-                      <input type="text" id="match_ratio" name="match_ratio" value="${lazylibrarian.CONFIG['MATCH_RATIO']}" class="form-control" placeholder="Search Match Ratio (percent)">
+                      <input type="number" id="match_ratio" name="match_ratio" value="${lazylibrarian.CONFIG['MATCH_RATIO']}" class="form-control" placeholder="Search Match Ratio (percent)">
                       <span class="input-group-addon">%</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="dload_ratio">Download Match Ratio:</label>
                     <div class="input-group">
-                      <input type="text" id="dload_ratio" name="dload_ratio" value="${lazylibrarian.CONFIG['DLOAD_RATIO']}" class="form-control" placeholder="Download Match Ratio (percent)">
+                      <input type="number" id="dload_ratio" name="dload_ratio" value="${lazylibrarian.CONFIG['DLOAD_RATIO']}" class="form-control" placeholder="Download Match Ratio (percent)">
                       <span class="input-group-addon">%</span>
                     </div>
                   </div>
                   <div class="form-group">
                     <label for="max_pages">Maximum Search Pages:</label>
-                    <input type="text" id="max_pages" name="max_pages" value="${lazylibrarian.CONFIG['MAX_PAGES']}" class="form-control" placeholder="Use zero to download all pages">
+                    <input type="number" id="max_pages" name="max_pages" value="${lazylibrarian.CONFIG['MAX_PAGES']}" class="form-control" placeholder="Use zero to download all pages">
                     <span class="help-block">Maximum pages of search results to load</span>
                   </div>
                   <div class="form-group">
                     <label for="max_bookpages">Maximum Author Pages:</label>
-                    <input type="text" id="max_bookpages" name="max_bookpages" value="${lazylibrarian.CONFIG['MAX_BOOKPAGES']}" class="form-control" placeholder="Use zero to download all pages">
+                    <input type="number" id="max_bookpages" name="max_bookpages" value="${lazylibrarian.CONFIG['MAX_BOOKPAGES']}" class="form-control" placeholder="Use zero to download all pages">
                     <span class="help-block">Maximum pages of books by an author to load</span>
                   </div>
                   <div class="form-group">
                     <label for="dload_ratio">Maximum Coverwall Images:</label>
-                    <input type="text" id="max_wall" name="max_wall" value="${lazylibrarian.CONFIG['MAX_WALL']}" class="form-control" placeholder="Use zero for no limit">
+                    <input type="number" id="max_wall" name="max_wall" value="${lazylibrarian.CONFIG['MAX_WALL']}" class="form-control" placeholder="Use zero for no limit">
                     <span class="help-block">Maximum results to show on coverwall</span>
                   </div>
                 </fieldset>
@@ -1981,7 +1961,6 @@
                     <label for="imp_rename" class="control-label">
                       <input type="checkbox" id="imp_rename" name="imp_rename" value="1" ${checked} />
                       Rename existing books on libraryscan</label>
-                    <span class="help-block">This renames existing files to match eBook/AudioBook Filename Patterns</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -1993,7 +1972,6 @@
                     <label for="mag_rename" class="control-label">
                       <input type="checkbox" id="mag_rename" name="mag_rename" value="1" ${checked} />
                       Rename existing magazines on libraryscan</label>
-                    <span class="help-block">This renames existing files to match Magazine Filename Pattern</span>
                   </div>
                   <div class="checkbox">
                     <%
@@ -2004,8 +1982,7 @@
                         %>
                     <label for="add_author" class="control-label">
                       <input type="checkbox" id="add_author" name="add_author" value="1" ${checked} />
-                      Add Authors</label>
-                    <span class="help-block">This will allow new authors to be added</span>
+                      Add New Authors</label>
                   </div>
                   <div class="checkbox">
                     <%
@@ -2016,8 +1993,7 @@
                         %>
                     <label for="add_series" class="control-label">
                       <input type="checkbox" id="add_series" name="add_series" value="1" ${checked} />
-                      Add Series</label>
-                    <span class="help-block">This will allow new series info to be added</span>
+                      Add Series Info</label>
                   </div>
                   <div class="checkbox">
                     <%
@@ -2029,8 +2005,19 @@
                     <label for="imp_autosearch" class="control-label">
                       <input type="checkbox" id="imp_autosearch" name="imp_autosearch" value="1" ${checked} />
                       Search when added</label>
-                    <span class="help-block">This will auto search for books/mags as soon as you add them to the database.  Leave unticked to search for them later.</span>
                   </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['MAG_SINGLE'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="mag_single" class="control-label">
+                      <input type="checkbox" id="mag_single" name="mag_single" value="1" ${checked} />
+                      Quick open single issues of magazines</label>
+                  </div>
+                </fieldset>
               </div>
             </div>
             <br>
@@ -2664,7 +2651,7 @@
                     </div>
                     <div class="form-group">
                       <label for="email_smtp_port">SMTP Port</label>
-                      <input type="text" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PORT']}" class="form-control" placeholder="SMTP Port">
+                      <input type="number" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PORT']}" class="form-control" placeholder="SMTP Port">
                     </div>
                     <div class="checkbox">
                       <%
@@ -2810,7 +2797,7 @@
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="newznab_${loop.index}_apilimit" class="control-label">Daily API Limit: (used ${provider['APICOUNT']} today)</label>
-                  <input type="text" placeholder="API Limit" id="newznab_${loop.index}_apilimit" name="newznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
+                  <input type="number" placeholder="API Limit" id="newznab_${loop.index}_apilimit" name="newznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
                 </div>
                 %endfor
@@ -2872,7 +2859,7 @@
                 </div>
                 <div class="form-group col-md-6" ${hidden}>
                   <label for="torznab_${loop.index}_apilimit" class="control-label">Daily API Limit: (used ${provider['APICOUNT']} today)</label>
-                  <input type="text" placeholder="API Limit" id="torznab_${loop.index}_apilimit" name="torznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
+                  <input type="number" placeholder="API Limit" id="torznab_${loop.index}_apilimit" name="torznab_${loop.index}_apilimit" value="${provider['APILIMIT']}" class="form-control">
                 </div>
               </div>
             %endfor
@@ -2926,68 +2913,67 @@
                 <legend>Book Size Limits</legend>
                 </div>
                 <div class="col-md-6">
-                <div class="form-group">
-                  <input type="text" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
-                  <span class="help-block">Book maximum size (Mb):<br/>
-                    Search results larger than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                  <div class="input-group">
+                    <input type="number" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
+                    <span class="input-group-addon">Maximum size (Mb)</span>
+                  </div>
                 </div>
                 <div class="col-md-6">
-                <div class="form-group">
-                  <input type="text" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
-                  <span class="help-block">Book minimum size (Mb):<br/>
-                    Search results smaller than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                  <div class="input-group">
+                    <input type="number" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
+                    <span class="input-group-addon">Minimum size (Mb)</span>
+                  </div>
                 </div>
                 <div class="col-md-12">
                 <legend>AudioBook Size Limits</legend>
                 </div>
                 <div class="col-md-6">
-                <div class="form-group">
-                  <input type="text" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
-                  <span class="help-block">AudioBook maximum size (Mb):<br/>
-                    Search results larger than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                 <div class="input-group">
+                    <input type="number" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
+                    <span class="input-group-addon">Maximum size (Mb)</span>
+                  </div>
                 </div>
                 <div class="col-md-6">
-                <div class="form-group">
-                  <input type="text" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
-                  <span class="help-block">AudioBook minimum size (Mb):<br/>
-                    Search results smaller than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                  <div class="input-group">
+                    <input type="number" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
+                    <span class="input-group-addon">Minimum size (Mb)</span>
+                  </div>
                 </div>
                 <div class="col-md-12">
                 <legend>Magazine Size Limits</legend>
                 </div>
                 <div class="col-md-6">
-                <div class="form-group">
-                  <input type="text" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
-                  <span class="help-block">Magazine maximum size (Mb):<br/>
-                    Search results larger than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                  <div class="input-group">
+                    <input type="number" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
+                    <span class="input-group-addon">Maximum size (Mb)</span>
+                  </div>
                 </div>
                 <div class="col-md-6">
-                <div class="form-group">
-                  <input type="text" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
-                  <span class="help-block">Magazine minimum size (Mb):<br/>
-                    Search results smaller than this will be rejected, set to 0 to disable<br/>
-                  </span>
-                </div>
+                  <div class="input-group">
+                    <input type="number" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
+                    <span class="input-group-addon">Minimum size (Mb)</span>
+                  </div>
                 </div>
                 <div class="col-md-12">
-                <legend>Magazine Reject Lists (per title)</legend>
+                <legend>Magazine Options (per title)</legend>
                 </div>
                 %for mag in config['magazines_list']:
                 <div class="col-md-6">
                 <label>${mag['Title']}</label>
-                <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" class="form-control" placeholder="Reject word list">
-                <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
-                <input type="text" id="datetype[${mag['Title']}]" name="datetype[${mag['Title']}]" value="${mag['DateType']}" class="form-control" placeholder="Date Style (leave empty for auto detect)">
+                  <div class="input-group">
+                    <span class="input-group-addon">Reject&nbsp;</span>
+                    <input type="text" id="reject_list[${mag['Title']}]" name="reject_list[${mag['Title']}]" value="${mag['Reject']}" class="form-control" placeholder="Reject word list">
+                  </div>
+                  <div class="input-group">
+                    <span class="input-group-addon">Search</span>
+                    <input type="text" id="regex[${mag['Title']}]" name="regex[${mag['Title']}]" value="${mag['Regex']}" class="form-control" placeholder="Search expression">
+                  </div>
+                  <div class="input-group">
+                    <span class="input-group-addon">Date Style</span>
+                    <input type="text" id="datetype[${mag['Title']}]" name="datetype[${mag['Title']}]" value="${mag['DateType']}" class="form-control" placeholder="Empty for auto detect">
+                    <span class="input-group-addon">Cover Page</span>
+                    <input type="number" id="coverpage[${mag['Title']}]" name="coverpage[${mag['Title']}]" value="${mag['CoverPage']}" class="form-control" placeholder="Cover Page">
+                  </div>
                 </div>
                 %endfor
                 <div class="col-md-6">
@@ -2999,6 +2985,7 @@
             <br>
           </div>
         </div>
+      </div>
     <!-- tabs content -->
     </div>
     <!-- tabs -->
