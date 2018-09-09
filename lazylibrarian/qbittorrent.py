@@ -201,10 +201,10 @@ def getProgress(hashid):
     if torrentList:
         for torrent in torrentList:
             if torrent['hash'].upper() == hashid.upper():
-                if 'status' in torrent:
-                    status = torrent['status']
+                if 'state' in torrent:
+                    state = torrent['state']
                 else:
-                    status = ''
+                    state = ''
                 if 'progress' in torrent:
                     try:
                         progress = int(100 * float(torrent['progress']))
@@ -212,7 +212,7 @@ def getProgress(hashid):
                         progress = 0
                 else:
                     progress = 0
-                return progress, status
+                return progress, state
     return -1, ''
 
 
@@ -227,14 +227,20 @@ def removeTorrent(hashid, remove_data=False):
     if torrentList:
         for torrent in torrentList:
             if torrent['hash'].upper() == hashid.upper():
+                remove = True
                 if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
-                    logger.info('%s has finished seeding, removing torrent and data' % torrent['name'])
+                    if not lazylibrarian.CONFIG['SEED_WAIT']:
+                        logger.debug('%s is seeding, removing torrent and data anyway' % torrent['name'])
+                    else:
+                        logger.info('%s has not finished seeding yet, torrent will not be removed' % torrent['name'])
+                        remove = False
+                if remove:
+                    if remove_data:
+                        logger.info('%s removing torrent and data' % torrent['name'])
+                    else:
+                        logger.info('%s removing torrent' % torrent['name'])
                     qbclient.remove(hashid, remove_data)
                     return True
-                else:
-                    logger.info(
-                        '%s has not finished seeding yet, torrent will not be removed, will try again on next run' %
-                        torrent['name'])
     return False
 
 

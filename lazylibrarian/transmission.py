@@ -219,7 +219,7 @@ def removeTorrent(torrentid, remove_data=False):
         if finished:
             logger.debug('%s has finished seeding, removing torrent and data' % name)
             remove = True
-        elif not lazylibrarian.CONFIG['TRANSMISSION_SEED_WAIT']:
+        elif not lazylibrarian.CONFIG['SEED_WAIT']:
             if (rpc_version < 14 and status == 8) or (rpc_version >= 14 and status in [5, 6]):
                 logger.debug('%s is seeding, removing torrent and data anyway' % name)
                 remove = True
