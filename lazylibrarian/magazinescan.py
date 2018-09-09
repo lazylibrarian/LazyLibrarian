@@ -213,7 +213,7 @@ def magazineScan(title=None):
 
                     # is this magazine already in the database?
                     mag_entry = myDB.match(
-                        'SELECT LastAcquired, IssueDate, MagazineAdded from magazines WHERE Title=?', (title,))
+                        'SELECT LastAcquired,IssueDate,MagazineAdded,CoverPage from magazines WHERE Title=?', (title,))
                     if not mag_entry:
                         # need to add a new magazine to the database
                         newValueDict = {
@@ -224,18 +224,21 @@ def magazineScan(title=None):
                             "LatestCover": None,
                             "IssueDate": None,
                             "IssueStatus": "Skipped",
-                            "Regex": None
+                            "Regex": None,
+                            "CoverPage": 1
                         }
                         logger.debug("Adding magazine %s" % title)
                         myDB.upsert("magazines", newValueDict, controlValueDict)
                         magissuedate = None
                         magazineadded = None
                         maglastacquired = None
+                        magcoverpage = 1
                     else:
                         maglastacquired = mag_entry['LastAcquired']
                         magissuedate = mag_entry['IssueDate']
                         magazineadded = mag_entry['MagazineAdded']
                         magissuedate = str(magissuedate).zfill(4)
+                        magcoverpage = mag_entry['CoverPage']
 
                     issuedate = str(issuedate).zfill(4)  # for sorting issue numbers
 
@@ -262,7 +265,7 @@ def magazineScan(title=None):
                     with open(ignorefile, 'a'):
                         os.utime(ignorefile, None)
 
-                    createMagCover(issuefile)
+                    createMagCover(issuefile,  pagenum=magcoverpage)
                     lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id, overwrite=new_opf)
 
                     # see if this issues date values are useful

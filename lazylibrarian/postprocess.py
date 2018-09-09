@@ -640,8 +640,9 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                             }
                             myDB.upsert("issues", newValueDict, controlValueDict)
 
+                            maginfo = myDB.match("SELECT CoverPage from magazines WHERE Title=?", (book['BookID'],))
                             # create a thumbnail cover for the new issue
-                            createMagCover(dest_file)
+                            createMagCover(dest_file, pagenum=check_int(maginfo['CoverPage'], 1))
                             processMAGOPF(dest_file, book['BookID'], book['AuxInfo'], iss_id)
                             if lazylibrarian.CONFIG['IMP_AUTOADDMAG']:
                                 dest_path = os.path.dirname(dest_file)

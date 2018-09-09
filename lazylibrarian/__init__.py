@@ -179,7 +179,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
                      'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
-                     'DELAYSEARCH']
+                     'DELAYSEARCH', 'SEED_WAIT']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -309,6 +309,7 @@ CONFIG_DEFINITIONS = {
     'TOR_DOWNLOADER_DELUGE': ('bool', 'TORRENT', 0),
     'NUMBEROFSEEDERS': ('int', 'TORRENT', 10),
     'KEEP_SEEDING': ('bool', 'TORRENT', 1),
+    'SEED_WAIT': ('bool', 'TORRENT', 1),
     'PREFER_MAGNET': ('bool', 'TORRENT', 1),
     'TORRENT_DIR': ('str', 'TORRENT', ''),
     'RTORRENT_HOST': ('str', 'RTORRENT', ''),

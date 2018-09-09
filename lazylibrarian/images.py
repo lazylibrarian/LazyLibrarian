@@ -488,7 +488,7 @@ def createMagCovers(refresh=False):
         return
     myDB = database.DBConnection()
     #  <> '' ignores empty string or NULL
-    issues = myDB.select("SELECT IssueFile from issues WHERE IssueFile <> ''")
+    issues = myDB.select("SELECT Title,IssueFile from issues WHERE IssueFile <> ''")
     if refresh:
         logger.info("Creating covers for %s issue%s" % (len(issues), plural(len(issues))))
     else:
@@ -496,7 +496,8 @@ def createMagCovers(refresh=False):
     cnt = 0
     for item in issues:
         try:
-            createMagCover(item['IssueFile'], refresh=refresh)
+            maginfo = myDB.match("SELECT CoverPage from magazines WHERE Title=?", (item['Title'],))
+            createMagCover(item['IssueFile'], refresh=refresh, pagenum=maginfo['CoverPage'])
             cnt += 1
         except Exception as why:
             logger.warn('Unable to create cover for %s, %s %s' % (item['IssueFile'], type(why).__name__, str(why)))
@@ -525,7 +526,7 @@ def createMagCover(issuefile=None, refresh=False, pagenum=1):
             os.remove(coverfile)
         else:
             logger.debug('Cover for %s exists' % issuefile)
-            return  'exists'  # quit if cover already exists and we didn't want to refresh
+            return 'exists'  # quit if cover already exists and we didn't want to refresh
 
     logger.debug('Creating cover for %s' % issuefile)
     data = ''  # result from unzip or unrar
@@ -630,7 +631,7 @@ def createMagCover(issuefile=None, refresh=False, pagenum=1):
                     generator = "%s version %s" % (generator, res)
                     issuefile = issuefile.split('[')[0]
                     params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER",
-                              "-dFirstPage=%d"  % check_int(pagenum, 1),
+                              "-dFirstPage=%d" % check_int(pagenum, 1),
                               "-dLastPage=%d" % check_int(pagenum, 1),
                               "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
 
@@ -696,7 +697,7 @@ def createMagCover(issuefile=None, refresh=False, pagenum=1):
                             issuefile = issuefile.split('[')[0]
                             params = [GS, "-sDEVICE=jpeg", "-dNOPAUSE", "-dBATCH", "-dSAFER",
                                       "-dFirstPage=%d" % check_int(pagenum, 1),
-                                      "-dLastPage=%d" % check_int(pagenum, 1) ,
+                                      "-dLastPage=%d" % check_int(pagenum, 1),
                                       "-dUseCropBox", "-sOutputFile=%s" % coverfile, issuefile]
                             res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                             res = makeUnicode(res).strip()
