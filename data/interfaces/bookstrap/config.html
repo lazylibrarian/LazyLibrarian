@@ -91,22 +91,25 @@
                         <input type="text" id="https_key" name="https_key" value="${lazylibrarian.CONFIG['HTTPS_KEY']}" class="form-control" placeholder="https key">
                       </div>
                     </fieldset>
-                    <div class="input-group">
-                      <span class="input-group-addon">Logdir</span>
-                      <input type="text" id="logdir" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" class="form-control" placeholder="Log Dir">
-                    </div>
-                    <div class="input-group">
-                      <span class="input-group-addon">Log Files</span>
-                      <input type="number" id="logfiles" name="logfiles" value="${lazylibrarian.CONFIG['LOGFILES']}" class="form-control"             placeholder="Number of files">
-                      <span class="input-group-addon">Log Lines</span>
-                      <input type="number" id="loglimit" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" class="form-control"             placeholder="Number of lines">
-                    </div>
-                    <div class="input-group">
-                      <span class="input-group-addon">Log Size</span>
-                      <input type="number" id="logsize" name="logsize" value="${lazylibrarian.CONFIG['LOGSIZE']}" class="form-control"             placeholder="Log File Size">
-                      <span class="input-group-addon">Log Level</span>
-                      <input type="number" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="0=quiet,1=Normal,2=Debug">
-                    </div>
+                    <fieldset>
+                      <legend>Logs</legend>
+                      <div class="input-group">
+                        <span class="input-group-addon">Logdir</span>
+                        <input type="text" id="logdir" name="logdir" value="${lazylibrarian.CONFIG['LOGDIR']}" class="form-control" placeholder="Log Dir">
+                      </div>
+                      <div class="input-group">
+                        <span class="input-group-addon">Log Files</span>
+                        <input type="number" id="logfiles" name="logfiles" value="${lazylibrarian.CONFIG['LOGFILES']}" class="form-control"             placeholder="Number of files">
+                        <span class="input-group-addon">Log Lines</span>
+                        <input type="number" id="loglimit" name="loglimit" value="${lazylibrarian.CONFIG['LOGLIMIT']}" class="form-control"             placeholder="Number of lines">
+                      </div>
+                      <div class="input-group">
+                        <span class="input-group-addon">Log Size</span>
+                        <input type="number" id="logsize" name="logsize" value="${lazylibrarian.CONFIG['LOGSIZE']}" class="form-control"             placeholder="Log File Size">
+                        <span class="input-group-addon">Log Level</span>
+                        <input type="number" id="loglevel" name="loglevel" value="${lazylibrarian.LOGLEVEL}" class="form-control" placeholder="0=quiet,1=Normal,2=Debug">
+                      </div>
+                    </fieldset>
                   </fieldset>
                   <br>
                   <fieldset>
@@ -146,15 +149,17 @@
                               %>
                               <label for="opds_authentication" title="OPDS requires username and password">
                               <input type="checkbox" id="opds_authentication" name="opds_authentication" value="1" ${checked} />
-                              OPDS Requires Credentials</label><br><small>If opds authentication is enabled and the user/pass below are blank the webserver user/pass will be used<br>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
+                              OPDS Requires Credentials</label>
                             </div>
                             <div id="opdscredentials">
+                              <small>If the user/pass below are blank the webserver user/pass will be used</small>
                               <div class="input-group">
                                 <span class="input-group-addon">Username</span>
                                 <input type="text" id="opds_username" name="opds_username" value="${lazylibrarian.CONFIG['OPDS_USERNAME']}" class="form-control" placeholder="Username">
                                 <span class="input-group-addon">Password</span>
                                 <input type="password" id="opds_password" name="opds_password" value="${lazylibrarian.CONFIG['OPDS_PASSWORD']}" class="form-control" placeholder="Password">
                               </div>
+                              <small>NOTE - some OPDS readers do not send authentication for cover images or searches, so we don't send them. If you are getting lists with no images try disabling authentication or upgrading your reader</small>
                             </div>
                             <div class="checkbox">
                               <%
@@ -173,6 +178,7 @@
                 <div class="col-md-6">
                   <fieldset>
                     <legend>Access Control</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
@@ -183,6 +189,10 @@
                       <label for="user_accounts" title="Enable user accounts">
                       <input type="checkbox" id="user_accounts" name="user_accounts" value="1" ${checked} />
                       Enable user accounts&nbsp;&nbsp;</label>
+                    </div>
+                    </div>
+                    <div class="col-md-6">
+                    <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['SINGLE_USER'] == True:
                             checked = 'checked="checked"'
@@ -193,7 +203,8 @@
                       <input type="checkbox" id="single_user" name="single_user" value="1" ${checked} />
                       Single user bypass login</label>
                     </div>
-                    <small>Enabling/Disabling user accounts or changing webserver user/pass requires restart</small><br>
+                    </div>
+                    &nbsp;
                     <fieldset id="admin_options">
                     <div class="form-group">
                       <label for="admin_email" class="control-label">Contact Email:</label>
@@ -209,7 +220,7 @@
                       <input type="password" id="http_pass" name="http_pass" value="${lazylibrarian.CONFIG['HTTP_PASS']}" class="form-control" placeholder="Password">
                     </div>
                     </fieldset>
-                    <br>
+                    <small>Enabling/Disabling user accounts or changing webserver user/pass requires restart<br></small>
                   </fieldset>
                   <fieldset>
                     <legend>Startup</legend>
@@ -282,6 +293,7 @@
                         </select>
                       </div>
                     </fieldset>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
@@ -304,28 +316,8 @@
                       <input type="checkbox" id="book_img" name="book_img" value="1" ${checked} />
                       Show Book Images</label>
                     </div>
-                    <div class="checkbox">
-                      <%
-                        if lazylibrarian.CONFIG['MAG_IMG'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                      %>
-                      <label for="mag_img" class="control-label">
-                        <input type="checkbox" id="mag_img" name="mag_img" value="1" ${checked} />
-                        Show Magazine Images</label>
                     </div>
-                    <div class="checkbox">
-                      <%
-                        if lazylibrarian.CONFIG['SERIES_TAB'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                      %>
-                      <label for="series_tab" class="control-label">
-                        <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
-                        Show Series</label>
-                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['MAG_TAB'] == True:
@@ -339,6 +331,30 @@
                     </div>
                     <div class="checkbox">
                       <%
+                        if lazylibrarian.CONFIG['MAG_IMG'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="mag_img" class="control-label">
+                        <input type="checkbox" id="mag_img" name="mag_img" value="1" ${checked} />
+                        Show Magazine Images</label>
+                    </div>
+                    </div>
+                    <div class="col-md-6">
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['SERIES_TAB'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="series_tab" class="control-label">
+                        <input type="checkbox" id="series_tab" name="series_tab" value="1" ${checked} />
+                        Show Series</label>
+                    </div>
+                    <div class="checkbox">
+                      <%
                         if lazylibrarian.CONFIG['AUDIO_TAB'] == True:
                             checked = 'checked="checked"'
                         else:
@@ -348,6 +364,8 @@
                         <input type="checkbox" id="audio_tab" name="audio_tab" value="1" ${checked} />
                         Show AudioBooks</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['TOGGLES'] == True:
@@ -361,17 +379,6 @@
                     </div>
                     <div class="checkbox">
                       <%
-                        if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
-                            checked = 'checked="checked"'
-                        else:
-                            checked = ''
-                      %>
-                      <label for="sort_definite" class="control-label">
-                        <input type="checkbox" id="sort_definite" name="sort_definite" value="1" ${checked} />
-                        Show titles ignoring definite article (The, A)</label>
-                    </div>
-                    <div class="checkbox">
-                      <%
                         if lazylibrarian.CONFIG['SORT_SURNAME'] == True:
                             checked = 'checked="checked"'
                         else:
@@ -381,7 +388,20 @@
                         <input type="checkbox" id="sort_surname" name="sort_surname" value="1" ${checked} />
                         Show author surname first</label>
                     </div>
-                  </fieldset>
+                    </div>
+                    <div class="col-md-12">
+                    <div class="checkbox">
+                      <%
+                        if lazylibrarian.CONFIG['SORT_DEFINITE'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                      %>
+                      <label for="sort_definite" class="control-label">
+                        <input type="checkbox" id="sort_definite" name="sort_definite" value="1" ${checked} />
+                        Show titles ignoring definite article (The, A)</label>
+                    </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -633,15 +653,15 @@
                       English month names are preloaded   Changes to this setting require a restart</span>
                   </div>
                   <legend>Date Formats</legend>
-                   <div class="form-group">
-                    <label for="date_format" class="control=label">Date format for Added columns:</label>
+                   <div class="form-group col-md-6">
+                    <label for="date_format" class="control=label">Added columns:</label>
                     <input type="text" id="date_format" name="date_format" value="${lazylibrarian.CONFIG['DATE_FORMAT']}" class="form-control" placeholder="Format for column dates">
                   </div>
-                   <div class="form-group">
-                    <label for="iss_format" class="control=label">Date format for Issue Date:</label>
+                   <div class="form-group col-md-6">
+                    <label for="iss_format" class="control=label">Issue Dates:</label>
                     <input type="text" id="iss_format" name="iss_format" value="${lazylibrarian.CONFIG['ISS_FORMAT']}" class="form-control" placeholder="Format for issue dates">
-                    <span class="help-block">$d Day of the month as a number<br>$b Month as abbreviated name<br>$B Month as full name<br>$m Month as a number<br>$y	Year without century<br>$Y	Year with century<br>eg $Y-$m-$d</span>
                   </div>
+                  <span class="help-block">$d Day of the month as a number<br>$b Month as abbreviated name<br>$B Month as full name<br>$m Month as a number<br>$y	Year without century<br>$Y	Year with century<br>eg $Y-$m-$d</span>
                 </fieldset>
               </div>
             </div>
@@ -787,6 +807,7 @@
                           <input type="text" id="synology_dir" name="synology_dir" value="${lazylibrarian.CONFIG['SYNOLOGY_DIR']}" class="form-control" placeholder="Synology Directory">
                         </div>
                       </div>
+                      <div class="form-group col-md-6">
                       <div class="checkbox">
                         <%
                         if lazylibrarian.CONFIG['NZB_DOWNLOADER_SYNOLOGY'] == True:
@@ -798,6 +819,8 @@
                           <input type="checkbox" id="nzb_downloader_synology" name="nzb_downloader_synology" value="1" ${checked} />
                           Use DownloadStation for usenet</label>
                       </div>
+                      </div>
+                      <div class="form-group col-md-6">
                       <div class="checkbox">
                         <%
                         if lazylibrarian.CONFIG['TOR_DOWNLOADER_SYNOLOGY'] == True:
@@ -808,6 +831,7 @@
                         <label for="tor_downloader_synology" class="control-label">
                           <input type="checkbox" id="tor_downloader_synology" name="tor_downloader_synology" value="1" ${checked} />
                           Use DownloadStation for torrents</label>
+                      </div>
                       </div>
                       <div class="form-group col-md-6">
                         <label for="testSynology" class="control-label">Synology Connection:</label><br>
@@ -834,7 +858,7 @@
                         <input type="text" id="nzb_blackholedir" name="nzb_blackholedir" value="${lazylibrarian.CONFIG['NZB_BLACKHOLEDIR']}" class="form-control" placeholder="NZB Blackhole Directory">
                       </div>
                     </fieldset>
-                    <div class="input-group">
+                    <div class="input-group col-md-6">
                       <span class="input-group-addon">Usenet Retention</span>
                       <input type="number" id="usenet_retention" name="usenet_retention" value="${lazylibrarian.CONFIG['USENET_RETENTION']}" class="form-control" placeholder="Retention Maximum Age">
                       <span class="input-group-addon">Days</span>
@@ -1118,10 +1142,6 @@
                         <input type="checkbox" id="prefer_magnet" name="prefer_magnet" value="1" ${checked} />
                         Prefer magnet links to torrent files</label>
                     </div>
-                    <div class="input-group">
-                      <span class="input-group-addon">Minimum Seeders</span>
-                      <input type="number" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" class="form-control" placeholder="Minimum number of seeders">
-                    </div>
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['KEEP_SEEDING'] == True:
@@ -1143,6 +1163,10 @@
                       <label for="seed_wait" class="control-label">
                       <input type="checkbox" id="seed_wait" name="seed_wait" value="1" ${checked} />
                       Do not delete if still seeding</label>
+                    </div>
+                    <div class="input-group col-md-6">
+                      <span class="input-group-addon">Minimum Seeders</span>
+                      <input type="number" id="numberofseeders" name="numberofseeders" value="${lazylibrarian.CONFIG['NUMBEROFSEEDERS']}" class="form-control" placeholder="0 to disable">
                     </div>
                   </fieldset>
                 </fieldset>
@@ -2041,6 +2065,7 @@
                 <div id="twitteroptions">
                   <fieldset>
                     <legend>Twitter</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONSNATCH'] == True:
@@ -2052,6 +2077,8 @@
                         <input type="checkbox" id="twitter_notify_onsnatch" name="twitter_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['TWITTER_NOTIFY_ONDOWNLOAD'] == True:
@@ -2062,6 +2089,7 @@
                       <label for="twitter_notify_ondownload">
                         <input type="checkbox" id="twitter_notify_ondownload" name="twitter_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <input type="button" value="Request Authorization" id="twitterStep1" class="btn btn-default" />
@@ -2093,6 +2121,7 @@
                 <div id="boxcaroptions">
                   <fieldset>
                     <legend>Boxcar2</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONSNATCH'] == True:
@@ -2104,6 +2133,8 @@
                         <input type="checkbox" id="boxcar_notify_onsnatch" name="boxcar_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['BOXCAR_NOTIFY_ONDOWNLOAD'] == True:
@@ -2114,6 +2145,7 @@
                       <label for="boxcar_notify_ondownload">
                         <input type="checkbox" id="boxcar_notify_ondownload" name="boxcar_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="boxcar_token" class="control-label">Boxcar Token</label>
@@ -2138,6 +2170,7 @@
                 <div id="pushbulletoptions">
                   <fieldset>
                     <legend>Pushbullet</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH'] == True:
@@ -2149,6 +2182,8 @@
                         <input type="checkbox" id="pushbullet_notify_onsnatch" name="pushbullet_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD'] == True:
@@ -2159,6 +2194,7 @@
                       <label for="pushbullet_notify_ondownload">
                         <input type="checkbox" id="pushbullet_notify_ondownload" name="pushbullet_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="pushbullet_token">Pushbullet API</label>
@@ -2187,6 +2223,7 @@
                 <div id="pushoveroptions">
                   <fieldset>
                     <legend>Pushover</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['PUSHOVER_ONSNATCH'] == True:
@@ -2198,6 +2235,8 @@
                         <input type="checkbox" id="pushover_onsnatch" name="pushover_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['PUSHOVER_ONDOWNLOAD'] == True:
@@ -2208,6 +2247,7 @@
                       <label for="pushover_ondownload" class="control-label">
                         <input type="checkbox" id="pushover_ondownload" name="pushover_ondownload" value="1" ${checked} />
                         Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="pushover_apitoken">Pushover API</label>
@@ -2244,6 +2284,7 @@
                 <div id="androidpnoptions">
                   <fieldset>
                     <legend>AndroidPN</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONSNATCH'] == True:
@@ -2255,6 +2296,8 @@
                         <input type="checkbox" id="androidpn_notify_onsnatch" name="androidpn_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['ANDROIDPN_NOTIFY_ONDOWNLOAD'] == True:
@@ -2266,6 +2309,8 @@
                         <input type="checkbox" id="androidpn_notify_ondownload" name="androidpn_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
                     </div>
+                    </div>
+                    <div class="col-md-12">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['ANDROIDPN_BROADCAST'] == True:
@@ -2276,6 +2321,7 @@
                       <label for="androidpn_broadcast" class="control-label">
                         <input type="checkbox" id="androidpn_broadcast" name="androidpn_broadcast" value="1" ${checked} />
                         Broadcast notification</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="androidpn_url" class="control-label">AndroidPN Notification URL</label>
@@ -2304,6 +2350,7 @@
                 <div id="prowloptions">
                   <fieldset>
                     <legend>Prowl</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['PROWL_ONSNATCH'] == True:
@@ -2313,8 +2360,10 @@
                         %>
                       <label for="prowl_onsnatch" class="control-label">
                         <input type="checkbox" id="prowl_onsnatch" name="prowl_onsnatch" value="1" ${checked} />
-                        Notify on snatch?</label>
+                        Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['PROWL_ONDOWNLOAD'] == True:
@@ -2324,7 +2373,8 @@
                         %>
                       <label for="prowl_ondownload" class="control-label">
                         <input type="checkbox" id="prowl_ondownload" name="prowl_ondownload" value="1" ${checked} />
-                        Notify on download?</label>
+                        Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="prowl_apikey" class="control-label">Prowl API Key</label>
@@ -2375,6 +2425,7 @@
                 <div id="growloptions">
                   <fieldset>
                     <legend>Growl</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['GROWL_ONSNATCH'] == True:
@@ -2384,8 +2435,10 @@
                         %>
                       <label for="growl_onsnatch" class="control-label">
                         <input type="checkbox" id="growl_onsnatch" name="growl_onsnatch" value="1" ${checked} />
-                        Notify on snatch?</label>
+                        Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['GROWL_ONDOWNLOAD'] == True:
@@ -2395,13 +2448,14 @@
                         %>
                       <label for="growl_ondownload" class="control-label">
                         <input type="checkbox" id="growl_ondownload" name="growl_ondownload" value="1" ${checked} />
-                        Notify on download?</label>
+                        Notify on download</label>
                     </div>
-                    <div class="form-group">
+                    </div>
+                    <div class="form-group col-md-6">
                       <label for="growl_host" class="control-label">Growl Host</label>
                       <input type="text" id="growl_host" name="growl_host" value="${lazylibrarian.CONFIG['GROWL_HOST']}" class="form-control" placeholder="eg localhost:23053">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group col-md-6">
                       <label for="growl_password" class="control-label">Growl Password</label>
                       <input type="text" id="growl_password" name="growl_password" value="${lazylibrarian.CONFIG['GROWL_PASSWORD']}" class="form-control" placeholder="none">
                     </div>
@@ -2426,6 +2480,7 @@
                 <div id="telegramoptions">
                   <fieldset>
                     <legend>Telegram</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['TELEGRAM_ONSNATCH'] == True:
@@ -2435,8 +2490,10 @@
                         %>
                       <label for="telegram_onsnatch" class="control-label">
                         <input type="checkbox" id="telegram_onsnatch" name="telegram_onsnatch" value="1" ${checked} />
-                        Notify on snatch?</label>
+                        Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['TELEGRAM_ONDOWNLOAD'] == True:
@@ -2446,7 +2503,8 @@
                         %>
                       <label for="telegram_ondownload" class="control-label">
                         <input type="checkbox" id="telegram_ondownload" name="telegram_ondownload" value="1" ${checked} />
-                        Notify on download?</label>
+                        Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="telegram_token" class="control-label">Telegram Token</label>
@@ -2476,6 +2534,7 @@
                 <div id="nmaoptions">
                   <fieldset>
                     <legend>NotifyMyAndroid</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['NMA_ONSNATCH'] == True:
@@ -2485,8 +2544,10 @@
                         %>
                       <label for="nma_onsnatch" class="control-label">
                         <input type="checkbox" id="nma_onsnatch" name="nma_onsnatch" value="1" ${checked} />
-                        Notify on snatch?</label>
+                        Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['NMA_ONDOWNLOAD'] == True:
@@ -2496,7 +2557,8 @@
                         %>
                       <label for="nma_ondownload" class="control-label">
                         <input type="checkbox" id="nma_ondownload" name="nma_ondownload" value="1" ${checked} />
-                        Notify on download?</label>
+                        Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="nma_apikey" class="control-label">NotifyMyAndroid API Key</label>
@@ -2547,6 +2609,7 @@
                 <div id="slackoptions">
                   <fieldset>
                     <legend>Slack</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['SLACK_NOTIFY_ONSNATCH'] == True:
@@ -2558,6 +2621,8 @@
                         <input type="checkbox" id="slack_notify_onsnatch" name="slack_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['SLACK_NOTIFY_ONDOWNLOAD'] == True:
@@ -2568,6 +2633,7 @@
                       <label for="slack_notify_ondownload">
                         <input type="checkbox" id="slack_notify_ondownload" name="slack_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="slack_url">Slack Webhook URL (usually https://hooks.slack.com/services/)</label>
@@ -2596,6 +2662,7 @@
                 <div id="emailoptions">
                   <fieldset>
                     <legend>Email</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH'] == True:
@@ -2607,6 +2674,8 @@
                         <input type="checkbox" id="email_notify_onsnatch" name="email_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONDOWNLOAD'] == True:
@@ -2618,6 +2687,8 @@
                         <input type="checkbox" id="email_notify_ondownload" name="email_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
                     </div>
+                    </div>
+                    <div class="col-md-12">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['EMAIL_SENDFILE_ONDOWNLOAD'] == True:
@@ -2629,6 +2700,7 @@
                         <input type="checkbox" id="email_sendfile_ondownload" name="email_sendfile_ondownload" value="1" ${checked} />
                         Attach book on download</label>
                     </div>
+                    </div>
                     <div class="form-group">
                       <label for="email_from">Email From</label>
                       <input type="text" id="email_from" name="email_from" value="${lazylibrarian.CONFIG['EMAIL_FROM']}" class="form-control" placeholder="Email From Address">
@@ -2637,22 +2709,23 @@
                       <label for="email_to">Email To</label>
                       <input type="text" id="email_to" name="email_to" value="${lazylibrarian.CONFIG['EMAIL_TO']}" class="form-control" placeholder="Email To Address">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group col-md-6">
                       <label for="email_smtp_server">SMTP Server</label>
                       <input type="text" id="email_smtp_server" name="email_smtp_server" value="${lazylibrarian.CONFIG['EMAIL_SMTP_SERVER']}" class="form-control" placeholder="SMTP Server">
                     </div>
-                    <div class="form-group">
-                      <label for="email_smtp_user">SMTP User</label>
-                      <input type="text" id="email_smtp_user" name="email_smtp_user" value="${lazylibrarian.CONFIG['EMAIL_SMTP_USER']}" class="form-control" placeholder="SMTP User">
-                    </div>
-                    <div class="form-group">
-                      <label for="email_smtp_password">SMTP Password</label>
-                      <input type="password" id="email_smtp_password" name="email_smtp_password" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD']}" class="form-control" placeholder="SMTP Password">
-                    </div>
-                    <div class="form-group">
+                    <div class="form-group col-md-6">
                       <label for="email_smtp_port">SMTP Port</label>
                       <input type="number" id="email_smtp_port" name="email_smtp_port" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PORT']}" class="form-control" placeholder="SMTP Port">
                     </div>
+                    <div class="form-group col-md-6">
+                      <label for="email_smtp_user">SMTP User</label>
+                      <input type="text" id="email_smtp_user" name="email_smtp_user" value="${lazylibrarian.CONFIG['EMAIL_SMTP_USER']}" class="form-control" placeholder="SMTP User">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="email_smtp_password">SMTP Password</label>
+                      <input type="password" id="email_smtp_password" name="email_smtp_password" value="${lazylibrarian.CONFIG['EMAIL_SMTP_PASSWORD']}" class="form-control" placeholder="SMTP Password">
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['EMAIL_SSL'] == True:
@@ -2664,6 +2737,8 @@
                         <input type="checkbox" id="email_ssl" name="email_ssl" value="1" ${checked} />
                         SSL</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['EMAIL_TLS'] == True:
@@ -2674,6 +2749,7 @@
                       <label for="email_tls">
                         <input type="checkbox" id="email_tls" name="email_tls" value="1" ${checked} />
                         TLS</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <input type="button" value="Test Email" id="testEmail" class="btn btn-default">
@@ -2694,6 +2770,7 @@
                 <div id="customoptions">
                   <fieldset>
                     <legend>Custom</legend>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONSNATCH'] == True:
@@ -2705,6 +2782,8 @@
                         <input type="checkbox" id="custom_notify_onsnatch" name="custom_notify_onsnatch" value="1" ${checked} />
                         Notify on snatch</label>
                     </div>
+                    </div>
+                    <div class="col-md-6">
                     <div class="checkbox">
                       <%
                         if lazylibrarian.CONFIG['CUSTOM_NOTIFY_ONDOWNLOAD'] == True:
@@ -2715,6 +2794,7 @@
                       <label for="custom_notify_ondownload">
                         <input type="checkbox" id="custom_notify_ondownload" name="custom_notify_ondownload" value="1" ${checked} />
                         Notify on download</label>
+                    </div>
                     </div>
                     <div class="form-group">
                       <label for="custom_script">Custom script to run</label>
@@ -2909,52 +2989,39 @@
                   </span>
                 </div>
                 </div>
-                <div class="col-md-12">
-                <legend>Book Size Limits</legend>
-                </div>
                 <div class="col-md-6">
+                <legend>eBook Size Limits</legend>
                   <div class="input-group">
+                    <span class="input-group-addon">Max size</span>
                     <input type="number" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
-                    <span class="input-group-addon">Maximum size (Mb)</span>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="input-group">
+                    <span class="input-group-addon">Min size</span>
                     <input type="number" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
-                    <span class="input-group-addon">Minimum size (Mb)</span>
+                    <span class="input-group-addon">(Mb)</span>
                   </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
                 <legend>AudioBook Size Limits</legend>
-                </div>
-                <div class="col-md-6">
                  <div class="input-group">
+                    <span class="input-group-addon">Max size</span>
                     <input type="number" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
-                    <span class="input-group-addon">Maximum size (Mb)</span>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="input-group">
+                    <span class="input-group-addon">Min size</span>
                     <input type="number" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
-                    <span class="input-group-addon">Minimum size (Mb)</span>
+                    <span class="input-group-addon">(Mb)</span>
                   </div>
                 </div>
-                <div class="col-md-12">
+                <div class="col-md-6">
+                <br>
                 <legend>Magazine Size Limits</legend>
-                </div>
-                <div class="col-md-6">
                   <div class="input-group">
+                    <span class="input-group-addon">Max size</span>
                     <input type="number" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
-                    <span class="input-group-addon">Maximum size (Mb)</span>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="input-group">
+                    <span class="input-group-addon">Min size</span>
                     <input type="number" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
-                    <span class="input-group-addon">Minimum size (Mb)</span>
+                    <span class="input-group-addon">(Mb)</span>
                   </div>
                 </div>
                 <div class="col-md-12">
+                <br>
                 <legend>Magazine Options (per title)</legend>
                 </div>
                 %for mag in config['magazines_list']:
