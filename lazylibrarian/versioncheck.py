@@ -216,6 +216,7 @@ def getCurrentGitBranch():
 def checkForUpdates():
     """ Called at startup, from webserver with thread name WEBSERVER, or as a cron job """
     auto_update = False
+    suppress = False
     if 'Thread-' in threading.currentThread().name:
         threading.currentThread().name = "CRON-VERSIONCHECK"
         auto_update = lazylibrarian.CONFIG['AUTO_UPDATE']
@@ -230,12 +231,18 @@ def checkForUpdates():
         commits, lazylibrarian.COMMIT_LIST = getCommitDifferenceFromGit()
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = commits
         if auto_update and commits > 0:
-            plural = ''
-            if commits > 1:
-                plural = 's'
-            logmsg('info', 'Auto updating %s commit%s in 10 seconds' % (commits, plural))
-            time.sleep(10)
-            lazylibrarian.SIGNAL = 'update'
+            for name in [n.name.lower() for n in [t for t in threading.enumerate()]]:
+                for word in ['update', 'scan', 'import', 'sync', 'process']:
+                    if word in name:
+                        suppress = True
+                        logmsg('warn', 'Suppressed auto-update as %s running' % name)
+                        break
+            if not suppress:
+                plural = ''
+                if commits > 1:
+                    plural = 's'
+                logmsg('info', 'Auto updating %s commit%s' % (commits, plural))
+                lazylibrarian.SIGNAL = 'update'
     logmsg('debug', 'Update check complete')
 
 
