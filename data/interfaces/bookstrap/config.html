@@ -429,7 +429,7 @@
               <div class="row">
                 <div class="col-md-4">
                 <fieldset>
-                  <legend>Book API</legend>
+                  <legend>Information Sources</legend>
                   <div class="form-group">
                     <%
                     if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
@@ -439,7 +439,7 @@
                         gr_selected = ''
                         gb_selected = 'selected="selected"'
                     %>
-                    <label for="book_api" class="control-label">Book Search Source</label>
+                    <label for="book_api" class="control-label">Book Information</label>
                     <select id="book_api" name="book_api" class="form-control">
                       <option value = "GoodReads" ${gr_selected}>GoodReads</option>
                       <option value = "GoogleBooks" ${gb_selected}>GoogleBooks</option>
@@ -507,7 +507,7 @@
                   </fieldset>
                   <div class="form-group">
                     <label for="lt_devkey" class="control-label">LibraryThing Developer Key:</label>
-                    <input type="text" id="lt_devkey" name="lt_devkey" value="${lazylibrarian.CONFIG['LT_DEVKEY']}" class="form-control">
+                    <input type="text" id="lt_devkey" name="lt_devkey" value="${lazylibrarian.CONFIG['LT_DEVKEY']}" class="form-control" placeholder="optional">
                   </div>
                 </fieldset>
               </div>
@@ -1851,8 +1851,8 @@
                     <label for="mag_dest_file">Magazine Filename Pattern:</label>
                     <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
                     <span class="help-block">Options: $Title, $IssueDate, any string
-                      <BR><strong>Current limitations: Issue Filename must contain IssueDate
-                      <BR>If Issue Filename does not contain Title, Foldername is used as Title</strong></span>
+                      <BR><strong>Current limitations: Filename must contain IssueDate
+                      <BR>If Filename does not contain Title, Foldername is used as Title</strong></span>
                   </div>
                 </fieldset>
               </div>
@@ -2999,7 +2999,7 @@
                     <input type="number" id="reject_maxsize" name="reject_maxsize" value="${lazylibrarian.CONFIG['REJECT_MAXSIZE']}" class="form-control" placeholder="Reject maximum size">
                     <span class="input-group-addon">Min size</span>
                     <input type="number" id="reject_minsize" name="reject_minsize" value="${lazylibrarian.CONFIG['REJECT_MINSIZE']}" class="form-control" placeholder="Reject minimum size">
-                    <span class="input-group-addon">(Mb)</span>
+                    <span class="input-group-addon">Mb</span>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -3009,7 +3009,7 @@
                     <input type="number" id="reject_maxaudio" name="reject_maxaudio" value="${lazylibrarian.CONFIG['REJECT_MAXAUDIO']}" class="form-control" placeholder="Reject maximum size">
                     <span class="input-group-addon">Min size</span>
                     <input type="number" id="reject_minaudio" name="reject_minaudio" value="${lazylibrarian.CONFIG['REJECT_MINAUDIO']}" class="form-control" placeholder="Reject minimum size">
-                    <span class="input-group-addon">(Mb)</span>
+                    <span class="input-group-addon">Mb</span>
                   </div>
                 </div>
                 <div class="col-md-6">
@@ -3020,7 +3020,7 @@
                     <input type="number" id="reject_magsize" name="reject_magsize" value="${lazylibrarian.CONFIG['REJECT_MAGSIZE']}" class="form-control" placeholder="Reject maximum size">
                     <span class="input-group-addon">Min size</span>
                     <input type="number" id="reject_magmin" name="reject_magmin" value="${lazylibrarian.CONFIG['REJECT_MAGMIN']}" class="form-control" placeholder="Reject minimum size">
-                    <span class="input-group-addon">(Mb)</span>
+                    <span class="input-group-addon">Mb</span>
                   </div>
                 </div>
                 <div class="col-md-12">
@@ -4341,11 +4341,11 @@
             }
         $('#book_api').change(function() {
             if ($(this).val() == 'GoodReads') {
-                $('#gr_options').show();
-                $('#gb_options').hide();
+                $("#gb_options").slideUp();
+                $("#gr_options").slideDown();
             } else {
-                $('#gb_options').show();
-                $('#gr_options').hide();
+                $("#gr_options").slideUp();
+                $("#gb_options").slideDown();
             }
         });
 
