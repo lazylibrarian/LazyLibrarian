@@ -451,6 +451,30 @@ def mimeType(filename):
     return "application/x-download"
 
 
+def is_overdue():
+    overdue = 0
+    total = 0
+    name = ''
+    days = 0
+    maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
+    if maxage:
+        myDB = database.DBConnection()
+        cmd = 'SELECT AuthorName,DateAdded from authors WHERE Status="Active" or Status="Loading"'
+        cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
+        authors = myDB.select(cmd)
+        total = len(authors)
+        if total:
+            name = authors[0]['AuthorName']
+            dtnow = datetime.datetime.now()
+            days = datecompare(dtnow.strftime("%Y-%m-%d"), authors[0]['DateAdded'])
+            for author in authors:
+                diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
+                if diff <= maxage:
+                    break
+                overdue += 1
+    return overdue, total, name, days
+
+
 def scheduleJob(action='Start', target=None):
     """ Start or stop or restart a cron job by name eg
         target=search_magazines, target=processDir, target=search_book """
@@ -516,19 +540,7 @@ def scheduleJob(action='Start', target=None):
             # Try to get all authors scanned evenly inside the cache age
             maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
             if maxage:
-                myDB = database.DBConnection()
-                cmd = 'SELECT DateAdded from authors WHERE Status="Active" or Status="Loading"'
-                cmd += ' or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
-                authors = myDB.select(cmd)
-                overdue = 0
-                total = len(authors)
-                dtnow = datetime.datetime.now()
-                for author in authors:
-                    diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-                    if diff < maxage:
-                        break
-                    overdue += 1
-
+                overdue, total, _, _ = is_overdue()
                 if not overdue:
                     logger.debug("There are no authors to update")
                     minutes = 60 * 24  # check again in 24hrs
@@ -703,29 +715,12 @@ def showJobs():
         jobinfo = "%s: Next run in %s %s" % (jobname, timeparts[0], timeparts[1])
         result.append(jobinfo)
 
-    cmd = 'SELECT AuthorID, AuthorName, DateAdded from authors WHERE Status="Active" or Status="Loading"'
-    cmd += 'or Status="Wanted" and DateAdded is not null order by DateAdded ASC'
-    author = myDB.match(cmd)
-    if author:
-        dtnow = datetime.datetime.now()
-        diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-        result.append('Oldest author info (%s) is %s day%s old' % (author['AuthorName'], diff, plural(diff)))
-        maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
-        if maxage:
-            authors = myDB.select(cmd)
-            overdue = 0
-            total = len(authors)
-            dtnow = datetime.datetime.now()
-            for author in authors:
-                diff = datecompare(dtnow.strftime("%Y-%m-%d"), author['DateAdded'])
-                if diff <= maxage:
-                    break
-                overdue += 1
-            if not overdue:
-                result.append("There are no authors overdue update")
-            else:
-                result.append("Found %s author%s from %s overdue update" % (
-                             overdue, plural(overdue), total))
+    overdue, total, name, days = is_overdue()
+    result.append('Oldest author info (%s) is %s day%s old' % (name, days, plural(days)))
+    if not overdue:
+        result.append("There are no authors overdue update")
+    else:
+        result.append("Found %s author%s from %s overdue update" % (overdue, plural(overdue), total))
     return result
 
 

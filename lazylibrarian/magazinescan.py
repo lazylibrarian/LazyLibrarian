@@ -246,9 +246,9 @@ def magazineScan(title=None):
                     issue_id = create_id("%s %s" % (title, issuedate))
                     iss_entry = myDB.match('SELECT Title,IssueFile from issues WHERE Title=? and IssueDate=?',
                                            (title, issuedate))
-                    new_opf = False
+                    new_entry = False
                     if not iss_entry or iss_entry['IssueFile'] != issuefile:
-                        new_opf = True  # new entry or name changed
+                        new_entry = True  # new entry or name changed
                         if not iss_entry:
                             logger.debug("Adding issue %s %s" % (title, issuedate))
                         else:
@@ -265,8 +265,8 @@ def magazineScan(title=None):
                     with open(ignorefile, 'a'):
                         os.utime(ignorefile, None)
 
-                    createMagCover(issuefile,  pagenum=magcoverpage)
-                    lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id, overwrite=new_opf)
+                    createMagCover(issuefile,  pagenum=magcoverpage, refresh=new_entry)
+                    lazylibrarian.postprocess.processMAGOPF(issuefile, title, issuedate, issue_id, overwrite=new_entry)
 
                     # see if this issues date values are useful
                     controlValueDict = {"Title": title}
