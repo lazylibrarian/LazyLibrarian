@@ -1060,7 +1060,7 @@ class WebInterface(object):
                     # print "No entry for str " + key
                     lazylibrarian.CONFIG[key] = ''
 
-        magazines = myDB.select('SELECT Title,Reject,Regex,DateType from magazines ORDER by upper(Title)')
+        magazines = myDB.select('SELECT Title,Reject,Regex,DateType,CoverPage from magazines ORDER by upper(Title)')
 
         if magazines:
             count = 0
@@ -1069,6 +1069,7 @@ class WebInterface(object):
                 reject = mag['Reject']
                 regex = mag['Regex']
                 datetype = mag['DateType']
+                coverpage = mag['CoverPage']
                 # seems kwargs parameters from cherrypy are sometimes passed as latin-1,
                 # can't see how to configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute stored as unicode
@@ -1103,6 +1104,12 @@ class WebInterface(object):
                     count += 1
                     controlValueDict = {'Title': title}
                     newValueDict = {'DateType': new_datetype}
+                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                new_coverpage = kwargs.get('coverpage[%s]' % title, None)
+                if not new_coverpage == coverpage:
+                    count += 1
+                    controlValueDict = {'Title': title}
+                    newValueDict = {'CoverPage': new_coverpage}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
             if count:
                 logger.info("Magazine filters updated")
