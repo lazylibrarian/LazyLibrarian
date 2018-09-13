@@ -311,13 +311,16 @@ def plural(var):
     return 's'
 
 
-def check_int(var, default):
+def check_int(var, default, positive=True):
     """
     Return an integer representation of var
-    or return default value if var is not integer
+    or return default value if var is not a positive integer
     """
     try:
-        return int(var)
+        res = int(var)
+        if positive and res < 0:
+            return default
+        return res
     except (ValueError, TypeError):
         return default
 

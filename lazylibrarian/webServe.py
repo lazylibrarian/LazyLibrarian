@@ -1069,7 +1069,7 @@ class WebInterface(object):
                 reject = mag['Reject']
                 regex = mag['Regex']
                 datetype = mag['DateType']
-                coverpage = mag['CoverPage']
+                coverpage = check_int(mag['CoverPage'], 1)
                 # seems kwargs parameters from cherrypy are sometimes passed as latin-1,
                 # can't see how to configure it, so we need to correct it on accented magazine names
                 # eg "Elle Quebec" where we might have e-acute stored as unicode
@@ -1105,7 +1105,7 @@ class WebInterface(object):
                     controlValueDict = {'Title': title}
                     newValueDict = {'DateType': new_datetype}
                     myDB.upsert("magazines", newValueDict, controlValueDict)
-                new_coverpage = kwargs.get('coverpage[%s]' % title, None)
+                new_coverpage = check_int(kwargs.get('coverpage[%s]' % title, None), 1)
                 if not new_coverpage == coverpage:
                     count += 1
                     controlValueDict = {'Title': title}
