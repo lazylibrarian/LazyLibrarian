@@ -43,7 +43,7 @@ from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, tod
     check_year
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.images import getBookCover
+from lazylibrarian.images import getBookCover, createMagCover
 from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals, search_for
 from lazylibrarian.librarysync import LibraryScan
 from lazylibrarian.manualbook import searchItem
@@ -56,7 +56,7 @@ from lazylibrarian.rssfeed import genFeed
 from lazylibrarian.opds import OPDS
 from lazylibrarian.bookrename import nameVars
 from lib.deluge_client import DelugeRPCClient
-from lib.six import PY2
+from lib.six import PY2, text_type
 from mako import exceptions
 from mako.lookup import TemplateLookup
 
@@ -1076,8 +1076,7 @@ class WebInterface(object):
                 # e-acute is \xe9 in latin-1  but  \xc3\xa9 in utf-8
                 # otherwise the comparison fails, but sometimes accented characters won't
                 # fit latin-1 but fit utf-8 how can we tell ???
-                # Check if we're a python 2 str, python3 str doesn't have "decode"
-                if isinstance(title, str) and hasattr(title, "decode"):
+                if not isinstance(title, text_type):
                     try:
                         title = title.encode('latin-1')
                     except UnicodeEncodeError:
@@ -3294,6 +3293,11 @@ class WebInterface(object):
             issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
             if issue:
                 title = issue['Title']
+                if action == 'NewCover':
+                    cmd = 'select coverpage from magazines where Title=?'
+                    res = myDB.match(cmd, (title,))
+                    if res:
+                        createMagCover(issue['IssueFile'], refresh=True, pagenum=check_int(res['coverpage'], 1))
                 if action == "Delete":
                     result = self.deleteIssue(issue['IssueFile'])
                     if result:
