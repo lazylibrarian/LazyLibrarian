@@ -20,7 +20,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages
-from lazylibrarian.bookrename import bookRename, audioRename
+from lazylibrarian.bookrename import bookRename, audioProcess
 from lazylibrarian.cache import cache_img, gr_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
@@ -961,9 +961,11 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                             myDB.action('UPDATE books set AudioFile=? where BookID=?',
                                                         (book_filename, bookid))
 
-                                            if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and \
-                                                    lazylibrarian.CONFIG['IMP_RENAME']:
-                                                book_filename = audioRename(bookid)
+                                            if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
+                                                if lazylibrarian.CONFIG['IMP_RENAME']:
+                                                    book_filename = audioProcess(bookid, rename=True, playlist=True)
+                                                else:
+                                                    book_filename = audioProcess(bookid, rename=False, playlist=True)
 
                                             # location may have changed since last scan
                                             if book_filename and book_filename != check_status['AudioFile']:
