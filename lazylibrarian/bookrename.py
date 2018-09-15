@@ -115,12 +115,12 @@ def audioProcess(bookid, rename=False, playlist=False):
                     parts.append([track, book, author, f])
                 if not abridged:
                     for tag in [book, title, albumartist, performer, composer]:
-                        if 'unabridged' in tag.lower():
+                        if tag and 'unabridged' in tag.lower():
                             abridged = 'Unabridged'
                             break
                 if not abridged:
                     for tag in [book, title, albumartist, performer, composer]:
-                        if 'abridged' in tag.lower():
+                        if tag and 'abridged' in tag.lower():
                             abridged = 'Abridged'
                             break
 
@@ -129,11 +129,11 @@ def audioProcess(bookid, rename=False, playlist=False):
                 pass
             finally:
                 if not abridged:
-                    if 'unabridged' in audio_file.lower():
+                    if audio_file and 'unabridged' in audio_file.lower():
                         abridged = 'Unabridged'
                         break
                 if not abridged:
-                    if 'abridged' in audio_file.lower():
+                    if audio_file and 'abridged' in audio_file.lower():
                         abridged = 'Abridged'
                         break
 
