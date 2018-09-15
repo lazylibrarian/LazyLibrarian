@@ -32,10 +32,16 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
 
-def audioRename(bookid):
+def audioProcess(bookid, rename=False, playlist=False):
+    """
+    :param bookid: book to process
+    :param rename: rename to match audiobook filename pattern
+    :param playlist: generate a playlist for popup
+    :return: filename of part 01 of the audiobook
+    """
     for item in ['$Part', '$Title']:
-        if item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
-            logger.error("Unable to audioRename, check AUDIOBOOK_DEST_FILE")
+        if rename and item not in lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
+            logger.error("Unable to audioProcess, check AUDIOBOOK_DEST_FILE")
             return ''
 
     myDB = database.DBConnection()
@@ -46,10 +52,10 @@ def audioRename(bookid):
         if book_filename:
             r = os.path.dirname(book_filename)
         else:
-            logger.debug("No filename for %s in audioRename %s" % bookid)
+            logger.debug("No filename for %s in audioProcess" % bookid)
             return ''
     else:
-        logger.debug("Invalid bookid in audioRename %s" % bookid)
+        logger.debug("Invalid bookid in audioProcess %s" % bookid)
         return ''
 
     if not TinyTag:
@@ -205,7 +211,7 @@ def audioRename(bookid):
     dest_path = seriesinfo['FolderName']
     dest_dir = lazylibrarian.DIRECTORY('Audio')
     dest_path = os.path.join(dest_dir, dest_path)
-    if r != dest_path:
+    if rename and r != dest_path:
         try:
             dest_path = safe_move(r, dest_path)
             r = dest_path
@@ -213,15 +219,26 @@ def audioRename(bookid):
             if not os.path.isdir(dest_path):
                 logger.error('Unable to create directory %s: %s' % (dest_path, why))
 
-    with open(os.path.join(dest_path, 'playlist.ll'), 'w') as pl:
-        for part in parts:
-            pattern = seriesinfo['AudioFile']
-            pattern = pattern.replace(
-                '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
-                '$Total', str(len(parts)))
-            pattern = ' '.join(pattern.split()).strip()
-            pattern = pattern + os.path.splitext(part[3])[1]
-            pl.write(pattern + '\n')
+    if playlist:
+        try:
+            playlist = open(os.path.join(dest_path, 'playlist.ll'), 'w')
+        except Exception as why:
+            logger.error('Unable to create playlist in %s: %s' % (dest_path, why))
+            playlist = None
+
+    for part in parts:
+        pattern = seriesinfo['AudioFile']
+        pattern = pattern.replace(
+            '$Part', str(part[0]).zfill(len(str(len(parts))))).replace(
+            '$Total', str(len(parts)))
+        pattern = ' '.join(pattern.split()).strip()
+        pattern = pattern + os.path.splitext(part[3])[1]
+        if playlist:
+            if rename:
+                playlist.write(pattern + '\n')
+            else:
+                playlist.write(part[3] + '\n')
+        if rename:
             n = os.path.join(r, pattern)
             o = os.path.join(r, part[3])
             if o != n:
@@ -229,10 +246,11 @@ def audioRename(bookid):
                     n = safe_move(o, n)
                     if part[0] == 1:
                         book_filename = n  # return part 1 of set
-                    logger.debug('%s: audioRename [%s] to [%s]' % (exists['BookName'], o, n))
-
+                    logger.debug('%s: audioProcess [%s] to [%s]' % (exists['BookName'], o, n))
                 except Exception as e:
                     logger.error('Unable to rename [%s] to [%s] %s %s' % (o, n, type(e).__name__, str(e)))
+    if playlist:
+        playlist.close()
     return book_filename
 
 

@@ -35,7 +35,7 @@ except ImportError:
 
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
-from lazylibrarian.bookrename import nameVars, audioRename, stripspaces
+from lazylibrarian.bookrename import nameVars, audioProcess, stripspaces
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
@@ -1419,8 +1419,11 @@ def processExtras(dest_file=None, global_name=None, bookid=None, book_type="eBoo
         newValueDict = {"AudioFile": dest_file, "AudioStatus": lazylibrarian.CONFIG['FOUND_STATUS'],
                         "AudioLibrary": now()}
         myDB.upsert("books", newValueDict, controlValueDict)
-        if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE'] and lazylibrarian.CONFIG['IMP_RENAME']:
-            book_filename = audioRename(bookid)
+        if lazylibrarian.CONFIG['AUDIOBOOK_DEST_FILE']:
+            if lazylibrarian.CONFIG['IMP_RENAME']:
+                book_filename = audioProcess(bookid, rename=True, playlist=True)
+            else:
+                book_filename = audioProcess(bookid, rename=False, playlist=True)
             if dest_file != book_filename:
                 myDB.action('UPDATE books set AudioFile=? where BookID=?', (book_filename, bookid))
     else:
