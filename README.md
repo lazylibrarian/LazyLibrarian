@@ -37,7 +37,7 @@ Linux / Mac OS X:
 * Install Python 2 v2.6 or higher, or Python 3 v3.5 or higher 
 * Git clone/extract LL wherever you like
 * Run "python LazyLibrarian.py -d" to start in daemon mode
-* Fill in all the config (see [Configuration Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/Configuration) for full configuration)
+* Fill in all the config (see [ Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/) for full configuration)
 
 * Start in daemon mode with `python LazyLibrarian.py -daemon`
 
@@ -45,8 +45,8 @@ Linux / Mac OS X:
 There is a wiki at https://github.com/DobyTang/LazyLibrarian/wiki   
 and a reddit at https://www.reddit.com/r/LazyLibrarian/   
 
-Docker tutorial here http://sasquatters.com/lazylibrarian-docker/   
-Config tutorial here http://sasquatters.com/lazylibrarian-configuration/   
+Docker tutorial  http://sasquatters.com/lazylibrarian-docker/   
+Config tutorial  http://sasquatters.com/lazylibrarian-configuration/   
 (thanks @mccorkled)   
 
 For more options see the [Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/).
