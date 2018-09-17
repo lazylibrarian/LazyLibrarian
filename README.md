@@ -42,31 +42,14 @@ Linux / Mac OS X:
 * Start in daemon mode with `python LazyLibrarian.py -daemon`
 
 ## Documentation:
-Fairly limited so far (any help appreciated)
-There is a wiki at https://github.com/DobyTang/LazyLibrarian/wiki
-and a reddit at https://www.reddit.com/r/LazyLibrarian/
+There is a wiki at https://github.com/DobyTang/LazyLibrarian/wiki   
+and a reddit at https://www.reddit.com/r/LazyLibrarian/   
 
-## Minimal Configuration (uTorrent):
-This is the bare minimum to get you up and running. For more options see the [Configuration Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/Configuration).
+Docker tutorial here http://sasquatters.com/lazylibrarian-docker/   
+Config tutorial here http://sasquatters.com/lazylibrarian-configuration/   
+(thanks @mccorkled)   
 
-### Downloaders
-- Open localhost:5299/config
-- Select Downloaders tab and check the uTorrent box.
-- Host: localhost
-- Port: Found in "uTorrent | Options Menu | Preferences | Connections | Port used for incoming connections"
-- In "uTorrent settings | Advanced | WebUI" check Enable WebUI and make a username and password. Fill that username and password in to LazyLibrarian.
-- In Download Settings Directory in Lazylibrarian change the path to where uTorrent keeps your completed downloads.
-Found in "uTorrent Settings | Directories | Move completed downloads to"
-
-### Providers
-Check some or all of the torrent provider boxes.
-
-### Processing
-In "Folders | Base Destination Folder" type the directory where you want to keep the books LazyLib downloads. For example putting a books folder in Documents. The system documents folder for windows is "C:\Users\USERNAME\Documents\Books\" where USERNAME is your Windows User Name.
-
-### Usage
-Open localhost:5299/home or click the LazyLibrarian icon in the top left. Type a book or author name into the top right search bar. Then on the search results screen select "Add Book" to make LazyLib start searching for the book. Not all books can be found instantly, but LazyLib will keep searching!
-
+For more options see the [Wiki](https://github.com/DobyTang/LazyLibrarian/wiki/).
 
 ## Update
 Auto update available via interface from master for git and source installs
