@@ -510,7 +510,7 @@ def createMagCovers(refresh=False):
 def createMagCover(issuefile=None, refresh=False, pagenum=1):
     if not lazylibrarian.CONFIG['IMP_MAGCOVER'] or not pagenum:
         return 'unwanted'
-    if issuefile is None or not os.path.isfile(issuefile):
+    if not issuefile or not os.path.isfile(issuefile):
         logger.debug('No issuefile %s' % issuefile)
         return 'failed'
 

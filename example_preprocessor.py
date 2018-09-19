@@ -25,7 +25,7 @@ delete_others = False  # use with care, deletes everything except wanted formats
 def makeBytestr(txt):
     # convert unicode to bytestring, needed for os.walk and os.listdir
     # listdir falls over if given unicode startdir and a filename in a subdir can't be decoded to ascii
-    if txt is None or not txt:
+    if not txt:
         return b''
     elif not isinstance(txt, text_type):  # nothing to do if already bytestring
         return txt
@@ -41,7 +41,7 @@ def makeBytestr(txt):
 def makeUnicode(txt):
     # convert a bytestring to unicode, don't know what encoding it might be so try a few
     # it could be a file on a windows filesystem, unix...
-    if txt is None or not txt:
+    if not txt:
         return u''
     elif isinstance(txt, text_type):
         return txt
@@ -108,7 +108,8 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor
             for ftype in wanted_formats:
                 if not os.path.exists(os.path.join(bookfolder, basename + ftype)):
                     pplog.write("No %s\n" % ftype)
-                    params = [converter, os.path.join(bookfolder, sourcefile), os.path.join(bookfolder, basename + ftype)]
+                    params = [converter, os.path.join(bookfolder, sourcefile),
+                              os.path.join(bookfolder, basename + ftype)]
                     try:
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if created:

@@ -55,7 +55,7 @@ def redirect_url(genhost, url):
 def GEN(book=None, prov=None, test=False):
     errmsg = ''
     provider = "libgen.io"
-    if prov is None:
+    if not prov:
         prov = 'GEN'
     host = lazylibrarian.CONFIG[prov + '_HOST']
     if not host.startswith('http'):
