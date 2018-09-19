@@ -155,7 +155,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
             'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
             'renameAudio': '&id Rename an audiobook using configured pattern',
-            'playlistAudio': '&id Create playlist for an audiobook',
+            'createPlaylist': '&id Create playlist for an audiobook',
             'nameVars': '&id Show the name variables that would be used for a bookid',
             'showCaps': '&provider= get a list of capabilities from a provider',
             'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
@@ -347,7 +347,7 @@ class Api(object):
             return
         self.data = audioProcess(kwargs['id'], rename=True)
 
-    def _playlistAudio(self, **kwargs):
+    def _createPlaylist(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
