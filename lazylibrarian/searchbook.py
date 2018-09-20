@@ -44,7 +44,7 @@ def search_book(books=None, library=None):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            if books is None:
+            if not books:
                 threading.currentThread().name = "SEARCHALLBOOKS"
             else:
                 threading.currentThread().name = "SEARCHBOOKS"
@@ -53,7 +53,7 @@ def search_book(books=None, library=None):
         searchlist = []
         searchbooks = []
 
-        if books is None:
+        if not books:
             # We are performing a backlog search
             cmd = 'SELECT BookID, AuthorName, Bookname, BookSub, BookAdded, books.Status, AudioStatus '
             cmd += 'from books,authors WHERE (books.Status="Wanted" OR AudioStatus="Wanted") '

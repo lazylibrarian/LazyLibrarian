@@ -104,7 +104,7 @@ def findBestResult(resultlist, book, searchtype, source):
             rejected = False
 
             url = res[prefix + 'url']
-            if url is None:
+            if not url:
                 rejected = True
                 logger.debug("Rejecting %s, no URL found" % resultTitle)
 

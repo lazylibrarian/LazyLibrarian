@@ -733,6 +733,19 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                         except Exception as why:
                             logger.error("Unable to rename %s, %s %s" %
                                          (pp_path, type(why).__name__, str(why)))
+                            if not os.access(pp_path, os.R_OK):
+                                logger.error("%s is not readable" % pp_path)
+                            if not os.access(pp_path, os.W_OK):
+                                logger.error("%s is not writeable" % pp_path)
+                            if not os.access(pp_path, os.X_OK):
+                                logger.error("%s is not executable" % pp_path)
+                            parent = os.path.dirname(pp_path)
+                            try:
+                                with open(os.path.join(parent, 'll_temp'), 'w') as f:
+                                    f.write('test')
+                                os.remove(os.path.join(parent, 'll_temp'))
+                            except Exception as why:
+                                logger.error("Directory %s is not writeable: %s" % (parent, why))
                             logger.warn('Residual files remain in %s' % pp_path)
 
             ppcount += check_residual(download_dir)
@@ -1384,7 +1397,19 @@ def process_book(pp_path=None, bookID=None):
                     _ = safe_move(pp_path, pp_path + '.fail')
                     logger.warn('Residual files remain in %s.fail' % pp_path)
                 except Exception as e:
-                    logger.error("[importBook] Unable to rename %s, %s %s" % (pp_path, type(e).__name__, str(e)))
+                    logger.error("Unable to rename %s, %s %s" %
+                                 (pp_path, type(e).__name__, str(e)))
+                    if not os.access(pp_path, os.R_OK):
+                        logger.error("%s is not readable" % pp_path)
+                    if not os.access(pp_path, os.W_OK):
+                        logger.error("%s is not writeable" % pp_path)
+                    parent = os.path.dirname(pp_path)
+                    try:
+                        with open(os.path.join(parent, 'll_temp'), 'w') as f:
+                            f.write('test')
+                        os.remove(os.path.join(parent, 'll_temp'))
+                    except Exception as why:
+                        logger.error("Directory %s is not writeable: %s" % (parent, why))
                     logger.warn('Residual files remain in %s' % pp_path)
 
                 was_snatched = myDB.match('SELECT NZBurl FROM wanted WHERE BookID=? and Status="Snatched"', (bookID,))
@@ -1660,6 +1685,17 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                         if is_valid_booktype(destfile, booktype=booktype):
                             newbookfile = destfile
                     except Exception as why:
+                        if not os.access(srcfile, os.R_OK):
+                            logger.error("File [%s] is not readable" % srcfile)
+                        if not os.access(srcfile, os.W_OK):
+                            logger.error("File [%s] is not writeable" % srcfile)
+                        parent = os.path.dirname(destfile)
+                        try:
+                            with open(os.path.join(parent, 'll_temp'), 'w') as f:
+                                f.write('test')
+                            os.remove(os.path.join(parent, 'll_temp'))
+                        except Exception as why:
+                            logger.error("Directory [%s] is not writeable: %s" % (parent, why))
                         return False, "Unable to %s file %s to %s: %s %s" % \
                                (typ, srcfile, destfile, type(why).__name__, str(why))
                 else:

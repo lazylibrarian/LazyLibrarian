@@ -40,7 +40,7 @@ def search_magazines(mags=None, reset=False):
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:
-            if mags is None:
+            if not mags:
                 threading.currentThread().name = "SEARCHALLMAG"
             else:
                 threading.currentThread().name = "SEARCHMAG"
@@ -48,7 +48,7 @@ def search_magazines(mags=None, reset=False):
         myDB = database.DBConnection()
         searchlist = []
 
-        if mags is None:  # backlog search
+        if not mags:  # backlog search
             searchmags = myDB.select('SELECT Title, Regex, DateType, LastAcquired, \
                                  IssueDate from magazines WHERE Status="Active"')
         else:

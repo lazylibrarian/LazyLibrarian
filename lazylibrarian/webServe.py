@@ -956,13 +956,13 @@ class WebInterface(object):
             for mag in magazines:
                 title = mag['Title']
                 regex = mag['Regex']
-                if regex is None:
+                if not regex:
                     regex = ""
                 reject = mag['Reject']
-                if reject is None:
+                if not reject:
                     reject = ""
                 datetype = mag['DateType']
-                if datetype is None:
+                if not datetype:
                     datetype = ""
                 coverpage = check_int(mag['CoverPage'], 1)
                 mags_list.append({
@@ -1212,7 +1212,7 @@ class WebInterface(object):
     @cherrypy.expose
     def search(self, name):
         self.label_thread('SEARCH')
-        if name is None or not name:
+        if not name:
             raise cherrypy.HTTPRedirect("home")
 
         myDB = database.DBConnection()
@@ -3289,59 +3289,57 @@ class WebInterface(object):
         title = ''
         args.pop('book_table_length', None)
 
-        for item in args:
-            issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
-            if issue:
-                title = issue['Title']
-                if action == 'NewCover':
-                    cmd = 'select coverpage from magazines where Title=?'
-                    res = myDB.match(cmd, (title,))
-                    if res:
-                        createMagCover(issue['IssueFile'], refresh=True, pagenum=check_int(res['coverpage'], 1))
-                if action == "Delete":
-                    result = self.deleteIssue(issue['IssueFile'])
-                    if result:
-                        logger.info('Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
-                if action == "Remove" or action == "Delete":
-                    myDB.action('DELETE from issues WHERE IssueID=?', (item,))
-                    logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
-                    # Set magazine_issuedate to issuedate of most recent issue we have
-                    # Set latestcover to most recent issue cover
-                    # Set magazine_lastacquired to acquired date of most recent issue we have
-                    # Set magazine_added to acquired date of earliest issue we have
-                    cmd = 'select IssueDate,IssueAcquired,IssueFile from issues where title=?'
-                    cmd += ' order by IssueDate '
-                    newest = myDB.match(cmd + 'DESC', (title,))
-                    oldest = myDB.match(cmd + 'ASC', (title,))
-                    controlValueDict = {'Title': title}
-                    if newest and oldest:
-                        old_acquired = ''
-                        new_acquired = ''
-                        cover = ''
-                        issuefile = newest['IssueFile']
-                        if os.path.exists(issuefile):
-                            cover = os.path.splitext(issuefile)[0] + '.jpg'
-                            mtime = os.path.getmtime(issuefile)
-                            new_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
-                        issuefile = oldest['IssueFile']
-                        if os.path.exists(issuefile):
-                            mtime = os.path.getmtime(issuefile)
-                            old_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+        if action:
+            for item in args:
+                issue = myDB.match('SELECT IssueFile,Title,IssueDate from issues WHERE IssueID=?', (item,))
+                if issue:
+                    title = issue['Title']
+                    if 'reCover' in action:
+                        createMagCover(issue['IssueFile'], refresh=True, pagenum=check_int(action[-1], 1))
+                    if action == "Delete":
+                        result = self.deleteIssue(issue['IssueFile'])
+                        if result:
+                            logger.info('Issue %s of %s deleted from disc' % (issue['IssueDate'], issue['Title']))
+                    if action == "Remove" or action == "Delete":
+                        myDB.action('DELETE from issues WHERE IssueID=?', (item,))
+                        logger.info('Issue %s of %s removed from database' % (issue['IssueDate'], issue['Title']))
+                        # Set magazine_issuedate to issuedate of most recent issue we have
+                        # Set latestcover to most recent issue cover
+                        # Set magazine_lastacquired to acquired date of most recent issue we have
+                        # Set magazine_added to acquired date of earliest issue we have
+                        cmd = 'select IssueDate,IssueAcquired,IssueFile from issues where title=?'
+                        cmd += ' order by IssueDate '
+                        newest = myDB.match(cmd + 'DESC', (title,))
+                        oldest = myDB.match(cmd + 'ASC', (title,))
+                        controlValueDict = {'Title': title}
+                        if newest and oldest:
+                            old_acquired = ''
+                            new_acquired = ''
+                            cover = ''
+                            issuefile = newest['IssueFile']
+                            if os.path.exists(issuefile):
+                                cover = os.path.splitext(issuefile)[0] + '.jpg'
+                                mtime = os.path.getmtime(issuefile)
+                                new_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
+                            issuefile = oldest['IssueFile']
+                            if os.path.exists(issuefile):
+                                mtime = os.path.getmtime(issuefile)
+                                old_acquired = datetime.date.isoformat(datetime.date.fromtimestamp(mtime))
 
-                        newValueDict = {
-                            'IssueDate': newest['IssueDate'],
-                            'LatestCover': cover,
-                            'LastAcquired': new_acquired,
-                            'MagazineAdded': old_acquired
-                        }
-                    else:
-                        newValueDict = {
-                            'IssueDate': '',
-                            'LastAcquired': '',
-                            'LatestCover': '',
-                            'MagazineAdded': ''
-                        }
-                    myDB.upsert("magazines", newValueDict, controlValueDict)
+                            newValueDict = {
+                                'IssueDate': newest['IssueDate'],
+                                'LatestCover': cover,
+                                'LastAcquired': new_acquired,
+                                'MagazineAdded': old_acquired
+                            }
+                        else:
+                            newValueDict = {
+                                'IssueDate': '',
+                                'LastAcquired': '',
+                                'LatestCover': '',
+                                'MagazineAdded': ''
+                            }
+                        myDB.upsert("magazines", newValueDict, controlValueDict)
         if title:
             raise cherrypy.HTTPRedirect("issuePage?title=%s" % quote_plus(title))
         else:
