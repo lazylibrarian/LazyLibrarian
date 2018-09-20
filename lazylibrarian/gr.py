@@ -566,8 +566,9 @@ class GoodReads:
                                         elif isbnhead:
                                             # if GR didn't give an isbn we can't cache it
                                             # just use language for this book
-                                            myDB.action('insert into languages values (?, ?)',
-                                                        (isbnhead, bookLanguage))
+                                            controlValueDict = {"isbn": isbnhead}
+                                            newValueDict = {"lang": bookLanguage}
+                                            myDB.upsert("languages", newValueDict, controlValueDict)
                                             logger.debug("GoodReads reports language [%s] for %s" %
                                                          (bookLanguage, isbnhead))
                                         else:

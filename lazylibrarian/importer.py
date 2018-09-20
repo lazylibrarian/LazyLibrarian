@@ -135,6 +135,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
     try:
         myDB = database.DBConnection()
         match = False
+        author = None
         authorimg = ''
         new_author = not refresh
         entry_status = ''
@@ -185,7 +186,7 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
                 if not dbauthor:
                     myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
 
-        if authorname and not match:
+        if authorname and author and not match:
             authorname = ' '.join(authorname.split())  # ensure no extra whitespace
             GR = GoodReads(authorname)
             author = GR.find_author_id(refresh=refresh)
