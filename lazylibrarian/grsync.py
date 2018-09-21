@@ -479,10 +479,10 @@ def grsync(status, shelf):
         shelf = shelf.lower()
         logger.info('Syncing %s to %s shelf' % (status, shelf))
         myDB = database.DBConnection()
-        cmd = 'select bookid from books where status="%s"' % status
+        cmd = 'select bookid from books where status=?'
         if status == 'Open':
             cmd += ' or status="Have"'
-        results = myDB.select(cmd)
+        results = myDB.select(cmd, (status,))
         ll_list = []
         for terms in results:
             ll_list.append(terms['bookid'])
@@ -501,6 +501,8 @@ def grsync(status, shelf):
                 logger.debug("Unable to create shelf %s: %s" % (shelf, msg))
                 return 0, 0
             else:
+                # make sure no old info lying around
+                myDB.match('DELETE from sync where UserID="goodreads" and Label=?', (shelf,))
                 logger.debug("Created new goodreads shelf: %s" % shelf)
 
         gr_shelf = GA.get_gr_shelf_contents(shelf=shelf)
@@ -525,8 +527,7 @@ def grsync(status, shelf):
 
         # For HAVE/OPEN method is the same, but only change status if HAVE, not OPEN
 
-        cmd = 'select SyncList from sync where UserID="%s" and Label="%s"' % ("goodreads", shelf)
-        res = myDB.match(cmd)
+        res = myDB.match('select SyncList from sync where UserID="goodreads" and Label=?', (shelf,))
         last_sync = []
         shelf_changed = 0
         ll_changed = 0
@@ -557,14 +558,14 @@ def grsync(status, shelf):
         logger.info("%s missing from goodreads %s" % (len(removed_from_shelf), shelf))
         for book in removed_from_shelf:
             # deleted from goodreads
-            cmd = 'select Status,BookName from books where BookID="%s"' % book
-            res = myDB.match(cmd)
+            cmd = 'select Status,BookName from books where BookID=?'
+            res = myDB.match(cmd, (book,))
             if not res:
                 logger.debug('Adding new book %s to database' % book)
                 if not GR:
                     GR = GoodReads(book)
                 GR.find_book(book)
-                res = myDB.match(cmd)
+                res = myDB.match(cmd, (book,))
             if not res:
                 logger.warn('Book %s not found in database' % book)
             else:
@@ -594,14 +595,14 @@ def grsync(status, shelf):
         # new additions to goodreads shelf
         logger.info("%s new in goodreads %s" % (len(added_to_shelf), shelf))
         for book in added_to_shelf:
-            cmd = 'select Status,BookName from books where BookID="%s"' % book
-            res = myDB.match(cmd)
+            cmd = 'select Status,BookName from books where BookID=?'
+            res = myDB.match(cmd, (book,))
             if not res:
                 logger.debug('Adding new book %s to database' % book)
                 if not GR:
                     GR = GoodReads(book)
                 GR.find_book(book)
-                res = myDB.match(cmd)
+                res = myDB.match(cmd, (book,))
             if not res:
                 logger.warn('Book %s not found in database' % book)
             else:
@@ -636,10 +637,10 @@ def grsync(status, shelf):
                         logger.warn("Not setting %s [%s] as Wanted, already marked Open" % (res['BookName'], book))
 
         # get new definitive list from ll
-        cmd = 'select bookid from books where status="%s"' % status
+        cmd = 'select bookid from books where status=?'
         if status == 'Open':
             cmd += ' or status="Have"'
-        results = myDB.select(cmd)
+        results = myDB.select(cmd, (status,))
         ll_list = []
         for terms in results:
             ll_list.append(terms['bookid'])
