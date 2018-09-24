@@ -344,13 +344,13 @@ def find_book_in_db(author, book, ignored=None):
                 partname_name = a_book['BookName']
                 partname_id = a_book['BookID']
 
-        if best_ratio > 90:
+        if best_ratio >= lazylibrarian.CONFIG['NAME_RATIO']:
             logger.debug("Fuzz match ratio [%d] [%s] [%s] %s" % (best_ratio, book, ratio_name, ratio_id))
             return ratio_id, best_type
-        if best_partial > 95:
+        if best_partial >= lazylibrarian.CONFIG['NAME_PARTIAL']:
             logger.debug("Fuzz match partial [%d] [%s] [%s] %s" % (best_partial, book, partial_name, partial_id))
             return partial_id, partial_type
-        if best_partname > 95:
+        if best_partname >= lazylibrarian.CONFIG['NAME_PARTNAME']:
             logger.debug("Fuzz match partname [%d] [%s] [%s] %s" % (best_partname, book, partname_name, partname_id))
             return partname_id, partname_type
 
@@ -385,7 +385,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
             lazylibrarian.AUTHORS_UPDATE = 1
             if library == 'eBook':
                 lazylibrarian.EBOOK_UPDATE = 1
-            elif library == 'Audio':
+            elif library == 'AudioBook':
                 lazylibrarian.AUDIO_UPDATE = 1
             myDB.action('DELETE from stats')
             try:  # remove any extra whitespace in authornames
