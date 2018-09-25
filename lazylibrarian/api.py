@@ -818,7 +818,7 @@ class Api(object):
             if 'wait' in kwargs:
                 search_book(library=library)
             else:
-                threading.Thread(target=search_book, name='API-SEARCHBOOK', args=[None, library]).start()
+                threading.Thread(target=search_book, name='API-SEARCHALLBOOK', args=[None, library]).start()
         else:
             self.data = "No search methods set, check config"
 
