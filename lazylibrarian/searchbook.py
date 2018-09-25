@@ -43,7 +43,7 @@ def search_book(books=None, library=None):
     # noinspection PyBroadException
     try:
         threadname = threading.currentThread().name
-        if 'SEARCHALL' in threadname:
+        if 'SEARCHALL' in threadname or 'API-SEARCH' in threadname:
             force = True
         else:
             force = False
