@@ -492,7 +492,11 @@ def grsync(status, shelf, library='eBook'):
     # noinspection PyBroadException
     try:
         shelf = shelf.lower()
-        logger.info('Syncing %s %s to %s shelf' % (library, status, shelf))
+        dstatus = status
+        if dstatus == "Open":
+            dstatus += "/Have"
+        logger.info('Syncing %s %ss to %s shelf' % (dstatus, library, shelf))
+
         myDB = database.DBConnection()
         if library == 'eBook':
             cmd = 'select bookid from books where status=?'
@@ -524,9 +528,6 @@ def grsync(status, shelf, library='eBook'):
                 logger.debug("Created new goodreads shelf: %s" % shelf)
 
         gr_shelf = GA.get_gr_shelf_contents(shelf=shelf)
-        dstatus = status
-        if dstatus == "Open":
-            dstatus += "/Have"
 
         logger.info("There are %s %s %ss, %s on goodreads %s shelf" %
                     (len(ll_list), dstatus, library, len(gr_shelf), shelf))
@@ -663,7 +664,7 @@ def grsync(status, shelf, library='eBook'):
                             logger.debug("%10s set to Wanted" % book)
                         else:
                             logger.warn("Not setting %s [%s] as Wanted, already marked Open" % (res['BookName'], book))
-                    
+
                     if status == 'Open':
                         if res['AudioStatus'] == 'Open':
                             logger.warn("%s [%s] is already marked Open" % (res['BookName'], book))
