@@ -26,8 +26,7 @@ import webbrowser
 import sqlite3
 
 import cherrypy
-from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
-    searchmag, magazinescan, bookwork, importer, grsync
+from lazylibrarian import logger, versioncheck, database
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader, scheduleJob
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
@@ -180,7 +179,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
                      'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
-                     'DELAYSEARCH', 'SEED_WAIT']
+                     'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -506,6 +505,8 @@ CONFIG_DEFINITIONS = {
     'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
     'GR_WANTED': ('str', 'API', ''),  # sync wanted to this shelf
     'GR_OWNED': ('str', 'API', ''),  # sync open/have to this shelf
+    'GR_AWANTED': ('str', 'API', ''),  # sync wanted to this shelf
+    'GR_AOWNED': ('str', 'API', ''),  # sync open/have to this shelf
     'GR_UNIQUE': ('bool', 'API', 0),  # delete from wanted if already owned
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
