@@ -500,10 +500,12 @@ def grsync(status, shelf, library='eBook'):
         myDB = database.DBConnection()
         if library == 'eBook':
             cmd = 'select bookid from books where status=?'
+            if status == 'Open':
+                cmd += ' or status="Have"'
         else:
             cmd = 'select bookid from books where audiostatus=?'
-        if status == 'Open':
-            cmd += ' or status="Have"'
+            if status == 'Open':
+                cmd += ' or audiostatus="Have"'
         results = myDB.select(cmd, (status,))
         ll_list = []
         for terms in results:
@@ -696,9 +698,14 @@ def grsync(status, shelf, library='eBook'):
                             logger.warn("Not setting %s [%s] as Wanted, already marked Open" % (res['BookName'], book))
 
         # get new definitive list from ll
-        cmd = 'select bookid from books where status=?'
-        if status == 'Open':
-            cmd += ' or status="Have"'
+        if library == 'eBook':
+            cmd = 'select bookid from books where status=?'
+            if status == 'Open':
+                cmd += ' or status="Have"'
+        else:
+            cmd = 'select bookid from books where audiostatus=?'
+            if status == 'Open':
+                cmd += ' or audiostatus="Have"'
         results = myDB.select(cmd, (status,))
         ll_list = []
         for terms in results:
