@@ -26,7 +26,8 @@ import webbrowser
 import sqlite3
 
 import cherrypy
-from lazylibrarian import logger, versioncheck, database
+from lazylibrarian import logger, versioncheck, database, postprocess, searchbook, searchmag, searchrss, \
+    librarysync, magazinescan, bookwork, importer, grsync
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader, scheduleJob
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
