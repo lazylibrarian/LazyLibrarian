@@ -426,19 +426,34 @@ def sync_to_gr():
     try:
         threading.currentThread().name = 'GRSync'
         if lazylibrarian.CONFIG['GR_WANTED']:
-            to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'])
+            to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_WANTED'], 'eBook')
             msg += "%s change%s to %s shelf\n" % (to_read_shelf, plural(to_read_shelf),
                                                   lazylibrarian.CONFIG['GR_WANTED'])
-            msg += "%s change%s to Wanted from GoodReads\n" % (ll_wanted, plural(ll_wanted))
+            msg += "%s change%s to eBook Wanted from GoodReads\n" % (ll_wanted, plural(ll_wanted))
         else:
-            msg += "Sync Wanted books is disabled\n"
+            msg += "Sync Wanted eBooks is disabled\n"
         if lazylibrarian.CONFIG['GR_OWNED']:
-            to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'])
+            to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_OWNED'], 'eBook')
             msg += "%s change%s to %s shelf\n" % (to_owned_shelf, plural(to_owned_shelf),
                                                   lazylibrarian.CONFIG['GR_OWNED'])
-            msg += "%s change%s to Owned from GoodReads\n" % (ll_have, plural(ll_have))
+            msg += "%s change%s to eBook Owned from GoodReads\n" % (ll_have, plural(ll_have))
         else:
-            msg += "Sync Owned books is disabled\n"
+            msg += "Sync Owned eBooks is disabled\n"
+        if lazylibrarian.SHOW_AUDIO:
+            if lazylibrarian.CONFIG['GR_AWANTED']:
+                to_read_shelf, ll_wanted = grsync('Wanted', lazylibrarian.CONFIG['GR_AWANTED'], 'AudioBook')
+                msg += "%s change%s to %s shelf\n" % (to_read_shelf, plural(to_read_shelf),
+                                                      lazylibrarian.CONFIG['GR_AWANTED'])
+                msg += "%s change%s to Audio Wanted from GoodReads\n" % (ll_wanted, plural(ll_wanted))
+            else:
+                msg += "Sync Wanted AudioBooks is disabled\n"
+            if lazylibrarian.CONFIG['GR_AOWNED']:
+                to_owned_shelf, ll_have = grsync('Open', lazylibrarian.CONFIG['GR_AOWNED'], 'AudioBook')
+                msg += "%s change%s to %s shelf\n" % (to_owned_shelf, plural(to_owned_shelf),
+                                                      lazylibrarian.CONFIG['GR_AOWNED'])
+                msg += "%s change%s to Audio Owned from GoodReads\n" % (ll_have, plural(ll_have))
+            else:
+                msg += "Sync Owned AudioBooks is disabled\n"
         logger.info(msg.strip('\n').replace('\n', ', '))
     except Exception as e:
         logger.error("Exception in sync_to_gr: %s %s" % (type(e).__name__, str(e)))
@@ -473,16 +488,25 @@ def grfollow(authorid, follow=True):
         return "Unable to (un)follow %s, invalid authorid" % authorid
 
 
-def grsync(status, shelf):
+def grsync(status, shelf, library='eBook'):
     # noinspection PyBroadException
     try:
         shelf = shelf.lower()
-        logger.info('Syncing %s to %s shelf' % (status, shelf))
+        dstatus = status
+        if dstatus == "Open":
+            dstatus += "/Have"
+        logger.info('Syncing %s %ss to %s shelf' % (dstatus, library, shelf))
+
         myDB = database.DBConnection()
-        cmd = 'select bookid from books where status="%s"' % status
-        if status == 'Open':
-            cmd += ' or status="Have"'
-        results = myDB.select(cmd)
+        if library == 'eBook':
+            cmd = 'select bookid from books where status=?'
+            if status == 'Open':
+                cmd += ' or status="Have"'
+        else:
+            cmd = 'select bookid from books where audiostatus=?'
+            if status == 'Open':
+                cmd += ' or audiostatus="Have"'
+        results = myDB.select(cmd, (status,))
         ll_list = []
         for terms in results:
             ll_list.append(terms['bookid'])
@@ -501,15 +525,14 @@ def grsync(status, shelf):
                 logger.debug("Unable to create shelf %s: %s" % (shelf, msg))
                 return 0, 0
             else:
+                # make sure no old info lying around
+                myDB.match('DELETE from sync where UserID="goodreads" and Label=?', (shelf,))
                 logger.debug("Created new goodreads shelf: %s" % shelf)
 
         gr_shelf = GA.get_gr_shelf_contents(shelf=shelf)
-        dstatus = status
-        if dstatus == "Open":
-            dstatus += "/Have"
 
-        logger.info("There are %s %s books, %s books on goodreads %s shelf" %
-                    (len(ll_list), dstatus, len(gr_shelf), shelf))
+        logger.info("There are %s %s %ss, %s on goodreads %s shelf" %
+                    (len(ll_list), dstatus, library, len(gr_shelf), shelf))
 
         # Sync method for WANTED:
         # Get results of last_sync (if any)
@@ -525,8 +548,7 @@ def grsync(status, shelf):
 
         # For HAVE/OPEN method is the same, but only change status if HAVE, not OPEN
 
-        cmd = 'select SyncList from sync where UserID="%s" and Label="%s"' % ("goodreads", shelf)
-        res = myDB.match(cmd)
+        res = myDB.match('select SyncList from sync where UserID="goodreads" and Label=?', (shelf,))
         last_sync = []
         shelf_changed = 0
         ll_changed = 0
@@ -557,24 +579,33 @@ def grsync(status, shelf):
         logger.info("%s missing from goodreads %s" % (len(removed_from_shelf), shelf))
         for book in removed_from_shelf:
             # deleted from goodreads
-            cmd = 'select Status,BookName from books where BookID="%s"' % book
-            res = myDB.match(cmd)
+            cmd = 'select Status,AudioStatus,BookName from books where BookID=?'
+            res = myDB.match(cmd, (book,))
             if not res:
-                logger.debug('Adding new book %s to database' % book)
+                logger.debug('Adding new %s %s to database' % (library, book))
                 if not GR:
                     GR = GoodReads(book)
                 GR.find_book(book)
-                res = myDB.match(cmd)
+                res = myDB.match(cmd, (book,))
             if not res:
-                logger.warn('Book %s not found in database' % book)
+                logger.warn('%s %s not found in database' % (library, book))
             else:
-                if res['Status'] in ['Have', 'Wanted']:
-                    myDB.action('UPDATE books SET Status="Skipped" WHERE BookID=?', (book,))
-                    ll_changed += 1
-                    logger.debug("%10s set to Skipped" % book)
+                if library == 'eBook':
+                    if res['Status'] in ['Have', 'Wanted']:
+                        myDB.action('UPDATE books SET Status="Skipped" WHERE BookID=?', (book,))
+                        ll_changed += 1
+                        logger.debug("%10s set to Skipped" % book)
+                    else:
+                        logger.warn("Not marking %s [%s] as Skipped, book is marked %s" % (
+                                    res['BookName'], book, res['Status']))
                 else:
-                    logger.warn("Not marking %s [%s] as Skipped, book is marked %s" % (
-                                res['BookName'], book, res['Status']))
+                    if res['AudioStatus'] in ['Have', 'Wanted']:
+                        myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE BookID=?', (book,))
+                        ll_changed += 1
+                        logger.debug("%10s set to Skipped" % book)
+                    else:
+                        logger.warn("Not marking %s [%s] as Skipped, audiobook is marked %s" % (
+                                    res['BookName'], book, res['AudioStatus']))
 
         # new additions to lazylibrarian
         logger.info("%s new in lazylibrarian %s" % (len(added_to_ll), shelf))
@@ -594,52 +625,88 @@ def grsync(status, shelf):
         # new additions to goodreads shelf
         logger.info("%s new in goodreads %s" % (len(added_to_shelf), shelf))
         for book in added_to_shelf:
-            cmd = 'select Status,BookName from books where BookID="%s"' % book
-            res = myDB.match(cmd)
+            cmd = 'select Status,AudioStatus,BookName from books where BookID=?'
+            res = myDB.match(cmd, (book,))
             if not res:
                 logger.debug('Adding new book %s to database' % book)
                 if not GR:
                     GR = GoodReads(book)
                 GR.find_book(book)
-                res = myDB.match(cmd)
+                res = myDB.match(cmd, (book,))
             if not res:
                 logger.warn('Book %s not found in database' % book)
             else:
-                if status == 'Open':
-                    if res['Status'] == 'Open':
-                        logger.warn("%s [%s] is already marked Open" % (res['BookName'], book))
-                    else:
-                        myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
-                        ll_changed += 1
-                        logger.debug("%10s set to Have" % book)
-                elif status == 'Wanted':
-                    # if in "wanted" and already marked "Open/Have", optionally delete from "wanted"
-                    # (depending on user prefs, to-read and wanted might not be the same thing)
-                    if lazylibrarian.CONFIG['GR_UNIQUE'] and res['Status'] in ['Open', 'Have']:
-                        try:
-                            r, content = GA.BookToList(book, shelf, action='remove')
-                        except Exception as e:
-                            logger.error("Error removing %s [%s] from %s: %s %s" % (
-                                         res['BookName'], book, shelf, type(e).__name__, str(e)))
-                            r = None
-                            content = ''
-                        if r:
-                            logger.debug("%10s removed from %s shelf" % (book, shelf))
-                            shelf_changed += 1
+                if library == 'eBook':
+                    if status == 'Open':
+                        if res['Status'] == 'Open':
+                            logger.warn("%s [%s] is already marked Open" % (res['BookName'], book))
                         else:
-                            logger.warn("Failed to remove %s from %s shelf: %s" % (book, shelf, content))
-                    elif res['Status'] != 'Open':
-                        myDB.action('UPDATE books SET Status="Wanted" WHERE BookID=?', (book,))
-                        ll_changed += 1
-                        logger.debug("%10s set to Wanted" % book)
-                    else:
-                        logger.warn("Not setting %s [%s] as Wanted, already marked Open" % (res['BookName'], book))
+                            myDB.action('UPDATE books SET Status="Have" WHERE BookID=?', (book,))
+                            ll_changed += 1
+                            logger.debug("%10s set to Have" % book)
+                    elif status == 'Wanted':
+                        # if in "wanted" and already marked "Open/Have", optionally delete from "wanted"
+                        # (depending on user prefs, to-read and wanted might not be the same thing)
+                        if lazylibrarian.CONFIG['GR_UNIQUE'] and res['Status'] in ['Open', 'Have']:
+                            try:
+                                r, content = GA.BookToList(book, shelf, action='remove')
+                            except Exception as e:
+                                logger.error("Error removing %s [%s] from %s: %s %s" % (
+                                             res['BookName'], book, shelf, type(e).__name__, str(e)))
+                                r = None
+                                content = ''
+                            if r:
+                                logger.debug("%10s removed from %s shelf" % (book, shelf))
+                                shelf_changed += 1
+                            else:
+                                logger.warn("Failed to remove %s from %s shelf: %s" % (book, shelf, content))
+                        elif res['Status'] != 'Open':
+                            myDB.action('UPDATE books SET Status="Wanted" WHERE BookID=?', (book,))
+                            ll_changed += 1
+                            logger.debug("%10s set to Wanted" % book)
+                        else:
+                            logger.warn("Not setting %s [%s] as Wanted, already marked Open" % (res['BookName'], book))
+
+                    if status == 'Open':
+                        if res['AudioStatus'] == 'Open':
+                            logger.warn("%s [%s] is already marked Open" % (res['BookName'], book))
+                        else:
+                            myDB.action('UPDATE books SET AudioStatus="Have" WHERE BookID=?', (book,))
+                            ll_changed += 1
+                            logger.debug("%10s set to Have" % book)
+                    elif status == 'Wanted':
+                        # if in "wanted" and already marked "Open/Have", optionally delete from "wanted"
+                        # (depending on user prefs, to-read and wanted might not be the same thing)
+                        if lazylibrarian.CONFIG['GR_UNIQUE'] and res['AudioStatus'] in ['Open', 'Have']:
+                            try:
+                                r, content = GA.BookToList(book, shelf, action='remove')
+                            except Exception as e:
+                                logger.error("Error removing %s [%s] from %s: %s %s" % (
+                                             res['BookName'], book, shelf, type(e).__name__, str(e)))
+                                r = None
+                                content = ''
+                            if r:
+                                logger.debug("%10s removed from %s shelf" % (book, shelf))
+                                shelf_changed += 1
+                            else:
+                                logger.warn("Failed to remove %s from %s shelf: %s" % (book, shelf, content))
+                        elif res['Status'] != 'Open':
+                            myDB.action('UPDATE books SET AudioStatus="Wanted" WHERE BookID=?', (book,))
+                            ll_changed += 1
+                            logger.debug("%10s set to Wanted" % book)
+                        else:
+                            logger.warn("Not setting %s [%s] as Wanted, already marked Open" % (res['BookName'], book))
 
         # get new definitive list from ll
-        cmd = 'select bookid from books where status="%s"' % status
-        if status == 'Open':
-            cmd += ' or status="Have"'
-        results = myDB.select(cmd)
+        if library == 'eBook':
+            cmd = 'select bookid from books where status=?'
+            if status == 'Open':
+                cmd += ' or status="Have"'
+        else:
+            cmd = 'select bookid from books where audiostatus=?'
+            if status == 'Open':
+                cmd += ' or audiostatus="Have"'
+        results = myDB.select(cmd, (status,))
         ll_list = []
         for terms in results:
             ll_list.append(terms['bookid'])

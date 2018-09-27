@@ -356,8 +356,9 @@ class GoogleBooks:
                                                         match = True
                                                         break
                                             if match:
-                                                myDB.action('insert into languages values (?, ?)',
-                                                            (isbnhead, booklang))
+                                                controlValueDict = {"isbn": isbnhead}
+                                                newValueDict = {"lang": booklang}
+                                                myDB.upsert("languages", newValueDict, controlValueDict)
 
                                     if not match:
                                         booklang = thingLang(book['isbn'])

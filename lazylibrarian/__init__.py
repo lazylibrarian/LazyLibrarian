@@ -26,8 +26,8 @@ import webbrowser
 import sqlite3
 
 import cherrypy
-from lazylibrarian import logger, postprocess, searchbook, searchrss, librarysync, versioncheck, database, \
-    searchmag, magazinescan, bookwork, importer, grsync
+from lazylibrarian import logger, database, versioncheck, postprocess, searchbook, searchmag, searchrss, \
+    importer, grsync
 from lazylibrarian.cache import fetchURL
 from lazylibrarian.common import restartJobs, logHeader, scheduleJob
 from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
@@ -167,7 +167,8 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
               'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'CHERRYPYLOG',
-                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME']
+                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME',
+                 'NAME_RATIO', 'NAME_PARTIAL', 'NAME_PARTNAME']
 # default interface does not know about these items, so leaves them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'FOUND_STATUS',
@@ -179,7 +180,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
                      'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
-                     'DELAYSEARCH', 'SEED_WAIT']
+                     'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -201,6 +202,9 @@ CONFIG_DEFINITIONS = {
     'MAX_WALL': ('int', 'General', 0),
     'MATCH_RATIO': ('int', 'General', 80),
     'DLOAD_RATIO': ('int', 'General', 90),
+    'NAME_RATIO': ('int', 'General', 90),
+    'NAME_PARTIAL': ('int', 'General', 95),
+    'NAME_PARTNAME': ('int', 'General', 95),
     'DISPLAYLENGTH': ('int', 'General', 10),
     'HIST_REFRESH': ('int', 'General', 1000),
     'HTTP_PORT': ('int', 'General', 5299),
@@ -502,6 +506,8 @@ CONFIG_DEFINITIONS = {
     'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
     'GR_WANTED': ('str', 'API', ''),  # sync wanted to this shelf
     'GR_OWNED': ('str', 'API', ''),  # sync open/have to this shelf
+    'GR_AWANTED': ('str', 'API', ''),  # sync wanted to this shelf
+    'GR_AOWNED': ('str', 'API', ''),  # sync open/have to this shelf
     'GR_UNIQUE': ('bool', 'API', 0),  # delete from wanted if already owned
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads

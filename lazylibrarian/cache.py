@@ -238,7 +238,6 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     logger.error("Error getting xml data from %s" % url)
                     return None, False
         else:
-            if lazylibrarian.LOGLEVEL & lazylibrarian.log_cache:
-                logger.debug("Got error response for %s: %s" % (url, result))
+            logger.debug("Got error response for %s: %s" % (url, result.split('<')[0]))
             return None, False
     return source, valid_cache

@@ -462,10 +462,16 @@
                       <input type="text" id="gr_oauth_token" name="gr_oauth_token" value="${lazylibrarian.CONFIG['GR_OAUTH_TOKEN']}" class="form-control">
                       <label for="gr_oauth_secret">Goodreads OAuth Secret:</label>
                       <input type="text" id="gr_oauth_secret" name="gr_oauth_secret" value="${lazylibrarian.CONFIG['GR_OAUTH_SECRET']}" class="form-control">
-                      <label for="gr_wanted">Sync Wanted to Goodreads shelf:</label>
+                      <label for="gr_wanted">Sync Wanted eBooks to Goodreads shelf:</label>
                       <input type="text" id="gr_wanted" name="gr_wanted" value="${lazylibrarian.CONFIG['GR_WANTED']}" class="form-control" placeholder="eg: to-read">
-                      <label for="gr_owned">Sync Open/Have to Goodreads shelf:</label>
+                      <label for="gr_owned">Sync Open/Have eBooks to Goodreads shelf:</label>
                       <input type="text" id="gr_owned" name="gr_owned" value="${lazylibrarian.CONFIG['GR_OWNED']}" class="form-control" placeholder="eg: owned">
+                      <fieldset id="graudio_options">
+                        <label for="gr_awanted">Sync Wanted AudioBooks to Goodreads shelf:</label>
+                        <input type="text" id="gr_awanted" name="gr_awanted" value="${lazylibrarian.CONFIG['GR_AWANTED']}" class="form-control" placeholder="eg: audio_wanted">
+                        <label for="gr_owned">Sync Open/Have AudioBooks to Goodreads shelf:</label>
+                        <input type="text" id="gr_aowned" name="gr_aowned" value="${lazylibrarian.CONFIG['GR_AOWNED']}"class="form-control" placeholder="eg: audio_owned">
+                      </fieldset>
                         <div class="checkbox">
                           <%
                             if lazylibrarian.CONFIG['GR_UNIQUE'] == True:
@@ -475,7 +481,7 @@
                           %>
                           <label for="gr_unique" class="control-label">
                             <input type="checkbox" id="gr_unique" name="gr_unique" value="1" ${checked} />
-                            Delete from first GoodReads shelf if book is also on second shelf</label>
+                            Delete from GoodReads Wanted shelf if also on Open/Have shelf</label>
                         </div>
                       <div class="form-group">
                         <label for="goodreads_interval" class="control-label">Goodreads Sync Interval:</label>
@@ -3152,6 +3158,26 @@
                 else
                 {
                         $("#https_options").slideUp();
+                }
+        });
+
+        if ($("#audio_tab").is(":checked"))
+            {
+                    $("#graudio_options").show();
+            }
+            else
+            {
+                    $("#graudio_options").hide();
+            }
+
+        $("#audio_tab").click(function(){
+                if ($("#audiobook_enabled").is(":checked"))
+                {
+                        $("#graudio_options").slideDown();
+                }
+                else
+                {
+                        $("#graudio_options").slideUp();
                 }
         });
 

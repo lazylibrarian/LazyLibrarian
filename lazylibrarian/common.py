@@ -76,6 +76,7 @@ def mymakedirs(dest_path):
 
     to_make = []
     while not os.path.isdir(dest_path):
+        # noinspection PyUnresolvedReferences
         to_make.insert(0, dest_path)
         parent = os.path.dirname(dest_path)
         if parent == dest_path:
@@ -497,33 +498,28 @@ def scheduleJob(action='Start', target=None):
                 return  # return if already running, if not, start a new one
         if 'processDir' in target and check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0):
             minutes = check_int(lazylibrarian.CONFIG['SCAN_INTERVAL'], 0)
-            lazylibrarian.SCHED.add_interval_job(
-                lazylibrarian.postprocess.cron_processDir, minutes=minutes)
+            lazylibrarian.SCHED.add_interval_job(lazylibrarian.postprocess.cron_processDir, minutes=minutes)
             logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_magazines' in target and check_int(lazylibrarian.CONFIG['SEARCH_MAGINTERVAL'], 0):
             minutes = check_int(lazylibrarian.CONFIG['SEARCH_MAGINTERVAL'], 0)
             if lazylibrarian.USE_TOR() or lazylibrarian.USE_NZB() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
-                lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchmag.cron_search_magazines, minutes=minutes)
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchmag.cron_search_magazines, minutes=minutes)
                 logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_book' in target and check_int(lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL'], 0):
             minutes = check_int(lazylibrarian.CONFIG['SEARCH_BOOKINTERVAL'], 0)
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_DIRECT():
-                lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchbook.cron_search_book, minutes=minutes)
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchbook.cron_search_book, minutes=minutes)
                 logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_rss_book' in target and check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0):
             if lazylibrarian.USE_RSS():
                 minutes = check_int(lazylibrarian.CONFIG['SEARCHRSS_INTERVAL'], 0)
-                lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchrss.cron_search_rss_book, minutes=minutes)
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.cron_search_rss_book, minutes=minutes)
                 logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_wishlist' in target and check_int(lazylibrarian.CONFIG['WISHLIST_INTERVAL'], 0):
             if lazylibrarian.USE_RSS():
                 hours = check_int(lazylibrarian.CONFIG['WISHLIST_INTERVAL'], 0)
-                lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.searchrss.cron_search_wishlist, hours=hours)
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.cron_search_wishlist, hours=hours)
                 logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'checkForUpdates' in target and check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0):
             hours = check_int(lazylibrarian.CONFIG['VERSIONCHECK_INTERVAL'], 0)
@@ -533,22 +529,23 @@ def scheduleJob(action='Start', target=None):
         elif 'syncToGoodreads' in target and lazylibrarian.CONFIG['GR_SYNC']:
             if check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0):
                 hours = check_int(lazylibrarian.CONFIG['GOODREADS_INTERVAL'], 0)
-                lazylibrarian.SCHED.add_interval_job(
-                    lazylibrarian.grsync.cron_sync_to_gr, hours=hours)
+                lazylibrarian.SCHED.add_interval_job(lazylibrarian.grsync.cron_sync_to_gr, hours=hours)
                 logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
         elif 'authorUpdate' in target and check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
             # Try to get all authors scanned evenly inside the cache age
             maxage = check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0)
             if maxage:
-                overdue, total, _, _ = is_overdue()
+                overdue, total, _, days = is_overdue()
                 if not overdue:
                     logger.debug("There are no authors to update")
-                    minutes = 60 * 24  # check again in 24hrs
+                    if days > maxage:
+                        minutes = 60 * 24  # nothing today, check again in 24hrs
+                    else:
+                        minutes = 60
                 else:
                     logger.debug("Found %s author%s from %s overdue update" % (
                                  overdue, plural(overdue), total))
                     minutes = maxage * 60 * 24
-                    # minutes = int(minutes / overdue)
                     minutes = int(minutes / total)
                     minutes -= 5  # average update time
 
@@ -582,8 +579,7 @@ def authorUpdate(restart=True):
             if diff > check_int(lazylibrarian.CONFIG['CACHE_AGE'], 0):
                 msg = 'Starting update for %s' % author['AuthorName']
                 logger.info(msg)
-                authorid = author['AuthorID']
-                lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=authorid)
+                lazylibrarian.importer.addAuthorToDB(refresh=True, authorid=author['AuthorID'])
                 msg = 'Updated author %s' % author['AuthorName']
             else:
                 logger.debug(msg)
@@ -605,8 +601,7 @@ def aaUpdate(refresh=False):
         lazylibrarian.AUTHORS_UPDATE = True
         logger.info('Starting update for %i active author%s' % (len(activeauthors), plural(len(activeauthors))))
         for author in activeauthors:
-            authorid = author['AuthorID']
-            lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=authorid)
+            lazylibrarian.importer.addAuthorToDB(refresh=refresh, authorid=author['AuthorID'])
         logger.info('Active author update complete')
         lazylibrarian.AUTHORS_UPDATE = False
         msg = 'Updated %i active author%s' % (len(activeauthors), plural(len(activeauthors)))

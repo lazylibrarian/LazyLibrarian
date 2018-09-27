@@ -1529,7 +1529,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         logger.debug("Running PreProcessor: %s %s" % (booktype, pp_path))
         params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], booktype, pp_path]
         try:
-            p = Popen(params, stdout=PIPE, stderr=PIPE)
+            p = Popen(params, stdout=PIPE, stderr=PIPE, shell=True, cwd=lazylibrarian.PROG_DIR)
             res, err = p.communicate()
             rc = p.returncode
             res = makeUnicode(res)
@@ -1694,10 +1694,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                             with open(os.path.join(parent, 'll_temp'), 'w') as f:
                                 f.write('test')
                             os.remove(os.path.join(parent, 'll_temp'))
-                        except Exception as why:
-                            logger.error("Directory [%s] is not writeable: %s" % (parent, why))
-                        return False, "Unable to %s file %s to %s: %s %s" % \
-                               (typ, srcfile, destfile, type(why).__name__, str(why))
+                        except Exception as w:
+                            logger.error("Directory [%s] is not writeable: %s" % (parent, w))
+                        return False, "Unable to %s file %s to %s: %s %s" % (typ, srcfile,
+                                                                             destfile, type(why).__name__, str(why))
                 else:
                     logger.debug('Ignoring unwanted file: %s' % fname)
 

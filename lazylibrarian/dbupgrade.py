@@ -245,6 +245,10 @@ def check_db(myDB):
         cmd = 'UPDATE books SET BookLang="Unknown" WHERE BookLang is NULL '
         cmd += 'or instr(BookLang, "<") or instr(BookLang, "invalid")'
         myDB.action(cmd)
+        # delete html error pages
+        myDB.action("delete from languages where length(lang) > 30")
+        # suppress duplicates
+        myDB.action("delete from languages where rowid not in (select max(rowid) from languages group by isbn)")
         authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
         if authors:
             msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))

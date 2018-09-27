@@ -43,6 +43,11 @@ def search_book(books=None, library=None):
     # noinspection PyBroadException
     try:
         threadname = threading.currentThread().name
+        if 'SEARCHALL' in threadname or 'API-SEARCH' in threadname:
+            force = True
+        else:
+            force = False
+
         if "Thread-" in threadname:
             if not books:
                 threading.currentThread().name = "SEARCHALLBOOKS"
@@ -164,7 +169,7 @@ def search_book(books=None, library=None):
         book_count = 0
         for book in searchlist:
             do_search = True
-            if lazylibrarian.CONFIG['DELAYSEARCH']:
+            if lazylibrarian.CONFIG['DELAYSEARCH'] and not force:
                 res = myDB.match('SELECT * FROM failedsearch WHERE BookID=? AND Library=?',
                                  (book['bookid'], book['library']))
                 if not res:
@@ -319,7 +324,7 @@ def search_book(books=None, library=None):
                 if downloadResult(highest, book) > 1:
                     book_count += 1  # we found it
                 myDB.action("DELETE from failedsearch WHERE BookID=? AND Library=?", (book['bookid'], book['library']))
-            elif lazylibrarian.CONFIG['DELAYSEARCH'] and do_search and len(modelist):
+            elif lazylibrarian.CONFIG['DELAYSEARCH'] and not force and do_search and len(modelist):
                 res = myDB.match('SELECT * FROM failedsearch WHERE BookID=? AND Library=?',
                                  (book['bookid'], book['library']))
                 if res:
