@@ -55,16 +55,18 @@ def makeUnicode(txt):
 
 
 if len(sys.argv) != 3:
-    sys.stderr.write("%s %s\n" % ("Invalid parameters", len(sys.argv)))
-    exit(1)
+    sys.stderr.write("Invalid parameters (%s) assume test\n" % len(sys.argv))
+    booktype = 'test'
+    bookfolder = ''
+else:
+    booktype = sys.argv[1]
+    bookfolder = sys.argv[2]
+
 
 if sys.version_info[0] == 3:
     text_type = str
 else:
     text_type = unicode
-
-booktype = sys.argv[1]
-bookfolder = sys.argv[2]
 
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor.log'), 'a') as pplog:
     pplog.write("%s: %s %s\n" % (time.ctime(), booktype, bookfolder))
@@ -78,6 +80,7 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor
         exit(1)
 
     if booktype == 'test':
+        print("Preprocessor test")
         if not os.path.exists(bookfolder):
             bookfolder = os.path.dirname(os.path.abspath(__file__))
 
