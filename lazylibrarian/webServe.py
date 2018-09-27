@@ -4723,7 +4723,7 @@ class WebInterface(object):
 
         params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], 'test', '']
         try:
-            p = Popen(params, stdout=PIPE, stderr=PIPE)
+            p = Popen(params, stdout=PIPE, stderr=PIPE, shell=True, cwd=lazylibrarian.PROG_DIR)
             res, err = p.communicate()
             rc = p.returncode
             res = makeUnicode(res)
