@@ -91,7 +91,6 @@ cmd_dict = {'help': 'list available commands. ' +
             'pauseAuthor': '&id= pause author by AuthorID',
             'resumeAuthor': '&id= resume author by AuthorID',
             'ignoreAuthor': '&id= ignore author by AuthorID',
-            'unignoreAuthor': '&id= unignore author by AuthorID',
             'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
             'authorUpdate': 'update the oldest author, if any are overdue',
             'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, refresh cache',
@@ -650,30 +649,32 @@ class Api(object):
     def _queueBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'BookID': self.id}
-        newValueDict = {'Status': 'Wanted'}
-        if 'type' in kwargs and kwargs['type'] == 'AudioBook':
-            newValueDict = {'AudioStatus': 'Wanted'}
-        myDB.upsert("books", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT Status,AudioStatus from books WHERE BookID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                if 'type' in kwargs and kwargs['type'] == 'AudioBook':
+                    myDB.action('UPDATE books SET AudioStatus="Wanted" WHERE BookID=?', (kwargs['id'],))
+                else:
+                    myDB.action('UPDATE books SET Status="Wanted" WHERE BookID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _unqueueBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'BookID': self.id}
-        newValueDict = {'Status': 'Skipped'}
-        if 'type' in kwargs and kwargs['type'] == 'AudioBook':
-            newValueDict = {'AudioStatus': 'Skipped'}
-        myDB.upsert("books", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT Status,AudioStatus from books WHERE BookID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                if 'type' in kwargs and kwargs['type'] == 'AudioBook':
+                    myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE BookID=?', (kwargs['id'],))
+                else:
+                    myDB.action('UPDATE books SET Status="Skipped" WHERE BookID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _addMagazine(self, **kwargs):
         if 'name' not in kwargs:
@@ -707,50 +708,38 @@ class Api(object):
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'AuthorID': self.id}
-        newValueDict = {'Status': 'Paused'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                myDB.action('UPDATE authors SET Status="Paused" WHERE AuthorID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _ignoreAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'AuthorID': self.id}
-        newValueDict = {'Status': 'Ignored'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
-
-    def _unignoreAuthor(self, **kwargs):
-        if 'id' not in kwargs:
-            self.data = 'Missing parameter: id'
-            return
-        else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'AuthorID': self.id}
-        newValueDict = {'Status': 'Active'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                myDB.action('UPDATE authors SET Status="Ignored" WHERE AuthorID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _resumeAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'AuthorID': self.id}
-        newValueDict = {'Status': 'Active'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                myDB.action('UPDATE authors SET Status="Active" WHERE AuthorID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _authorUpdate(self):
         try:
