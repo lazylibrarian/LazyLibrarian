@@ -22,7 +22,7 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, getList
 from lazylibrarian.gr import GoodReads
-from lazylibrarian.common import gr_api_sleep
+from lazylibrarian.cache import gr_api_sleep
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import urlencode, parse_qsl

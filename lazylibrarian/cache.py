@@ -24,8 +24,19 @@ from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT, proxyList, gr_api_sleep
+from lazylibrarian.common import USER_AGENT, proxyList
 from lazylibrarian.formatter import check_int, md5_utf8
+
+
+def gr_api_sleep():
+    time_now = time.time()
+    delay = time_now - lazylibrarian.LAST_GOODREADS
+    if delay < 1.0:
+        sleep_time = 1.0 - delay
+        lazylibrarian.GR_SLEEP += sleep_time
+        logger.debug("GoodReads sleep %.3f, total %.3f" % (sleep_time, lazylibrarian.GR_SLEEP))
+        time.sleep(sleep_time)
+    lazylibrarian.LAST_GOODREADS = time_now
 
 
 def fetchURL(URL, headers=None, retry=True, raw=None):
