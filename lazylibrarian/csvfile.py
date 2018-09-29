@@ -11,14 +11,15 @@
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 import traceback
 
 import lazylibrarian
 from lib.six import PY2
 from lazylibrarian import database, logger
-from lazylibrarian.common import csv_file
+from lazylibrarian.common import csv_file, safe_move
 from lazylibrarian.formatter import plural, is_valid_isbn, now, unaccented, formatAuthorName, \
-    makeUnicode, split_title
+    makeUnicode, split_title, makeBytestr
 from lazylibrarian.importer import search_for, import_book, addAuthorNameToDB
 from lazylibrarian.librarysync import find_book_in_db
 
@@ -70,7 +71,7 @@ def dump_table(table, savedir=None, status=None):
                 csvwrite.writerow(headers)
                 for item in data:
                     if PY2:
-                        csvwrite.writerow([str(s).encode(lazylibrarian.SYS_ENCODING) if s else '' for s in item])
+                        csvwrite.writerow([makeBytestr(s) if s else '' for s in item])
                     else:
                         csvwrite.writerow([str(s) if s else '' for s in item])
                     count += 1
@@ -397,6 +398,28 @@ def import_CSV(search_dir=None):
                         logger.warn('Unable to delete %s: %s' % (csvFile, why.strerror))
                 else:
                     logger.warn("Not deleting %s as not all books found" % csvFile)
+                    if os.path.isdir(csvFile + '.fail'):
+                        try:
+                            shutil.rmtree(csvFile + '.fail')
+                        except Exception as why:
+                            logger.warn("Unable to remove %s, %s %s" % (csvFile + '.fail',
+                                                                        type(why).__name__, str(why)))
+                    try:
+                        _ = safe_move(csvFile, csvFile + '.fail')
+                    except Exception as e:
+                        logger.error("Unable to rename %s, %s %s" %
+                                     (csvFile, type(e).__name__, str(e)))
+                        if not os.access(csvFile, os.R_OK):
+                            logger.error("%s is not readable" % csvFile)
+                        if not os.access(csvFile, os.W_OK):
+                            logger.error("%s is not writeable" % csvFile)
+                        parent = os.path.dirname(csvFile)
+                        try:
+                            with open(os.path.join(parent, 'll_temp'), 'w') as f:
+                                f.write('test')
+                            os.remove(os.path.join(parent, 'll_temp'))
+                        except Exception as why:
+                            logger.error("Directory %s is not writeable: %s" % (parent, why))
             return msg
     except Exception:
         msg = 'Unhandled exception in importCSV: %s' % traceback.format_exc()
