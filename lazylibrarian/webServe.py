@@ -3373,8 +3373,7 @@ class WebInterface(object):
         args.pop('book_table_length', None)
 
         for item in args:
-            item = makeUnicode(item)
-            title = unquote_plus(item)
+            title = makeUnicode(unquote_plus(item))
             if action == "Paused" or action == "Active":
                 controlValueDict = {"Title": title}
                 newValueDict = {"Status": action}
@@ -3399,7 +3398,7 @@ class WebInterface(object):
                         logger.debug('Magazine directory %s deleted from disc' % magdir)
                     except OSError:
                         logger.debug('Magazine directory %s is not empty' % magdir)
-                logger.info('Magazine %s deleted from disc' % item)
+                logger.info('Magazine %s deleted from disc' % title)
             if action == "Remove" or action == "Delete":
                 myDB.action('DELETE from magazines WHERE Title=?', (title,))
                 myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
