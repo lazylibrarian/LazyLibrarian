@@ -152,10 +152,7 @@ def magazineScan(title=None):
                     dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ',
                            '#': '# '}
                     if issuedate:
-                        exploded = replace_all(issuedate, dic).strip()
-                        # remove extra spaces if they're in a row
-                        exploded = " ".join(exploded.split())
-                        exploded = exploded.split(' ')
+                        exploded = replace_all(issuedate, dic).split()
                         regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
                         if lazylibrarian.LOGLEVEL & lazylibrarian.log_magdates:
                             logger.debug("Date regex [%s][%s][%s]" % (regex_pass, issuedate, year))
@@ -163,9 +160,7 @@ def magazineScan(title=None):
                             issuedate = ''
 
                     if not issuedate:
-                        exploded = replace_all(fname, dic).strip()
-                        exploded = " ".join(exploded.split())
-                        exploded = exploded.split(' ')
+                        exploded = replace_all(fname, dic).split()
                         regex_pass, issuedate, year = lazylibrarian.searchmag.get_issue_date(exploded)
                         if lazylibrarian.LOGLEVEL & lazylibrarian.log_magdates:
                             logger.debug("File regex [%s][%s][%s]" % (regex_pass, issuedate, year))
