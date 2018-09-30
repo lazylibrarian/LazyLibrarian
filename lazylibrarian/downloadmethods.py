@@ -363,10 +363,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         logger.debug("Sending %s to rTorrent" % tor_title)
         Source = "RTORRENT"
         if torrent:
-            logger.debug("Sending %s data to rtorrent" % tor_title)
+            logger.debug("Sending %s data to rTorrent" % tor_title)
             downloadID, res = rtorrent.addTorrent(tor_title, hashid, data=torrent)
         else:
-            logger.debug("Sending %s url to rtorrent" % tor_title)
+            logger.debug("Sending %s url to rTorrent" % tor_title)
             downloadID, res = rtorrent.addTorrent(tor_url, hashid)  # returns hash or False
         if downloadID:
             tor_title = rtorrent.getName(downloadID)
@@ -374,10 +374,10 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
     if lazylibrarian.CONFIG['TOR_DOWNLOADER_QBITTORRENT'] and lazylibrarian.CONFIG['QBITTORRENT_HOST']:
         Source = "QBITTORRENT"
         if torrent:
-            logger.debug("Sending %s data to qbittorrent" % tor_title)
+            logger.debug("Sending %s data to qBittorrent" % tor_title)
             status, res = qbittorrent.addTorrent(torrent, hashid)
         else:
-            logger.debug("Sending %s url to qbittorrent" % tor_title)
+            logger.debug("Sending %s url to qBittorrent" % tor_title)
             status, res = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
         if status:
             downloadID = hashid

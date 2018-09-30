@@ -4467,6 +4467,8 @@ class WebInterface(object):
                 elif 'SEARCHALLMAG' not in [n.name for n in [t for t in threading.enumerate()]]:
                     threading.Thread(target=search_magazines, name='SEARCHALLMAG', args=[]).start()
                     scheduleJob(action='Restart', target='search_magazines')
+            else:
+                logger.warn('Search called but no download providers set')
         elif source in ["books", "audio"]:
             if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() \
                     or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
@@ -4476,7 +4478,7 @@ class WebInterface(object):
                     if lazylibrarian.USE_RSS():
                         scheduleJob(action='Restart', target='search_rss_book')
             else:
-                logger.debug('forceSearch called but no download methods set')
+                logger.warn('Search called but no download providers set')
         else:
             logger.debug("forceSearch called with bad source")
         raise cherrypy.HTTPRedirect(source)

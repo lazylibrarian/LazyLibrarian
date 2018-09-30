@@ -1255,8 +1255,6 @@ def add_rss_slot():
 
 
 def USE_RSS():
-    if not check_int(CONFIG['SEARCHRSS_INTERVAL'], 0) and not check_int(CONFIG['WISHLIST_INTERVAL'], 0):
-        return 0
     count = 0
     for provider in RSS_PROV:
         if bool(provider['ENABLED']):
@@ -1265,8 +1263,6 @@ def USE_RSS():
 
 
 def USE_NZB():
-    if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
-        return 0
     # Count how many nzb providers are active
     count = 0
     for provider in NEWZNAB_PROV:
@@ -1279,8 +1275,6 @@ def USE_NZB():
 
 
 def USE_TOR():
-    if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
-        return 0
     count = 0
     for provider in [CONFIG['KAT'], CONFIG['WWT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
         if bool(provider):
@@ -1289,8 +1283,6 @@ def USE_TOR():
 
 
 def USE_DIRECT():
-    if not check_int(CONFIG['SEARCH_BOOKINTERVAL'], 0) and not check_int(CONFIG['SEARCH_MAGINTERVAL'], 0):
-        return 0
     count = 0
     for provider in [CONFIG['GEN'], CONFIG['GEN2']]:
         if bool(provider):

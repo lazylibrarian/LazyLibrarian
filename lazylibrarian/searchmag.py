@@ -207,10 +207,10 @@ def search_magazines(mags=None, reset=False):
                     # (e.g. Maxim USA will find Maximum PC USA) so split into "words"
                     dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ',
                            '#': '# '}
-                    nzbtitle_formatted = replace_all(nzbtitle, dic).strip()
+                    nzbtitle_formatted = replace_all(nzbtitle, dic)
                     # remove extra spaces if they're in a row
                     nzbtitle_formatted = " ".join(nzbtitle_formatted.split())
-                    nzbtitle_exploded = nzbtitle_formatted.split(' ')
+                    nzbtitle_exploded = nzbtitle_formatted.split()
 
                     results = myDB.match('SELECT * from magazines WHERE Title=?', (bookid,))
                     if not results:
@@ -230,10 +230,7 @@ def search_magazines(mags=None, reset=False):
                                 rejected = True
 
                         if not rejected:
-                            if ' ' in bookid:
-                                bookid_exploded = bookid.split(' ')
-                            else:
-                                bookid_exploded = [bookid]
+                            bookid_exploded = replace_all(bookid, dic).split()
 
                             # Check nzb has magazine title and a date/issue nr
                             # eg The MagPI July 2015
