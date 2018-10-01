@@ -126,7 +126,7 @@ def GEN(book=None, prov=None, test=False):
                 rows = []
 
                 try:
-                    table = soup.find_all('table')[-1]  # un-named table, last one in page
+                    table = soup.find_all('table', class_='c')[-1]  # the last table with class=c
                     if table:
                         rows = table.find_all('tr')
                 except IndexError:  # no results table in result page
