@@ -87,7 +87,7 @@ class CustomNotifier:
                         params.append(str(dictionary[item]))
 
                 try:
-                    p = Popen(' '.join(params), stdout=PIPE, stderr=PIPE, shell=True, cwd=lazylibrarian.PROG_DIR)
+                    p = Popen(params, stdout=PIPE, stderr=PIPE)
                     res, err = p.communicate()
                     rc = p.returncode
                     res = makeUnicode(res)
