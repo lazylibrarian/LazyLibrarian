@@ -126,9 +126,10 @@ def GEN(book=None, prov=None, test=False):
                 rows = []
 
                 try:
-                    table = soup.find_all('table', class_='c')[-1]  # the last table with class=c
+                    table = soup.find_all('table', rules='rows')[-1]  # the last table with rules=rows
                     if table:
                         rows = table.find_all('tr')
+
                 except IndexError:  # no results table in result page
                     rows = []
 
@@ -144,6 +145,7 @@ def GEN(book=None, prov=None, test=False):
                     td = row.find_all('td')
 
                     if 'index.php' in search and len(td) > 3:
+                        # Foreign fiction
                         try:
                             author = formatAuthorName(td[0].text)
                             title = td[2].text
@@ -158,6 +160,7 @@ def GEN(book=None, prov=None, test=False):
                             logger.debug('Error parsing libgen index.php results: %s' % str(e))
 
                     elif 'search.php' in search and len(td) > 8:
+                        # Non-fiction
                         try:
                             author = formatAuthorName(td[1].text)
                             title = td[2].text
