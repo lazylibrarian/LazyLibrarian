@@ -20,7 +20,6 @@ import threading
 import time
 import traceback
 from shutil import copyfile, rmtree
-from subprocess import Popen, PIPE
 
 # noinspection PyUnresolvedReferences
 from lib.six.moves.urllib_parse import quote_plus, unquote_plus, urlsplit, urlunsplit
@@ -35,7 +34,7 @@ from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthor
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibreTest, syncCalibreList, calibredb
 from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
-    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType, zipAudio
+    aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType, zipAudio, runScript
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
@@ -4723,17 +4722,10 @@ class WebInterface(object):
             lazylibrarian.CONFIG['IMP_PREPROCESS'] = kwargs['prg']
 
         params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], 'test', '']
-        try:
-            p = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = p.communicate()
-            rc = p.returncode
-            res = makeUnicode(res)
-            err = makeUnicode(err)
-            if rc:
-                return "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
-            return res
-        except Exception as e:
-            return 'Error running preprocessor: %s' % e
+        rc, res, err = runScript(params)
+        if rc:
+            return "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
+        return res
 
     @cherrypy.expose
     def opds(self, **kwargs):
