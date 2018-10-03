@@ -119,12 +119,14 @@ class qbittorrentclient(object):
             except KeyError:
                 contentType = ''
 
+            resp = response.read()
             # some commands return json
             if contentType == 'application/json':
-                return json.loads(response.read())
+                if resp:
+                    return json.loads(resp)
+                return ''
             else:
                 # some commands return plain text
-                resp = response.read()
                 resp = makeUnicode(resp)
                 logger.debug("QBitTorrent returned %s" % resp)
                 if command == 'version/api':
@@ -150,11 +152,11 @@ class qbittorrentclient(object):
 
     def get_savepath(self, hashid):
         logger.debug('qb.get_savepath(%s)' % hashid)
+        hashid = hashid.lower()
         torrentList = self._get_list()
         for torrent in list(torrentList):
-            if torrent['hash']:
-                if torrent['hash'].upper() == hashid.upper():
-                    return torrent['save_path']
+            if torrent['hash'] and torrent['hash'].lower() == hashid:
+                return torrent['save_path']
         return None
 
     def start(self, hashid):
@@ -192,6 +194,7 @@ class qbittorrentclient(object):
 
 def getProgress(hashid):
     logger.debug('getProgress(%s)' % hashid)
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
@@ -200,7 +203,7 @@ def getProgress(hashid):
     torrentList = qbclient._get_list()
     if torrentList:
         for torrent in torrentList:
-            if torrent['hash'].upper() == hashid.upper():
+            if torrent['hash'].lower() == hashid:
                 if 'state' in torrent:
                     state = torrent['state']
                 else:
@@ -218,6 +221,7 @@ def getProgress(hashid):
 
 def removeTorrent(hashid, remove_data=False):
     logger.debug('removeTorrent(%s,%s)' % (hashid, remove_data))
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
@@ -226,7 +230,7 @@ def removeTorrent(hashid, remove_data=False):
     torrentList = qbclient._get_list()
     if torrentList:
         for torrent in torrentList:
-            if torrent['hash'].upper() == hashid.upper():
+            if torrent['hash'].lower() == hashid:
                 remove = True
                 if torrent['state'] == 'uploading' or torrent['state'] == 'stalledUP':
                     if not lazylibrarian.CONFIG['SEED_WAIT']:
@@ -260,6 +264,7 @@ def checkLink():
 def addTorrent(link, hashid):
     logger.debug('addTorrent(%s)' % link)
     args = {}
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
@@ -284,7 +289,7 @@ def addTorrent(link, hashid):
     time.sleep(2)
     # noinspection PyProtectedMember
     torrents = qbclient._get_list()
-    if hashid.upper() in str(torrents).upper():
+    if hashid in str(torrents).lower():
         logger.debug("qBittorrent: hashid found in torrent list, assume success")
         return True, ''
     res = "qBittorrent: hashid not found in torrent list, addTorrent failed"
@@ -294,6 +299,7 @@ def addTorrent(link, hashid):
 
 def addFile(data, hashid, title):
     logger.debug('addFile(data)')
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
@@ -307,7 +313,7 @@ def addFile(data, hashid, title):
     time.sleep(2)
     # noinspection PyProtectedMember
     torrents = qbclient._get_list()
-    if hashid.upper() in str(torrents).upper():
+    if hashid in str(torrents).lower():
         logger.debug("qBittorrent: hashid found in torrent list, assume success")
         return True, ''
     res = "qBittorrent: hashid not found in torrent list, addFile failed"
@@ -317,6 +323,7 @@ def addFile(data, hashid, title):
 
 def getName(hashid):
     logger.debug('getName(%s)' % hashid)
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
@@ -327,19 +334,20 @@ def getName(hashid):
         # noinspection PyProtectedMember
         torrents = qbclient._get_list()
         if torrents:
-            if hashid.upper() in str(torrents).upper():
+            if hashid in str(torrents).lower():
                 break
         time.sleep(2)
         RETRIES -= 1
 
     for tor in torrents:
-        if tor['hash'].upper() == hashid.upper():
+        if tor['hash'].lower() == hashid:
             return tor['name']
     return ''
 
 
 def getFiles(hashid):
     logger.debug('getFiles(%s)' % hashid)
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
@@ -358,6 +366,7 @@ def getFiles(hashid):
 
 def getFolder(hashid):
     logger.debug('getFolder(%s)' % hashid)
+    hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
