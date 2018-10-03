@@ -541,7 +541,7 @@ def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and not WishListType(host):
+        if provider['ENABLED'] and not WishListType(provider['HOST']):
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverRSSSites] - %s is BLOCKED' % provider['HOST'])
             else:
@@ -558,14 +558,14 @@ def IterateOverWishLists():
     for provider in lazylibrarian.RSS_PROV:
         if provider['ENABLED']:
             wishtype = WishListType(provider['HOST'])
-            if wishtype == 'GOODREADS'
+            if wishtype == 'GOODREADS':
                 if ProviderIsBlocked(provider['HOST']):
                     logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
                 else:
                     providers += 1
                     logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
                     resultslist += GOODREADS(provider['HOST'], provider['NAME'],
-                                            provider['DLPRIORITY'], provider['DISPNAME'])
+                                             provider['DLPRIORITY'], provider['DISPNAME'])
             elif wishtype == 'LISTOPIA':
                 if ProviderIsBlocked(provider['HOST']):
                     logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
@@ -581,7 +581,7 @@ def IterateOverWishLists():
                     providers += 1
                     logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
                     resultslist += NYTIMES(provider['HOST'], provider['NAME'],
-                                        provider['DLPRIORITY'], provider['DISPNAME'])
+                                           provider['DLPRIORITY'], provider['DISPNAME'])
 
     return resultslist, providers
 

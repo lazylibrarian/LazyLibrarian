@@ -292,15 +292,27 @@ def addTorrent(link, hashid):
     return False, res
 
 
-def addFile(data):
+def addFile(data, hashid, title):
     logger.debug('addFile(data)')
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
         logger.debug("Failed to login to qBittorrent")
         return False
-    files = {'torrents': {'filename': '', 'content': data}}
+    files = {'torrents': {'filename': title, 'content': data}}
     # noinspection PyProtectedMember
-    return qbclient._command('command/upload', files=files)
+    if qbclient._command('command/upload', files=files):
+        return True, ''
+    # sometimes returns "Fails." when it hasn't failed, so look if hashid was added correctly
+    logger.debug("qBittorrent: addFile thinks it failed")
+    time.sleep(2)
+    # noinspection PyProtectedMember
+    torrents = qbclient._get_list()
+    if hashid.upper() in str(torrents).upper():
+        logger.debug("qBittorrent: hashid found in torrent list, assume success")
+        return True, ''
+    res = "qBittorrent: hashid not found in torrent list, addFile failed"
+    logger.debug(res)
+    return False, res
 
 
 def getName(hashid):

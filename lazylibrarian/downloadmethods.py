@@ -375,7 +375,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         Source = "QBITTORRENT"
         if torrent:
             logger.debug("Sending %s data to qBittorrent" % tor_title)
-            status, res = qbittorrent.addTorrent(torrent, hashid)
+            status, res = qbittorrent.addFile(torrent, hashid, tor_title)
         else:
             logger.debug("Sending %s url to qBittorrent" % tor_title)
             status, res = qbittorrent.addTorrent(tor_url, hashid)  # returns True or False
