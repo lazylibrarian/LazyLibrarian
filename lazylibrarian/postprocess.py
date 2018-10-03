@@ -20,7 +20,6 @@ import shutil
 import tarfile
 import threading
 import traceback
-from subprocess import Popen, PIPE
 
 import lazylibrarian
 from lib.six import PY2
@@ -39,7 +38,7 @@ from lazylibrarian.bookrename import nameVars, audioProcess, stripspaces
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
-    safe_copy, safe_move, mymakedirs
+    safe_copy, safe_move, mymakedirs, runScript
 from lazylibrarian.formatter import unaccented_str, unaccented, plural, now, today, is_valid_booktype, \
     replace_all, getList, surnameFirst, makeUnicode, makeBytestr, check_int, is_valid_type, multibook
 from lazylibrarian.gr import GoodReads
@@ -1528,17 +1527,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     if len(lazylibrarian.CONFIG['IMP_PREPROCESS']):
         logger.debug("Running PreProcessor: %s %s" % (booktype, pp_path))
         params = [lazylibrarian.CONFIG['IMP_PREPROCESS'], booktype, pp_path]
-        try:
-            p = Popen(params, stdout=PIPE, stderr=PIPE)
-            res, err = p.communicate()
-            rc = p.returncode
-            res = makeUnicode(res)
-            err = makeUnicode(err)
-            if rc:
-                return False, "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
-            logger.debug("PreProcessor: %s" % res)
-        except Exception as e:
-            return False, 'Error running preprocessor: %s' % e
+        rc, res, err = runScript(params)
+        if rc:
+            return False, "Preprocessor returned %s: res[%s] err[%s]" % (rc, res, err)
+        logger.debug("PreProcessor: %s" % res)
 
     # If ebook, do we want calibre to import the book for us
     newbookfile = ''

@@ -10,7 +10,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from subprocess import Popen, PIPE
 import string
 import re
 import json
@@ -18,10 +17,11 @@ import time
 import cherrypy
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.formatter import unaccented, getList, makeUnicode
+from lazylibrarian.formatter import unaccented, getList
 from lazylibrarian.importer import addAuthorNameToDB, search_for, import_book
 from lazylibrarian.librarysync import find_book_in_db
 from lib.fuzzywuzzy import fuzz
+from lazylibrarian.common import runScript
 
 # calibredb custom_columns
 # calibredb add_custom_column label name bool
@@ -426,56 +426,24 @@ def calibredb(cmd=None, prelib=None, postlib=None):
         params.extend(['--with-library', '%s' % dest_url])
     if postlib:
         params.extend(postlib)
-    logger.debug(str(params))
-    res = ''
-    err = ''
-    try:
-        p = Popen(params, stdout=PIPE, stderr=PIPE)
-        res, err = p.communicate()
-        rc = p.returncode
-        logger.debug("calibredb rc %s" % rc)
-        # strip linefeeds etc from calibre response
-        wsp = re.escape(string.whitespace)
-        res = makeUnicode(res)
-        err = makeUnicode(err)
-        nres = re.sub(r'['+wsp+']', ' ', res)
-        nerr = re.sub(r'['+wsp+']', ' ', err)
-        logger.debug("calibredb res %d[%s]" % (len(nres), nres))
-        logger.debug("calibredb err %d[%s]" % (len(nerr), nerr))
-        if rc:
-            if 'Errno 111' in err:
-                logger.warn("calibredb returned Errno 111: Connection refused")
-            elif 'Errno 13' in err:
-                logger.warn("calibredb returned Errno 13: Permission denied")
-            elif cmd == 'list_categories' and len(res):
-                rc = 0  # false error return of 1 on v2.xx calibredb
-        if 'already exist' in err:
-            dest_url = err
-    except Exception as e:
-        logger.error("calibredb exception: %s %s" % (type(e).__name__, str(e)))
-        rc = 1
 
-    # if rc and dest_url.startswith('http') and not res.startswith('Forbidden'):
-    #     # if not forbidden (auth issue), might be no server running, retry using file
-    #     params = [lazylibrarian.CONFIG['IMP_CALIBREDB'], cmd]
-    #     if prelib:
-    #        params.extend(prelib)
-    #    dest_url = lazylibrarian.DIRECTORY('eBook')
-    #    params.extend(['--with-library', dest_url])
-    #    if postlib:
-    #        params.extend(postlib)
-    #    logger.debug(str(params))
-    #    try:
-    #        q = Popen(params, stdout=PIPE, stderr=PIPE)
-    #        res, err = q.communicate()
-    #        res = makeUnicode(res)
-    #        err = makeUnicode(err)
-    #        rc = q.returncode
-    #        if rc:
-    #            logger.debug("calibredb retry returned %s: res[%s] err[%s]" % (rc, res, err))
-    #    except Exception as e:
-    #        logger.error("calibredb retry exception: %s %s" % (type(e).__name__, str(e)))
-    #        rc = 1
+    rc, res, err = runScript(params)
+    logger.debug("calibredb rc %s" % rc)
+    wsp = re.escape(string.whitespace)
+    nres = re.sub(r'['+wsp+']', ' ', res)
+    nerr = re.sub(r'['+wsp+']', ' ', err)
+    logger.debug("calibredb res %d[%s]" % (len(nres), nres))
+    logger.debug("calibredb err %d[%s]" % (len(nerr), nerr))
+
+    if rc:
+        if 'Errno 111' in err:
+            logger.warn("calibredb returned Errno 111: Connection refused")
+        elif 'Errno 13' in err:
+            logger.warn("calibredb returned Errno 13: Permission denied")
+        elif cmd == 'list_categories' and len(res):
+            rc = 0  # false error return of 1 on v2.xx calibredb
+    if 'already exist' in err:
+        dest_url = err
 
     if rc:
         return res, err, rc

@@ -523,11 +523,25 @@ def IterateOverDirectSites(book=None, searchType=None):
     return resultslist, providers
 
 
+def WishListType(host):
+    """ Return type of wishlist or empty string if not a wishlist """
+    # GoodReads rss feeds
+    if 'goodreads' in host and 'list_rss' in host:
+        return 'GOODREADS'
+    # GoodReads Listopia html pages
+    if 'goodreads' in host and '/list/show/' in host:
+        return 'LISTOPIA'
+    # NYTimes best-sellers html pages
+    if 'nytimes' in host and 'best-sellers' in host:
+        return 'NYTIMES'
+    return ''
+
+
 def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and 'goodreads' not in provider['HOST'] and 'list_rss' not in provider['HOST']:
+        if provider['ENABLED'] and not WishListType(provider['HOST']):
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverRSSSites] - %s is BLOCKED' % provider['HOST'])
             else:
@@ -539,30 +553,90 @@ def IterateOverRSSSites():
 
 
 def IterateOverWishLists():
-    # Two types of wishlists handled
-    # GoodReads rss feeds
-    # GoodReads Listopia html pages
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and 'goodreads' in provider['HOST'] and 'list_rss' in provider['HOST']:
-            if ProviderIsBlocked(provider['HOST']):
-                logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
-            else:
-                providers += 1
-                logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
-                resultslist += GOODREADS(provider['HOST'], provider['NAME'],
-                                         provider['DLPRIORITY'], provider['DISPNAME'])
-        elif provider['ENABLED'] and 'goodreads' in provider['HOST'] and '/list/show/' in provider['HOST']:
-            if ProviderIsBlocked(provider['HOST']):
-                logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
-            else:
-                providers += 1
-                logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
-                resultslist += LISTOPIA(provider['HOST'], provider['NAME'],
-                                        provider['DLPRIORITY'], provider['DISPNAME'])
+        if provider['ENABLED']:
+            wishtype = WishListType(provider['HOST'])
+            if wishtype == 'GOODREADS':
+                if ProviderIsBlocked(provider['HOST']):
+                    logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
+                else:
+                    providers += 1
+                    logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
+                    resultslist += GOODREADS(provider['HOST'], provider['NAME'],
+                                             provider['DLPRIORITY'], provider['DISPNAME'])
+            elif wishtype == 'LISTOPIA':
+                if ProviderIsBlocked(provider['HOST']):
+                    logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
+                else:
+                    providers += 1
+                    logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
+                    resultslist += LISTOPIA(provider['HOST'], provider['NAME'],
+                                            provider['DLPRIORITY'], provider['DISPNAME'])
+            elif wishtype == 'NYTIMES':
+                if ProviderIsBlocked(provider['HOST']):
+                    logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
+                else:
+                    providers += 1
+                    logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
+                    resultslist += NYTIMES(provider['HOST'], provider['NAME'],
+                                           provider['DLPRIORITY'], provider['DISPNAME'])
 
     return resultslist, providers
+
+
+def NYTIMES(host=None, feednr=None, priority=0, dispname=None, test=False):
+    """
+    NYTIMES best-sellers query function, return all the results in a list
+    """
+    results = []
+    basehost = host
+    if not str(host)[:4] == "http":
+        host = 'http://' + host
+
+    URL = host
+    provider = host.split('best-sellers')[1].strip('/')
+    if provider:
+        provider = provider.split('/')[0]
+    else:
+        provider = 'best-sellers'
+    if not dispname:
+        dispname = provider
+
+    result, success = fetchURL(URL)
+
+    if test:
+        return success
+
+    if not success:
+        logger.error('Error fetching data from %s: %s' % (URL, result))
+        BlockProvider(basehost, result)
+
+    elif result:
+        logger.debug('Parsing results from %s' % URL)
+        data = result.split('class="book-body"')
+        for entry in data[1:]:
+            try:
+                title = makeUnicode(entry.split('itemprop="name">')[1].split('<')[0])
+                author_name = makeUnicode(entry.split('itemprop="author">by ')[1].split('<')[0])
+                results.append({
+                    'rss_prov': provider,
+                    'rss_feed': feednr,
+                    'rss_title': title,
+                    'rss_author': author_name,
+                    'rss_bookid': '',
+                    'rss_isbn': '',
+                    'priority': priority,
+                    'dispname': dispname
+                })
+            except IndexError:
+                pass
+    else:
+        logger.debug('No data returned from %s' % URL)
+
+    logger.debug("Found %i result%s from %s" % (len(results), plural(len(results)), host))
+    return results
 
 
 def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
@@ -603,9 +677,9 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
             for entry in data[1:]:
                 try:
                     # index = entry.split('<')[0]
-                    title = entry.split('<a title="')[1].split('"')[0]
+                    title = makeUnicode(entry.split('<a title="')[1].split('"')[0])
                     book_id = entry.split('data-resource-id="')[1].split('"')[0]
-                    author_name = entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0]
+                    author_name = makeUnicode(entry.split('<a class="authorName"')[1].split('"name">')[1].split('<')[0])
                     results.append({
                         'rss_prov': provider,
                         'rss_feed': feednr,

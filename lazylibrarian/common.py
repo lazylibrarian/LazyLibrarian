@@ -25,6 +25,7 @@ import threading
 import time
 import traceback
 from lib.six import PY2
+from subprocess import Popen, PIPE
 
 try:
     import zipfile
@@ -474,13 +475,13 @@ def scheduleJob(action='Start', target=None):
     if target == 'PostProcessor':  # more readable
         target = 'processDir'
 
-    if action == 'Stop' or action == 'Restart':
+    if action in ['Stop', 'Restart']:
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
                 lazylibrarian.SCHED.unschedule_job(job)
                 logger.debug("Stop %s job" % target)
 
-    if action == 'Start' or action == 'Restart':
+    if action in ['Start', 'Restart']:
         for job in lazylibrarian.SCHED.get_jobs():
             if target in str(job):
                 logger.debug("%s %s job, already scheduled" % (action, target))
@@ -1202,3 +1203,17 @@ def zipAudio(source, zipname):
                         myzip.write(os.path.join(rootdir, filename), filename)
         logger.debug('Zipped up %s files' % cnt)
     return zip_file
+
+
+def runScript(params):
+    if platform.system() == "Windows" and params[0].endswith('.py'):
+        params.insert(0, sys.executable)
+    logger.debug(params)
+    try:
+        p = Popen(params, stdout=PIPE, stderr=PIPE)
+        res, err = p.communicate()
+        return p.returncode, makeUnicode(res), makeUnicode(err)
+    except Exception as e:
+        err = "runScript exception: %s %s" % (type(e).__name__, str(e))
+        logger.error(err)
+        return 1, '', err

@@ -13,12 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with LazyLibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from subprocess import Popen, PIPE
-
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-from lazylibrarian.formatter import makeUnicode
+from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD, runScript
 
 
 class CustomNotifier:
@@ -86,20 +83,13 @@ class CustomNotifier:
                     else:
                         params.append(str(dictionary[item]))
 
-                try:
-                    p = Popen(params, stdout=PIPE, stderr=PIPE)
-                    res, err = p.communicate()
-                    rc = p.returncode
-                    res = makeUnicode(res)
-                    err = makeUnicode(err)
-                    if rc:
-                        logger.error("Custom notifier returned %s: res[%s] err[%s]" % (rc, res, err))
-                        return False
+                rc, res, err = runScript(params)
+                if rc:
+                    logger.error("Custom notifier returned %s: res[%s] err[%s]" % (rc, res, err))
+                    return False
+                else:
                     logger.debug(res)
                     return True
-                except Exception as e:
-                    logger.warn('Error sending command: %s' % e)
-                    return False
             else:
                 logger.warn('Error sending custom notification: Check config')
                 return False
