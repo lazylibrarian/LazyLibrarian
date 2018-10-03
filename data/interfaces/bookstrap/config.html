@@ -1738,6 +1738,17 @@
                   </div>
                   <div class="checkbox">
                     <%
+                        if lazylibrarian.CONFIG['IMP_AUTOADD_COPY'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="imp_autoadd_copy">
+                      <input type="checkbox" id="imp_autoadd_copy" name="imp_autoadd_copy" value="1" ${checked} />
+                      Keep a copy of the book in the local library</label>
+                  </div>
+                  <div class="checkbox">
+                    <%
                         if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
                             checked = 'checked="checked"'
                         else:
@@ -1753,6 +1764,17 @@
                     <label for="imp_autoadd">Calibre Magazines Auto Add Directory:</label>
                     <input type="text" id="imp_autoaddmag" name="imp_autoaddmag" value="${lazylibrarian.CONFIG['IMP_AUTOADDMAG']}" class="form-control">
                     <span class="help-block">Directory for a copy to be placed for auto add process</span>
+                  </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['IMP_AUTOADDMAG_COPY'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                    %>
+                    <label for="imp_autoaddmag_copy">
+                      <input type="checkbox" id="imp_autoaddmag_copy" name="imp_autoaddmag_copy" value="1" ${checked} />
+                      Keep a copy of the magazine in the local library</label>
                   </div>
                   <div class="checkbox">
                     <%

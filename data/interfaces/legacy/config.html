@@ -1057,6 +1057,18 @@
             <small>Directory for a copy to be placed for auto add process</small>
             <div>
               <%
+                    if lazylibrarian.CONFIG['IMP_AUTOADD_COPY'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="imp_autoadd_copy" name="imp_autoadd_copy" value=1 ${checked} />
+              <label> Copy the auto added books</label>
+              <BR>
+              <small> Keep a copy of the book in the local library</small>
+            </div>
+            <div>
+              <%
                     if lazylibrarian.CONFIG['IMP_AUTOADD_BOOKONLY'] == True:
                         checked = 'checked="checked"'
                     else:

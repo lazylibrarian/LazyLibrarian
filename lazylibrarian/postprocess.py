@@ -1725,8 +1725,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
 def processAutoAdd(src_path=None, booktype='book'):
     # Called to copy/move the book files to an auto add directory for the likes of Calibre which can't do nested dirs
     autoadddir = lazylibrarian.CONFIG['IMP_AUTOADD']
+    savefiles = lazylibrarian.CONFIG['IMP_AUTOADD_COPY']
     if booktype == 'mag':
         autoadddir = lazylibrarian.CONFIG['IMP_AUTOADDMAG']
+        savefiles = lazylibrarian.CONFIG['IMP_AUTOADDMAG_COPY']
 
     if not os.path.exists(autoadddir):
         logger.error('AutoAdd directory for %s [%s] is missing or not set - cannot perform autoadd' % (
@@ -1768,7 +1770,7 @@ def processAutoAdd(src_path=None, booktype='book'):
                 srcname = os.path.join(src_path, name)
                 dstname = os.path.join(autoadddir, name)
                 try:
-                    if lazylibrarian.CONFIG['DESTINATION_COPY']:
+                    if savefiles:
                         logger.debug('AutoAdd Copying file [%s] from [%s] to [%s]' % (name, srcname, dstname))
                         dstname = safe_copy(srcname, dstname)
                     else:
@@ -1785,7 +1787,7 @@ def processAutoAdd(src_path=None, booktype='book'):
                     logger.warn("Could not set permission of %s because [%s]" % (dstname, why.strerror))
                     # permissions might not be fatal, continue
 
-        if copied and not lazylibrarian.CONFIG['DESTINATION_COPY']:  # do we want to keep the original files?
+        if copied and not savefiles:  # do we want to keep the library files?
             logger.debug('Removing %s' % src_path)
             shutil.rmtree(src_path)
 
