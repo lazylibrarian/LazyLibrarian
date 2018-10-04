@@ -212,22 +212,32 @@ def find_book_in_db(author, book, ignored=None):
         best_ratio = 0
         best_partial = 0
         best_partname = 0
+        have_prefix = False
         ratio_name = ""
         partial_name = ""
         partname_name = ""
+        prefix_name = ""
         ratio_id = 0
         partial_id = 0
         partname_id = 0
+        prefix_id = 0
         partname = 0
         best_type = ''
         partial_type = ''
         partname_type = ''
+        prefix_type = ''
 
         dic = {u'\u2018': "", u'\u2019': "", u'\u201c': '', u'\u201d': '', "'": "", '"': ''}
         book_lower = unaccented(book.lower())
         book_lower = replace_all(book_lower, dic)
         book_partname, book_sub = split_title(author, book_lower)
 
+        # We want to match a book on disk with a subtitle to a shorter book in the DB
+        # - Strict prefix match with a : followed by junk is allowed
+        # - Strict prefix match with a ()ed remainder is allowed
+        # But the leading : is removed by has_clean_subtitle, so we allow all non (): subtitles
+        has_clean_subtitle = re.search(r"^\s+([^:()]+|\([^)]+\))$", book_sub) is not None
+        
         logger.debug('Searching %s %sbook%s by [%s] in database for [%s]' %
                      (len(books), ign, plural(len(books)), author, book))
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
@@ -344,6 +354,12 @@ def find_book_in_db(author, book, ignored=None):
                 partname_name = a_book['BookName']
                 partname_id = a_book['BookID']
 
+            if a_book_lower == book_partname and has_clean_subtitle:
+                have_prefix = True
+                prefix_type = a_book['Status']
+                prefix_name = a_book['BookName']
+                prefix_id = a_book['BookID']
+
         if best_ratio >= lazylibrarian.CONFIG['NAME_RATIO']:
             logger.debug("Fuzz match ratio [%d] [%s] [%s] %s" % (best_ratio, book, ratio_name, ratio_id))
             return ratio_id, best_type
@@ -353,6 +369,10 @@ def find_book_in_db(author, book, ignored=None):
         if best_partname >= lazylibrarian.CONFIG['NAME_PARTNAME']:
             logger.debug("Fuzz match partname [%d] [%s] [%s] %s" % (best_partname, book, partname_name, partname_id))
             return partname_id, partname_type
+
+        if have_prefix:
+            logger.debug("Fuzz match prefix [%s] [%s] %s" % (book, prefix_name, prefix_id))
+            return prefix_id, prefix_type
 
         if books:
             logger.debug(
