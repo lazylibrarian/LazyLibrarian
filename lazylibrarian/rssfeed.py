@@ -22,21 +22,21 @@ from lib.rfeed import Item, Guid, Feed
 def genFeed(ftype, limit=10, user=0, baseurl=''):
     if ftype == 'eBook':
         cmd = "select AuthorName,BookName,BookDesc,BookLibrary,BookID,BookLink from books,authors where"
-        cmd += " BookLibrary != '' and books.AuthorID = authors.AuthorID order by BookLibrary desc limit %s" % limit
+        cmd += " BookLibrary != '' and books.AuthorID = authors.AuthorID order by BookLibrary desc limit ?"
         baselink = baseurl + 'bookWall&have=1'
     elif ftype == 'AudioBook':
         cmd = "select AuthorName,BookName,BookDesc,AudioLibrary,BookID,BookLink from books,authors where"
-        cmd += " AudioLibrary != '' and books.AuthorID = authors.AuthorID order by AudioLibrary desc limit %s" % limit
+        cmd += " AudioLibrary != '' and books.AuthorID = authors.AuthorID order by AudioLibrary desc limit ?"
         baselink = baseurl + 'audioWall'
     elif ftype == 'Magazine':
-        cmd = "select Title,IssueDate,IssueAcquired,IssueID from issues order by IssueAcquired desc limit %s" % limit
+        cmd = "select Title,IssueDate,IssueAcquired,IssueID from issues order by IssueAcquired desc limit ?"
         baselink = baseurl + 'magWall'
     else:
         logger.debug("Invalid feed type")
         return None
 
     myDB = database.DBConnection()
-    results = myDB.select(cmd)
+    results = myDB.select(cmd, (limit,))
     items = []
     # logger.debug("Found %s %s results" % (len(results), ftype))
 
