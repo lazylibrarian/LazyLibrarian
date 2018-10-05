@@ -523,25 +523,11 @@ def IterateOverDirectSites(book=None, searchType=None):
     return resultslist, providers
 
 
-def WishListType(host):
-    """ Return type of wishlist or empty string if not a wishlist """
-    # GoodReads rss feeds
-    if 'goodreads' in host and 'list_rss' in host:
-        return 'GOODREADS'
-    # GoodReads Listopia html pages
-    if 'goodreads' in host and '/list/show/' in host:
-        return 'LISTOPIA'
-    # NYTimes best-sellers html pages
-    if 'nytimes' in host and 'best-sellers' in host:
-        return 'NYTIMES'
-    return ''
-
-
 def IterateOverRSSSites():
     resultslist = []
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
-        if provider['ENABLED'] and not WishListType(provider['HOST']):
+        if provider['ENABLED'] and not lazylibrarian.WishListType(provider['HOST']):
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverRSSSites] - %s is BLOCKED' % provider['HOST'])
             else:
@@ -557,7 +543,7 @@ def IterateOverWishLists():
     providers = 0
     for provider in lazylibrarian.RSS_PROV:
         if provider['ENABLED']:
-            wishtype = WishListType(provider['HOST'])
+            wishtype = lazylibrarian.WishListType(provider['HOST'])
             if wishtype == 'GOODREADS':
                 if ProviderIsBlocked(provider['HOST']):
                     logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
@@ -620,6 +606,7 @@ def NYTIMES(host=None, feednr=None, priority=0, dispname=None, test=False):
             try:
                 title = makeUnicode(entry.split('itemprop="name">')[1].split('<')[0])
                 author_name = makeUnicode(entry.split('itemprop="author">by ')[1].split('<')[0])
+                author_name = author_name.split(' and ')[0]  # multi-author, use first one
                 results.append({
                     'rss_prov': provider,
                     'rss_feed': feednr,

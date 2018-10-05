@@ -784,13 +784,13 @@ class Api(object):
             self.data = 'No rss feeds set, check config'
 
     def _forceWishlistSearch(self, **kwargs):
-        if lazylibrarian.USE_RSS():
+        if lazylibrarian.USE_WISHLIST():
             if 'wait' in kwargs:
                 search_wishlist()
             else:
                 threading.Thread(target=search_wishlist, name='API-SEARCHWISHLIST', args=[]).start()
         else:
-            self.data = 'No rss feeds set, check config'
+            self.data = 'No wishlists set, check config'
 
     def _forceBookSearch(self, **kwargs):
         if 'type' in kwargs:

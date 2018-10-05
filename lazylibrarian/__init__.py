@@ -180,7 +180,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
                      'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
-                     'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED']
+                     'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED', 'MAG_DELFOLDER']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -430,6 +430,7 @@ CONFIG_DEFINITIONS = {
     'MAG_DEST_FOLDER': ('str', 'PostProcess', '_Magazines/$Title/$IssueDate'),
     'MAG_DEST_FILE': ('str', 'PostProcess', '$IssueDate - $Title'),
     'MAG_RELATIVE': ('bool', 'PostProcess', 1),
+    'MAG_DELFOLDER': ('bool', 'PostProcess', 1),
     'USE_TWITTER': ('bool', 'Twitter', 0),
     'TWITTER_NOTIFY_ONSNATCH': ('bool', 'Twitter', 0),
     'TWITTER_NOTIFY_ONDOWNLOAD': ('bool', 'Twitter', 0),
@@ -1256,10 +1257,32 @@ def add_rss_slot():
                          })
 
 
+def WishListType(host):
+    """ Return type of wishlist or empty string if not a wishlist """
+    # GoodReads rss feeds
+    if 'goodreads' in host and 'list_rss' in host:
+        return 'GOODREADS'
+    # GoodReads Listopia html pages
+    if 'goodreads' in host and '/list/show/' in host:
+        return 'LISTOPIA'
+    # NYTimes best-sellers html pages
+    if 'nytimes' in host and 'best-sellers' in host:
+        return 'NYTIMES'
+    return ''
+
+
 def USE_RSS():
     count = 0
     for provider in RSS_PROV:
-        if bool(provider['ENABLED']):
+        if bool(provider['ENABLED']) and not WishListType(provider['HOST']):
+            count += 1
+    return count
+
+
+def USE_WISHLIST():
+    count = 0
+    for provider in RSS_PROV:
+        if bool(provider['ENABLED']) and WishListType(provider['HOST']):
             count += 1
     return count
 

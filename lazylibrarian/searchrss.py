@@ -40,10 +40,6 @@ def cron_search_wishlist():
 
 # noinspection PyBroadException
 def search_wishlist():
-    if not (lazylibrarian.USE_RSS()):
-        logger.warn('RSS search is disabled')
-        scheduleJob(action='Stop', target='search_wishlist')
-        return
     try:
         threadname = threading.currentThread().name
         if "Thread-" in threadname:

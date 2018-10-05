@@ -56,7 +56,7 @@ class GoodReads:
             if ' <ll> ' in searchterm:  # special token separates title from author
                 searchtitle, searchauthorname = searchterm.split(' <ll> ')
                 searchterm = searchterm.replace(' <ll> ', ' ')
-
+                searchtitle = searchtitle.split(' (')[0]  # without any series info
             if PY2:
                 searchterm = searchterm.encode(lazylibrarian.SYS_ENCODING)
             url = quote_plus(searchterm)
@@ -145,6 +145,8 @@ class GoodReads:
                         else:
                             author_fuzz = fuzz.ratio(authorNameResult, searchterm)
                         if searchtitle:
+                            if bookTitle.endswith(')'):
+                                bookTitle = bookTitle.rsplit(' (', 1)[0]
                             book_fuzz = fuzz.token_set_ratio(bookTitle, searchtitle)
                             # lose a point for each extra word in the fuzzy matches so we get the closest match
                             words = len(getList(bookTitle))
