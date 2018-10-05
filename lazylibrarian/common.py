@@ -793,6 +793,7 @@ def logHeader():
     else:
         header += "urllib3: missing\n"
     header += "requests: %s\n" % getattr(requests, '__version__', None)
+    logger.info('Checking TLS version, you can ignore any "InsecureRequestWarning" message')
     tls_version = requests.get('https://www.howsmyssl.com/a/check', timeout=30, verify=False).json()['tls_version']
     if '1.2' not in tls_version and '1.3' not in tls_version:
         header += 'tls: missing required functionality. Try upgrading to v1.2 or newer. You have '
