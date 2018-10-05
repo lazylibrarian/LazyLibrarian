@@ -507,7 +507,7 @@ def scheduleJob(action='Start', target=None):
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.cron_search_rss_book, minutes=minutes)
                 logger.debug("%s %s job in %s minute%s" % (action, target, minutes, plural(minutes)))
         elif 'search_wishlist' in target and check_int(lazylibrarian.CONFIG['WISHLIST_INTERVAL'], 0):
-            if lazylibrarian.USE_RSS():
+            if lazylibrarian.USE_WISHLIST():
                 hours = check_int(lazylibrarian.CONFIG['WISHLIST_INTERVAL'], 0)
                 lazylibrarian.SCHED.add_interval_job(lazylibrarian.searchrss.cron_search_wishlist, hours=hours)
                 logger.debug("%s %s job in %s hour%s" % (action, target, hours, plural(hours)))
@@ -643,10 +643,12 @@ def checkRunningJobs():
             ensureRunning('search_book')
         if lazylibrarian.USE_RSS():
             ensureRunning('search_rss_book')
-            ensureRunning('search_wishlist')
     else:
         scheduleJob('Stop', 'search_book')
         scheduleJob('Stop', 'search_rss_book')
+    if lazylibrarian.USE_WISHLIST():
+        ensureRunning('search_wishlist')
+    else:
         scheduleJob('Stop', 'search_wishlist')
 
     if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
