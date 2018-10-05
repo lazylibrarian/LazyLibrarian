@@ -375,6 +375,7 @@ def getFolder(hashid):
     # Get Active Directory from settings
     # noinspection PyProtectedMember
     settings = qbclient._get_settings()
+    # noinspection PyTypeChecker
     active_dir = settings['temp_path']
     # completed_dir = settings['save_path']
 
