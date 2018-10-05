@@ -51,6 +51,7 @@ from lazylibrarian.postprocess import processAlternate, processDir, delete_task,
 from lazylibrarian.providers import test_provider
 from lazylibrarian.searchbook import search_book
 from lazylibrarian.searchmag import search_magazines
+from lazylibrarian.searchrss import search_wishlist
 from lazylibrarian.rssfeed import genFeed
 from lazylibrarian.opds import OPDS
 from lazylibrarian.bookrename import nameVars
@@ -3357,11 +3358,12 @@ class WebInterface(object):
             if os.path.exists(fname):
                 os.remove(fname)
             # if the directory is now empty, delete that too
-            try:
-                os.rmdir(os.path.dirname(issuefile))
-            except OSError as e:
-                logger.debug('Directory %s not deleted: %s' % (os.path.dirname(issuefile), str(e)))
-            return True
+            if lazylibrarian.CONFIG['MAG_DELFOLDER']:
+                try:
+                    os.rmdir(os.path.dirname(issuefile))
+                except OSError as e:
+                    logger.debug('Directory %s not deleted: %s' % (os.path.dirname(issuefile), str(e)))
+                return True
         except Exception as e:
             logger.warn('delete issue failed on %s, %s %s' % (issuefile, type(e).__name__, str(e)))
         return False
@@ -4453,6 +4455,14 @@ class WebInterface(object):
             scheduleJob(action='Restart', target='PostProcessor')
         else:
             logger.debug('POSTPROCESS already running')
+        raise cherrypy.HTTPRedirect(source)
+
+    @cherrypy.expose
+    def forceWish(self, source=None):
+        if lazylibrarian.USE_WISHLIST():
+            search_wishlist()
+        else:
+            logger.warn('WishList search called but no wishlist providers set')
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose

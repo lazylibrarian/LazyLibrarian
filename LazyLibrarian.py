@@ -188,9 +188,12 @@ def main():
 
     version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
-        # User may be running an old source zip, so force update
+        # User may be running an old source zip, so try to force update
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 1
         lazylibrarian.SIGNAL = 'update'
+        # but only once in case the update fails, don't loop
+        with open(version_file, 'w') as f:
+            f.write("UNKNOWN SOURCE")
 
     if lazylibrarian.CONFIG['COMMITS_BEHIND'] <= 0 and lazylibrarian.SIGNAL == 'update':
         lazylibrarian.SIGNAL = None

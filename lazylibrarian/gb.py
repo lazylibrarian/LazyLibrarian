@@ -175,6 +175,8 @@ class GoogleBooks:
                                 author_fuzz = fuzz.ratio(book['author'], fullterm)
 
                             if title:
+                                if title.endswith(')'):
+                                    title = title.rsplit('(', 1)[0]
                                 book_fuzz = fuzz.token_set_ratio(book['name'], title)
                                 # lose a point for each extra word in the fuzzy matches so we get the closest match
                                 words = len(getList(book['name']))
