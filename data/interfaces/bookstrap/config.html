@@ -1870,6 +1870,17 @@
                       <input type="checkbox" id="mag_relative" name="mag_relative" value="1" ${checked} />
                       Magazines inside book folder</label>
                   </div>
+                  <div class="checkbox">
+                    <%
+                        if lazylibrarian.CONFIG['MAG_DELFOLDER'] == True:
+                            checked = 'checked="checked"'
+                        else:
+                            checked = ''
+                        %>
+                    <label for="mag_delfolder" class="control-label">
+                      <input type="checkbox" id="mag_delfolder" name="mag_delfolder" value="1" ${checked} />
+                      Delete folder when last issue is removed</label>
+                  </div>
                   <div class="form-group">
                     <label for="mag_dest_file">Magazine Filename Pattern:</label>
                     <input type="text" id="mag_dest_file" name="mag_dest_file" value="${lazylibrarian.CONFIG['MAG_DEST_FILE']}" class="form-control" placeholder="Magazine Issue Filename">
