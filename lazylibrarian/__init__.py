@@ -699,10 +699,10 @@ def initialize():
         except Exception as e:
             logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
 
-        # debuginfo = logHeader()
-        # for item in debuginfo.splitlines():
-        #     if 'missing' in item:
-        #         logger.warn(item)
+        debuginfo = logHeader()
+        for item in debuginfo.splitlines():
+            if 'missing' in item:
+                logger.warn(item)
 
         try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
             # noinspection PyUnresolvedReferences
