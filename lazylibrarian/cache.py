@@ -20,12 +20,12 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
-from lib.six import PY2, text_type
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import check_int, md5_utf8
+from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr
 
 
 def gr_api_sleep():
@@ -183,11 +183,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
         elif cache == "XML":
             with open(hashfilename, "rb") as cachefile:
                 result = cachefile.read()
-            if isinstance(result, text_type):
-                xml = '<?xml'
-            else:
-                xml = b'<?xml'
-            if result and result.startswith(xml):
+            if result and result.startswith(b'<?xml'):
                 try:
                     source = ElementTree.fromstring(result)
                 except UnicodeEncodeError:
@@ -227,11 +223,8 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
-                if isinstance(result, text_type):
-                    xml = '<?xml'
-                else:
-                    xml = b'<?xml'
-                if result and result.startswith(xml):
+                result = makeBytestr(result)
+                if result and result.startswith(b'<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
                         if not expiry:
