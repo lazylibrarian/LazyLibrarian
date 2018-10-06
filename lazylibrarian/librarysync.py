@@ -957,6 +957,7 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 myDB.action(
                                                     'UPDATE books set AudioStatus=?, AudioLibrary=? where BookID=?',
                                                     (lazylibrarian.CONFIG['FOUND_STATUS'], now(), bookid))
+
                                             # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(rootdir, files)
                                             # link to the first part of multi-part audiobooks

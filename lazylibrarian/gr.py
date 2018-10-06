@@ -707,6 +707,7 @@ class GoodReads:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
                             match = myDB.match(cmd, (bookname, authorNameResult))
+
                             if match:
                                 if match['BookID'] != bookid:
                                     # we have a different bookid for this author/title already
