@@ -916,11 +916,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 # we found a new book
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set Status=? where BookID=?',
-                                                    (lazylibrarian.CONFIG['FOUND_STATUS'], bookid,))
-                                                myDB.action(
-                                                    'UPDATE books set BookLibrary=? where BookID=?',
-                                                    (now(), bookid,))
+                                                    'UPDATE books set Status=?, BookLibrary=? where BookID=?',
+                                                    (lazylibrarian.CONFIG['FOUND_STATUS'], now(), bookid))
 
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(rootdir, files)
@@ -958,11 +955,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 # we found a new audiobook
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set AudioStatus=? where BookID=?',
-                                                    (lazylibrarian.CONFIG['FOUND_STATUS'], bookid,))
-                                                myDB.action(
-                                                    'UPDATE books set AudioLibrary=? where BookID=?',
-                                                    (now(), bookid))
+                                                    'UPDATE books set AudioStatus=?, AudioLibrary=? where BookID=?',
+                                                    (lazylibrarian.CONFIG['FOUND_STATUS'], now(), bookid))
+
                                             # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(rootdir, files)
                                             # link to the first part of multi-part audiobooks

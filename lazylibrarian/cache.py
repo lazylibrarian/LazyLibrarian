@@ -25,7 +25,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import USER_AGENT, proxyList
-from lazylibrarian.formatter import check_int, md5_utf8
+from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr
 
 
 def gr_api_sleep():
@@ -223,6 +223,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
+                result = makeBytestr(result)
                 if result and result.startswith(b'<?xml'):
                     try:
                         source = ElementTree.fromstring(result)
