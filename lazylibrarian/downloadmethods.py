@@ -120,9 +120,12 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
 
 def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook'):
+    if library != 'eBook':
+        res = "Unsupported DIRECT download type %s for [%s]" % (library, dl_title)
+        logger.warn(res)
+        return False, res
     myDB = database.DBConnection()
     Source = "DIRECT"
-
     logger.debug("Starting Direct Download for [%s]" % dl_title)
     proxies = proxyList()
     headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}

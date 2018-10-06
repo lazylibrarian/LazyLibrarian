@@ -267,8 +267,9 @@ def addTorrent(link, hashid):
     hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
-        logger.debug("Failed to login to qBittorrent")
-        return False
+        res = "Failed to login to qBittorrent"
+        logger.debug(res)
+        return False, res
     dl_dir = lazylibrarian.CONFIG['QBITTORRENT_DIR']
     if dl_dir:
         args['savepath'] = dl_dir
@@ -302,8 +303,9 @@ def addFile(data, hashid, title):
     hashid = hashid.lower()
     qbclient = qbittorrentclient()
     if not len(qbclient.cookiejar):
-        logger.debug("Failed to login to qBittorrent")
-        return False
+        res = "Failed to login to qBittorrent"
+        logger.debug(res)
+        return False, res
     files = {'torrents': {'filename': title, 'content': data}}
     # noinspection PyProtectedMember
     if qbclient._command('command/upload', files=files):
