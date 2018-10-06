@@ -673,7 +673,7 @@ class OPDS(object):
                          'rel': 'file',
                          'type': mime_type}
                 if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                    author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
+                    author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
                     author = makeUnicode(author['AuthorName'])
                     entry['image'] = self.searchroot + '/' + book['BookImg']
                     entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
@@ -735,7 +735,7 @@ class OPDS(object):
                      'rel': 'file',
                      'type': mimeType("we_send.zip")}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                author = myDB.match("SELECT AuthorName from authors WHERE AuthorID='%s'" % book['AuthorID'])
+                author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
                 author = makeUnicode(author['AuthorName'])
                 entry['image'] = self.searchroot + '/' + book['BookImg']
                 entry['content'] = escape('%s - %s' % (title, book['BookDesc']))

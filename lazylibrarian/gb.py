@@ -200,8 +200,7 @@ class GoogleBooks:
                             AuthorID = ''
                             if book['author']:
                                 match = myDB.match(
-                                    'SELECT AuthorID FROM authors WHERE AuthorName=?', (
-                                        book['author'].replace('"', '""'),))
+                                    'SELECT AuthorID FROM authors WHERE AuthorName=?', (book['author'],))
                                 if match:
                                     AuthorID = match['AuthorID']
 
@@ -421,7 +420,7 @@ class GoogleBooks:
                         if not rejected:
                             cmd = 'SELECT BookID FROM books,authors WHERE books.AuthorID = authors.AuthorID'
                             cmd += ' and BookName=? COLLATE NOCASE and AuthorName=? COLLATE NOCASE'
-                            match = myDB.match(cmd, (bookname.replace('"', '""'), authorname.replace('"', '""')))
+                            match = myDB.match(cmd, (bookname, authorname))
                             if match:
                                 if match['BookID'] != bookid:  # we have a different book with this author/title already
                                     logger.debug('Rejecting bookid %s for [%s][%s] already got %s' %
@@ -602,7 +601,7 @@ class GoogleBooks:
             logger.debug("Imported/Updated %s book%s for author" % (resultcount, plural(resultcount)))
 
             myDB.action('insert into stats values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        (authorname.replace('"', '""'), api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
+                        (authorname, api_hits, gr_lang_hits, lt_lang_hits, gb_lang_change,
                          cache_hits, ignored, removedResults, not_cached, duplicates))
 
             if refresh:

@@ -173,7 +173,7 @@ def find_book_in_db(author, book, ignored=None):
     myDB = database.DBConnection()
     cmd = 'SELECT BookID,books.Status FROM books,authors where books.AuthorID = authors.AuthorID'
     cmd += ' and AuthorName=? COLLATE NOCASE and BookName=? COLLATE NOCASE'
-    res = myDB.select(cmd, (author.replace('"', '""'), book.replace('"', '""')))
+    res = myDB.select(cmd, (author, book))
     match = None
     for item in res:
         if item['Status'] == 'Have':
@@ -208,7 +208,7 @@ def find_book_in_db(author, book, ignored=None):
         elif ignored is False:
             cmd += 'and books.Status != "Ignored" '
         cmd += 'and AuthorName=? COLLATE NOCASE'
-        books = myDB.select(cmd, (author.replace('"', '""'),))
+        books = myDB.select(cmd, (author,))
         best_ratio = 0
         best_partial = 0
         best_partname = 0
@@ -916,11 +916,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 # we found a new book
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set Status="%s" where BookID=?' %
-                                                    lazylibrarian.CONFIG['FOUND_STATUS'], (bookid,))
-                                                myDB.action(
-                                                    'UPDATE books set BookLibrary=? where BookID=?',
-                                                    (now(), bookid))
+                                                    'UPDATE books set Status=?, BookLibrary=? where BookID=?',
+                                                    (lazylibrarian.CONFIG['FOUND_STATUS'], now(), bookid))
 
                                             # check and store book location so we can check if it gets (re)moved
                                             book_filename = os.path.join(rootdir, files)
@@ -958,10 +955,8 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                                 # we found a new audiobook
                                                 new_book_count += 1
                                                 myDB.action(
-                                                    'UPDATE books set AudioStatus="%s" where BookID=?' %
-                                                    lazylibrarian.CONFIG['FOUND_STATUS'], (bookid,))
-                                                myDB.action(
-                                                    'UPDATE books set AudioLibrary=? where BookID=?', (now(), bookid))
+                                                    'UPDATE books set AudioStatus=?, AudioLibrary=? where BookID=?',
+                                                    (lazylibrarian.CONFIG['FOUND_STATUS'], now(), bookid))
                                             # store audiobook location so we can check if it gets (re)moved
                                             book_filename = os.path.join(rootdir, files)
                                             # link to the first part of multi-part audiobooks
