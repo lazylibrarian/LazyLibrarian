@@ -42,11 +42,11 @@ def addAuthorNameToDB(author=None, refresh=False, addbooks=True):
     myDB = database.DBConnection()
 
     # Check if the author exists, and import the author if not,
-    check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName=?', (author.replace('"', '""'),))
+    check_exist_author = myDB.match('SELECT AuthorID FROM authors where AuthorName=?', (author,))
 
     # If no exact match, look for a close fuzzy match to handle misspellings, accents
     if not check_exist_author:
-        match_name = author.replace('"', '""').lower()
+        match_name = author.lower()
         res = myDB.action('select AuthorID,AuthorName from authors')
         for item in res:
             aname = item['AuthorName']
@@ -191,11 +191,9 @@ def addAuthorToDB(authorname=None, refresh=False, authorid=None, addbooks=True):
             GR = GoodReads(authorname)
             author = GR.find_author_id(refresh=refresh)
 
-            query = "SELECT * from authors WHERE AuthorName=?"
-            dbauthor = myDB.match(query, (authorname.replace("'", "''"),))
+            dbauthor = myDB.match("SELECT * from authors WHERE AuthorName=?", (authorname,))
             if author and not dbauthor:  # may have different name for same authorid (spelling?)
-                query = "SELECT * from authors WHERE AuthorID=?"
-                dbauthor = myDB.match(query, (author['authorid'],))
+                dbauthor = myDB.match("SELECT * from authors WHERE AuthorID=?", (author['authorid'],))
                 authorname = dbauthor['AuthorName']
 
             controlValueDict = {"AuthorName": authorname}
