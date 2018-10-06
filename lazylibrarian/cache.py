@@ -20,7 +20,7 @@ try:
     import requests
 except ImportError:
     import lib.requests as requests
-from lib.six import PY2
+from lib.six import PY2, text_type
 
 import lazylibrarian
 from lazylibrarian import logger
@@ -183,7 +183,11 @@ def get_cached_request(url, useCache=True, cache="XML"):
         elif cache == "XML":
             with open(hashfilename, "rb") as cachefile:
                 result = cachefile.read()
-            if result and result.startswith(b'<?xml'):
+            if isinstance(result, text_type):
+                xml = '<?xml'
+            else:
+                xml = b'<?xml'
+            if result and result.startswith(xml):
                 try:
                     source = ElementTree.fromstring(result)
                 except UnicodeEncodeError:
@@ -223,7 +227,11 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     return None, False
                 json.dump(source, open(hashfilename, "w"))
             elif cache == "XML":
-                if result and result.startswith(b'<?xml'):
+                if isinstance(result, text_type):
+                    xml = '<?xml'
+                else:
+                    xml = b'<?xml'
+                if result and result.startswith(xml):
                     try:
                         source = ElementTree.fromstring(result)
                         if not expiry:
