@@ -4511,6 +4511,8 @@ class WebInterface(object):
         threading.currentThread().name = "WEBSERVER"
         if 'host' in kwargs:
             lazylibrarian.CONFIG['DELUGE_HOST'] = kwargs['host']
+        if 'base' in kwargs:
+            lazylibrarian.CONFIG['DELUGE_BASE'] = kwargs['base']
         if 'cert' in kwargs:
             lazylibrarian.CONFIG['DELUGE_CERT'] = kwargs['cert']
         if 'port' in kwargs:
@@ -4629,6 +4631,8 @@ class WebInterface(object):
         threading.currentThread().name = "WEBSERVER"
         if 'host' in kwargs:
             lazylibrarian.CONFIG['TRANSMISSION_HOST'] = kwargs['host']
+        if 'base' in kwargs:
+            lazylibrarian.CONFIG['TRANSMISSION_BASE'] = kwargs['base']
         if 'port' in kwargs:
             lazylibrarian.CONFIG['TRANSMISSION_PORT'] = check_int(kwargs['port'], 0)
         if 'user' in kwargs:

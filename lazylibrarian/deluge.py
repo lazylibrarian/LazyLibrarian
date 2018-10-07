@@ -307,6 +307,12 @@ def _get_auth():
     if not delugeweb_host.startswith("http"):
         delugeweb_host = 'http://%s' % delugeweb_host
 
+    delugeweb_host = "%s:%s" % (delugeweb_host.strip('/'), delugeweb_port)
+
+    if lazylibrarian.CONFIG['DELUGE_BASE']:
+        delugeweb_base = lazylibrarian.CONFIG['DELUGE_BASE'].strip('/')
+        delugeweb_host = "%s/%s" % (delugeweb_host, delugeweb_base)
+
     if delugeweb_cert is None or delugeweb_cert.strip() == '':
         deluge_verify_cert = False
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
@@ -317,10 +323,6 @@ def _get_auth():
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
             logger.debug('Deluge: Using certificate %s, host is now %s' % (deluge_verify_cert, delugeweb_host))
 
-    if delugeweb_host.endswith('/'):
-        delugeweb_host = delugeweb_host[:-1]
-
-    delugeweb_host = "%s:%s" % (delugeweb_host, delugeweb_port)
     delugeweb_url = delugeweb_host + '/json'
 
     post_json = {"method": "auth.login", "params": [delugeweb_password], "id": 1}

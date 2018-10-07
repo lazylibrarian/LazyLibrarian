@@ -921,6 +921,10 @@
                         <label for="deluge_cert">Deluge Certificate:</label>
                         <input type="text" id="deluge_cert" name="deluge_cert" value="${lazylibrarian.CONFIG['DELUGE_CERT']}" class="form-control" placeholder="webUI only">
                       </div>
+                      <div class="form-group col-md-4">
+                        <label for="deluge_base">Deluge URLBase:</label>
+                        <input type="text" id="deluge_base" name="deluge_base" value="${lazylibrarian.CONFIG['DELUGE_BASE']}" class="form-control" placeholder="URL Base">
+                      </div>
                     </div>
                     <div class="row">
                       <div class="form-group col-md-6">
@@ -979,6 +983,10 @@
                       <div class="form-group col-md-6">
                         <label for="transmission_dir" class="control-label">Download directory :</label>
                         <input type="text" id="transmission_dir" name="transmission_dir" value="${lazylibrarian.CONFIG['TRANSMISSION_DIR']}" class="form-control" placeholder="use transmission default">
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="transmission_base" class="control-label">Transmission URL Base:</label>
+                        <input type="text" id="transmission_base" name="transmission_base" value="${lazylibrarian.CONFIG['TRANSMISSION_BASE']}" class="form-control" placeholder="/transmission">
                       </div>
                     </div>
                     <div class="row">
@@ -3625,12 +3633,13 @@
 
         $('#testDeluge').on('click', function() {
             var host = $.trim($("#deluge_host").val());
+            var base = $.trim($("#deluge_base").val());
             var cert = $.trim($("#deluge_cert").val());
             var port = $.trim($("#deluge_port").val());
             var user = $.trim($("#deluge_user").val());
             var pwd = $.trim($("#deluge_pass").val());
             var label = $.trim($("#deluge_label").val());
-            $.get("testDeluge", {'host': host, 'port': port, 'cert': cert, 'user': user, 'pwd': pwd, 'label': label},
+            $.get("testDeluge", {'host': host, 'port': port, 'base': base, 'cert': cert, 'user': user, 'pwd': pwd, 'label': label},
                 function(data) {
                     bootbox.dialog({
                     title: 'Deluge Connection',
@@ -3648,9 +3657,10 @@
         $('#testTransmission').on('click', function(e) {
             var host = $.trim($("#transmission_host").val());
             var port = $.trim($("#transmission_port").val());
+            var base = $.trim($("#transmission_base").val());
             var user = $.trim($("#transmission_user").val());
             var pwd = $.trim($("#transmission_pass").val());
-            $.get('testTransmission', {'host': host, 'port': port, 'user': user, 'pwd': pwd},
+            $.get('testTransmission', {'host': host, 'port': port, 'base': base, 'user': user, 'pwd': pwd},
                 function(data) {
                 bootbox.dialog({
                     title: 'Transmission Connection',
