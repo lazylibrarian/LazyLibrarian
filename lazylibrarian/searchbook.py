@@ -216,14 +216,17 @@ def search_book(books=None, library=None):
                                 lazylibrarian.NO_TOR_MSG = timenow
                             modelist.remove('tor')
                     elif mode == 'direct' and 'direct' in modelist:
-                        resultlist, nprov = IterateOverDirectSites(book, searchtype)
-                        if not nprov:
-                            # don't nag. Show warning message no more than every 20 mins
-                            timenow = int(time.time())
-                            if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
-                                logger.warn('No direct providers are available. Check config and blocklist')
-                                lazylibrarian.NO_DIRECT_MSG = timenow
-                            modelist.remove('direct')
+                        if searchtype == 'audio' and not lazylibrarian.CONFIG['DIRECT_AUDIO']:
+                            logger.debug("Ignoring direct providers for audio")
+                        else:
+                            resultlist, nprov = IterateOverDirectSites(book, searchtype)
+                            if not nprov:
+                                # don't nag. Show warning message no more than every 20 mins
+                                timenow = int(time.time())
+                                if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
+                                    logger.warn('No direct providers are available. Check config and blocklist')
+                                    lazylibrarian.NO_DIRECT_MSG = timenow
+                                modelist.remove('direct')
                     elif mode == 'rss' and 'rss' in modelist:
                         if rss_resultlist:
                             resultlist = rss_resultlist
@@ -258,14 +261,18 @@ def search_book(books=None, library=None):
                                     lazylibrarian.NO_TOR_MSG = timenow
                                 modelist.remove('tor')
                         elif mode == 'direct' and 'direct' in modelist:
-                            resultlist, nprov = IterateOverDirectSites(book, searchtype)
-                            if not nprov:
-                                # don't nag. Show warning message no more than every 20 mins
-                                timenow = int(time.time())
-                                if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
-                                    logger.warn('No direct providers are available. Check config and blocklist')
-                                    lazylibrarian.NO_DIRECT_MSG = timenow
-                                modelist.remove('direct')
+                            if (searchtype == 'book' and not lazylibrarian.CONFIG['DIRECT_EBOOK']) or (
+                                searchtype == 'audio' and not lazylibrarian.CONFIG['DIRECT_AUDIO']):
+                                    logger.debug("Ignoring direct providers for %s" % searchtype)
+                            else:
+                                resultlist, nprov = IterateOverDirectSites(book, searchtype)
+                                if not nprov:
+                                    # don't nag. Show warning message no more than every 20 mins
+                                    timenow = int(time.time())
+                                    if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
+                                        logger.warn('No direct providers are available. Check config and blocklist')
+                                        lazylibrarian.NO_DIRECT_MSG = timenow
+                                    modelist.remove('direct')
                         elif mode == 'rss' and 'rss' in modelist:
                             resultlist = rss_resultlist
 

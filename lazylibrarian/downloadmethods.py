@@ -120,7 +120,9 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
 
 def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook'):
-    if library != 'eBook':
+    if (library == 'eBook' and not lazylibrarian.CONFIG['DIRECT_EBOOK']) or (
+            library == 'AudioBook' and not lazylibrarian.CONFIG['DIRECT_AUDIO']) or (
+            library == 'magazine' and not lazylibrarian.CONFIG['DIRECT_MAG']):
         res = "Unsupported DIRECT download type %s for [%s]" % (library, dl_title)
         logger.warn(res)
         return False, res
@@ -274,7 +276,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             # which requests can't handle, so throws an exception
             logger.debug("Requests exception: %s" % str(e))
             if "magnet:?" in str(e):
-                tor_url = 'magnet:?' + str(e).split('magnet:?')[1]. strip("'")
+                tor_url = 'magnet:?' + str(e).split('magnet:?')[1].strip("'")
                 logger.debug("Redirecting to %s" % tor_url)
             else:
                 if hasattr(e, 'reason'):

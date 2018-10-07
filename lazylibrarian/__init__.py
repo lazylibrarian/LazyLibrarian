@@ -168,7 +168,7 @@ CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDAT
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'CHERRYPYLOG',
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME',
-                 'NAME_RATIO', 'NAME_PARTIAL', 'NAME_PARTNAME']
+                 'NAME_RATIO', 'NAME_PARTIAL', 'NAME_PARTNAME', 'DIRECT_EBOOK', 'DIRECT_AUDIO', 'DIRECT_MAG']
 # default interface does not know about these items, so leaves them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'FOUND_STATUS',
@@ -380,6 +380,9 @@ CONFIG_DEFINITIONS = {
     'GEN2_SEARCH': ('str', 'GEN', 'foreignfiction/index.php'),
     'GEN2': ('bool', 'GEN', 0),
     'GEN2_DLPRIORITY': ('int', 'GEN', 0),
+    'DIRECT_EBOOK': ('bool', 'GEN', 1),
+    'DIRECT_AUDIO': ('bool', 'GEN', 0),
+    'DIRECT_MAG': ('bool', 'GEN', 1),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
     'LIME_DLPRIORITY': ('int', 'LIME', 0),
