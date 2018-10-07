@@ -275,11 +275,10 @@ def torrentAction(method, arguments):
             logger.error(res)
             return False, res
 
-        if not host.startswith("http://") and not host.startswith("https://"):
+        if not host.startswith("http"):
             host = 'http://' + host
 
-        if host.endswith('/'):
-            host = host[:-1]
+        host = host.strip('/')
 
         # Fix the URL. We assume that the user does not point to the RPC endpoint,
         # so add it if it is missing.
@@ -292,7 +291,10 @@ def torrentAction(method, arguments):
             parts[1] += ":%s" % port
 
         if not parts[2].endswith("/rpc"):
-            parts[2] += "/transmission/rpc"
+            if lazylibrarian.CONFIG['TRANSMISSION_BASE']:
+                parts[2] += "/%s/rpc" % lazylibrarian.CONFIG['TRANSMISSION_BASE'].strip('/')
+            else:
+                parts[2] += "/transmission/rpc"
 
         host_url = urlunparse(parts)
 
