@@ -3355,8 +3355,7 @@ class WebInterface(object):
             for extn in ['.opf', '.jpg']:
                 if os.path.exists(fname + extn):
                     os.remove(fname + extn)
-            if os.path.exists(fname):
-                os.remove(fname)
+
             # if the directory is now empty, delete that too
             if lazylibrarian.CONFIG['MAG_DELFOLDER']:
                 try:
@@ -3391,15 +3390,17 @@ class WebInterface(object):
                         issuedir = os.path.dirname(issue['IssueFile'])
                     else:
                         logger.debug('Failed to delete %s' % (issue['IssueFile']))
-                if issuedir:
+
+                # if the directory is now empty, delete that too
+                if issuedir and lazylibrarian.CONFIG['MAG_DELFOLDER']:
                     magdir = os.path.dirname(issuedir)
-                    # delete this magazines directory if now empty
                     try:
                         os.rmdir(magdir)
                         logger.debug('Magazine directory %s deleted from disc' % magdir)
                     except OSError:
                         logger.debug('Magazine directory %s is not empty' % magdir)
-                logger.info('Magazine %s deleted from disc' % title)
+                    logger.info('Magazine %s deleted from disc' % title)
+
             if action == "Remove" or action == "Delete":
                 myDB.action('DELETE from magazines WHERE Title=?', (title,))
                 myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
