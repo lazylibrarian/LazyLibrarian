@@ -110,28 +110,25 @@ def search_magazines(mags=None, reset=False):
                         lazylibrarian.NO_NZB_MSG = timenow
 
             if lazylibrarian.USE_DIRECT():
-                if not lazylibrarian.CONFIG['DIRECT_MAG']:
-                    logger.debug("Ignoring direct providers for magazines")
-                else:
-                    dir_resultlist, nproviders = IterateOverDirectSites(book, 'mag')
-                    if not nproviders:
-                        # don't nag. Show warning message no more than every 20 mins
-                        timenow = int(time.time())
-                        if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
-                            logger.warn('No direct providers are available. Check config and blocklist')
-                            lazylibrarian.NO_DIRECT_MSG = timenow
+                dir_resultlist, nproviders = IterateOverDirectSites(book, 'mag')
+                if not nproviders:
+                    # don't nag. Show warning message no more than every 20 mins
+                    timenow = int(time.time())
+                    if check_int(lazylibrarian.NO_DIRECT_MSG, 0) + 1200 < timenow:
+                        logger.warn('No direct providers are available. Check config and blocklist')
+                        lazylibrarian.NO_DIRECT_MSG = timenow
 
-                    if dir_resultlist:
-                        for item in dir_resultlist:  # reformat the results so they look like nzbs
-                            resultlist.append({
-                                'bookid': item['bookid'],
-                                'nzbprov': item['tor_prov'],
-                                'nzbtitle': item['tor_title'],
-                                'nzburl': item['tor_url'],
-                                'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned
-                                'nzbsize': item['tor_size'],
-                                'nzbmode': 'torrent'
-                            })
+                if dir_resultlist:
+                    for item in dir_resultlist:  # reformat the results so they look like nzbs
+                        resultlist.append({
+                            'bookid': item['bookid'],
+                            'nzbprov': item['tor_prov'],
+                            'nzbtitle': item['tor_title'],
+                            'nzburl': item['tor_url'],
+                            'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned
+                            'nzbsize': item['tor_size'],
+                            'nzbmode': 'direct'
+                        })
 
             if lazylibrarian.USE_TOR():
                 tor_resultlist, nproviders = IterateOverTorrentSites(book, 'mag')
@@ -165,16 +162,16 @@ def search_magazines(mags=None, reset=False):
 
                 if rss_resultlist:
                     for item in rss_resultlist:  # reformat the rss results so they look like nzbs
-                        resultlist.append({
-                            'bookid': book['bookid'],
-                            'nzbprov': item['tor_prov'],
-                            'nzbtitle': item['tor_title'],
-                            'nzburl': item['tor_url'],
-                            'nzbdate':
-                                item['tor_date'],  # may be fake date as none returned from rss torrents, only rss nzb
-                            'nzbsize': item['tor_size'],
-                            'nzbmode': item['tor_type']
-                        })
+                        if 'M' in item['types']:
+                            resultlist.append({
+                                'bookid': book['bookid'],
+                                'nzbprov': item['tor_prov'],
+                                'nzbtitle': item['tor_title'],
+                                'nzburl': item['tor_url'],
+                                'nzbdate': item['tor_date'],  # may be fake date as none returned from rss torrents
+                                'nzbsize': item['tor_size'],
+                                'nzbmode': item['tor_type']
+                            })
 
             if not resultlist:
                 logger.debug("No results for magazine %s" % book['searchterm'])

@@ -922,7 +922,7 @@
                         <input type="text" id="deluge_cert" name="deluge_cert" value="${lazylibrarian.CONFIG['DELUGE_CERT']}" class="form-control" placeholder="webUI only">
                       </div>
                       <div class="form-group col-md-4">
-                        <label for="deluge_base">Deluge URLBase:</label>
+                        <label for="deluge_base">Deluge URL Base:</label>
                         <input type="text" id="deluge_base" name="deluge_base" value="${lazylibrarian.CONFIG['DELUGE_BASE']}" class="form-control" placeholder="URL Base">
                       </div>
                     </div>
@@ -1238,6 +1238,8 @@
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                       <input type="number" id="newznab_${loop.index}_dlpriority" name="newznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">Types</span>
+                      <input type="text" id="newznab_${loop.index}_dltypes" name="newznab_${loop.index}_dltypes" value="${provider['DLTYPES']}" class="form-control" placeholder="">
                       <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="newznab_${loop.index}"> Test</button>
                       </span>
@@ -1281,6 +1283,8 @@
                     <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                       <input type="number" id="torznab_${loop.index}_dlpriority" name="torznab_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">Types</span>
+                      <input type="text" id="torznab_${loop.index}_dltypes" name="torznab_${loop.index}_dltypes" value="${provider['DLTYPES']}" class="form-control" placeholder="">
                       <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="torznab_${loop.index}"> Test</button>
                       </span>
@@ -1324,6 +1328,8 @@
                     <div class="input-group">
                       <span class="input-group-addon">${label}</span>
                       <input type="number" id="rss_${loop.index}_dlpriority" name="rss_${loop.index}_dlpriority" value="${provider['DLPRIORITY']}" class="form-control" placeholder="0">
+                      <span class="input-group-addon">Types</span>
+                      <input type="text" id="rss_${loop.index}_dltypes" name="rss_${loop.index}_dltypes" value="${provider['DLTYPES']}" class="form-control" placeholder="">
                       <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="rss_${loop.index}"> Test</button>
                       </span>
@@ -1353,6 +1359,8 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="number" id="kat_dlpriority" name="kat_dlpriority" value="${lazylibrarian.CONFIG['KAT_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="kat_dltypes" name="kat_dltypes" value="${lazylibrarian.CONFIG['KAT_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="KAT"> Test</button>
                         </span>
@@ -1375,6 +1383,8 @@
                       <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                         <input type="number" id="tpb_dlpriority" name="tpb_dlpriority" value="${lazylibrarian.CONFIG['TPB_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="tpb_dltypes" name="tpb_dltypes" value="${lazylibrarian.CONFIG['TPB_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TPB"> Test</button>
                         </span>
@@ -1397,6 +1407,8 @@
                       <div class="input-group">
                       <span class="input-group-addon">Priority</span>
                         <input type="number" id="wwt_dlpriority" name="wwt_dlpriority" value="${lazylibrarian.CONFIG['WWT_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="wwt_dltypes" name="wwt_dltypes" value="${lazylibrarian.CONFIG['WWT_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="WWT"> Test</button>
                         </span>
@@ -1419,6 +1431,8 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="number" id="zoo_dlpriority" name="zoo_dlpriority" value="${lazylibrarian.CONFIG['ZOO_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="zoo_dltypes" name="zoo_dltypes" value="${lazylibrarian.CONFIG['ZOO_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="ZOO"> Test</button>
                         </span>
@@ -1441,6 +1455,8 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="number" id="tdl_dlpriority" name="tdl_dlpriority" value="${lazylibrarian.CONFIG['TDL_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="tdl_dltypes" name="tdl_dltypes" value="${lazylibrarian.CONFIG['TDL_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="TDL"> Test</button>
                         </span>
@@ -1463,6 +1479,8 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="number" id="lime_dlpriority" name="lime_dlpriority" value="${lazylibrarian.CONFIG['LIME_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="lime_dltypes" name="lime_dltypes" value="${lazylibrarian.CONFIG['LIME_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="LIME"> Test</button>
                         </span>
@@ -1497,6 +1515,8 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="number" id="gen_dlpriority" name="gen_dlpriority" value="${lazylibrarian.CONFIG['GEN_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="gen_dltypes" name="gen_dltypes" value="${lazylibrarian.CONFIG['GEN_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN"> Test</button>
                         </span>
@@ -1525,6 +1545,8 @@
                       <div class="input-group">
                         <span class="input-group-addon">Priority</span>
                         <input type="number" id="gen2_dlpriority" name="gen2_dlpriority" value="${lazylibrarian.CONFIG['GEN2_DLPRIORITY']}" class="form-control" placeholder="0">
+                        <span class="input-group-addon">Types</span>
+                        <input type="text" id="gen2_dltypes" name="gen2_dltypes" value="${lazylibrarian.CONFIG['GEN2_DLTYPES']}" class="form-control" placeholder="">
                         <span class="input-group-addon">
                         <button role="testprov" class="button btn btn-xs btn-warning btn-primary" type="button" value="GEN2"> Test</button>
                         </span>

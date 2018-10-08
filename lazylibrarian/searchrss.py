@@ -58,8 +58,8 @@ def search_wishlist():
         logger.debug('Processing %s item%s in wishlists' % (len(resultlist), plural(len(resultlist))))
         for book in resultlist:
             # we get rss_author, rss_title, maybe rss_isbn, rss_bookid (goodreads bookid)
-            # we can just use bookid if goodreads, or try isbn and name matching on author/title if googlebooks
-            # not sure if anyone would use a goodreads wishlist if not using goodreads interface...
+            # we can just use bookid if goodreads, or try isbn and name matching on author/title if not
+            # eg NYTimes wishlist
             if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and book['rss_bookid']:
                 bookmatch = myDB.match('select Status,BookName from books where bookid=?', (book['rss_bookid'],))
                 if bookmatch:

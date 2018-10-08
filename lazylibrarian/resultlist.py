@@ -136,6 +136,17 @@ def findBestResult(resultlist, book, searchtype, source):
                                      (resultTitle, blacklisted['Status'], blacklisted['NZBprov']))
                         rejected = True
 
+            if not rejected and source == 'rss':
+                if searchtype in ['book', 'shortbook'] and 'E' not in res['types']:
+                    rejected = True
+                    logger.debug("Ignoring %s for eBook" % res[prefix + 'prov'])
+                if 'audio' in searchtype and 'A' not in res['types']:
+                    rejected = True
+                    logger.debug("Ignoring %s for AudioBook" % res[prefix + 'prov'])
+                if 'mag' in searchtype and 'M' not in res['types']:
+                    rejected = True
+                    logger.debug("Ignoring %s for Magazine" % res[prefix + 'prov'])
+
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                 rejected = True
                 logger.debug("Rejecting %s, invalid URL [%s]" % (resultTitle, url))

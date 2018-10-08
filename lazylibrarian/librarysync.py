@@ -237,7 +237,7 @@ def find_book_in_db(author, book, ignored=None):
         # - Strict prefix match with a ()ed remainder is allowed
         # But the leading : is removed by has_clean_subtitle, so we allow all non (): subtitles
         has_clean_subtitle = re.search(r"^\s+([^:()]+|\([^)]+\))$", book_sub) is not None
-        
+
         logger.debug('Searching %s %sbook%s by [%s] in database for [%s]' %
                      (len(books), ign, plural(len(books)), author, book))
         if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:

@@ -120,12 +120,6 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
 
 def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook'):
-    if (library == 'eBook' and not lazylibrarian.CONFIG['DIRECT_EBOOK']) or (
-            library == 'AudioBook' and not lazylibrarian.CONFIG['DIRECT_AUDIO']) or (
-            library == 'magazine' and not lazylibrarian.CONFIG['DIRECT_MAG']):
-        res = "Unsupported DIRECT download type %s for [%s]" % (library, dl_title)
-        logger.warn(res)
-        return False, res
     myDB = database.DBConnection()
     Source = "DIRECT"
     logger.debug("Starting Direct Download for [%s]" % dl_title)

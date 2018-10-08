@@ -68,13 +68,9 @@ def searchItem(item=None, bookid=None, cat=None):
         if nprov:
             results += resultlist
     if lazylibrarian.USE_DIRECT():
-        if (cat == 'book' and not lazylibrarian.CONFIG['DIRECT_EBOOK']) or (
-            cat == 'audio' and not lazylibrarian.CONFIG['DIRECT_AUDIO']):
-                logger.debug("Ignoring direct providers for %s" % cat)
-        else:
-            resultlist, nprov = IterateOverDirectSites(book, cat)
-            if nprov:
-                results += resultlist
+        resultlist, nprov = IterateOverDirectSites(book, cat)
+        if nprov:
+            results += resultlist
     if lazylibrarian.USE_RSS():
         resultlist, nprov = IterateOverRSSSites()
         if nprov:
