@@ -251,5 +251,7 @@ def get_cached_request(url, useCache=True, cache="XML"):
                     return None, False
         else:
             logger.debug("Got error response for %s: %s" % (url, result.split('<')[0]))
+            if 'goodreads' in url and '503' in result:
+                time.sleep(1)
             return None, False
     return source, valid_cache

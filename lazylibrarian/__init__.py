@@ -357,26 +357,26 @@ CONFIG_DEFINITIONS = {
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
     'KAT_DLPRIORITY': ('int', 'KAT', 0),
-    'KAT_DLTYPES': ('str', 'KAT', 'AEM'),
+    'KAT_DLTYPES': ('str', 'KAT', 'A,E,M'),
     'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.me'),
     'WWT': ('bool', 'WWT', 0),
     'WWT_DLPRIORITY': ('int', 'WWT', 0),
-    'WWT_DLTYPES': ('str', 'WWT', 'AEM'),
+    'WWT_DLTYPES': ('str', 'WWT', 'A,E,M'),
     'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
     'TPB': ('bool', 'TPB', 0),
     'TPB_DLPRIORITY': ('int', 'TPB', 0),
-    'TPB_DLTYPES': ('str', 'TPB', 'AEM'),
+    'TPB_DLTYPES': ('str', 'TPB', 'A,E,M'),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
     'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
-    'ZOO_DLTYPES': ('str', 'ZOO', 'AEM'),
+    'ZOO_DLTYPES': ('str', 'ZOO', 'A,E,M'),
     # 'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
     # 'EXTRA': ('bool', 'EXTRA', 0),
     # 'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
     'TDL_DLPRIORITY': ('int', 'TDL', 0),
-    'TDL_DLTYPES': ('str', 'TDL', 'AEM'),
+    'TDL_DLTYPES': ('str', 'TDL', 'A,E,M'),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
     'GEN_SEARCH': ('str', 'GEN', 'search.php'),
     'GEN': ('bool', 'GEN', 0),
@@ -390,7 +390,7 @@ CONFIG_DEFINITIONS = {
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
     'LIME_DLPRIORITY': ('int', 'LIME', 0),
-    'LIME_DLTYPES': ('str', 'LIME', 'AEM'),
+    'LIME_DLTYPES': ('str', 'LIME', 'A,E,M'),
     'NEWZBIN_UID': ('str', 'Newzbin', ''),
     'NEWZBIN_PASS': ('str', 'Newzbin', ''),
     'NEWZBIN': ('bool', 'Newzbin', 0),
@@ -697,7 +697,8 @@ def initialize():
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
             sys.exit(0)
 
-        check_db(myDB)
+        if version:
+            check_db(myDB)
 
         # group_concat needs sqlite3 >= 3.5.4
         GROUP_CONCAT = False
@@ -795,7 +796,7 @@ def config_read(reloaded=False):
                              "APILIMIT": check_setting('int', newz_name, 'apilimit', 0),
                              "APICOUNT": 0,
                              "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0),
-                             "DLTYPES": check_setting('str', newz_name, 'dltypes', 'AEM'),
+                             "DLTYPES": check_setting('str', newz_name, 'dltypes', 'A,E,M'),
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -836,7 +837,7 @@ def config_read(reloaded=False):
                              "APILIMIT": check_setting('int', torz_name, 'apilimit', 0),
                              "APICOUNT": 0,
                              "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0),
-                             "DLTYPES": check_setting('str', torz_name, 'dltypes', 'AEM'),
+                             "DLTYPES": check_setting('str', torz_name, 'dltypes', 'A,E,M'),
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -978,7 +979,7 @@ def config_write(part=None):
             value = CFG.get(section, key.lower())
             CONFIG[key] = value
             # if CONFIG['LOGLEVEL'] > 2:
-            #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
+            #    logger.debug("Leaving %s unchanged (%s)" % (key, value))
 
         if isinstance(value, text_type):
             if PY2:
@@ -989,7 +990,7 @@ def config_write(part=None):
                     value = unaccented_str(value)
             value = value.strip()
             if 'DLTYPES' in key:
-                value = ''.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
                 if not value:
                     value = 'E'
                 CONFIG[key] = value
@@ -1056,7 +1057,7 @@ def config_write(part=None):
                     if isinstance(value, text_type):
                         value = value.strip()
                     if item == 'DLTYPES':
-                        value = ''.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                        value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
                         if not value:
                             value = 'E'
                         provider['DLTYPES'] = value
@@ -1102,7 +1103,7 @@ def config_write(part=None):
                 if isinstance(value, text_type):
                     value = value.strip()
                 if item == 'DLTYPES':
-                    value = ''.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                    value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
                     if not value:
                         value = 'E'
                     provider['DLTYPES'] = value
@@ -1192,7 +1193,7 @@ def add_newz_slot():
                  "APILIMIT": 0,
                  "APICOUNT": 0,
                  "DLPRIORITY": 0,
-                 "DLTYPES": 'AEM'
+                 "DLTYPES": 'A,E,M'
                  }
         NEWZNAB_PROV.append(empty)
 
@@ -1225,7 +1226,7 @@ def add_torz_slot():
                  "APILIMIT": 0,
                  "APICOUNT": 0,
                  "DLPRIORITY": 0,
-                 "DLTYPES": 'AEM'
+                 "DLTYPES": 'A,E,M'
                  }
         TORZNAB_PROV.append(empty)
 

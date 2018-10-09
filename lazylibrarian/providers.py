@@ -662,16 +662,14 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, types='E', test=
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    page = 0
+    page = 1
     next_page = True
     provider = host.split('/list/show/')[1]
     if not dispname:
         dispname = provider
 
     while next_page:
-        URL = host
-        if page:
-            URL = "%s?page=%i" % (host, page)
+        URL = "%s?page=%i" % (host, page)
 
         result, success = fetchURL(URL)
 
@@ -712,7 +710,7 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, types='E', test=
 
         page += 1
         if maxpage:
-            if page >= maxpage:
+            if page > maxpage:
                 logger.warn('Maximum results page reached, still more results available')
                 next_page = False
 

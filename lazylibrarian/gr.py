@@ -1174,7 +1174,7 @@ class GoodReads:
         }
 
         myDB.upsert("books", newValueDict, controlValueDict)
-        logger.info("%s by %s added to the books database" % (bookname, authorname))
+        logger.info("%s by %s added to the books database, %s/%s" % (bookname, authorname, bookstatus, audiostatus))
 
         if 'nocover' in bookimg or 'nophoto' in bookimg:
             # try to get a cover from another source

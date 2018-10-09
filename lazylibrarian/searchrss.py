@@ -60,21 +60,37 @@ def search_wishlist():
             # we get rss_author, rss_title, maybe rss_isbn, rss_bookid (goodreads bookid)
             # we can just use bookid if goodreads, or try isbn and name matching on author/title if not
             # eg NYTimes wishlist
+            if 'E' in book['types']:
+                ebook_status = "Wanted"
+            else:
+                ebook_status = "Skipped"
+            if 'A' in book['types']:
+                audio_status = "Wanted"
+            else:
+                audio_status = "Skipped"
             if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and book['rss_bookid']:
-                bookmatch = myDB.match('select Status,BookName from books where bookid=?', (book['rss_bookid'],))
+                bookmatch = myDB.match('select Status,AudioStatus,BookName from books where bookid=?',
+                                       (book['rss_bookid'],))
                 if bookmatch:
-                    bookstatus = bookmatch['Status']
                     bookname = bookmatch['BookName']
-                    if bookstatus in ['Open', 'Wanted', 'Have']:
-                        logger.info('Found book %s, already marked as "%s"' % (bookname, bookstatus))
+                    if bookmatch['Status'] in ['Open', 'Wanted', 'Have']:
+                        logger.info('Found book %s, already marked as "%s"' % (bookname, bookmatch['Status']))
                     else:  # skipped/ignored
                         logger.info('Found book %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"Status": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         new_books += 1
+                    if bookmatch['AudioStatus'] in ['Open', 'Wanted', 'Have']:
+                        logger.info('Found audiobook %s, already marked as "%s"' % (bookname, bookmatch['AudioStatus']))
+                    else:  # skipped/ignored
+                        logger.info('Found audiobook %s, marking as "Wanted"' % bookname)
+                        controlValueDict = {"BookID": book['rss_bookid']}
+                        newValueDict = {"AudioStatus": "Wanted"}
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                        new_books += 1
                 else:
-                    import_book(book['rss_bookid'])
+                    import_book(book['rss_bookid'], ebook_status, audio_status)
                     new_books += 1
             else:
                 item = {}
@@ -89,14 +105,23 @@ def search_wishlist():
                     authorname = bookmatch['AuthorName']
                     bookname = bookmatch['BookName']
                     bookid = bookmatch['BookID']
-                    bookstatus = bookmatch['Status']
-                    if bookstatus in ['Open', 'Wanted', 'Have']:
+                    if bookmatch['Status'] in ['Open', 'Wanted', 'Have']:
                         logger.info(
-                            'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookstatus))
+                            'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookmatch['Status']))
                     else:  # skipped/ignored
                         logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
                         controlValueDict = {"BookID": bookid}
                         newValueDict = {"Status": "Wanted"}
+                        myDB.upsert("books", newValueDict, controlValueDict)
+                        new_books += 1
+                    if bookmatch['AudioStatus'] in ['Open', 'Wanted', 'Have']:
+                        logger.info(
+                            'Found audiobook %s by %s, already marked as "%s"' %
+                            (bookname, authorname, bookmatch['AudioStatus']))
+                    else:  # skipped/ignored
+                        logger.info('Found audiobook %s by %s, marking as "Wanted"' % (bookname, authorname))
+                        controlValueDict = {"BookID": bookid}
+                        newValueDict = {"AudioStatus": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         new_books += 1
                 else:  # not in database yet
@@ -107,7 +132,7 @@ def search_wishlist():
                         if result['isbn_fuzz'] > check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
                             logger.info("Found (%s%%) %s: %s" %
                                         (result['isbn_fuzz'], result['authorname'], result['bookname']))
-                            import_book(result['bookid'])
+                            import_book(result['bookid'], ebook_status, audio_status)
                             new_books += 1
                             bookmatch = True
                     if not results:
@@ -119,7 +144,7 @@ def search_wishlist():
                                 and result['book_fuzz'] > check_int(lazylibrarian.CONFIG['MATCH_RATIO'], 90):
                             logger.info("Found (%s%% %s%%) %s: %s" % (result['author_fuzz'], result['book_fuzz'],
                                                                       result['authorname'], result['bookname']))
-                            import_book(result['bookid'])
+                            import_book(result['bookid'], ebook_status, audio_status)
                             new_books += 1
                             bookmatch = True
 
