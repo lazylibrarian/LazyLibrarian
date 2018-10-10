@@ -120,10 +120,6 @@ def NZBDownloadMethod(bookid=None, nzbtitle=None, nzburl=None, library='eBook'):
 
 
 def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook'):
-    if library != 'eBook':
-        res = "Unsupported DIRECT download type %s for [%s]" % (library, dl_title)
-        logger.warn(res)
-        return False, res
     myDB = database.DBConnection()
     Source = "DIRECT"
     logger.debug("Starting Direct Download for [%s]" % dl_title)
@@ -274,7 +270,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
             # which requests can't handle, so throws an exception
             logger.debug("Requests exception: %s" % str(e))
             if "magnet:?" in str(e):
-                tor_url = 'magnet:?' + str(e).split('magnet:?')[1]. strip("'")
+                tor_url = 'magnet:?' + str(e).split('magnet:?')[1].strip("'")
                 logger.debug("Redirecting to %s" % tor_url)
             else:
                 if hasattr(e, 'reason'):

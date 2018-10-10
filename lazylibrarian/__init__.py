@@ -357,32 +357,40 @@ CONFIG_DEFINITIONS = {
     'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
     'KAT': ('bool', 'KAT', 0),
     'KAT_DLPRIORITY': ('int', 'KAT', 0),
+    'KAT_DLTYPES': ('str', 'KAT', 'A,E,M'),
     'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.me'),
     'WWT': ('bool', 'WWT', 0),
     'WWT_DLPRIORITY': ('int', 'WWT', 0),
+    'WWT_DLTYPES': ('str', 'WWT', 'A,E,M'),
     'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
     'TPB': ('bool', 'TPB', 0),
     'TPB_DLPRIORITY': ('int', 'TPB', 0),
+    'TPB_DLTYPES': ('str', 'TPB', 'A,E,M'),
     'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
     'ZOO': ('bool', 'ZOO', 0),
     'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
+    'ZOO_DLTYPES': ('str', 'ZOO', 'A,E,M'),
     # 'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
     # 'EXTRA': ('bool', 'EXTRA', 0),
     # 'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
     'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
     'TDL': ('bool', 'TDL', 0),
     'TDL_DLPRIORITY': ('int', 'TDL', 0),
+    'TDL_DLTYPES': ('str', 'TDL', 'A,E,M'),
     'GEN_HOST': ('str', 'GEN', 'libgen.io'),
     'GEN_SEARCH': ('str', 'GEN', 'search.php'),
     'GEN': ('bool', 'GEN', 0),
     'GEN_DLPRIORITY': ('int', 'GEN', 0),
+    'GEN_DLTYPES': ('str', 'GEN', 'EM'),
     'GEN2_HOST': ('str', 'GEN', 'libgen.io'),
     'GEN2_SEARCH': ('str', 'GEN', 'foreignfiction/index.php'),
     'GEN2': ('bool', 'GEN', 0),
     'GEN2_DLPRIORITY': ('int', 'GEN', 0),
+    'GEN2_DLTYPES': ('str', 'GEN2', 'EM'),
     'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
     'LIME': ('bool', 'LIME', 0),
     'LIME_DLPRIORITY': ('int', 'LIME', 0),
+    'LIME_DLTYPES': ('str', 'LIME', 'A,E,M'),
     'NEWZBIN_UID': ('str', 'Newzbin', ''),
     'NEWZBIN_PASS': ('str', 'Newzbin', ''),
     'NEWZBIN': ('bool', 'Newzbin', 0),
@@ -689,7 +697,8 @@ def initialize():
             logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
             sys.exit(0)
 
-        check_db(myDB)
+        if version:
+            check_db(myDB)
 
         # group_concat needs sqlite3 >= 3.5.4
         GROUP_CONCAT = False
@@ -786,7 +795,8 @@ def config_read(reloaded=False):
                              "MANUAL": check_setting('bool', newz_name, 'manual', 0),
                              "APILIMIT": check_setting('int', newz_name, 'apilimit', 0),
                              "APICOUNT": 0,
-                             "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0)
+                             "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0),
+                             "DLTYPES": check_setting('str', newz_name, 'dltypes', 'A,E,M'),
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -826,7 +836,8 @@ def config_read(reloaded=False):
                              "MANUAL": check_setting('bool', torz_name, 'manual', 0),
                              "APILIMIT": check_setting('int', torz_name, 'apilimit', 0),
                              "APICOUNT": 0,
-                             "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0)
+                             "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0),
+                             "DLTYPES": check_setting('str', torz_name, 'dltypes', 'A,E,M'),
                              })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -858,7 +869,8 @@ def config_read(reloaded=False):
                          "DISPNAME": disp_name,
                          "ENABLED": check_setting('bool', rss_name, 'ENABLED', 0),
                          "HOST": check_setting('str', rss_name, 'HOST', ''),
-                         "DLPRIORITY": check_setting('int', rss_name, 'DLPRIORITY', 0)
+                         "DLPRIORITY": check_setting('int', rss_name, 'DLPRIORITY', 0),
+                         "DLTYPES": check_setting('str', rss_name, 'dltypes', 'E'),
                          })
         count += 1
     # if the last slot is full, add an empty one on the end
@@ -967,7 +979,7 @@ def config_write(part=None):
             value = CFG.get(section, key.lower())
             CONFIG[key] = value
             # if CONFIG['LOGLEVEL'] > 2:
-            #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
+            #    logger.debug("Leaving %s unchanged (%s)" % (key, value))
 
         if isinstance(value, text_type):
             if PY2:
@@ -977,6 +989,11 @@ def config_write(part=None):
                     logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
                     value = unaccented_str(value)
             value = value.strip()
+            if 'DLTYPES' in key:
+                value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                if not value:
+                    value = 'E'
+                CONFIG[key] = value
 
         if key in ['SEARCH_BOOKINTERVAL', 'SEARCH_MAGINTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL',
                    'SEARCHRSS_INTERVAL', 'GOODREADS_INTERVAL', 'WISHLIST_INTERVAL']:
@@ -1005,8 +1022,9 @@ def config_write(part=None):
             logger.warn('Unsaved/invalid config key: %s' % key)
 
     if not part or part.startswith('Newznab') or part.startswith('Torznab'):
-        NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH', 'AUDIOSEARCH',
-                     'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'UPDATED', 'MANUAL', 'APILIMIT']
+        NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH',
+                     'AUDIOSEARCH', 'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'DLTYPES',
+                     'UPDATED', 'MANUAL', 'APILIMIT']
         for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
             new_list = []
             # strip out any empty slots
@@ -1038,6 +1056,11 @@ def config_write(part=None):
                     value = provider[item]
                     if isinstance(value, text_type):
                         value = value.strip()
+                    if item == 'DLTYPES':
+                        value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                        if not value:
+                            value = 'E'
+                        provider['DLTYPES'] = value
                     CFG.set(provider['NAME'], item, value)
 
             if entry[1] == 'Newznab':
@@ -1048,7 +1071,7 @@ def config_write(part=None):
                 add_torz_slot()
 
     if not part or part.startswith('rss_'):
-        RSS_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'DLPRIORITY']
+        RSS_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'DLPRIORITY', 'DLTYPES']
         new_list = []
         # strip out any empty slots
         for provider in RSS_PROV:
@@ -1079,6 +1102,11 @@ def config_write(part=None):
                 value = provider[item]
                 if isinstance(value, text_type):
                     value = value.strip()
+                if item == 'DLTYPES':
+                    value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                    if not value:
+                        value = 'E'
+                    provider['DLTYPES'] = value
                 CFG.set(provider['NAME'], item, value)
 
         RSS_PROV = new_list
@@ -1164,7 +1192,8 @@ def add_newz_slot():
                  "MANUAL": 0,
                  "APILIMIT": 0,
                  "APICOUNT": 0,
-                 "DLPRIORITY": 0
+                 "DLPRIORITY": 0,
+                 "DLTYPES": 'A,E,M'
                  }
         NEWZNAB_PROV.append(empty)
 
@@ -1196,7 +1225,8 @@ def add_torz_slot():
                  "MANUAL": 0,
                  "APILIMIT": 0,
                  "APICOUNT": 0,
-                 "DLPRIORITY": 0
+                 "DLPRIORITY": 0,
+                 "DLTYPES": 'A,E,M'
                  }
         TORZNAB_PROV.append(empty)
 
@@ -1255,7 +1285,8 @@ def add_rss_slot():
                          "DISPNAME": rss_name,
                          "ENABLED": 0,
                          "HOST": '',
-                         "DLPRIORITY": 0
+                         "DLPRIORITY": 0,
+                         "DLTYPES": 'E'
                          })
 
 

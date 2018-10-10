@@ -361,7 +361,7 @@ def import_CSV(search_dir=None):
                                         (result['author_fuzz'], result['book_fuzz'],
                                          result['authorname'], result['bookname'],
                                          authorname, title))
-                            import_book(result['bookid'], wait=True)
+                            import_book(result['bookid'], ebook="Wanted", wait=True)
                             imported = myDB.match('select * from books where BookID=?', (result['bookid'],))
                             if imported:
                                 bookcount += 1

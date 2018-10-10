@@ -1146,6 +1146,8 @@ class WebInterface(object):
                     'newznab_%i_apilimit' % count, 0), 0)
                 lazylibrarian.NEWZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'newznab_%i_dlpriority' % count, 0), 0)
+                lazylibrarian.NEWZNAB_PROV[count]['DLTYPES'] = kwargs.get(
+                    'newznab_%i_dltypes' % count, 'E')
                 lazylibrarian.NEWZNAB_PROV[count]['DISPNAME'] = kwargs.get(
                     'newznab_%i_dispname' % count, '')
             count += 1
@@ -1183,6 +1185,8 @@ class WebInterface(object):
                     'torznab_%i_apilimit' % count, 0), 0)
                 lazylibrarian.TORZNAB_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'torznab_%i_dlpriority' % count, 0), 0)
+                lazylibrarian.TORZNAB_PROV[count]['DLTYPES'] = kwargs.get(
+                    'torznab_%i_dltypes' % count, 'E')
                 lazylibrarian.TORZNAB_PROV[count]['DISPNAME'] = kwargs.get(
                     'torznab_%i_dispname' % count, '')
             count += 1
@@ -1194,6 +1198,8 @@ class WebInterface(object):
             if interface != 'legacy':
                 lazylibrarian.RSS_PROV[count]['DLPRIORITY'] = check_int(kwargs.get(
                     'rss_%i_dlpriority' % count, 0), 0)
+                lazylibrarian.RSS_PROV[count]['DLTYPES'] = kwargs.get(
+                    'rss_%i_dltypes' % count, 'E')
                 lazylibrarian.RSS_PROV[count]['DISPNAME'] = kwargs.get(
                     'rss_%i_dispname' % count, '')
             count += 1
@@ -3355,8 +3361,7 @@ class WebInterface(object):
             for extn in ['.opf', '.jpg']:
                 if os.path.exists(fname + extn):
                     os.remove(fname + extn)
-            if os.path.exists(fname):
-                os.remove(fname)
+
             # if the directory is now empty, delete that too
             if lazylibrarian.CONFIG['MAG_DELFOLDER']:
                 try:
@@ -3391,15 +3396,17 @@ class WebInterface(object):
                         issuedir = os.path.dirname(issue['IssueFile'])
                     else:
                         logger.debug('Failed to delete %s' % (issue['IssueFile']))
-                if issuedir:
+
+                # if the directory is now empty, delete that too
+                if issuedir and lazylibrarian.CONFIG['MAG_DELFOLDER']:
                     magdir = os.path.dirname(issuedir)
-                    # delete this magazines directory if now empty
                     try:
                         os.rmdir(magdir)
                         logger.debug('Magazine directory %s deleted from disc' % magdir)
                     except OSError:
                         logger.debug('Magazine directory %s is not empty' % magdir)
-                logger.info('Magazine %s deleted from disc' % title)
+                    logger.info('Magazine %s deleted from disc' % title)
+
             if action == "Remove" or action == "Delete":
                 myDB.action('DELETE from magazines WHERE Title=?', (title,))
                 myDB.action('DELETE from pastissues WHERE BookID=?', (title,))
@@ -3599,7 +3606,7 @@ class WebInterface(object):
         if 'limit' in kwargs:
             limit = kwargs['limit']
         else:
-            limit = 10
+            limit = '10'
 
         # url might end in .xml
         if not limit.isdigit():
@@ -3626,8 +3633,6 @@ class WebInterface(object):
             remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
         elif 'X-Host' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-        elif 'Host' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['Host']  # nginx
         elif 'Remote-Addr' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['Remote-Addr']
         else:
@@ -4463,7 +4468,9 @@ class WebInterface(object):
             search_wishlist()
         else:
             logger.warn('WishList search called but no wishlist providers set')
-        raise cherrypy.HTTPRedirect(source)
+        if source:
+            raise cherrypy.HTTPRedirect(source)
+        raise cherrypy.HTTPRedirect('books')
 
     @cherrypy.expose
     def forceSearch(self, source=None, title=None):
@@ -4490,6 +4497,7 @@ class WebInterface(object):
                 logger.warn('Search called but no download providers set')
         else:
             logger.debug("forceSearch called with bad source")
+            raise cherrypy.HTTPRedirect('books')
         raise cherrypy.HTTPRedirect(source)
 
     @cherrypy.expose

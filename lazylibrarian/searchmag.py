@@ -127,7 +127,7 @@ def search_magazines(mags=None, reset=False):
                             'nzburl': item['tor_url'],
                             'nzbdate': 'Fri, 01 Jan 1970 00:00:00 +0100',  # fake date as none returned
                             'nzbsize': item['tor_size'],
-                            'nzbmode': 'torrent'
+                            'nzbmode': 'direct'
                         })
 
             if lazylibrarian.USE_TOR():
@@ -162,16 +162,16 @@ def search_magazines(mags=None, reset=False):
 
                 if rss_resultlist:
                     for item in rss_resultlist:  # reformat the rss results so they look like nzbs
-                        resultlist.append({
-                            'bookid': book['bookid'],
-                            'nzbprov': item['tor_prov'],
-                            'nzbtitle': item['tor_title'],
-                            'nzburl': item['tor_url'],
-                            'nzbdate':
-                                item['tor_date'],  # may be fake date as none returned from rss torrents, only rss nzb
-                            'nzbsize': item['tor_size'],
-                            'nzbmode': item['tor_type']
-                        })
+                        if 'M' in item['types']:
+                            resultlist.append({
+                                'bookid': book['bookid'],
+                                'nzbprov': item['tor_prov'],
+                                'nzbtitle': item['tor_title'],
+                                'nzburl': item['tor_url'],
+                                'nzbdate': item['tor_date'],  # may be fake date as none returned from rss torrents
+                                'nzbsize': item['tor_size'],
+                                'nzbmode': item['tor_type']
+                            })
 
             if not resultlist:
                 logger.debug("No results for magazine %s" % book['searchterm'])

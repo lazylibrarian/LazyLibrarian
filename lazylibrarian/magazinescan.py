@@ -69,15 +69,15 @@ def magazineScan(title=None):
                     myDB.upsert("magazines", newValueDict, controlValueDict)
                     logger.debug('Magazine %s details reset' % title)
 
-            mags = myDB.select('SELECT * from magazines')
             # now check the magazine titles and delete any with no issues
-            for mag in mags:
-                title = mag['Title']
-                count = myDB.select('SELECT COUNT(Title) as counter FROM issues WHERE Title=?', (title,))
-                issues = count[0]['counter']
-                if not issues:
-                    logger.debug('Magazine %s deleted as no issues found' % title)
-                    myDB.action('DELETE from magazines WHERE Title=?', (title,))
+            if lazylibrarian.CONFIG['MAG_DELFOLDER']:
+                mags = myDB.select('SELECT Title,count(Title) as counter from issues group by Title')
+                for mag in mags:
+                    title = mag['Title']
+                    issues = mag['counter']
+                    if not issues:
+                        logger.debug('Magazine %s deleted as no issues found' % title)
+                        myDB.action('DELETE from magazines WHERE Title=?', (title,))
 
         if onetitle:
             match = myDB.match('SELECT LatestCover from magazines where Title=?', (onetitle,))

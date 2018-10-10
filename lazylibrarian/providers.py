@@ -414,6 +414,12 @@ def IterateOverNewzNabSites(book=None, searchType=None):
         if provider['ENABLED']:
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverNewzNabSites] - %s is BLOCKED' % provider['HOST'])
+            elif searchType in ['book', 'shortbook'] and 'E' not in provider['DLTYPES']:
+                logger.debug("Ignoring %s for eBook" % provider['HOST'])
+            elif "audio" in searchType and 'A' not in provider['DLTYPES']:
+                logger.debug("Ignoring %s for AudioBook" % provider['HOST'])
+            elif "mag" in searchType and 'M' not in provider['DLTYPES']:
+                logger.debug("Ignoring %s for Magazine" % provider['HOST'])
             else:
                 if check_int(provider['APILIMIT'], 0):
                     if 'APICOUNT' in provider:
@@ -426,16 +432,22 @@ def IterateOverNewzNabSites(book=None, searchType=None):
                     else:
                         provider['APICOUNT'] = res + 1
 
-            if not ProviderIsBlocked(provider['HOST']):
-                provider = get_capabilities(provider)
-                providers += 1
-                logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
-                resultslist += NewzNabPlus(book, provider, searchType, "nzb")
+                if not ProviderIsBlocked(provider['HOST']):
+                    provider = get_capabilities(provider)
+                    providers += 1
+                    logger.debug('[IterateOverNewzNabSites] - %s' % provider['HOST'])
+                    resultslist += NewzNabPlus(book, provider, searchType, "nzb")
 
     for provider in lazylibrarian.TORZNAB_PROV:
         if provider['ENABLED']:
             if ProviderIsBlocked(provider['HOST']):
                 logger.debug('[IterateOverNewzNabSites] - %s is BLOCKED' % provider['HOST'])
+            elif searchType in ['book', 'shortbook'] and 'E' not in provider['DLTYPES']:
+                logger.debug("Ignoring %s for eBook" % provider['HOST'])
+            elif "audio" in searchType and 'A' not in provider['DLTYPES']:
+                logger.debug("Ignoring %s for AudioBook" % provider['HOST'])
+            elif "mag" in searchType and 'M' not in provider['DLTYPES']:
+                logger.debug("Ignoring %s for Magazine" % provider['HOST'])
             else:
                 if check_int(provider['APILIMIT'], 0):
                     if 'APICOUNT' in provider:
@@ -448,11 +460,11 @@ def IterateOverNewzNabSites(book=None, searchType=None):
                     else:
                         provider['APICOUNT'] = res + 1
 
-            if not ProviderIsBlocked(provider['HOST']):
-                provider = get_capabilities(provider)
-                providers += 1
-                logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
-                resultslist += NewzNabPlus(book, provider, searchType, "torznab")
+                if not ProviderIsBlocked(provider['HOST']):
+                    provider = get_capabilities(provider)
+                    providers += 1
+                    logger.debug('[IterateOverTorzNabSites] - %s' % provider['HOST'])
+                    resultslist += NewzNabPlus(book, provider, searchType, "torznab")
 
     return resultslist, providers
 
@@ -468,6 +480,12 @@ def IterateOverTorrentSites(book=None, searchType=None):
         if lazylibrarian.CONFIG[prov]:
             if ProviderIsBlocked(prov):
                 logger.debug('[IterateOverTorrentSites] - %s is BLOCKED' % lazylibrarian.CONFIG[prov + '_HOST'])
+            elif searchType in ['book', 'shortbook'] and 'E' not in lazylibrarian.CONFIG[prov + '_DLTYPES']:
+                logger.debug("Ignoring %s for eBook" % prov)
+            elif "audio" in searchType and 'A' not in lazylibrarian.CONFIG[prov + '_DLTYPES']:
+                logger.debug("Ignoring %s for AudioBook" % prov)
+            elif "mag" in searchType and 'M' not in lazylibrarian.CONFIG[prov + '_DLTYPES']:
+                logger.debug("Ignoring %s for Magazine" % prov)
             else:
                 logger.debug('[IterateOverTorrentSites] - %s' % lazylibrarian.CONFIG[prov + '_HOST'])
                 if prov == 'KAT':
@@ -510,6 +528,12 @@ def IterateOverDirectSites(book=None, searchType=None):
             if ProviderIsBlocked(prov):
                 logger.debug('[IterateOverDirectSites] - %s %s is BLOCKED' % (lazylibrarian.CONFIG[prov + '_HOST'],
                                                                               lazylibrarian.CONFIG[prov + '_SEARCH']))
+            elif searchType in ['book', 'shortbook'] and 'E' not in lazylibrarian.CONFIG[prov + '_DLTYPES']:
+                logger.debug("Ignoring %s for eBook" % prov)
+            elif "audio" in searchType and 'A' not in lazylibrarian.CONFIG[prov + '_DLTYPES']:
+                logger.debug("Ignoring %s for AudioBook" % prov)
+            elif "mag" in searchType and 'M' not in lazylibrarian.CONFIG[prov + '_DLTYPES']:
+                logger.debug("Ignoring %s for Magazine" % prov)
             else:
                 logger.debug('[IterateOverDirectSites] - %s %s' % (lazylibrarian.CONFIG[prov + '_HOST'],
                                                                    lazylibrarian.CONFIG[prov + '_SEARCH']))
@@ -533,7 +557,8 @@ def IterateOverRSSSites():
             else:
                 providers += 1
                 logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
-                resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'], provider['DISPNAME'])
+                resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'], provider['DISPNAME'],
+                                   provider['DLTYPES'])
 
     return resultslist, providers
 
@@ -551,7 +576,7 @@ def IterateOverWishLists():
                     providers += 1
                     logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
                     resultslist += GOODREADS(provider['HOST'], provider['NAME'],
-                                             provider['DLPRIORITY'], provider['DISPNAME'])
+                                             provider['DLPRIORITY'], provider['DISPNAME'], provider['DLTYPES'])
             elif wishtype == 'LISTOPIA':
                 if ProviderIsBlocked(provider['HOST']):
                     logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
@@ -559,7 +584,7 @@ def IterateOverWishLists():
                     providers += 1
                     logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
                     resultslist += LISTOPIA(provider['HOST'], provider['NAME'],
-                                            provider['DLPRIORITY'], provider['DISPNAME'])
+                                            provider['DLPRIORITY'], provider['DISPNAME'], provider['DLTYPES'])
             elif wishtype == 'NYTIMES':
                 if ProviderIsBlocked(provider['HOST']):
                     logger.debug('[IterateOverWishLists] - %s is BLOCKED' % provider['HOST'])
@@ -567,12 +592,12 @@ def IterateOverWishLists():
                     providers += 1
                     logger.debug('[IterateOverWishLists] - %s' % provider['HOST'])
                     resultslist += NYTIMES(provider['HOST'], provider['NAME'],
-                                           provider['DLPRIORITY'], provider['DISPNAME'])
+                                           provider['DLPRIORITY'], provider['DISPNAME'], provider['DLTYPES'])
 
     return resultslist, providers
 
 
-def NYTIMES(host=None, feednr=None, priority=0, dispname=None, test=False):
+def NYTIMES(host=None, feednr=None, priority=0, dispname=None, types='E', test=False):
     """
     NYTIMES best-sellers query function, return all the results in a list
     """
@@ -615,7 +640,8 @@ def NYTIMES(host=None, feednr=None, priority=0, dispname=None, test=False):
                     'rss_bookid': '',
                     'rss_isbn': '',
                     'priority': priority,
-                    'dispname': dispname
+                    'dispname': dispname,
+                    'types': types,
                 })
             except IndexError:
                 pass
@@ -626,7 +652,7 @@ def NYTIMES(host=None, feednr=None, priority=0, dispname=None, test=False):
     return results
 
 
-def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
+def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, types='E', test=False):
     """
     Goodreads Listopia query function, return all the results in a list
     """
@@ -636,16 +662,14 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
     if not str(host)[:4] == "http":
         host = 'http://' + host
 
-    page = 0
+    page = 1
     next_page = True
     provider = host.split('/list/show/')[1]
     if not dispname:
         dispname = provider
 
     while next_page:
-        URL = host
-        if page:
-            URL = "%s?page=%i" % (host, page)
+        URL = "%s?page=%i" % (host, page)
 
         result, success = fetchURL(URL)
 
@@ -675,7 +699,8 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
                         'rss_bookid': book_id,
                         'rss_isbn': '',
                         'priority': priority,
-                        'dispname': dispname
+                        'dispname': dispname,
+                        'types': types,
                     })
                     next_page = True
                 except IndexError:
@@ -685,7 +710,7 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
 
         page += 1
         if maxpage:
-            if page >= maxpage:
+            if page > maxpage:
                 logger.warn('Maximum results page reached, still more results available')
                 next_page = False
 
@@ -693,7 +718,7 @@ def LISTOPIA(host=None, feednr=None, priority=0, dispname=None, test=False):
     return results
 
 
-def GOODREADS(host=None, feednr=None, priority=0, dispname=None, test=False):
+def GOODREADS(host=None, feednr=None, priority=0, dispname=None, types='E', test=False):
     """
     Goodreads RSS query function, return all the results in a list, can handle multiple wishlists
     but expects goodreads format (looks for goodreads category names)
@@ -745,14 +770,15 @@ def GOODREADS(host=None, feednr=None, priority=0, dispname=None, test=False):
                     'rss_bookid': book_id,
                     'rss_isbn': isbn,
                     'priority': priority,
-                    'dispname': dispname
+                    'dispname': dispname,
+                    'types': types,
                 })
     else:
         logger.debug('No data returned from %s' % host)
     return results
 
 
-def RSS(host=None, feednr=None, priority=0, dispname=None, test=False):
+def RSS(host=None, feednr=None, priority=0, dispname=None, types='E', test=False):
     """
     Generic RSS query function, just return all the results from the RSS feed in a list
     """
@@ -840,7 +866,8 @@ def RSS(host=None, feednr=None, priority=0, dispname=None, test=False):
                     'tor_feed': feednr,
                     'tor_type': tortype,
                     'priority': priority,
-                    'dispname': dispname
+                    'dispname': dispname,
+                    'types': types,
                 })
     else:
         logger.debug('No data returned from %s' % host)
