@@ -3633,8 +3633,6 @@ class WebInterface(object):
             remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
         elif 'X-Host' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-        elif 'Host' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['Host']  # nginx
         elif 'Remote-Addr' in cherrypy.request.headers:
             remote_ip = cherrypy.request.headers['Remote-Addr']
         else:
