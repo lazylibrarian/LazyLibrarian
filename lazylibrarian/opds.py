@@ -57,6 +57,14 @@ class OPDS(object):
             else:
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
 
+        my_ip = None
+        if 'X-Forwarded-Host' in cherrypy.request.headers:
+            my_ip = cherrypy.request.headers['X-Forwarded-Host']
+        elif 'Host' in cherrypy.request.headers:
+            my_ip = cherrypy.request.headers['Host']
+        if my_ip:
+            self.opdsroot = '%s://%s%s' % (cherrypy.request.scheme, my_ip, self.opdsroot)
+
         self.searchroot = self.opdsroot.replace('/opds', '')
 
     def checkParams(self, **kwargs):
@@ -85,8 +93,6 @@ class OPDS(object):
                 remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
             elif 'X-Host' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-            elif 'Host' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['Host']  # nginx
             elif 'Remote-Addr' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['Remote-Addr']
             else:
