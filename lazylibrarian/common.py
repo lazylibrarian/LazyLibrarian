@@ -1211,7 +1211,7 @@ def zipAudio(source, zipname):
 def runScript(params):
     if platform.system() == "Windows" and params[0].endswith('.py'):
         params.insert(0, sys.executable)
-    logger.debug(params)
+    logger.debug(str(params))
     try:
         p = Popen(params, stdout=PIPE, stderr=PIPE)
         res, err = p.communicate()
