@@ -997,30 +997,44 @@ def NewzNabPlus(book=None, provider=None, searchType=None, searchMode=None, test
                 resultxml = rootxml.getiterator('item')
                 nzbcount = 0
                 maxage = check_int(lazylibrarian.CONFIG['USENET_RETENTION'], 0)
+                minimumseeders = check_int(lazylibrarian.CONFIG['NUMBEROFSEEDERS'], 0)
                 for nzb in resultxml:
                     try:
                         thisnzb = ReturnResultsFieldsBySearchType(book, nzb, host, searchMode, provider['DLPRIORITY'])
                         thisnzb['dispname'] = provider['DISPNAME']
-                        if not maxage:
-                            nzbcount += 1
-                            results.append(thisnzb)
-                        else:
-                            # example nzbdate format: Mon, 27 May 2013 02:12:09 +0200
-                            nzbdate = thisnzb['nzbdate']
-                            try:
-                                parts = nzbdate.split(' ')
-                                nzbdate = ' '.join(parts[:5])  # strip the +0200
-                                dt = datetime.datetime.strptime(nzbdate, "%a, %d %b %Y %H:%M:%S").timetuple()
-                                nzbage = age('%04d-%02d-%02d' % (dt.tm_year, dt.tm_mon, dt.tm_mday))
-                            except Exception as e:
-                                logger.warn('Unable to get age from [%s] %s %s' %
-                                            (thisnzb['nzbdate'], type(e).__name__, str(e)))
-                                nzbage = 0
-                            if nzbage <= maxage:
+
+                        if 'seeders' in thisnzb:
+                            # its torznab, check if minimum seeders relevant
+                            if check_int(thisnzb['seeders'], 0) >= minimumseeders:
                                 nzbcount += 1
                                 results.append(thisnzb)
                             else:
-                                logger.debug('%s is too old (%s day%s)' % (thisnzb['nzbtitle'], nzbage, plural(nzbage)))
+                                logger.debug('Rejecting %s has %s seeder%s' % (thisnzb['nzbtitle'],
+                                                                               thisnzb['seeders'],
+                                                                               plural(thisnzb['seeders'])))
+                        else:
+                            # its newznab, check if too old
+                            if not maxage:
+                                nzbcount += 1
+                                results.append(thisnzb)
+                            else:
+                                # example nzbdate format: Mon, 27 May 2013 02:12:09 +0200
+                                nzbdate = thisnzb['nzbdate']
+                                try:
+                                    parts = nzbdate.split(' ')
+                                    nzbdate = ' '.join(parts[:5])  # strip the +0200
+                                    dt = datetime.datetime.strptime(nzbdate, "%a, %d %b %Y %H:%M:%S").timetuple()
+                                    nzbage = age('%04d-%02d-%02d' % (dt.tm_year, dt.tm_mon, dt.tm_mday))
+                                except Exception as e:
+                                    logger.warn('Unable to get age from [%s] %s %s' %
+                                                (thisnzb['nzbdate'], type(e).__name__, str(e)))
+                                    nzbage = 0
+                                if nzbage <= maxage:
+                                    nzbcount += 1
+                                    results.append(thisnzb)
+                                else:
+                                    logger.debug('%s is too old (%s day%s)' % (thisnzb['nzbtitle'],
+                                                                               nzbage, plural(nzbage)))
 
                     except IndexError:
                         logger.debug('No results from %s for %s' % (host, sterm))
@@ -1211,6 +1225,7 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
     nzbdate = ''
     nzburl = ''
     nzbsize = 0
+    seeders = None
 
     n = 0
     while n < len(nzbdetails):
@@ -1229,6 +1244,8 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
             nzburl = nzbdetails[n].attrib.get('value')
         elif nzbdetails[n].attrib.get('name') == 'size':
             nzbsize = nzbdetails[n].attrib.get('value')
+        elif nzbdetails[n].attrib.get('name') == 'seeders':
+            seeders = nzbdetails[n].attrib.get('value')
         n += 1
 
     resultFields = {
@@ -1241,6 +1258,8 @@ def ReturnResultsFieldsBySearchType(book=None, nzbdetails=None, host=None, searc
         'nzbmode': searchMode,
         'priority': priority
     }
+    if seeders is not None:  # only if torznab
+        resultFields['seeders'] = check_int(seeders, 0)
 
     logger.debug('[NewzNabPlus] - result fields from NZB are ' + str(resultFields))
     return resultFields
