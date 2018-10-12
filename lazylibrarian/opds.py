@@ -23,7 +23,7 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int, plural, md5_utf8
+from lazylibrarian.formatter import makeUnicode, check_int, plural
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
@@ -255,7 +255,7 @@ class OPDS(object):
                 }
 
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
-               entry['thumbnail'] = '/' + author['AuthorImg']
+                entry['thumbnail'] = '/' + author['AuthorImg']
             entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
