@@ -23,7 +23,7 @@ import cherrypy
 import os
 import datetime
 from cherrypy.lib.static import serve_file
-from lazylibrarian.formatter import makeUnicode, check_int, plural
+from lazylibrarian.formatter import makeUnicode, check_int, plural, getList
 from lazylibrarian.common import mimeType, zipAudio
 from lazylibrarian.cache import cache_img
 # noinspection PyUnresolvedReferences
@@ -118,6 +118,23 @@ class OPDS(object):
                                                              title=self.data['title'], opds=self.data)
         else:
             return self.data
+
+
+    def multiLink(self, bookfile, bookid):
+        types = []
+        multi = ''
+        basename, extn = os.path.splitext(bookfile)
+        for item in getList(lazylibrarian.CONFIG['EBOOK_TYPE']):
+            target = basename + '.' + item
+            if os.path.isfile(target):
+                types.append(item)
+        if len(types) > 1:
+            for fmt in types:
+                multi += '<link href="'
+                multi += '%s?cmd=Serve&amp;bookid=%s&amp;fmt=%s' % (self.opdsroot, quote_plus(bookid), fmt)
+                multi += '" rel="http://opds-spec.org/acquisition" type="' + mimeType('.' + fmt) + '"/>'
+        return multi
+
 
     @staticmethod
     def _error_with_message(message):
@@ -467,8 +484,14 @@ class OPDS(object):
 
         for book in page:
             mime_type = None
+            rel = 'file'
             if book['BookFile']:
-                mime_type = mimeType(book['BookFile'])
+                mime_type = self.multiLink(book['BookFile'], book['BookID'])
+                if mime_type:
+                    rel = 'multi'
+                else:
+                    mime_type = mimeType(book['BookFile'])
+
             elif book['AudioFile']:
                 mime_type = mimeType(book['AudioFile'])
 
@@ -478,7 +501,7 @@ class OPDS(object):
                          'updated': opdstime(book['BookAdded']),
                          'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
                          'kind': 'acquisition',
-                         'rel': 'file',
+                         'rel': rel,
                          'type': mime_type}
                 if lazylibrarian.CONFIG['OPDS_METAINFO']:
                     entry['image'] = self.searchroot + '/' + book['BookImg']
@@ -538,8 +561,14 @@ class OPDS(object):
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
             mime_type = None
+            rel = 'file'
             if book['BookFile']:
-                mime_type = mimeType(book['BookFile'])
+                mime_type = self.multiLink(book['BookFile'], book['BookID'])
+                if mime_type:
+                    rel = 'multi'
+                else:
+                    mime_type = mimeType(book['BookFile'])
+
             elif book['AudioFile']:
                 mime_type = mimeType(book['AudioFile'])
             if mime_type:
@@ -552,7 +581,7 @@ class OPDS(object):
                          'updated': opdstime(book['BookAdded']),
                          'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, book['BookID']),
                          'kind': 'acquisition',
-                         'rel': 'file',
+                         'rel': rel,
                          'author': escape("%s" % author),
                          'type': mime_type}
 
@@ -669,8 +698,14 @@ class OPDS(object):
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
             mime_type = None
+            rel = 'file'
             if book['BookFile']:
-                mime_type = mimeType(book['BookFile'])
+                mime_type = self.multiLink(book['BookFile'], book['BookID'])
+                if mime_type:
+                    rel = 'multi'
+                else:
+                    mime_type = mimeType(book['BookFile'])
+
             elif book['AudioFile']:
                 mime_type = mimeType(book['AudioFile'])
             if mime_type:
@@ -680,8 +715,9 @@ class OPDS(object):
                          'updated': opdstime(book['BookLibrary']),
                          'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
                          'kind': 'acquisition',
-                         'rel': 'file',
+                         'rel': rel,
                          'type': mime_type}
+
                 if lazylibrarian.CONFIG['OPDS_METAINFO']:
                     author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
                     author = makeUnicode(author['AuthorName'])
@@ -773,11 +809,18 @@ class OPDS(object):
 
     def _Serve(self, **kwargs):
         if 'bookid' in kwargs:
+            if 'fmt' in kwargs:
+                fmt = kwargs['fmt']
+            else:
+                fmt = ''
             myid = kwargs['bookid']
             myDB = database.DBConnection()
             res = myDB.match('SELECT BookFile,BookName from books where bookid=?', (myid,))
-            self.file = res['BookFile']
-            self.filename = os.path.split(res['BookFile'])[1]
+            bookfile = res['BookFile']
+            if fmt:
+                bookfile = os.path.splitext(bookfile)[0] + '.' + fmt
+            self.file = bookfile
+            self.filename = os.path.split(bookfile)[1]
             return
         elif 'issueid' in kwargs:
             myid = kwargs['issueid']
