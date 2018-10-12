@@ -232,7 +232,7 @@ class OPDS(object):
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
         links.append(getLink(href='%s/opensearchauthors.xml' % self.searchroot,
                              ftype='application/opensearchdescription+xml', rel='search', title='Search Authors'))
-        cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded from Authors WHERE "
+        cmd = "SELECT AuthorName,AuthorID,HaveBooks,TotalBooks,DateAdded,AuthorImg from Authors WHERE "
         if 'query' in kwargs:
             cmd += "AuthorName LIKE '%" + kwargs['query'] + "%' AND "
         cmd += "CAST(HaveBooks AS INTEGER) > 0 order by AuthorName"
@@ -253,9 +253,9 @@ class OPDS(object):
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-            # removed authorimg as it stops navigation ??
-            # if lazylibrarian.CONFIG['OPDS_METAINFO']:
-            #    entry['image'] = self.searchroot + '/' + author['AuthorImg']
+
+            if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                entry['thumbnail'] = '/' + author['AuthorImg']
             entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
@@ -306,10 +306,10 @@ class OPDS(object):
                     'kind': 'navigation',
                     'rel': 'subsection',
                 }
-                # disabled cover image as it stops navigation?
+
                 # if lazylibrarian.CONFIG['OPDS_METAINFO']:
                 #     res = cache_img('magazine', md5_utf8(mag['LatestCover']), mag['LatestCover'], refresh=True)
-                #     entry['image'] = self.searchroot + '/' + res[0]
+                #     entry['thumbnail'] = '/' + res[0]
                 entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
@@ -415,6 +415,7 @@ class OPDS(object):
                 fname = os.path.splitext(issue['IssueFile'])[0]
                 res = cache_img('magazine', issue['IssueID'], fname + '.jpg')
                 entry['image'] = self.searchroot + '/' + res[0]
+                entry['thumbnail'] = entry['image']
             entries.append(entry)
 
         feed = {}
@@ -481,6 +482,7 @@ class OPDS(object):
                          'type': mime_type}
                 if lazylibrarian.CONFIG['OPDS_METAINFO']:
                     entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['thumbnail'] = entry['image']
                     entry['content'] = escape('%s - %s' % (book['BookName'], book['BookDesc']))
                     entry['author'] = escape('%s' % author)
                 else:
@@ -556,6 +558,7 @@ class OPDS(object):
 
                 if lazylibrarian.CONFIG['OPDS_METAINFO']:
                     entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['thumbnail'] = entry['image']
                     entry['content'] = escape('%s (%s %s) %s' % (book['BookName'], series['SeriesName'],
                                                                  book['SeriesNum'], book['BookDesc']))
                 else:
@@ -625,6 +628,7 @@ class OPDS(object):
                 fname = os.path.splitext(mag['IssueFile'])[0]
                 res = cache_img('magazine', mag['IssueID'], fname + '.jpg')
                 entry['image'] = self.searchroot + '/' + res[0]
+                entry['thumbnail'] = entry['image']
             entries.append(entry)
 
         if len(results) > (index + self.PAGE_SIZE):
@@ -682,6 +686,7 @@ class OPDS(object):
                     author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
                     author = makeUnicode(author['AuthorName'])
                     entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['thumbnail'] = entry['image']
                     entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
                     entry['author'] = escape('%s' % author)
                 else:
@@ -744,6 +749,7 @@ class OPDS(object):
                 author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
                 author = makeUnicode(author['AuthorName'])
                 entry['image'] = self.searchroot + '/' + book['BookImg']
+                entry['thumbnail'] = entry['image']
                 entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
                 entry['author'] = escape('%s' % author)
             else:

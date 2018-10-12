@@ -92,6 +92,7 @@ def findBestResult(resultlist, book, searchtype, source):
         logger.debug('Searching %s %s results for best %s match' % (len(resultlist), source, auxinfo))
 
         matches = []
+        ignored_messages = []
         for res in resultlist:
             resultTitle = unaccented_str(replace_all(res[prefix + 'title'], dictrepl)).strip()
             resultTitle = re.sub(r"\s\s+", " ", resultTitle)  # remove extra whitespace
@@ -139,13 +140,22 @@ def findBestResult(resultlist, book, searchtype, source):
             if not rejected and source == 'rss':
                 if searchtype in ['book', 'shortbook'] and 'E' not in res['types']:
                     rejected = True
-                    logger.debug("Ignoring %s for eBook" % res[prefix + 'prov'])
+                    ignore_msg = "Ignoring %s for eBook" % res[prefix + 'prov']
+                    if ignore_msg not in ignored_messages:
+                        ignored_messages.append(ignore_msg)
+                        logger.debug(ignore_msg)
                 if 'audio' in searchtype and 'A' not in res['types']:
                     rejected = True
-                    logger.debug("Ignoring %s for AudioBook" % res[prefix + 'prov'])
+                    ignore_msg = "Ignoring %s for AudioBook" % res[prefix + 'prov']
+                    if ignore_msg not in ignored_messages:
+                        ignored_messages.append(ignore_msg)
+                        logger.debug(ignore_msg)
                 if 'mag' in searchtype and 'M' not in res['types']:
                     rejected = True
-                    logger.debug("Ignoring %s for Magazine" % res[prefix + 'prov'])
+                    ignore_msg = "Ignoring %s for Magazine" % res[prefix + 'prov']
+                    if ignore_msg not in ignored_messages:
+                        ignored_messages.append(ignore_msg)
+                        logger.debug(ignore_msg)
 
             if not rejected and not url.startswith('http') and not url.startswith('magnet'):
                 rejected = True
