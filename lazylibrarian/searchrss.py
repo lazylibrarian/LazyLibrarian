@@ -75,7 +75,7 @@ def search_wishlist():
                     bookname = bookmatch['BookName']
                     if bookmatch['Status'] in ['Open', 'Wanted', 'Have']:
                         logger.info('Found book %s, already marked as "%s"' % (bookname, bookmatch['Status']))
-                    else:  # skipped/ignored
+                    elif ebook_status == "Wanted":  # skipped/ignored
                         logger.info('Found book %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"Status": "Wanted"}
@@ -83,7 +83,7 @@ def search_wishlist():
                         new_books += 1
                     if bookmatch['AudioStatus'] in ['Open', 'Wanted', 'Have']:
                         logger.info('Found audiobook %s, already marked as "%s"' % (bookname, bookmatch['AudioStatus']))
-                    else:  # skipped/ignored
+                    elif audio_status == "Wanted":  # skipped/ignored
                         logger.info('Found audiobook %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"AudioStatus": "Wanted"}
