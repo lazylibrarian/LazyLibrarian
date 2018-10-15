@@ -221,9 +221,9 @@ def audioProcess(bookid, rename=False, playlist=False):
 
     if playlist:
         try:
-            playlist = open(os.path.join(dest_path, 'playlist.ll'), 'w')
+            playlist = open(os.path.join(r, 'playlist.ll'), 'w')
         except Exception as why:
-            logger.error('Unable to create playlist in %s: %s' % (dest_path, why))
+            logger.error('Unable to create playlist in %s: %s' % (r, why))
             playlist = None
 
     for part in parts:
