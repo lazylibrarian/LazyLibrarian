@@ -39,7 +39,7 @@ from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_ta
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
     safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, makeBytestr, md5_utf8, dateFormat, \
-    check_year
+    check_year, dispName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.images import getBookCover, createMagCover
@@ -3844,35 +3844,9 @@ class WebInterface(object):
                         title = title.replace('.', ' ')
                         title = title.replace('LL (', 'LL.(')
                         nrow[0] = title
-                    # provider needs to be shorter and with spaces for column resizing
-                    provider = nrow[3]
-                    if provider:
-                        provider = provider.strip('/')
-                        provname = ''
-                        for item in lazylibrarian.NEWZNAB_PROV:
-                            if item['HOST'].strip('/') == provider:
-                                provname = item['DISPNAME']
-                                break
-                        if not provname:
-                            for item in lazylibrarian.TORZNAB_PROV:
-                                if item['HOST'].strip('/') == provider:
-                                    provname = item['DISPNAME']
-                                    break
-
-                        if not provname:
-                            for item in lazylibrarian.RSS_PROV:
-                                if item['HOST'].strip('/') == provider:
-                                    provname = item['DISPNAME']
-                                    break
-                        if not provname:
-                            provname = provider
-
-                        if len(provname) > 20:
-                            while len(provname) > 20 and '/' in provname:
-                                provname = provname.split('/', 1)[1]
-                            provname = provname.replace('/', ' ')
-                        nrow[3] = provname
-
+                    # provider name needs to be shorter and with spaces for column resizing
+                    if nrow[3]:
+                        nrow[3] = dispName(nrow[3].strip('/'))
                         rows.append(nrow)  # add the rowlist to the masterlist
 
                 if sSearch:
@@ -3968,7 +3942,7 @@ class WebInterface(object):
             message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
             message += "Date: %s<br>" % match['NZBdate']
             message += "Size: %s Mb<br>" % match['NZBsize']
-            message += "Provider: %s<br>" % match['NZBprov']
+            message += "Provider: %s<br>" % dispName(match['NZBprov'])
             message += "Downloader: %s<br>" % match['Source']
             message += "DownloadID: %s<br>" % match['DownloadID']
             message += "URL: %s<br>" % match['NZBurl']
@@ -4117,25 +4091,7 @@ class WebInterface(object):
         result = ''
         downloads = myDB.select('SELECT Count,Provider FROM downloads ORDER BY Count DESC')
         for line in downloads:
-            provider = line['Provider'].strip('/')
-            provname = ''
-            for item in lazylibrarian.NEWZNAB_PROV:
-                if item['HOST'].strip('/') == provider:
-                    provname = item['DISPNAME']
-                    break
-            if not provname:
-                for item in lazylibrarian.TORZNAB_PROV:
-                    if item['HOST'].strip('/') == provider:
-                        provname = item['DISPNAME']
-                        break
-            if not provname:
-                for item in lazylibrarian.RSS_PROV:
-                    if item['HOST'].strip('/') == provider:
-                        provname = item['DISPNAME']
-                        break
-            if not provname:
-                provname = provider
-
+            provname = dispName(line['Provider'].strip('/'))
             new_entry = "%4d - %s\n" % (line['Count'], provname)
             result = result + new_entry
 
