@@ -119,7 +119,6 @@ class OPDS(object):
         else:
             return self.data
 
-
     def multiLink(self, bookfile, bookid):
         types = []
         multi = ''
@@ -134,7 +133,6 @@ class OPDS(object):
                 multi += '%s?cmd=Serve&amp;bookid=%s&amp;fmt=%s' % (self.opdsroot, quote_plus(bookid), fmt)
                 multi += '" rel="http://opds-spec.org/acquisition" type="' + mimeType('.' + fmt) + '"/>'
         return multi
-
 
     @staticmethod
     def _error_with_message(message):
