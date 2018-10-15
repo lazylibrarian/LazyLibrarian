@@ -75,7 +75,7 @@ def search_wishlist():
                     bookname = bookmatch['BookName']
                     if bookmatch['Status'] in ['Open', 'Wanted', 'Have']:
                         logger.info('Found book %s, already marked as "%s"' % (bookname, bookmatch['Status']))
-                    else:  # skipped/ignored
+                    elif ebook_status == 'Wanted':  # skipped/ignored
                         logger.info('Found book %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"Status": "Wanted"}
@@ -83,7 +83,7 @@ def search_wishlist():
                         new_books += 1
                     if bookmatch['AudioStatus'] in ['Open', 'Wanted', 'Have']:
                         logger.info('Found audiobook %s, already marked as "%s"' % (bookname, bookmatch['AudioStatus']))
-                    else:  # skipped/ignored
+                    elif audio_status == 'Wanted':  # skipped/ignored
                         logger.info('Found audiobook %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"AudioStatus": "Wanted"}
@@ -108,7 +108,7 @@ def search_wishlist():
                     if bookmatch['Status'] in ['Open', 'Wanted', 'Have']:
                         logger.info(
                             'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookmatch['Status']))
-                    else:  # skipped/ignored
+                    elif ebook_status == 'Wanted':  # skipped/ignored
                         logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
                         controlValueDict = {"BookID": bookid}
                         newValueDict = {"Status": "Wanted"}
@@ -118,7 +118,7 @@ def search_wishlist():
                         logger.info(
                             'Found audiobook %s by %s, already marked as "%s"' %
                             (bookname, authorname, bookmatch['AudioStatus']))
-                    else:  # skipped/ignored
+                    elif audio_status == 'Wanted':  # skipped/ignored
                         logger.info('Found audiobook %s by %s, marking as "Wanted"' % (bookname, authorname))
                         controlValueDict = {"BookID": bookid}
                         newValueDict = {"AudioStatus": "Wanted"}
@@ -272,7 +272,7 @@ def search_rss_book(books=None, library=None):
                 found = processResultList(resultlist, book, searchtype, 'rss')
 
             if not found:
-                logger.info("NZB Searches for %s %s returned no results." % (book['library'], book['searchterm']))
+                logger.info("RSS Searches for %s %s returned no results." % (book['library'], book['searchterm']))
             if found > 1:
                 rss_count += 1
 
