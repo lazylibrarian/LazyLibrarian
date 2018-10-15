@@ -33,7 +33,11 @@
         %if entry['rel'] == 'file':
         <link href="${entry['href']}" rel="http://opds-spec.org/acquisition" type="${entry['type']}"/>
         %else:
-        <link href="${entry['href']}" rel= "${entry['rel']}" type="application/atom+xml; profile=opds-catalog; kind=${entry['kind']}"/>
+          % if entry['rel'] == 'multi':
+            ${entry['type']}
+          %else:
+            <link href="${entry['href']}" rel= "${entry['rel']}" type="application/atom+xml; profile=opds-catalog; kind=${entry['kind']}"/>
+          %endif
         %endif
         %if 'thumbnail' in entry and entry['thumbnail']:
         <link href="${entry['thumbnail']}" type="image/jpeg" rel="http://opds-spec.org/image/thumbnail"/>

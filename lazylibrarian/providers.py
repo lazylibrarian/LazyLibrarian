@@ -550,6 +550,7 @@ def IterateOverDirectSites(book=None, searchType=None):
 def IterateOverRSSSites():
     resultslist = []
     providers = 0
+    dltypes = ''
     for provider in lazylibrarian.RSS_PROV:
         if provider['ENABLED'] and not lazylibrarian.WishListType(provider['HOST']):
             if ProviderIsBlocked(provider['HOST']):
@@ -559,8 +560,9 @@ def IterateOverRSSSites():
                 logger.debug('[IterateOverRSSSites] - %s' % provider['HOST'])
                 resultslist += RSS(provider['HOST'], provider['NAME'], provider['DLPRIORITY'], provider['DISPNAME'],
                                    provider['DLTYPES'])
+                dltypes += provider['DLTYPES']
 
-    return resultslist, providers
+    return resultslist, providers, ''.join(set(dltypes))
 
 
 def IterateOverWishLists():
@@ -631,7 +633,7 @@ def NYTIMES(host=None, feednr=None, priority=0, dispname=None, types='E', test=F
             try:
                 title = makeUnicode(entry.split('itemprop="name">')[1].split('<')[0])
                 author_name = makeUnicode(entry.split('itemprop="author">by ')[1].split('<')[0])
-                author_name = author_name.split(' and ')[0]  # multi-author, use first one
+                author_name = author_name.split(' and ')[0].strip()  # multi-author, use first one
                 results.append({
                     'rss_prov': provider,
                     'rss_feed': feednr,

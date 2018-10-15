@@ -152,8 +152,8 @@ def search_magazines(mags=None, reset=False):
                         })
 
             if lazylibrarian.USE_RSS():
-                rss_resultlist, nproviders = IterateOverRSSSites()
-                if not nproviders:
+                rss_resultlist, nproviders, dltypes = IterateOverRSSSites()
+                if not nproviders or 'M' not in dltypes:
                     # don't nag. Show warning message no more than every 20 mins
                     timenow = int(time.time())
                     if check_int(lazylibrarian.NO_RSS_MSG, 0) + 1200 < timenow:
