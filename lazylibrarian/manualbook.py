@@ -72,8 +72,8 @@ def searchItem(item=None, bookid=None, cat=None):
         if nprov:
             results += resultlist
     if lazylibrarian.USE_RSS():
-        resultlist, nprov = IterateOverRSSSites()
-        if nprov:
+        resultlist, nprov, dltypes = IterateOverRSSSites()
+        if nprov and dltypes != 'M':
             results += resultlist
 
     # reprocess to get consistent results

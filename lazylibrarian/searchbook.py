@@ -157,8 +157,10 @@ def search_book(books=None, library=None):
         # only get rss results once per run, as they are not search specific
         rss_resultlist = None
         if 'rss' in modelist:
-            rss_resultlist, nprov = IterateOverRSSSites()
-            if not nprov:
+            rss_resultlist, nprov, dltypes = IterateOverRSSSites()
+            if not nprov or (library == 'Audiobook' and 'A' not in dltypes) or \
+                            (library == 'eBook' and 'E' not in dltypes) or \
+                            (library is None and dltypes == 'M'):
                 # don't nag. Show warning message no more than every 20 mins
                 timenow = int(time.time())
                 if check_int(lazylibrarian.NO_RSS_MSG, 0) + 1200 < timenow:
