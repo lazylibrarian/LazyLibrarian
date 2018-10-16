@@ -85,8 +85,10 @@ def upgrade_needed():
     # 38 change series count and total to integers
     # 39 add LastBookID to author table
     # 40 add CoverPage to magazines table
+    # 41 add Requester and AudioRequester to books table
+    # 42 add SendTo to users table
 
-    db_current_version = 40
+    db_current_version = 42
 
     if db_version < db_current_version:
         return db_current_version
@@ -155,7 +157,7 @@ def dbupgrade(db_current_version):
                                 'BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, ' +
                                 'WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
                                 'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
-                                'OriginalPubDate TEXT,' +
+                                'OriginalPubDate TEXT, Requester TEXT, AudioRequester TEXT' +
                                 ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
                                 'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
@@ -188,7 +190,7 @@ def dbupgrade(db_current_version):
                     myDB.action('CREATE TABLE downloads (Count INTEGER DEFAULT 0, Provider TEXT)')
                     myDB.action('CREATE TABLE users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, Password TEXT, ' +
                                 'Email TEXT, Name TEXT, Perms INTEGER DEFAULT 0, HaveRead TEXT, ToRead TEXT, ' +
-                                'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT)')
+                                'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT, SendTo TEXT)')
                     myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT,' +
                                 ' CONSTRAINT fk_u FOREIGN KEY (UserID) REFERENCES users (UserID) ' +
                                 'ON DELETE CASCADE)')
@@ -1113,3 +1115,22 @@ def db_v40(myDB, upgradelog):
         logger.debug(lazylibrarian.UPDATE_MSG)
         myDB.action('ALTER TABLE magazines ADD COLUMN CoverPage INTEGER DEFAULT 1')
     upgradelog.write("%s v40: complete\n" % time.ctime())
+
+
+def db_v41(myDB, upgradelog):
+    if not has_column(myDB, "books", "Requester"):
+        lazylibrarian.UPDATE_MSG = 'Updating books to hold requested wishlist name'
+        upgradelog.write("%s v41: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        logger.debug(lazylibrarian.UPDATE_MSG)
+        myDB.action('ALTER TABLE books ADD COLUMN Requester TEXT')
+        myDB.action('ALTER TABLE books ADD COLUMN AudioRequester TEXT')
+    upgradelog.write("%s v41: complete\n" % time.ctime())
+
+
+def db_v42(myDB, upgradelog):
+    if not has_column(myDB, "users", "SendTo"):
+        lazylibrarian.UPDATE_MSG = 'Adding SendTo to Users table'
+        upgradelog.write("%s v42: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+        myDB.action('ALTER TABLE users ADD COLUMN SendTo TEXT')
+    upgradelog.write("%s v42: complete\n" % time.ctime())
+
