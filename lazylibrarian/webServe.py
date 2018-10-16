@@ -131,6 +131,9 @@ def serve_template(templatename, **kwargs):
         elif templatename == 'audio.html' and not perm & lazylibrarian.perm_audio:
             logger.warn('User %s attempted to access %s' % (username, templatename))
             templatename = "login.html"
+        elif templatename == 'choosetype.html' and not perm & lazylibrarian.perm_download:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
         elif templatename in ['series.html', 'members.html'] and not perm & lazylibrarian.perm_series:
             logger.warn('User %s attempted to access %s' % (username, templatename))
             templatename = "login.html"
@@ -4738,10 +4741,12 @@ class WebInterface(object):
                         logger.debug(msg)
                     else:
                         logger.debug("Emailing %s to %s" % (basefile, res['SendTo']))
-                        if not name:
-                            name = ''
+                        if name:
+                            msg = name + ' is attached'
+                        else:
+                            msg = ''
                         result = notifiers.email_notifier.email_file(subject="Message from LazyLibrarian",
-                                                                     message=name, to_addr=res['SendTo'],
+                                                                     message=msg, to_addr=res['SendTo'],
                                                                      files=[basefile])
                         if result:
                             msg = "Emailed file %s to %s" % (os.path.split(basefile)[1], res['SendTo'])
