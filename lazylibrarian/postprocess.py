@@ -1579,7 +1579,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 # we can pass an opf with all the info, and a cover image
                 myDB = database.DBConnection()
                 cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,BookRate'
-                cmd += ' from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+                cmd += ',Requester,AudioRequester from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
                 data = myDB.match(cmd, (bookid,))
                 if not data:
                     logger.error('processDestination: No data found for bookid %s' % bookid)
@@ -1587,8 +1587,12 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     processIMG(pp_path, data['BookID'], data['BookImg'], global_name)
                     opfpath, our_opf = processOPF(pp_path, data, global_name, True)
                     _, _, rc = calibredb('set_metadata', None, [calibre_id, opfpath])
-                if rc:
-                    logger.warn("calibredb unable to set opf")
+                    if rc:
+                        logger.warn("calibredb unable to set opf")
+                    _, _, rc = calibredb('set_metadata', ['--field', 'tags:%s' % data['Requester'].replace(" ",",")], [calibre_id])
+                    _, _, rc = calibredb('set_metadata', ['--field', 'tags:%s' % data['AudioRequester'].replace(" ",",")], [calibre_id])
+                    if rc:
+                        logger.warn("calibredb unable to set tags")
 
             if not our_opf and not rc:  # pre-existing opf might not have our preferred authorname/title/identifier
                 _, _, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
