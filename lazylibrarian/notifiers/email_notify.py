@@ -106,6 +106,9 @@ class EmailNotifier:
     def notify_message(self, subject, message, to_addr):
         return self._notify(message=message, event=subject, force=True, to_addr=to_addr)
 
+    def email_file(self, subject, message, to_addr, files):
+        return self._notify(message=message, event=subject, force=True, to_addr=to_addr, files=files)
+
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:
             return self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])

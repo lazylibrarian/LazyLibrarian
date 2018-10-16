@@ -172,7 +172,7 @@ class WebInterface(object):
         cookie = cherrypy.request.cookie
         if cookie and 'll_uid' in list(cookie.keys()):
             myDB = database.DBConnection()
-            user = myDB.match('SELECT UserName,Name,Email from users where UserID=?', (cookie['ll_uid'].value,))
+            user = myDB.match('SELECT UserName,Name,Email,SendTo from users where UserID=?', (cookie['ll_uid'].value,))
             if user:
                 return serve_template(templatename="profile.html", title=title, user=user)
         return serve_template(templatename="index.html", title=title, authors=[])
@@ -337,6 +337,10 @@ class WebInterface(object):
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
+                if user['SendTo'] != kwargs['sendto']:
+                    changes += ' sendto'
+                    myDB.action('UPDATE users SET sendto=? WHERE UserID=?', (kwargs['sendto'], userid))
+
                 if user['BookType'] != kwargs['booktype']:
                     changes += ' BookType'
                     myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
@@ -449,7 +453,7 @@ class WebInterface(object):
         self.label_thread('USERADMIN')
         myDB = database.DBConnection()
         title = "Manage User Accounts"
-        cmd = 'SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead, BookType from users'
+        cmd = 'SELECT UserID, UserName, Name, Email, SendTo, Perms, CalibreRead, CalibreToRead, BookType from users'
         users = myDB.select(cmd)
         return serve_template(templatename="users.html", title=title, users=users)
 
@@ -482,10 +486,10 @@ class WebInterface(object):
         if match:
             res = simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
                                     'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead'],
-                                    'booktype': match['BookType']})
+                                    'sendto': match['SendTo'], 'booktype': match['BookType']})
         else:
             res = simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': '',
-                                    'booktype': ''})
+                                    'sendto': '', 'booktype': ''})
         return res
 
     @cherrypy.expose
@@ -539,9 +543,10 @@ class WebInterface(object):
             result = notifiers.email_notifier.notify_message('LazyLibrarian New Account', msg, kwargs['email'])
 
             if result:
-                cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
+                cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, SendTo, Perms)'
+                cmd += ' VALUES (?, ?, ?, ?, ?, ?, ?)'
                 myDB.action(cmd, (pwd_generator(), kwargs['username'], kwargs['fullname'],
-                                  md5_utf8(kwargs['password']), kwargs['email'], perms))
+                                  md5_utf8(kwargs['password']), kwargs['email'], kwargs['sendto'], perms))
                 msg = "New user added: %s: %s" % (kwargs['username'], perm_msg)
                 msg += "<br>Email sent to %s" % kwargs['email']
                 cnt = myDB.match("select count(*) as counter from users")
@@ -560,7 +565,7 @@ class WebInterface(object):
                     return "Username already exists"
 
             changes = ''
-            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead,BookType'
+            cmd = 'SELECT UserID,Name,Email,SendTo,Password,Perms,CalibreRead,CalibreToRead,BookType'
             cmd += ' from users where UserName=?'
             details = myDB.match(cmd, (user,))
 
@@ -580,6 +585,13 @@ class WebInterface(object):
                             return "Invalid email given"
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
+
+                if details['SendTo'] != kwargs['sendto']:
+                    if kwargs['sendto']:
+                        if not isValidEmail(kwargs['sendto']):
+                            return "Invalid sendto email given"
+                    changes += ' sendto'
+                    myDB.action('UPDATE users SET sendto=? WHERE UserID=?', (kwargs['sendto'], userid))
 
                 if kwargs['password']:
                     pwd = md5_utf8(kwargs['password'])
@@ -611,8 +623,9 @@ class WebInterface(object):
                                 count += 1
                         if count < 2:
                             return "Unable to remove last administrator"
-                    changes += ' Perms'
-                    myDB.action('UPDATE users SET Perms=? WHERE UserID=?', (kwargs['perms'], userid))
+                    if oldperm != newperm:
+                        changes += ' Perms'
+                        myDB.action('UPDATE users SET Perms=? WHERE UserID=?', (kwargs['perms'], userid))
 
                 if changes:
                     return 'Updated user details:%s' % changes
@@ -2021,8 +2034,7 @@ class WebInterface(object):
                 # zip up all the audiobook parts
                 if basefile and os.path.isfile(basefile):
                     target = zipAudio(os.path.dirname(basefile), res['BookName'])
-                    return serve_file(target, 'application/x-zip-compressed', 'attachment',
-                                      name=res['BookName'] + '.zip')
+                    return self.send_file(target, name=res['BookName'] + '.zip')
 
         basefile = None
         if ftype == 'book':
@@ -2049,7 +2061,7 @@ class WebInterface(object):
 
         if basefile and os.path.isfile(basefile):
             logger.debug('Opening %s %s' % (ftype, basefile))
-            return serve_file(basefile, mimeType(basefile), "attachment")
+            return self.send_file(basefile)
 
         else:
             logger.warn("No file found for %s %s" % (ftype, itemid))
@@ -2094,19 +2106,20 @@ class WebInterface(object):
                             if booktype == 'zip':
                                 zipfile = zipAudio(parentdir, bookName)
                                 logger.debug('Opening %s %s' % (library, zipfile))
-                                return serve_file(zipfile, mimeType(zipfile), "attachment")
+                                return self.send_file(zipfile, name="Audiobook zip of %s" % bookName, redirect=redirect)
                             idx = check_int(booktype, 0)
                             if idx:
                                 with open(index, 'r') as f:
                                     part = f.read().splitlines()[idx - 1]
                                 bookfile = os.path.join(parentdir, part)
                                 logger.debug('Opening %s %s' % (library, bookfile))
-                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                                return self.send_file(bookfile, name="Audiobook part %s of %s" % (idx, bookName),
+                                                      redirect=redirect)
                             # noinspection PyUnusedLocal
                             cnt = sum(1 for line in open(index))
                             if cnt <= 1:
                                 logger.debug('Opening %s %s' % (library, bookfile))
-                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                                return self.send_file(bookfile, name="Audiobook %s" % bookName, redirect=redirect)
                             else:
                                 msg = "Please select which part to download"
                                 item = 1
@@ -2125,7 +2138,7 @@ class WebInterface(object):
                                                   valid=getList(partlist.replace(' ', ',')))
                         else:
                             logger.debug('Opening %s %s' % (library, bookfile))
-                            return serve_file(bookfile, mimeType(bookfile), "attachment")
+                            return self.send_file(bookfile, name="Audiobook %s" % bookName, redirect=redirect)
                 else:
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]
@@ -2165,7 +2178,7 @@ class WebInterface(object):
                                                   valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
 
                         logger.debug('Opening %s %s' % (library, bookfile))
-                        return serve_file(bookfile, mimeType(bookfile), "attachment")
+                        return self.send_file(bookfile, name="eBook %s" % bookName, redirect=redirect)
 
                 logger.info('Missing %s %s, %s [%s]' % (library, authorName, bookName, bookfile))
             else:
@@ -3170,7 +3183,8 @@ class WebInterface(object):
             IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
                 logger.debug('Opening file %s' % IssueFile)
-                return serve_file(IssueFile, mimeType(IssueFile), "attachment")
+                return self.send_file(IssueFile, name="Magazine %s %s" % (mag_data["Title"], mag_data["IssueDate"]),
+                                      redirect="issuePage?title=%s" % quote_plus(mag_data["Title"]))
 
         # or we may just have a title to find magazine in issues table
         mag_data = myDB.select('SELECT * from issues WHERE Title=?', (bookid,))
@@ -3180,7 +3194,8 @@ class WebInterface(object):
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.debug('Opening %s - %s' % (bookid, IssueDate))
-            return serve_file(IssueFile, mimeType(IssueFile), "attachment")
+            return self.send_file(IssueFile, name="Magazine %s %s" % (bookid, IssueDate),
+                                  redirect="issuePage?title=%s" % quote_plus(bookid))
         else:  # multiple issues, show a list
             logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             if PY2:
@@ -4711,3 +4726,27 @@ class WebInterface(object):
         op.checkParams(**kwargs)
         data = op.fetchData()
         return data
+
+    @staticmethod
+    def send_file(basefile, name=None, redirect=None):
+        if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            myDB = database.DBConnection()
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in list(cookie.keys()):
+                res = myDB.match('SELECT SendTo from users where UserID=?', (cookie['ll_uid'].value,))
+                if res and res['SendTo']:
+                    logger.debug("Emailing %s to %s" % (basefile, res['SendTo']))
+                    if not name:
+                        name = ''
+                    result = notifiers.email_notifier.email_file(subject="Attachment from LazyLibrarian", message=name,
+                                                                 to_addr=res['SendTo'], files=[basefile])
+                    if result:
+                        logger.debug("Emailed file %s to %s" % (basefile, res['SendTo']))
+                    else:
+                        logger.error("Failed to email file %s to %s" % (basefile, res['SendTo']))
+                    if not redirect:
+                        redirect = 'home'
+                    raise cherrypy.HTTPRedirect(redirect)
+        if name:
+            return serve_file(basefile, mimeType(basefile), "attachment", name=name)
+        return serve_file(basefile, mimeType(basefile), "attachment")
