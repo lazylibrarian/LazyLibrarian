@@ -113,6 +113,8 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'preprocessor
                     pplog.write("No %s\n" % ftype)
                     params = [converter, os.path.join(bookfolder, sourcefile),
                               os.path.join(bookfolder, basename + ftype)]
+                    if ftype == '.mobi':
+                        params.extend(['--output-profile', 'kindle'])
                     try:
                         res = subprocess.check_output(params, stderr=subprocess.STDOUT)
                         if created:
