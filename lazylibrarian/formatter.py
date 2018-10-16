@@ -626,3 +626,30 @@ def replace_all(text, dic):
     for item in dic:
         text = text.replace(item, dic[item])
     return text
+
+
+def dispName(provider):
+    provname = ''
+    for item in lazylibrarian.NEWZNAB_PROV:
+        if item['HOST'].strip('/') == provider:
+            provname = item['DISPNAME']
+            break
+    if not provname:
+        for item in lazylibrarian.TORZNAB_PROV:
+            if item['HOST'].strip('/') == provider:
+                provname = item['DISPNAME']
+                break
+    if not provname:
+        for item in lazylibrarian.RSS_PROV:
+            if item['HOST'].strip('/') == provider:
+                provname = item['DISPNAME']
+                break
+    if not provname:
+        provname = provider
+
+    if len(provname) > 20:
+        while len(provname) > 20 and '/' in provname:
+            provname = provname.split('/', 1)[1]
+        provname = provname.replace('/', ' ')
+    return provname
+

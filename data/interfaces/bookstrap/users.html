@@ -37,8 +37,12 @@
                 <input id="fullname" name="fullname" class="form-control" value="">
               </div>
               <div class="form-group col-md-12">
-                <label for="email">Email</label>
+                <label for="email">Email (for messages)</label>
                 <input id="email" name="email" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-12">
+                <label for="sendto">Send To (eg kindle email)</label>
+                <input id="sendto" name="sendto" class="form-control" value="">
               </div>
               <fieldset  class="form-group col-md-6">
               <div>
@@ -66,7 +70,7 @@
                 <input id="caltoread" name="caltoread" class="form-control" value="">
               </div>
               <div class="form-group col-md-6">
-                <label for="booktype">Preferred BookType to open</label>
+                <label for="booktype">Preferred BookType to open/email</label>
                 <input id="booktype" name="booktype" class="form-control" value="">
               </div>
               <fieldset class="form-group col-md-12">
@@ -111,6 +115,7 @@
             var obj = JSON.parse(data);
             $("#username").val(user);
             $("#email").val(obj['email']);
+            $("#sendto").val(obj['sendto']);
             $("#fullname").val(obj['name']);
             $("#perms").val(obj['perms']);
             $("#calread").val(obj['calread']);
@@ -190,13 +195,14 @@
           var username = $.trim($("#username").val());
           var fullname = $.trim($("#fullname").val());
           var email = $.trim($("#email").val());
+          var sendto = $.trim($("#sendto").val());
           var perms = $.trim($("#perms").val());
           var calread = $.trim($("#calread").val());
           var caltoread = $.trim($("#caltoread").val());
           var booktype = $.trim($("#booktype").val());
           var password = $.trim($("#password").val());
           $.get("admin_users", {'user': user, 'username': username, 'fullname': fullname, 'email': email,
-                'perms': perms, 'password': password, 'calread': calread, 'caltoread': caltoread,
+                'sendto': sendto, 'perms': perms, 'password': password, 'calread': calread, 'caltoread': caltoread,
                 'booktype': booktype},
                 function (data) {
                 bootbox.dialog({

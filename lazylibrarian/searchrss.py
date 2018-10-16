@@ -69,29 +69,71 @@ def search_wishlist():
             else:
                 audio_status = "Skipped"
             if lazylibrarian.CONFIG['BOOK_API'] == "GoodReads" and book['rss_bookid']:
-                bookmatch = myDB.match('select Status,AudioStatus,BookName from books where bookid=?',
-                                       (book['rss_bookid'],))
+                cmd = 'select Status,AudioStatus,BookName,Requester,AudioRequester from books where bookid=?'
+                bookmatch = myDB.match(cmd, (book['rss_bookid'],))
                 if bookmatch:
                     bookname = bookmatch['BookName']
                     if bookmatch['Status'] in ['Open', 'Wanted', 'Have']:
                         logger.info('Found book %s, already marked as "%s"' % (bookname, bookmatch['Status']))
+                        if bookmatch["Requester"]:  # Already on a wishlist
+                            if book["dispname"] not in bookmatch["Requester"]:
+                                newValueDict = {"Requester": ' '.join(bookmatch["Requester"], book["dispname"])}
+                                controlValueDict = {"BookID": book['rss_bookid']}
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                        else:
+                            newValueDict = {"Requester": book["dispname"]}
+                            controlValueDict = {"BookID": book['rss_bookid']}
+                            myDB.upsert("books", newValueDict, controlValueDict)
                     elif ebook_status == "Wanted":  # skipped/ignored
                         logger.info('Found book %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"Status": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         new_books += 1
+                        if bookmatch["Requester"]:  # Already on a wishlist
+                            if book["dispname"] not in bookmatch["Requester"]:
+                                newValueDict = {"Requester": ' '.join(bookmatch["Requester"], book["dispname"])}
+                                controlValueDict = {"BookID": book['rss_bookid']}
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                        else:
+                            newValueDict = {"Requester": book["dispname"]}
+                            controlValueDict = {"BookID": book['rss_bookid']}
+                            myDB.upsert("books", newValueDict, controlValueDict)
                     if bookmatch['AudioStatus'] in ['Open', 'Wanted', 'Have']:
                         logger.info('Found audiobook %s, already marked as "%s"' % (bookname, bookmatch['AudioStatus']))
+                        if bookmatch["AudioRequester"]:  # Already on a wishlist
+                            if book["dispname"] not in bookmatch["AudioRequester"]:
+                                newValueDict = {"AudioRequester": ' '.join(bookmatch["AudioRequester"], book["dispname"])}
+                                controlValueDict = {"BookID": book['rss_bookid']}
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                        else:
+                            newValueDict = {"AudioRequester": book["dispname"]}
+                            controlValueDict = {"BookID": book['rss_bookid']}
+                            myDB.upsert("books", newValueDict, controlValueDict)
                     elif audio_status == "Wanted":  # skipped/ignored
                         logger.info('Found audiobook %s, marking as "Wanted"' % bookname)
                         controlValueDict = {"BookID": book['rss_bookid']}
                         newValueDict = {"AudioStatus": "Wanted"}
                         myDB.upsert("books", newValueDict, controlValueDict)
                         new_books += 1
+                        if bookmatch["AudioRequester"]:  # Already on a wishlist
+                            if book["dispname"] not in bookmatch["AudioRequester"]:
+                                newValueDict = {"AudioRequester": ' '.join(bookmatch["AudioRequester"], book["dispname"])}
+                                controlValueDict = {"BookID": book['rss_bookid']}
+                                myDB.upsert("books", newValueDict, controlValueDict)
+                        else:
+                            newValueDict = {"AudioRequester": book["dispname"]}
+                            controlValueDict = {"BookID": book['rss_bookid']}
+                            myDB.upsert("books", newValueDict, controlValueDict)
                 else:
                     import_book(book['rss_bookid'], ebook_status, audio_status)
                     new_books += 1
+                    newValueDict = {"Requester": book["dispname"]}
+                    controlValueDict = {"BookID": book['rss_bookid']}
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    newValueDict = {"AudioRequester": book["dispname"]}
+                    controlValueDict = {"BookID": book['rss_bookid']}
+                    myDB.upsert("books", newValueDict, controlValueDict)
             else:
                 item = {}
                 results = None

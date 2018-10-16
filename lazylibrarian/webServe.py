@@ -39,7 +39,7 @@ from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_ta
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
 from lazylibrarian.formatter import unaccented, unaccented_str, plural, now, today, check_int, replace_all, \
     safe_unicode, cleanName, surnameFirst, sortDefinite, getList, makeUnicode, makeBytestr, md5_utf8, dateFormat, \
-    check_year
+    check_year, dispName
 from lazylibrarian.gb import GoogleBooks
 from lazylibrarian.gr import GoodReads
 from lazylibrarian.images import getBookCover, createMagCover
@@ -131,6 +131,9 @@ def serve_template(templatename, **kwargs):
         elif templatename == 'audio.html' and not perm & lazylibrarian.perm_audio:
             logger.warn('User %s attempted to access %s' % (username, templatename))
             templatename = "login.html"
+        elif templatename == 'choosetype.html' and not perm & lazylibrarian.perm_download:
+            logger.warn('User %s attempted to access %s' % (username, templatename))
+            templatename = "login.html"
         elif templatename in ['series.html', 'members.html'] and not perm & lazylibrarian.perm_series:
             logger.warn('User %s attempted to access %s' % (username, templatename))
             templatename = "login.html"
@@ -172,7 +175,7 @@ class WebInterface(object):
         cookie = cherrypy.request.cookie
         if cookie and 'll_uid' in list(cookie.keys()):
             myDB = database.DBConnection()
-            user = myDB.match('SELECT UserName,Name,Email from users where UserID=?', (cookie['ll_uid'].value,))
+            user = myDB.match('SELECT UserName,Name,Email,SendTo from users where UserID=?', (cookie['ll_uid'].value,))
             if user:
                 return serve_template(templatename="profile.html", title=title, user=user)
         return serve_template(templatename="index.html", title=title, authors=[])
@@ -337,6 +340,10 @@ class WebInterface(object):
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
 
+                if user['SendTo'] != kwargs['sendto']:
+                    changes += ' sendto'
+                    myDB.action('UPDATE users SET sendto=? WHERE UserID=?', (kwargs['sendto'], userid))
+
                 if user['BookType'] != kwargs['booktype']:
                     changes += ' BookType'
                     myDB.action('UPDATE users SET BookType=? WHERE UserID=?', (kwargs['booktype'], userid))
@@ -449,7 +456,7 @@ class WebInterface(object):
         self.label_thread('USERADMIN')
         myDB = database.DBConnection()
         title = "Manage User Accounts"
-        cmd = 'SELECT UserID, UserName, Name, Email, Perms, CalibreRead, CalibreToRead, BookType from users'
+        cmd = 'SELECT UserID, UserName, Name, Email, SendTo, Perms, CalibreRead, CalibreToRead, BookType from users'
         users = myDB.select(cmd)
         return serve_template(templatename="users.html", title=title, users=users)
 
@@ -482,10 +489,10 @@ class WebInterface(object):
         if match:
             res = simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
                                     'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead'],
-                                    'booktype': match['BookType']})
+                                    'sendto': match['SendTo'], 'booktype': match['BookType']})
         else:
             res = simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': '',
-                                    'booktype': ''})
+                                    'sendto': '', 'booktype': ''})
         return res
 
     @cherrypy.expose
@@ -539,9 +546,10 @@ class WebInterface(object):
             result = notifiers.email_notifier.notify_message('LazyLibrarian New Account', msg, kwargs['email'])
 
             if result:
-                cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, Perms) VALUES (?, ?, ?, ?, ?, ?)'
+                cmd = 'INSERT into users (UserID, UserName, Name, Password, Email, SendTo, Perms)'
+                cmd += ' VALUES (?, ?, ?, ?, ?, ?, ?)'
                 myDB.action(cmd, (pwd_generator(), kwargs['username'], kwargs['fullname'],
-                                  md5_utf8(kwargs['password']), kwargs['email'], perms))
+                                  md5_utf8(kwargs['password']), kwargs['email'], kwargs['sendto'], perms))
                 msg = "New user added: %s: %s" % (kwargs['username'], perm_msg)
                 msg += "<br>Email sent to %s" % kwargs['email']
                 cnt = myDB.match("select count(*) as counter from users")
@@ -560,7 +568,7 @@ class WebInterface(object):
                     return "Username already exists"
 
             changes = ''
-            cmd = 'SELECT UserID,Name,Email,Password,Perms,CalibreRead,CalibreToRead,BookType'
+            cmd = 'SELECT UserID,Name,Email,SendTo,Password,Perms,CalibreRead,CalibreToRead,BookType'
             cmd += ' from users where UserName=?'
             details = myDB.match(cmd, (user,))
 
@@ -580,6 +588,13 @@ class WebInterface(object):
                             return "Invalid email given"
                     changes += ' email'
                     myDB.action('UPDATE users SET email=? WHERE UserID=?', (kwargs['email'], userid))
+
+                if details['SendTo'] != kwargs['sendto']:
+                    if kwargs['sendto']:
+                        if not isValidEmail(kwargs['sendto']):
+                            return "Invalid sendto email given"
+                    changes += ' sendto'
+                    myDB.action('UPDATE users SET sendto=? WHERE UserID=?', (kwargs['sendto'], userid))
 
                 if kwargs['password']:
                     pwd = md5_utf8(kwargs['password'])
@@ -611,8 +626,9 @@ class WebInterface(object):
                                 count += 1
                         if count < 2:
                             return "Unable to remove last administrator"
-                    changes += ' Perms'
-                    myDB.action('UPDATE users SET Perms=? WHERE UserID=?', (kwargs['perms'], userid))
+                    if oldperm != newperm:
+                        changes += ' Perms'
+                        myDB.action('UPDATE users SET Perms=? WHERE UserID=?', (kwargs['perms'], userid))
 
                 if changes:
                     return 'Updated user details:%s' % changes
@@ -2021,8 +2037,7 @@ class WebInterface(object):
                 # zip up all the audiobook parts
                 if basefile and os.path.isfile(basefile):
                     target = zipAudio(os.path.dirname(basefile), res['BookName'])
-                    return serve_file(target, 'application/x-zip-compressed', 'attachment',
-                                      name=res['BookName'] + '.zip')
+                    return self.send_file(target, name=res['BookName'] + '.zip')
 
         basefile = None
         if ftype == 'book':
@@ -2049,7 +2064,7 @@ class WebInterface(object):
 
         if basefile and os.path.isfile(basefile):
             logger.debug('Opening %s %s' % (ftype, basefile))
-            return serve_file(basefile, mimeType(basefile), "attachment")
+            return self.send_file(basefile)
 
         else:
             logger.warn("No file found for %s %s" % (ftype, itemid))
@@ -2094,19 +2109,19 @@ class WebInterface(object):
                             if booktype == 'zip':
                                 zipfile = zipAudio(parentdir, bookName)
                                 logger.debug('Opening %s %s' % (library, zipfile))
-                                return serve_file(zipfile, mimeType(zipfile), "attachment")
+                                return self.send_file(zipfile, name="Audiobook zip of %s" % bookName)
                             idx = check_int(booktype, 0)
                             if idx:
                                 with open(index, 'r') as f:
                                     part = f.read().splitlines()[idx - 1]
                                 bookfile = os.path.join(parentdir, part)
                                 logger.debug('Opening %s %s' % (library, bookfile))
-                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                                return self.send_file(bookfile, name="Audiobook part %s of %s" % (idx, bookName))
                             # noinspection PyUnusedLocal
                             cnt = sum(1 for line in open(index))
                             if cnt <= 1:
                                 logger.debug('Opening %s %s' % (library, bookfile))
-                                return serve_file(bookfile, mimeType(bookfile), "attachment")
+                                return self.send_file(bookfile, name="Audiobook %s" % bookName)
                             else:
                                 msg = "Please select which part to download"
                                 item = 1
@@ -2125,7 +2140,7 @@ class WebInterface(object):
                                                   valid=getList(partlist.replace(' ', ',')))
                         else:
                             logger.debug('Opening %s %s' % (library, bookfile))
-                            return serve_file(bookfile, mimeType(bookfile), "attachment")
+                            return self.send_file(bookfile, name="Audiobook %s" % bookName)
                 else:
                     library = 'eBook'
                     bookfile = bookdata["BookFile"]
@@ -2165,7 +2180,7 @@ class WebInterface(object):
                                                   valid=getList(lazylibrarian.CONFIG['EBOOK_TYPE']))
 
                         logger.debug('Opening %s %s' % (library, bookfile))
-                        return serve_file(bookfile, mimeType(bookfile), "attachment")
+                        return self.send_file(bookfile, name="eBook %s" % bookName)
 
                 logger.info('Missing %s %s, %s [%s]' % (library, authorName, bookName, bookfile))
             else:
@@ -3170,7 +3185,7 @@ class WebInterface(object):
             IssueFile = mag_data["IssueFile"]
             if IssueFile and os.path.isfile(IssueFile):
                 logger.debug('Opening file %s' % IssueFile)
-                return serve_file(IssueFile, mimeType(IssueFile), "attachment")
+                return self.send_file(IssueFile, name="Magazine %s %s" % (mag_data["Title"], mag_data["IssueDate"]))
 
         # or we may just have a title to find magazine in issues table
         mag_data = myDB.select('SELECT * from issues WHERE Title=?', (bookid,))
@@ -3180,7 +3195,7 @@ class WebInterface(object):
             IssueDate = mag_data[0]["IssueDate"]
             IssueFile = mag_data[0]["IssueFile"]
             logger.debug('Opening %s - %s' % (bookid, IssueDate))
-            return serve_file(IssueFile, mimeType(IssueFile), "attachment")
+            return self.send_file(IssueFile, name="Magazine %s %s" % (bookid, IssueDate))
         else:  # multiple issues, show a list
             logger.debug("%s has %s issue%s" % (bookid, len(mag_data), plural(len(mag_data))))
             if PY2:
@@ -3844,35 +3859,9 @@ class WebInterface(object):
                         title = title.replace('.', ' ')
                         title = title.replace('LL (', 'LL.(')
                         nrow[0] = title
-                    # provider needs to be shorter and with spaces for column resizing
-                    provider = nrow[3]
-                    if provider:
-                        provider = provider.strip('/')
-                        provname = ''
-                        for item in lazylibrarian.NEWZNAB_PROV:
-                            if item['HOST'].strip('/') == provider:
-                                provname = item['DISPNAME']
-                                break
-                        if not provname:
-                            for item in lazylibrarian.TORZNAB_PROV:
-                                if item['HOST'].strip('/') == provider:
-                                    provname = item['DISPNAME']
-                                    break
-
-                        if not provname:
-                            for item in lazylibrarian.RSS_PROV:
-                                if item['HOST'].strip('/') == provider:
-                                    provname = item['DISPNAME']
-                                    break
-                        if not provname:
-                            provname = provider
-
-                        if len(provname) > 20:
-                            while len(provname) > 20 and '/' in provname:
-                                provname = provname.split('/', 1)[1]
-                            provname = provname.replace('/', ' ')
-                        nrow[3] = provname
-
+                    # provider name needs to be shorter and with spaces for column resizing
+                    if nrow[3]:
+                        nrow[3] = dispName(nrow[3].strip('/'))
                         rows.append(nrow)  # add the rowlist to the masterlist
 
                 if sSearch:
@@ -3968,7 +3957,7 @@ class WebInterface(object):
             message += "Type: %s %s<br>" % (match['NZBmode'], dltype)
             message += "Date: %s<br>" % match['NZBdate']
             message += "Size: %s Mb<br>" % match['NZBsize']
-            message += "Provider: %s<br>" % match['NZBprov']
+            message += "Provider: %s<br>" % dispName(match['NZBprov'])
             message += "Downloader: %s<br>" % match['Source']
             message += "DownloadID: %s<br>" % match['DownloadID']
             message += "URL: %s<br>" % match['NZBurl']
@@ -4117,25 +4106,7 @@ class WebInterface(object):
         result = ''
         downloads = myDB.select('SELECT Count,Provider FROM downloads ORDER BY Count DESC')
         for line in downloads:
-            provider = line['Provider'].strip('/')
-            provname = ''
-            for item in lazylibrarian.NEWZNAB_PROV:
-                if item['HOST'].strip('/') == provider:
-                    provname = item['DISPNAME']
-                    break
-            if not provname:
-                for item in lazylibrarian.TORZNAB_PROV:
-                    if item['HOST'].strip('/') == provider:
-                        provname = item['DISPNAME']
-                        break
-            if not provname:
-                for item in lazylibrarian.RSS_PROV:
-                    if item['HOST'].strip('/') == provider:
-                        provname = item['DISPNAME']
-                        break
-            if not provname:
-                provname = provider
-
+            provname = dispName(line['Provider'].strip('/'))
             new_entry = "%4d - %s\n" % (line['Count'], provname)
             result = result + new_entry
 
@@ -4755,3 +4726,37 @@ class WebInterface(object):
         op.checkParams(**kwargs)
         data = op.fetchData()
         return data
+
+    @staticmethod
+    def send_file(basefile, name=None):
+        if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+            myDB = database.DBConnection()
+            cookie = cherrypy.request.cookie
+            if cookie and 'll_uid' in list(cookie.keys()):
+                res = myDB.match('SELECT SendTo from users where UserID=?', (cookie['ll_uid'].value,))
+                if res and res['SendTo']:
+                    fsize = check_int(os.path.getsize(basefile), 0)
+                    if fsize > 20000000:
+                        msg = '%s is too large (%s) to email' % (os.path.split(basefile)[1], fsize)
+                        logger.debug(msg)
+                    else:
+                        logger.debug("Emailing %s to %s" % (basefile, res['SendTo']))
+                        if name:
+                            msg = name + ' is attached'
+                        else:
+                            msg = ''
+                        result = notifiers.email_notifier.email_file(subject="Message from LazyLibrarian",
+                                                                     message=msg, to_addr=res['SendTo'],
+                                                                     files=[basefile])
+                        if result:
+                            msg = "Emailed file %s to %s" % (os.path.split(basefile)[1], res['SendTo'])
+                            logger.debug(msg)
+                        else:
+                            msg = "Failed to email file %s to %s" % (os.path.split(basefile)[1], res['SendTo'])
+                            logger.error(msg)
+                    return serve_template(templatename="choosetype.html", prefix="SendTo", title='Send file',
+                                          pop_message=msg, pop_types='', bookid='', valid='')
+
+        if name and name.endswith('zip'):
+            return serve_file(basefile, mimeType(basefile), "attachment", name=name)
+        return serve_file(basefile, mimeType(basefile), "attachment")

@@ -40,6 +40,7 @@ class EmailNotifier:
 
         subject = event
         text = message
+        oversize = False
 
         if files:
             message = MIMEMultipart()
@@ -65,7 +66,9 @@ class EmailNotifier:
             for f in files:
                 fsize = check_int(os.path.getsize(f), 0)
                 if fsize > 20000000:
+                    oversize = True
                     msg = '%s is too large (%s) to email' % (os.path.basename(f), fsize)
+                    logger.debug(msg)
                     message.attach(MIMEText(msg))
                 else:
                     logger.debug('Attaching %s' % os.path.basename(f))
@@ -93,6 +96,8 @@ class EmailNotifier:
             mailserver.sendmail(lazylibrarian.CONFIG['EMAIL_FROM'], lazylibrarian.CONFIG['EMAIL_TO'],
                                 message.as_string())
             mailserver.quit()
+            if oversize:
+                return False
             return True
 
         except Exception as e:
@@ -105,6 +110,10 @@ class EmailNotifier:
 
     def notify_message(self, subject, message, to_addr):
         return self._notify(message=message, event=subject, force=True, to_addr=to_addr)
+
+    def email_file(self, subject, message, to_addr, files):
+        res = self._notify(message=message, event=subject, force=True, to_addr=to_addr, files=files)
+        return res
 
     def notify_snatch(self, title):
         if lazylibrarian.CONFIG['EMAIL_NOTIFY_ONSNATCH']:
