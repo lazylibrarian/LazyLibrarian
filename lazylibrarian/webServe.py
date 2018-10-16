@@ -4728,25 +4728,28 @@ class WebInterface(object):
         return data
 
     @staticmethod
-    def send_file(basefile, name=None, redirect=None):
+    def send_file(basefile, name=None, redirect='home'):
         if lazylibrarian.CONFIG['USER_ACCOUNTS']:
             myDB = database.DBConnection()
             cookie = cherrypy.request.cookie
             if cookie and 'll_uid' in list(cookie.keys()):
                 res = myDB.match('SELECT SendTo from users where UserID=?', (cookie['ll_uid'].value,))
                 if res and res['SendTo']:
-                    logger.debug("Emailing %s to %s" % (basefile, res['SendTo']))
-                    if not name:
-                        name = ''
-                    result = notifiers.email_notifier.email_file(subject="Attachment from LazyLibrarian", message=name,
-                                                                 to_addr=res['SendTo'], files=[basefile])
-                    if result:
-                        logger.debug("Emailed file %s to %s" % (basefile, res['SendTo']))
+                    size = os.path.getsize(basefile)
+                    if size > 20000000:  # email attachment size limit
+                        logger.warn('%s is too large to email' % basefile)
                     else:
-                        logger.error("Failed to email file %s to %s" % (basefile, res['SendTo']))
-                    if not redirect:
-                        redirect = 'home'
-                    raise cherrypy.HTTPRedirect(redirect)
-        if name:
+                        logger.debug("Emailing %s to %s" % (basefile, res['SendTo']))
+                        if not name:
+                            name = ''
+                        result = notifiers.email_notifier.email_file(subject="Attachment from LazyLibrarian",
+                                                                     message=name, to_addr=res['SendTo'],
+                                                                     files=[basefile])
+                        if result:
+                            logger.debug("Emailed file %s to %s" % (basefile, res['SendTo']))
+                        else:
+                            logger.error("Failed to email file %s to %s" % (basefile, res['SendTo']))
+            raise cherrypy.HTTPRedirect(redirect)
+        if name and name.endswith('zip'):
             return serve_file(basefile, mimeType(basefile), "attachment", name=name)
         return serve_file(basefile, mimeType(basefile), "attachment")
