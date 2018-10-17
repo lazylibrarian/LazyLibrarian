@@ -268,6 +268,8 @@ CONFIG_DEFINITIONS = {
     'GIT_PROGRAM': ('str', 'General', ''),
     'CACHE_AGE': ('int', 'General', 30),
     'TASK_AGE': ('int', 'General', 2),
+    'OPF_TAGS': ('bool', 'General', 1),
+    'WISHLIST_TAGS': ('bool', 'General', 1),
     'GIT_USER': ('str', 'Git', 'dobytang'),
     'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
     'GIT_BRANCH': ('str', 'Git', 'master'),

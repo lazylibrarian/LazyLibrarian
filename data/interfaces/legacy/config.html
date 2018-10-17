@@ -1087,6 +1087,30 @@
               <BR>
               <small> Only add eBook, not opf or jpg</small>
             </div>
+			<div>
+              <%
+                    if lazylibrarian.CONFIG['OPF_TAGS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="opf_tags" name="opf_tags" value=1 ${checked} />
+              <label> Add OPF Tags</label>
+              <BR>
+              <small> Add downloaded tags to Calibre</small>
+            </div>
+			<div>
+              <%
+                    if lazylibrarian.CONFIG['WISHLIST_TAGS'] == True:
+                        checked = 'checked="checked"'
+                    else:
+                        checked = ''
+                    %>
+              <input type="checkbox" id="wishlist_tags" name="wishlist_tags" value=1 ${checked} />
+              <label> Add Wishlist Tags</label>
+              <BR>
+              <small> Add wishlist names as tags in Calibre</small>
+            </div>
             <div>
               <%
                     if lazylibrarian.CONFIG['FULL_SCAN'] == True:
