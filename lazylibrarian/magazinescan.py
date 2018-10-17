@@ -34,14 +34,15 @@ def create_id(issuename=None):
 
 def magazineScan(title=None):
     lazylibrarian.MAG_UPDATE = 1
-    onetitle = title
 
     # noinspection PyBroadException
     try:
         myDB = database.DBConnection()
-
-        mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER']
-        mag_path = mag_path.split('$')[0]
+        onetitle = title
+        if onetitle:
+            mag_path = lazylibrarian.CONFIG['MAG_DEST_FOLDER'].replace('$Title', onetitle)
+        else:
+            mag_path = os.path.dirname(lazylibrarian.CONFIG['MAG_DEST_FOLDER'])
 
         if lazylibrarian.CONFIG['MAG_RELATIVE']:
             mag_path = os.path.join(lazylibrarian.DIRECTORY('eBook'), mag_path)
@@ -78,11 +79,6 @@ def magazineScan(title=None):
                     if not issues:
                         logger.debug('Magazine %s deleted as no issues found' % title)
                         myDB.action('DELETE from magazines WHERE Title=?', (title,))
-
-        if onetitle:
-            match = myDB.match('SELECT LatestCover from magazines where Title=?', (onetitle,))
-            if match:
-                mag_path = os.path.dirname(match['LatestCover'])
 
         logger.info(' Checking [%s] for magazines' % mag_path)
 
