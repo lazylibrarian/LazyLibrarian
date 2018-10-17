@@ -1589,10 +1589,14 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     _, _, rc = calibredb('set_metadata', None, [calibre_id, opfpath])
                     if rc:
                         logger.warn("calibredb unable to set opf")
-                    _, _, rc = calibredb('set_metadata', ['--field', 'tags:%s' % data['Requester'].replace(" ",",")], [calibre_id])
-                    _, _, rc = calibredb('set_metadata', ['--field', 'tags:%s' % data['AudioRequester'].replace(" ",",")], [calibre_id])
-                    if rc:
-                        logger.warn("calibredb unable to set tags")
+                    if data['Requester'] is not None:
+                        _, _, rc = calibredb('set_metadata', ['--field', 'tags:%s' % data['Requester'].replace(" ",",")], [calibre_id])
+                        if rc:
+                            logger.warn("calibredb unable to set Requester")
+                    if data['AudioRequester'] is not None:
+                        _, _, rc = calibredb('set_metadata', ['--field', 'tags:%s' % data['AudioRequester'].replace(" ",",")], [calibre_id])
+                        if rc:
+                            logger.warn("calibredb unable to set AudioRequester")
 
             if not our_opf and not rc:  # pre-existing opf might not have our preferred authorname/title/identifier
                 _, _, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
