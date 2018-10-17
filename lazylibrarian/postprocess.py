@@ -1590,18 +1590,19 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     _, _, rc = calibredb('set_metadata', None, [calibre_id, opfpath])
                     if rc:
                         logger.warn("calibredb unable to set opf")
-                    if data['Requester'] is not None:
-                        _, _, rc = calibredb('set_metadata',
+                    if lazylibrarian.CONFIG['WISHLIST_TAGS']:
+                        if data['Requester'] is not None:
+                            _, _, rc = calibredb('set_metadata',
                                              ['--field', 'tags:%s' % data['Requester'].replace(" ", ",")],
                                              [calibre_id])
-                        if rc:
-                            logger.warn("calibredb unable to set Requester")
-                    if data['AudioRequester'] is not None:
-                        _, _, rc = calibredb('set_metadata',
+                            if rc:
+                                logger.warn("calibredb unable to set Requester")
+                        if data['AudioRequester'] is not None:
+                            _, _, rc = calibredb('set_metadata',
                                              ['--field', 'tags:%s' % data['AudioRequester'].replace(" ", ",")],
                                              [calibre_id])
-                        if rc:
-                            logger.warn("calibredb unable to set AudioRequester")
+                            if rc:
+                                logger.warn("calibredb unable to set AudioRequester")
 
             if not our_opf and not rc:  # pre-existing opf might not have our preferred authorname/title/identifier
                 _, _, rc = calibredb('set_metadata', ['--field', 'authors:%s' % unaccented(authorname)], [calibre_id])
@@ -1878,10 +1879,11 @@ def processMAGOPF(issuefile, title, issue, issueID, overwrite=False):
 
 def processOPF(dest_path=None, data=None, global_name=None, overwrite=False):
     opfpath = os.path.join(dest_path, global_name + '.opf')
-    if not overwrite and os.path.exists(opfpath):
-        logger.debug('%s already exists. Did not create one.' % opfpath)
-        setperm(opfpath)
-        return opfpath, False
+    if lazylibrarian.CONFIG['OPF_TAGS']:
+        if not overwrite and os.path.exists(opfpath):
+            logger.debug('%s already exists. Did not create one.' % opfpath)
+            setperm(opfpath)
+            return opfpath, False
 
     # Horrible hack to work around the limitations of sqlite3's row object
     data = {k: data[k] for k in data.keys()}
