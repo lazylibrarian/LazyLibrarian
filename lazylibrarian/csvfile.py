@@ -232,8 +232,8 @@ def finditem(item, preferred_authorname):
         bookid = item['BookID']
 
     # try to find book in our database using bookid or isbn, or if that fails, name matching
-    cmd = 'SELECT AuthorName,BookName,BookID,books.Status,AudioStatus FROM books,authors'
-    cmd += ' where books.AuthorID = authors.AuthorID '
+    cmd = 'SELECT AuthorName,BookName,BookID,books.Status,AudioStatus,Requester,'
+    cmd += 'AudioRequester FROM books,authors where books.AuthorID = authors.AuthorID '
     if bookid:
         fullcmd = cmd + 'and BookID=?'
         bookmatch = myDB.match(fullcmd, (bookid,))
