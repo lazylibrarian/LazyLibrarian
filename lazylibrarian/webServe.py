@@ -3663,16 +3663,16 @@ class WebInterface(object):
         return makeBytestr(res)
 
     @cherrypy.expose
-    def importCSV(self):
+    def importCSV(self, library='eBook'):
         if 'IMPORTCSV' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
-                threading.Thread(target=import_CSV, name='IMPORTCSV',
-                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
-                csvFile = csv_file(lazylibrarian.CONFIG['ALTERNATE_DIR'])
+                csvFile = csv_file(lazylibrarian.CONFIG['ALTERNATE_DIR'], library=library)
                 if os.path.exists(csvFile):
                     message = "Importing books (background task) from %s" % csvFile
+                    threading.Thread(target=import_CSV, name='IMPORTCSV',
+                                     args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], library]).start()
                 else:
-                    message = "No CSV file in [%s]" % lazylibrarian.CONFIG['ALTERNATE_DIR']
+                    message = "No %s CSV file in [%s]" % (library, lazylibrarian.CONFIG['ALTERNATE_DIR'])
             except Exception as e:
                 message = 'Unable to complete the import: %s %s' % (type(e).__name__, str(e))
                 logger.error(message)
@@ -3686,9 +3686,9 @@ class WebInterface(object):
             return message
 
     @cherrypy.expose
-    def exportCSV(self):
+    def exportCSV(self, library='eBook'):
         self.label_thread('EXPORTCSV')
-        message = export_CSV(lazylibrarian.CONFIG['ALTERNATE_DIR'])
+        message = export_CSV(lazylibrarian.CONFIG['ALTERNATE_DIR'], library=library)
         message = message.replace('\n', '<br>')
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
             raise cherrypy.HTTPRedirect("manage")

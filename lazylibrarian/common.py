@@ -399,8 +399,17 @@ def bts_file(search_dir=None):
     return any_file(search_dir, '.bts')
 
 
-def csv_file(search_dir=None):
-    return any_file(search_dir, '.csv')
+def csv_file(search_dir=None, library=None):
+    if search_dir and os.path.isdir(search_dir):
+        try:
+            for fname in os.listdir(makeBytestr(search_dir)):
+                fname = makeUnicode(fname)
+                if fname.endswith('.csv'):
+                    if not library or library in fname:
+                        return os.path.join(search_dir, fname)
+        except Exception as e:
+            logger.warn('Listdir error [%s]: %s %s' % (search_dir, type(e).__name__, str(e)))
+    return ''
 
 
 def jpg_file(search_dir=None):
@@ -796,9 +805,12 @@ def logHeader():
         header += "urllib3: missing\n"
     header += "requests: %s\n" % getattr(requests, '__version__', None)
     logger.info('Checking TLS version, you can ignore any "InsecureRequestWarning" message')
-    tls_version = requests.get('https://www.howsmyssl.com/a/check', timeout=30, verify=False).json()['tls_version']
-    if '1.2' not in tls_version and '1.3' not in tls_version:
-        header += 'tls: missing required functionality. Try upgrading to v1.2 or newer. You have '
+    try:
+        tls_version = requests.get('https://www.howsmyssl.com/a/check', timeout=30, verify=False).json()['tls_version']
+        if '1.2' not in tls_version and '1.3' not in tls_version:
+            header += 'tls: missing required functionality. Try upgrading to v1.2 or newer. You have '
+    except Exception as e:
+        tls_version = str(e)
     header += "tls: %s\n" % tls_version
     header += "cherrypy: %s\n" % getattr(cherrypy, '__version__', None)
 
