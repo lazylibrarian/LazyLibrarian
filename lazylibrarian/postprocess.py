@@ -727,6 +727,8 @@ def processDir(reset=False, startdir=None, ignoreclient=False):
                                 logger.warn("Unable to remove %s, %s %s" %
                                             (pp_path + '.fail', type(why).__name__, str(why)))
                         try:
+                            if os.name == 'nt': #Windows has max path length of 256
+                                pp_path = '\\\\?\\' + pp_path
                             _ = safe_move(pp_path, pp_path + '.fail')
                             logger.warn('Residual files remain in %s.fail' % pp_path)
                         except Exception as why:
@@ -1490,6 +1492,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     """ Copy/move book/mag and associated files into target directory
         Return True, full_path_to_book  or False, error_message"""
 
+                
     if not bookname:
         booktype = 'mag'
 
@@ -1513,6 +1516,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         match = False
         for fname in os.listdir(makeBytestr(pp_path)):
             fname = makeUnicode(fname)
+            logger.debug(str(fname))
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
                 break
@@ -1536,6 +1540,8 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     newbookfile = ''
     if booktype == 'ebook' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('eBook')
+
+        
         try:
             logger.debug('Importing %s into calibre library' % global_name)
             # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
@@ -1543,7 +1549,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(makeBytestr(pp_path)):
                 fname = makeUnicode(fname)
+                logger.debug(str(fname))
                 filename, extn = os.path.splitext(fname)
+                logger.debug(str(filename))
+                logger.debug(str(extn))
                 srcfile = os.path.join(pp_path, fname)
                 if is_valid_booktype(fname, booktype=booktype) or extn in ['.opf', '.jpg']:
                     if bestmatch and not fname.endswith(bestmatch) and extn not in ['.opf', '.jpg']:
@@ -1552,6 +1561,10 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     else:
                         dstfile = os.path.join(pp_path, global_name.replace('"', '_') + extn)
                         # calibre does not like quotes in author names
+                        if os.name == 'nt': #Windows has max path length of 256
+                            srcfile = '\\\\?\\' + srcfile
+                            logger.debug(str(srcfile))
+                            dstfile = '\\\\?\\' + dstfile
                         _ = safe_move(srcfile, dstfile)
                 else:
                     logger.debug('Removing %s as not wanted' % fname)
@@ -1561,6 +1574,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             else:
                 identifier = "google:%s" % bookid
 
+            
             res, err, rc = calibredb('add', ['-1'], [pp_path])
 
             if rc:

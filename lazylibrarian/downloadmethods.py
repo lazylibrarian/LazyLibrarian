@@ -181,6 +181,10 @@ def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook
             hashid = sha1(bencode(dl_url)).hexdigest()
 
         destfile = os.path.join(destdir, basename + '.' + extn)
+
+        if os.name == 'nt': #Windows has max path length of 256
+            destfile = '\\\\?\\' + destfile
+            
         try:
             with open(destfile, 'wb') as bookfile:
                 bookfile.write(r.content)
