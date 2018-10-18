@@ -1491,7 +1491,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                        booktype=None):
     """ Copy/move book/mag and associated files into target directory
         Return True, full_path_to_book  or False, error_message"""
-
                 
     if not bookname:
         booktype = 'mag'
@@ -1516,7 +1515,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
         match = False
         for fname in os.listdir(makeBytestr(pp_path)):
             fname = makeUnicode(fname)
-            logger.debug(str(fname))
             if is_valid_booktype(fname, booktype=booktype):
                 match = True
                 break
@@ -1540,8 +1538,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
     newbookfile = ''
     if booktype == 'ebook' and len(lazylibrarian.CONFIG['IMP_CALIBREDB']):
         dest_dir = lazylibrarian.DIRECTORY('eBook')
-
-        
         try:
             logger.debug('Importing %s into calibre library' % global_name)
             # calibre may ignore metadata.opf and book_name.opf depending on calibre settings,
@@ -1549,10 +1545,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
             # so we send separate "set_metadata" commands after the import
             for fname in os.listdir(makeBytestr(pp_path)):
                 fname = makeUnicode(fname)
-                logger.debug(str(fname))
                 filename, extn = os.path.splitext(fname)
-                logger.debug(str(filename))
-                logger.debug(str(extn))
                 srcfile = os.path.join(pp_path, fname)
                 if is_valid_booktype(fname, booktype=booktype) or extn in ['.opf', '.jpg']:
                     if bestmatch and not fname.endswith(bestmatch) and extn not in ['.opf', '.jpg']:
@@ -1573,7 +1566,6 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 identifier = "goodreads:%s" % bookid
             else:
                 identifier = "google:%s" % bookid
-
             
             res, err, rc = calibredb('add', ['-1'], [pp_path])
 
