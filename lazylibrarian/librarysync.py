@@ -20,7 +20,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import setWorkPages
-from lazylibrarian.bookrename import bookRename, audioProcess
+from lazylibrarian.bookrename import bookRename, audioProcess, id3read
 from lazylibrarian.cache import cache_img, gr_xml_request
 from lazylibrarian.common import opf_file, any_file
 from lazylibrarian.formatter import plural, is_valid_isbn, is_valid_booktype, getList, unaccented, \
@@ -163,7 +163,7 @@ def get_book_info(fname):
     return res
 
 
-def find_book_in_db(author, book, ignored=None):
+def find_book_in_db(author, book, ignored=None, library='eBook'):
     # Fuzzy search for book in library, return LL bookid and status if found or zero
     # prefer an exact match on author & book
     # prefer 'Have' if the user has marked the one they want
@@ -171,42 +171,55 @@ def find_book_in_db(author, book, ignored=None):
     # or prefer not ignored over ignored
     logger.debug('Searching database for [%s] by [%s]' % (book, author))
     myDB = database.DBConnection()
-    cmd = 'SELECT BookID,books.Status FROM books,authors where books.AuthorID = authors.AuthorID'
+    cmd = 'SELECT BookID,books.Status,AudioStatus FROM books,authors where books.AuthorID = authors.AuthorID'
     cmd += ' and AuthorName=? COLLATE NOCASE and BookName=? COLLATE NOCASE'
     res = myDB.select(cmd, (author, book))
+    if library == 'eBook':
+        whichstatus = 'Status'
+    else:
+        whichstatus = 'AudioStatus'
     match = None
     for item in res:
-        if item['Status'] == 'Have':
+        if item[whichstatus] == 'Have':
             match = item
             break
     if not match:
         for item in res:
-            if item['Status'] == 'Open':
+            if item[whichstatus] == 'Open':
                 match = item
                 break
     if not match:
         for item in res:
-            if item['Status'] != 'Ignored':
+            if item[whichstatus] != 'Ignored':
                 match = item
                 break
     if not match:
         for item in res:
-            if item['Status'] == 'Ignored':
+            if item[whichstatus] == 'Ignored':
                 match = item
                 break
     if match:
         logger.debug('Exact match [%s]' % book)
-        return match['BookID'], match['Status']
+        return match['BookID'], match[whichstatus]
     else:
         # Try a more complex fuzzy match against each book in the db by this author
         # Using hard-coded ratios for now, maybe make ratios configurable in config.ini later
-        cmd = 'SELECT BookID,BookName,BookISBN,books.Status FROM books,authors where books.AuthorID = authors.AuthorID '
+        cmd = 'SELECT BookID,BookName,BookISBN,books.Status,AudioStatus FROM books,authors'
+        cmd += ' where books.AuthorID = authors.AuthorID '
         ign = ''
-        if ignored is True:
-            cmd += 'and books.Status = "Ignored" '
-            ign = 'ignored '
-        elif ignored is False:
-            cmd += 'and books.Status != "Ignored" '
+        if library == 'eBook':
+            if ignored is True:
+                cmd += 'and books.Status = "Ignored" '
+                ign = 'ignored '
+            elif ignored is False:
+                cmd += 'and books.Status != "Ignored" '
+        else:
+            if ignored is True:
+                cmd += 'and AudioStatus = "Ignored" '
+                ign = 'ignored '
+            elif ignored is False:
+                cmd += 'and AudioStatus != "Ignored" '
+
         cmd += 'and AuthorName=? COLLATE NOCASE'
         books = myDB.select(cmd, (author,))
         best_ratio = 0
@@ -277,7 +290,9 @@ def find_book_in_db(author, book, ignored=None):
             if ratio > best_ratio:
                 use_it = True
             elif ratio == best_ratio:
-                if a_book['Status'] == 'Have':
+                if library == 'eBook' and a_book['Status'] == 'Have':
+                    use_it = True
+                if library != 'eBook' and a_book['AudioStatus'] == 'Have':
                     use_it = True
                 if not use_it:
                     want_words = getList(book_lower)
@@ -292,11 +307,17 @@ def find_book_in_db(author, book, ignored=None):
                             new_cnt += 1
                     if new_cnt > best_cnt:
                         use_it = True
-                if not use_it and best_type == 'Ignored' and a_book['Status'] != 'Ignored':
-                    use_it = True
+                if not use_it and best_type == 'Ignored':
+                    if library == 'eBook' and a_book['Status'] != 'Ignored':
+                        use_it = True
+                    if library != 'eBook' and a_book['AudioStatus'] != 'Ignored':
+                        use_it = True
             if use_it:
                 best_ratio = ratio
-                best_type = a_book['Status']
+                if library == 'eBook':
+                    best_type = a_book['Status']
+                else:
+                    best_type = a_book['AudioStatus']
                 ratio_name = a_book['BookName']
                 ratio_id = a_book['BookID']
 
@@ -304,7 +325,9 @@ def find_book_in_db(author, book, ignored=None):
             if partial > best_partial:
                 use_it = True
             elif partial == best_partial:
-                if a_book['Status'] == 'Have':
+                if library == 'eBook' and a_book['Status'] == 'Have':
+                    use_it = True
+                if library != 'eBook' and a_book['AudioStatus'] == 'Have':
                     use_it = True
                 if not use_it:
                     want_words = getList(book_lower)
@@ -319,11 +342,17 @@ def find_book_in_db(author, book, ignored=None):
                             new_cnt += 1
                     if new_cnt > best_cnt:
                         use_it = True
-                if not use_it and partial_type == 'Ignored' and a_book['Status'] != 'Ignored':
-                    use_it = True
+                if not use_it and partial_type == 'Ignored':
+                    if library == 'eBook' and a_book['Status'] != 'Ignored':
+                        use_it = True
+                    if library != 'eBook' and a_book['AudioStatus'] != 'Ignored':
+                        use_it = True
             if use_it:
                 best_partial = partial
-                partial_type = a_book['Status']
+                if library == 'eBook':
+                    partial_type = a_book['Status']
+                else:
+                    partial_type = a_book['AudioStatus']
                 partial_name = a_book['BookName']
                 partial_id = a_book['BookID']
 
@@ -331,7 +360,9 @@ def find_book_in_db(author, book, ignored=None):
             if partname > best_partname:
                 use_it = True
             elif partname == best_partname:
-                if a_book['Status'] == 'Have':
+                if library == 'eBook' and a_book['Status'] == 'Have':
+                    use_it = True
+                if library != 'eBook' and a_book['AudioStatus'] == 'Have':
                     use_it = True
                 if not use_it:
                     want_words = getList(book_lower)
@@ -346,17 +377,26 @@ def find_book_in_db(author, book, ignored=None):
                             new_cnt += 1
                     if new_cnt > best_cnt:
                         use_it = True
-                if not use_it and partname_type == 'Ignored' and a_book['Status'] != 'Ignored':
-                    use_it = True
+                if not use_it and partname_type == 'Ignored':
+                    if library == 'eBook' and a_book['Status'] != 'Ignored':
+                        use_it = True
+                    if library != 'eBook' and a_book['AudioStatus'] != 'Ignored':
+                        use_it = True
             if use_it:
                 best_partname = partname
-                partname_type = a_book['Status']
+                if library == 'eBook':
+                    partname_type = a_book['Status']
+                else:
+                    partname_type = a_book['AudioStatus']
                 partname_name = a_book['BookName']
                 partname_id = a_book['BookID']
 
             if a_book_lower == book_partname and has_clean_subtitle:
                 have_prefix = True
-                prefix_type = a_book['Status']
+                if library == 'eBook':
+                    prefix_type = a_book['Status']
+                else:
+                    prefix_type = a_book['Status']
                 prefix_name = a_book['BookName']
                 prefix_id = a_book['BookID']
 
@@ -637,57 +677,9 @@ def LibraryScan(startdir=None, library='eBook', authid=None, remove=True):
                                 filename = os.path.join(rootdir, files)
                                 if PY2:
                                     filename = filename.encode(lazylibrarian.SYS_ENCODING)
-                                if TinyTag:
-                                    try:
-                                        id3r = TinyTag.get(filename)
-                                        performer = id3r.artist
-                                        composer = id3r.composer
-                                        book = id3r.album
-                                        albumartist = id3r.albumartist
-
-                                        if performer:
-                                            performer = performer.strip()
-                                        else:
-                                            performer = ''
-                                        if composer:
-                                            composer = composer.strip()
-                                        else:
-                                            composer = ''
-                                        if book:
-                                            book = book.strip()
-                                        else:
-                                            book = ''
-                                        if albumartist:
-                                            albumartist = albumartist.strip()
-                                        else:
-                                            albumartist = ''
-
-                                        if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
-                                            logger.debug("id3r.filename [%s]" % filename)
-                                            logger.debug("id3r.performer [%s]" % performer)
-                                            logger.debug("id3r.composer [%s]" % composer)
-                                            logger.debug("id3r.album [%s]" % book)
-                                            logger.debug("id3r.albumartist [%s]" % albumartist)
-
-                                        if composer:  # if present, should be author
-                                            author = composer
-                                        elif performer:  # author, or narrator if composer == author
-                                            author = performer
-                                        elif albumartist:
-                                            author = albumartist
-                                        else:
-                                            author = None
-                                        if author and type(author) is list:
-                                            lst = ', '.join(author)
-                                            logger.debug("id3reader author list [%s]" % lst)
-                                            author = author[0]  # if multiple authors, just use the first one
-                                        if author and book:
-                                            match = True
-                                            author = makeUnicode(author)
-                                            book = makeUnicode(book)
-                                    except Exception as e:
-                                        logger.error("tinytag error %s %s [%s]" % (type(e).__name__, str(e), filename))
-                                        pass
+                                author, book = id3read(filename)
+                                if author and book:
+                                    match = True
 
                         # Failing anything better, just pattern match on filename
                         if not match:

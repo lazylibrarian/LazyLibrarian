@@ -214,7 +214,7 @@ def export_CSV(search_dir=None, status="Wanted", library='eBook'):
         return msg
 
 
-def finditem(item, preferred_authorname):
+def finditem(item, preferred_authorname, library='eBook'):
     """
     Try to find book matching the csv item in the database
     Return database entry, or False if not found
@@ -249,10 +249,7 @@ def finditem(item, preferred_authorname):
             fullcmd = cmd + 'and BookIsbn=?'
             bookmatch = myDB.match(fullcmd, (isbn13,))
     if not bookmatch:
-        bookid, mtype = find_book_in_db(preferred_authorname, bookname, ignored=False)
-        if bookid and mtype == "Ignored":
-            logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
-                        (bookname, preferred_authorname))
+        bookid, mtype = find_book_in_db(preferred_authorname, bookname, ignored=False, library=library)
         if bookid:
             fullcmd = cmd + 'and BookID=?'
             bookmatch = myDB.match(fullcmd, (bookid,))
@@ -323,7 +320,7 @@ def import_CSV(search_dir=None, library='eBook'):
                         if new:
                             authcount += 1
 
-                    bookmatch = finditem(item, authorname)
+                    bookmatch = finditem(item, authorname, library=library)
                     result = ''
                     imported = ''
                     if bookmatch:

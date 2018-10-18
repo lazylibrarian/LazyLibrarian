@@ -299,7 +299,7 @@ def search_rss_book(books=None, library=None):
             logger.debug("SearchRSS - No books to search for")
             return
 
-        resultlist, nproviders = IterateOverRSSSites()
+        resultlist, nproviders, _ = IterateOverRSSSites()
         if not nproviders:
             logger.warn('No rss providers are available')
             scheduleJob(action='Stop', target='search_rss_book')

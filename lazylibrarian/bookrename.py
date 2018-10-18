@@ -32,6 +32,60 @@ __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
 
 
+def id3read(filename):
+    if not TinyTag:
+        return None, None
+
+    try:
+        id3r = TinyTag.get(filename)
+        performer = id3r.artist
+        composer = id3r.composer
+        book = id3r.album
+        albumartist = id3r.albumartist
+
+        if performer:
+            performer = performer.strip()
+        else:
+            performer = ''
+        if composer:
+            composer = composer.strip()
+        else:
+            composer = ''
+        if book:
+            book = book.strip()
+        else:
+            book = ''
+        if albumartist:
+            albumartist = albumartist.strip()
+        else:
+            albumartist = ''
+
+        if lazylibrarian.LOGLEVEL & lazylibrarian.log_libsync:
+            logger.debug("id3r.filename [%s]" % filename)
+            logger.debug("id3r.performer [%s]" % performer)
+            logger.debug("id3r.composer [%s]" % composer)
+            logger.debug("id3r.album [%s]" % book)
+            logger.debug("id3r.albumartist [%s]" % albumartist)
+
+        if composer:  # if present, should be author
+            author = composer
+        elif performer:  # author, or narrator if composer == author
+            author = performer
+        elif albumartist:
+            author = albumartist
+        else:
+            author = None
+        if author and type(author) is list:
+            lst = ', '.join(author)
+            logger.debug("id3reader author list [%s]" % lst)
+            author = author[0]  # if multiple authors, just use the first one
+        if author and book:
+            return makeUnicode(author), makeUnicode(book)
+    except Exception as e:
+        logger.error("tinytag error %s %s [%s]" % (type(e).__name__, str(e), filename))
+    return None, None
+
+
 def audioProcess(bookid, rename=False, playlist=False):
     """
     :param bookid: book to process
