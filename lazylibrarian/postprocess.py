@@ -1593,14 +1593,14 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                     if lazylibrarian.CONFIG['WISHLIST_TAGS']:
                         if data['Requester'] is not None:
                             _, _, rc = calibredb('set_metadata',
-                                             ['--field', 'tags:%s' % data['Requester'].replace(" ", ",")],
-                                             [calibre_id])
+                                                 ['--field', 'tags:%s' % data['Requester'].replace(" ", ",")],
+                                                 [calibre_id])
                             if rc:
                                 logger.warn("calibredb unable to set Requester")
                         if data['AudioRequester'] is not None:
                             _, _, rc = calibredb('set_metadata',
-                                             ['--field', 'tags:%s' % data['AudioRequester'].replace(" ", ",")],
-                                             [calibre_id])
+                                                 ['--field', 'tags:%s' % data['AudioRequester'].replace(" ", ",")],
+                                                 [calibre_id])
                             if rc:
                                 logger.warn("calibredb unable to set AudioRequester")
 

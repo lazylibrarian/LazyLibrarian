@@ -152,8 +152,8 @@ def search_wishlist():
                             'Found book %s by %s, already marked as "%s"' % (bookname, authorname, bookmatch['Status']))
                         if bookmatch["Requester"]:  # Already on a wishlist
                             if book["dispname"] not in bookmatch["Requester"]:
-                                newValueDict = {"Requester": bookmatch["Requester"]+ book["dispname"] + ' '}
-                                controlValueDict = {"BookID":bookid}
+                                newValueDict = {"Requester": bookmatch["Requester"] + book["dispname"] + ' '}
+                                controlValueDict = {"BookID": bookid}
                                 myDB.upsert("books", newValueDict, controlValueDict)
                         else:
                             newValueDict = {"Requester": book["dispname"] + ' '}
@@ -167,7 +167,7 @@ def search_wishlist():
                         new_books += 1
                         if bookmatch["Requester"]:  # Already on a wishlist
                             if book["dispname"] not in bookmatch["Requester"]:
-                                newValueDict = {"Requester": bookmatch["Requester"]+ book["dispname"] + ' '}
+                                newValueDict = {"Requester": bookmatch["Requester"] + book["dispname"] + ' '}
                                 controlValueDict = {"BookID": bookid}
                                 myDB.upsert("books", newValueDict, controlValueDict)
                         else:
@@ -180,7 +180,7 @@ def search_wishlist():
                             (bookname, authorname, bookmatch['AudioStatus']))
                         if bookmatch["AudioRequester"]:  # Already on a wishlist
                             if book["dispname"] not in bookmatch["AudioRequester"]:
-                                newValueDict = {"AudioRequester": bookmatch["AudioRequester"]+ book["dispname"] + ' '}
+                                newValueDict = {"AudioRequester": bookmatch["AudioRequester"] + book["dispname"] + ' '}
                                 controlValueDict = {"BookID": bookid}
                                 myDB.upsert("books", newValueDict, controlValueDict)
                         else:
@@ -195,7 +195,7 @@ def search_wishlist():
                         new_books += 1
                         if bookmatch["AudioRequester"]:  # Already on a wishlist
                             if book["dispname"] not in bookmatch["AudioRequester"]:
-                                newValueDict = {"AudioRequester": bookmatch["AudioRequester"]+ book["dispname"] + ' '}
+                                newValueDict = {"AudioRequester": bookmatch["AudioRequester"] + book["dispname"] + ' '}
                                 controlValueDict = {"BookID": bookid}
                                 myDB.upsert("books", newValueDict, controlValueDict)
                         else:
@@ -317,7 +317,7 @@ def search_rss_book(books=None, library=None):
             if library is None or library == 'eBook':
                 if searchbook['Status'] == "Wanted":
                     cmd = 'SELECT BookID from wanted WHERE BookID=? and AuxInfo="eBook" and Status="Snatched"'
-                    snatched = myDB.match(cmd, (searchbook["BookID"], ))
+                    snatched = myDB.match(cmd, (searchbook["BookID"],))
                     if snatched:
                         logger.warn('eBook %s %s already marked snatched in wanted table' %
                                     (searchbook['AuthorName'], searchbook['BookName']))
@@ -333,7 +333,7 @@ def search_rss_book(books=None, library=None):
             if library is None or library == 'AudioBook':
                 if searchbook['AudioStatus'] == "Wanted":
                     cmd = 'SELECT BookID from wanted WHERE BookID=? and AuxInfo="AudioBook" and Status="Snatched"'
-                    snatched = myDB.match(cmd, (searchbook["BookID"], ))
+                    snatched = myDB.match(cmd, (searchbook["BookID"],))
                     if snatched:
                         logger.warn('AudioBook %s %s already marked snatched in wanted table' %
                                     (searchbook['AuthorName'], searchbook['BookName']))

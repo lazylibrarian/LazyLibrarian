@@ -7,22 +7,24 @@
     <div id="subhead_container">
       <form id="subhead_menu" action="search" method="get">
         <div class="col-xs-10">
-          %if library != 'AudioBook':
-            %if perm&lazylibrarian.perm_force:
+          %if perm&lazylibrarian.perm_force:
+            %if library != 'AudioBook':
               <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
               <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
-              <a href="forceWish?source=books" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> WishLists</a>
-              <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">
-              <i class="fa fa-download"></i> Import CSV</button>
-              <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv">
-              <i class="fa fa-upload"></i> Export CSV</button>
+            %endif
+            <a href="forceWish?source=books" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> WishLists</a>
+            <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">
+            <i class="fa fa-download"></i> Import CSV</button>
+            <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv">
+            <i class="fa fa-upload"></i> Export CSV</button>
+            %if library != 'AudioBook':
               %if lazylibrarian.CONFIG['GR_SYNC'] == True:
                 <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads">
                 <i class="fa fa-link"></i> Goodreads Sync</button>
               %endif
               %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
-              <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
-              <i class="fa fa-link"></i> Calibre Sync</button>
+                <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
+                <i class="fa fa-link"></i> Calibre Sync</button>
               %endif
             %endif
           %endif
@@ -147,7 +149,7 @@
         })
 
         $('#exportcsv').on('click', function(e) {
-            $.get('exportCSV', function(data) {
+            $.get('exportCSV', {'library': $('#chooselib').val()}, function(data) {
                 bootbox.dialog({
                     title: 'CSV Export Result',
                     message: '<pre>'+data+'</pre>',
@@ -196,7 +198,7 @@
         });
 
         $('#importcsv').on('click', function(e) {
-            $.get('importCSV', function(data) {
+            $.get('importCSV', {'library': $('#chooselib').val()}, function(data) {
                 var myModal = bootbox.dialog({
                     title: 'CSV Import Info',
                     message: '<pre>'+data+'</pre>',

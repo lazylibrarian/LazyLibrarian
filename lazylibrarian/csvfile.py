@@ -152,7 +152,7 @@ def restore_table(table, savedir=None, status=None):
         return 0
 
 
-def export_CSV(search_dir=None, status="Wanted"):
+def export_CSV(search_dir=None, status="Wanted", library='eBook'):
     """ Write a csv file to the search_dir containing all books marked as "Wanted" """
     # noinspection PyBroadException
     try:
@@ -169,16 +169,19 @@ def export_CSV(search_dir=None, status="Wanted"):
             logger.warn(msg)
             return msg
 
-        csvFile = os.path.join(search_dir, "%s - %s.csv" % (status, now().replace(':', '-')))
+        csvFile = os.path.join(search_dir, "%s %s - %s.csv" % (status, library, now().replace(':', '-')))
 
         myDB = database.DBConnection()
 
         cmd = 'SELECT BookID,AuthorName,BookName,BookIsbn,books.AuthorID FROM books,authors '
-        cmd += 'WHERE books.Status=? and books.AuthorID = authors.AuthorID'
+        if library == 'eBook':
+            cmd += 'WHERE books.Status=? and books.AuthorID = authors.AuthorID'
+        else:
+            cmd += 'WHERE AudioStatus=? and books.AuthorID = authors.AuthorID'
         find_status = myDB.select(cmd, (status,))
 
         if not find_status:
-            msg = "No books marked as %s" % status
+            msg = "No %s marked as %s" % (library, status)
             logger.warn(msg)
         else:
             count = 0
@@ -194,7 +197,7 @@ def export_CSV(search_dir=None, status="Wanted"):
                 csvwrite.writerow(['BookID', 'Author', 'Title', 'ISBN', 'AuthorID'])
 
                 for resulted in find_status:
-                    logger.debug("Exported CSV for book %s" % resulted['BookName'])
+                    logger.debug("Exported CSV for %s %s" % (library, resulted['BookName']))
                     row = ([resulted['BookID'], resulted['AuthorName'], resulted['BookName'],
                             resulted['BookIsbn'], resulted['AuthorID']])
                     if PY2:
@@ -202,7 +205,7 @@ def export_CSV(search_dir=None, status="Wanted"):
                     else:
                         csvwrite.writerow([("%s" % s) for s in row])
                     count += 1
-            msg = "CSV exported %s book%s to %s" % (count, plural(count), csvFile)
+            msg = "CSV exported %s %s%s to %s" % (count, library, plural(count), csvFile)
             logger.info(msg)
         return msg
     except Exception:
@@ -257,7 +260,7 @@ def finditem(item, preferred_authorname):
 
 
 # noinspection PyTypeChecker
-def import_CSV(search_dir=None):
+def import_CSV(search_dir=None, library='eBook'):
     """ Find a csv file in the search_dir and process all the books in it,
         adding authors to the database if not found
         and marking the books as "Wanted"
@@ -274,7 +277,7 @@ def import_CSV(search_dir=None):
             logger.warn(msg)
             return msg
 
-        csvFile = csv_file(search_dir)
+        csvFile = csv_file(search_dir, library=library)
 
         headers = None
 
@@ -286,7 +289,7 @@ def import_CSV(search_dir=None):
         existing = 0
 
         if not csvFile:
-            msg = "No CSV file found in %s" % search_dir
+            msg = "No %s CSV file found in %s" % (library, search_dir)
             logger.warn(msg)
             return msg
         else:
@@ -327,15 +330,21 @@ def import_CSV(search_dir=None):
                         authorname = bookmatch['AuthorName']
                         bookname = bookmatch['BookName']
                         bookid = bookmatch['BookID']
-                        bookstatus = bookmatch['Status']
+                        if library == 'eBook':
+                            bookstatus = bookmatch['Status']
+                        else:
+                            bookstatus = bookmatch['AudioStatus']
                         if bookstatus in ['Open', 'Wanted', 'Have']:
                             existing += 1
-                            logger.info('Found book %s by %s, already marked as "%s"' %
-                                        (bookname, authorname, bookstatus))
+                            logger.info('Found %s %s by %s, already marked as "%s"' %
+                                        (library, bookname, authorname, bookstatus))
                         else:  # skipped/ignored
-                            logger.info('Found book %s by %s, marking as "Wanted"' % (bookname, authorname))
+                            logger.info('Found %s %s by %s, marking as "Wanted"' % (library, bookname, authorname))
                             controlValueDict = {"BookID": bookid}
-                            newValueDict = {"Status": "Wanted"}
+                            if library == 'eBook':
+                                newValueDict = {"Status": "Wanted"}
+                            else:
+                                newValueDict = {"AudioStatus": "Wanted"}
                             myDB.upsert("books", newValueDict, controlValueDict)
                             bookcount += 1
                     else:
@@ -362,7 +371,10 @@ def import_CSV(search_dir=None):
                                         (result['author_fuzz'], result['book_fuzz'],
                                          result['authorname'], result['bookname'],
                                          authorname, title))
-                            import_book(result['bookid'], ebook="Wanted", wait=True)
+                            if library == 'eBook':
+                                import_book(result['bookid'], ebook="Wanted", wait=True)
+                            else:
+                                import_book(result['bookid'], audio="Wanted", wait=True)
                             imported = myDB.match('select * from books where BookID=?', (result['bookid'],))
                             if imported:
                                 bookcount += 1
@@ -385,10 +397,12 @@ def import_CSV(search_dir=None):
                             logger.warn(msg)
                         skipcount += 1
 
-            msg = "Found %i book%s in csv file, %i already existing or wanted" % (total, plural(total), existing)
+            msg = "Found %i %s%s in csv file, %i already existing or wanted" % (total, library,
+                                                                                plural(total), existing)
             logger.info(msg)
-            msg = "Added %i new author%s, marked %i book%s as 'Wanted', %i book%s not found" % \
-                  (authcount, plural(authcount), bookcount, plural(bookcount), skipcount, plural(skipcount))
+            msg = "Added %i new author%s, marked %i %s%s as 'Wanted', %i %s%s not found" % \
+                  (authcount, plural(authcount), bookcount, library, plural(bookcount),
+                   skipcount, plural(skipcount), library)
             logger.info(msg)
             if lazylibrarian.CONFIG['DELETE_CSV']:
                 if skipcount == 0:
