@@ -157,7 +157,7 @@ def dbupgrade(db_current_version):
                                 'BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, ' +
                                 'WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
                                 'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
-                                'OriginalPubDate TEXT, Requester TEXT, AudioRequester TEXT' +
+                                'OriginalPubDate TEXT, Requester TEXT, AudioRequester TEXT,' +
                                 ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
                                 'ON DELETE CASCADE)')
                     myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
