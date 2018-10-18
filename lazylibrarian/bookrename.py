@@ -193,8 +193,8 @@ def audioProcess(bookid, rename=False, playlist=False):
 
     logger.debug("%s found %s audiofile%s" % (exists['BookName'], cnt, plural(cnt)))
 
-    if cnt == 1 and not parts:  # single file audiobook
-        parts = [1, exists['BookName'], exists['AuthorName'], audio_file]
+    if cnt == 1 and not parts:  # single file audiobook with no tags
+        parts = [[1, exists['BookName'], exists['AuthorName'], audio_file]]
 
     if cnt != len(parts):
         logger.warn("%s: Incorrect number of parts (found %i from %i)" % (exists['BookName'], len(parts), cnt))
