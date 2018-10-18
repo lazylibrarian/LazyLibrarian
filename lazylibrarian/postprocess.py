@@ -34,7 +34,7 @@ except ImportError:
 
 from lazylibrarian import database, logger, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology, sabnzbd, nzbget
-from lazylibrarian.bookrename import nameVars, audioProcess, stripspaces
+from lazylibrarian.bookrename import nameVars, audioProcess, stripspaces, id3read
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibredb
 from lazylibrarian.common import scheduleJob, book_file, opf_file, setperm, bts_file, jpg_file, \
@@ -66,7 +66,7 @@ def update_downloads(provider):
         myDB.action('INSERT into downloads (Count, Provider) VALUES  (?, ?)', (1, provider))
 
 
-def processAlternate(source_dir=None):
+def processAlternate(source_dir=None, library='eBook'):
     # import a book from an alternate directory
     # noinspection PyBroadException
     try:
@@ -80,64 +80,75 @@ def processAlternate(source_dir=None):
             logger.warn('Alternate directory must not be the same as Destination')
             return False
 
-        logger.debug('Processing directory %s' % source_dir)
+        logger.debug('Processing %s directory %s' % (library, source_dir))
         # first, recursively process any books in subdirectories
         flist = os.listdir(makeBytestr(source_dir))
         flist = [makeUnicode(item) for item in flist]
         for fname in flist:
             subdir = os.path.join(source_dir, fname)
             if os.path.isdir(subdir):
-                processAlternate(subdir)
-        # only import one book from each alternate (sub)directory, this is because
-        # the importer may delete the directory after importing a book,
-        # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
-        # also if multiple books in a folder and only a "metadata.opf"
-        # or "cover.jpg"" which book is it for?
-        reject = multibook(source_dir)
-        if reject:
-            logger.debug("Not processing %s, found multiple %s" % (source_dir, reject))
-            return False
-
-        new_book = book_file(source_dir, booktype='ebook')
-        if not new_book:
-            # check if an archive in this directory
-            for f in os.listdir(makeBytestr(source_dir)):
-                f = makeUnicode(f)
-                if not is_valid_type(f):
-                    # Is file an archive, if so look inside and extract to new dir
-                    res = unpack_archive(os.path.join(source_dir, f), source_dir, f)
-                    if res:
-                        source_dir = res
-                        break
-            new_book = book_file(source_dir, booktype='ebook')
-        if not new_book:
-            logger.warn("No book file found in %s" % source_dir)
-            return False
+                processAlternate(subdir, library=library)
 
         metadata = {}
-        # see if there is a metadata file in this folder with the info we need
-        # try book_name.opf first, or fall back to any filename.opf
-        metafile = os.path.splitext(new_book)[0] + '.opf'
-        if not os.path.isfile(metafile):
-            metafile = opf_file(source_dir)
-        if metafile and os.path.isfile(metafile):
-            try:
-                metadata = get_book_info(metafile)
-            except Exception as e:
-                logger.warn('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
-        else:
-            logger.debug('No metadata file found for %s' % new_book)
+        if library == 'eBook':
+            # only import one book from each alternate (sub)directory, this is because
+            # the importer may delete the directory after importing a book,
+            # depending on lazylibrarian.CONFIG['DESTINATION_COPY'] setting
+            # also if multiple books in a folder and only a "metadata.opf"
+            # or "cover.jpg"" which book is it for?
+            reject = multibook(source_dir)
+            if reject:
+                logger.debug("Not processing %s, found multiple %s" % (source_dir, reject))
+                return False
 
-        if 'title' not in metadata or 'creator' not in metadata:
-            # if not got both, try to get metadata from the book file
-            extn = os.path.splitext(new_book)[1]
-            if extn.lower() in [".epub", ".mobi"]:
-                if PY2:
-                    new_book = new_book.encode(lazylibrarian.SYS_ENCODING)
+            new_book = book_file(source_dir, booktype='ebook')
+            if not new_book:
+                # check if an archive in this directory
+                for f in os.listdir(makeBytestr(source_dir)):
+                    f = makeUnicode(f)
+                    if not is_valid_type(f):
+                        # Is file an archive, if so look inside and extract to new dir
+                        res = unpack_archive(os.path.join(source_dir, f), source_dir, f)
+                        if res:
+                            source_dir = res
+                            break
+                new_book = book_file(source_dir, booktype='ebook')
+            if not new_book:
+                logger.warn("No book file found in %s" % source_dir)
+                return False
+
+            # see if there is a metadata file in this folder with the info we need
+            # try book_name.opf first, or fall back to any filename.opf
+            metafile = os.path.splitext(new_book)[0] + '.opf'
+            if not os.path.isfile(metafile):
+                metafile = opf_file(source_dir)
+            if metafile and os.path.isfile(metafile):
                 try:
-                    metadata = get_book_info(new_book)
+                    metadata = get_book_info(metafile)
                 except Exception as e:
-                    logger.warn('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
+                    logger.warn('Failed to read metadata from %s, %s %s' % (metafile, type(e).__name__, str(e)))
+            else:
+                logger.debug('No metadata file found for %s' % new_book)
+
+            if 'title' not in metadata or 'creator' not in metadata:
+                # if not got both, try to get metadata from the book file
+                extn = os.path.splitext(new_book)[1]
+                if extn.lower() in [".epub", ".mobi"]:
+                    if PY2:
+                        new_book = new_book.encode(lazylibrarian.SYS_ENCODING)
+                    try:
+                        metadata = get_book_info(new_book)
+                    except Exception as e:
+                        logger.warn('No metadata found in %s, %s %s' % (new_book, type(e).__name__, str(e)))
+        else:
+            new_book = book_file(source_dir, booktype='audiobook')
+            if not new_book:
+                logger.warn("No audiobook file found in %s" % source_dir)
+                return False
+            author, book = id3read(new_book)
+            if author and book:
+                metadata['creator'] = author
+                metadata['title'] = book
 
         if 'title' in metadata and 'creator' in metadata:
             authorname = metadata['creator']
@@ -171,16 +182,24 @@ def processAlternate(source_dir=None):
                 else:
                     addAuthorNameToDB(author=authorname)
 
-            bookid, mtype = find_book_in_db(authorname, bookname, ignored=False)
+            bookid, _ = find_book_in_db(authorname, bookname, ignored=False, library=library)
             if bookid:
-                if mtype == "Ignored":
-                    logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
-                                (bookname, authorname))
-                return process_book(source_dir, bookid)
+                if library == 'eBook':
+                    res = myDB.match("SELECT Status from books WHERE BookID=?", (bookid,))
+                    if res and res['Status'] == 'Ignored':
+                        logger.warn("%s %s by %s is marked Ignored in database, importing anyway" %
+                                    (library, bookname, authorname))
+                    return process_book(source_dir, bookid)
+                else:
+                    res = myDB.match("SELECT AudioStatus from books WHERE BookID=?", (bookid,))
+                    if res and res['AudioStatus'] == 'Ignored':
+                        logger.warn("%s %s by %s is marked Ignored in database, importing anyway" %
+                                    (library, bookname, authorname))
+                    return process_book(source_dir, bookid)
             else:
-                logger.warn("Book %s by %s not found in database" % (bookname, authorname))
+                logger.warn("%s %s by %s not found in database" % (library, bookname, authorname))
         else:
-            logger.warn('Book %s has no metadata, unable to import' % new_book)
+            logger.warn('%s %s has no metadata, unable to import' % (library, new_book))
         return False
 
     except Exception:

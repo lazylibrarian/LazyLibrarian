@@ -9,12 +9,15 @@
         <div class="col-xs-10">
           %if perm&lazylibrarian.perm_force:
             %if library != 'AudioBook':
-              <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Books</a>
-              <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include Books</a>
+              <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import eBooks</a>
+              <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include eBooks</a>
               %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
                 <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
                 <i class="fa fa-link"></i> Calibre Sync</button>
               %endif
+            %else:
+              <a href="importAlternate?library=AudioBook" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import AudioBooks</a>
+              <a href="includeAlternate?library=AudioBook" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include AudioBooks</a>
             %endif
             <a href="forceWish?source=books" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> WishLists</a>
             <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">

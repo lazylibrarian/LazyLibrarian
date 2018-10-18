@@ -3587,28 +3587,28 @@ class WebInterface(object):
             raise cherrypy.HTTPRedirect("magazines")
 
     @cherrypy.expose
-    def includeAlternate(self):
+    def includeAlternate(self, library='eBook'):
         if 'ALT-LIBRARYSCAN' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
                 threading.Thread(target=LibraryScan, name='ALT-LIBRARYSCAN',
-                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], 'eBook', None, False]).start()
+                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], library, None, False]).start()
             except Exception as e:
                 logger.error('Unable to complete the libraryscan: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('ALT-LIBRARYSCAN already running')
-        raise cherrypy.HTTPRedirect("manage")
+        raise cherrypy.HTTPRedirect("manage?library=%s" % library)
 
     @cherrypy.expose
-    def importAlternate(self):
+    def importAlternate(self, library='eBook'):
         if 'IMPORTALT' not in [n.name for n in [t for t in threading.enumerate()]]:
             try:
                 threading.Thread(target=processAlternate, name='IMPORTALT',
-                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR']]).start()
+                                 args=[lazylibrarian.CONFIG['ALTERNATE_DIR'], library]).start()
             except Exception as e:
                 logger.error('Unable to complete the import: %s %s' % (type(e).__name__, str(e)))
         else:
             logger.debug('IMPORTALT already running')
-        raise cherrypy.HTTPRedirect("manage")
+        raise cherrypy.HTTPRedirect("manage?library=%s" % library)
 
     @cherrypy.expose
     def rssFeed(self, **kwargs):

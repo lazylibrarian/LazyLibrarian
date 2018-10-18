@@ -127,7 +127,7 @@ def syncCalibreList(col_read=None, col_toread=None, userid=None):
                     logger.debug("Changed authorname for [%s] from [%s] to [%s]" %
                                  (item['title'], item['authors'], authorname))
                     item['authors'] = authorname
-                bookid, mtype = find_book_in_db(authorname, item['title'], ignored=False)
+                bookid, mtype = find_book_in_db(authorname, item['title'], ignored=False, library='eBook')
                 if bookid and mtype == "Ignored":
                     logger.warn("Book %s by %s is marked Ignored in database, importing anyway" %
                                 (item['title'], authorname))
