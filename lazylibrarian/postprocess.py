@@ -1491,7 +1491,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                        booktype=None):
     """ Copy/move book/mag and associated files into target directory
         Return True, full_path_to_book  or False, error_message"""
-                
+
     if not bookname:
         booktype = 'mag'
 
@@ -1566,7 +1566,7 @@ def processDestination(pp_path=None, dest_path=None, authorname=None, bookname=N
                 identifier = "goodreads:%s" % bookid
             else:
                 identifier = "google:%s" % bookid
-            
+
             res, err, rc = calibredb('add', ['-1'], [pp_path])
 
             if rc:
