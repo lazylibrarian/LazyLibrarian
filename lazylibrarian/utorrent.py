@@ -31,7 +31,7 @@ from lib.six.moves.urllib_error import HTTPError
 
 
 class utorrentclient(object):
-    TOKEN_REGEX = "<div id='token' style='display:none;'>([^<>]+)</div>"
+    TOKEN_REGEX = b"<div id='token' style='display:none;'>([^<>]+)</div>"
 
     # noinspection PyUnusedLocal
     def __init__(self, base_url='',  # lazylibrarian.CONFIG['UTORRENT_HOST'],
