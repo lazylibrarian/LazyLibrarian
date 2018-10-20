@@ -1377,9 +1377,12 @@ def process_book(pp_path=None, bookID=None):
                     newValueDict = {"Status": "Processed", "NZBDate": now(), "DLResult": dest_file}
                     myDB.upsert("wanted", newValueDict, controlValueDict)
                 else:
+                    controlValueDict = {"BookID": bookID}
+                    newValueDict = {"AuxInfo": book_type}
+                    myDB.upsert("wanted", newValueDict, controlValueDict)
                     snatched_from = "manually added"
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_postprocess:
-                        logger.debug("%s was %s" % (global_name, snatched_from))
+                        logger.debug("%s %s was %s" % (book_type, global_name, snatched_from))
 
                 processExtras(dest_file, global_name, bookID, book_type)
 

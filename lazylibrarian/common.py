@@ -845,6 +845,7 @@ def logHeader():
             header += "pyOpenSSL.crypto X509: module missing\n"
 
     if X509:
+        # noinspection PyCallingNonCallable
         x509 = X509()
         if getattr(x509, "_x509", None) is None:
             header += "pyOpenSSL: module missing required functionality. Try upgrading to v0.14 or newer. You have "

@@ -25,6 +25,7 @@ except ImportError:
 
 # noinspection PyBroadException
 try:
+    # noinspection PyUnresolvedReferences
     import magic
 except Exception:
     # noinspection PyBroadException

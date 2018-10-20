@@ -1411,6 +1411,8 @@ def build_monthtable():
         return table
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
+        if 'LC_CTYPE' in current_locale:
+            current_locale = locale.setlocale(locale.LC_CTYPE, '')
         # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
         logger.debug('Current locale is %s' % current_locale)
     except locale.Error as e:
