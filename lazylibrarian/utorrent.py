@@ -148,6 +148,7 @@ class utorrentclient(object):
         return self._action(params)
 
     def _action(self, params, body=None, content_type=None):
+        # noinspection PyTypeChecker
         url = self.base_url + '/gui/' + '?token=' + self.token + '&' + urlencode(params)
         request = Request(url)
         if lazylibrarian.CONFIG['PROXY_HOST']:

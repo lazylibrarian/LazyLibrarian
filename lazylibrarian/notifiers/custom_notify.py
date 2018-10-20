@@ -36,6 +36,7 @@ class CustomNotifier:
             # grab the first entry in the book table and wanted table
             book = myDB.match('SELECT * from books')
             wanted = myDB.match('SELECT * from wanted')
+            ident = 'eBook'
         else:
             # message is a bookid followed by type (eBook/AudioBook)
             # or a magazine title followed by it's NZBUrl
