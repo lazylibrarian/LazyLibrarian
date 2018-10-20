@@ -62,7 +62,7 @@ class CustomNotifier:
             dictionary = dict(list(zip(list(book.keys()), book)))
         else:
             dictionary = {}
-
+        
         dictionary['Event'] = event
 
         if wanted:
@@ -72,6 +72,13 @@ class CustomNotifier:
                     dictionary['Wanted_' + item] = wanted_dictionary[item]
                 else:
                     dictionary[item] = wanted_dictionary[item]
+
+        if 'AuxInfo' not in dictionary or not dictionary['AuxInfo']:
+            if ident in ['eBook', 'AudioBook']:
+                dictionary['AuxInfo'] = ident
+            else:
+                dictionary['AuxInfo'] = 'Magazine'
+        
         try:
             # call the custom notifier script here, passing dictionary deconstructed as strings
             if lazylibrarian.CONFIG['CUSTOM_SCRIPT']:
