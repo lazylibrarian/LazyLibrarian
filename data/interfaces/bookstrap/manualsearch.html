@@ -42,13 +42,21 @@
 </%def>
 <%def name="javascriptIncludes()">
   <script>
-    $(document).ready(function()
-    {
+    function formatBytes(a,b){if(0==a)return"0 Bytes";
+      var c=1024,d=b||2,e=["Bytes","KB","MB","GB","TB","PB","EB","ZB","YB"],f=Math.floor(Math.log(a)/Math.log(c));
+      return parseFloat((a/Math.pow(c,f)).toFixed(d))+" "+e[f]}
 
+  $(document).ready(function()
+    {
         $('#book_table').dataTable(
             {
                 "responsive": true,
                 "order": [[ 0, 'desc' ]],
+                "columnDefs":[{ type: 'natural', targets: 3 },
+                    { targets: [3], 'render': function(data, type, row) {
+                        return '<span style="display:none;">' + row[3] + '</span>' + formatBytes(row[3])
+                         ;} },
+                ],
                 "oLanguage": {
                     "sSearch": "Filter: ",
                     "sLengthMenu":"Show _MENU_ rows per page",
