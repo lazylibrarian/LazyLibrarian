@@ -77,7 +77,7 @@
             <th class="authorname">Author</th>
             <th class="bookname">Title</th>
             <th class="series">Series</th>
-            <th class="stars text-center hidden-sm">Rating</th>
+            <th class="stars text-center hidden-sm hidden-xs">Rating</th>
             <th class="date text-center">Date</th>
             <th class="date text-center">Added</th>
             <th class="status text-center">Status</th>
@@ -203,7 +203,7 @@
                 %endif
                 // hide cover,stars,date on small devices
                 //$('td', nRow).eq(1).addClass('hidden-xs');
-                $('td', nRow).eq(5).addClass('hidden-sm');
+                $('td', nRow).eq(5).addClass('hidden-sm hidden-xs');
                 //$('td', nRow).eq(6).addClass('hidden-xs');
                 //$('td', nRow).eq(7).addClass('hidden-xs');
                 return nRow;
