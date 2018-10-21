@@ -126,7 +126,7 @@
                             return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
                      { targets: [2], 'render': function(data, type, row) {
                      %if perm&lazylibrarian.perm_authorbooks:
-                        btn = '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[10] + '\'">' + row[1] + '</button>'
+                        btn = '<a href=\'authorPage?AuthorID=' + row[10] + '\'">' + row[1] + '</a>'
                      %else:
                         btn = '<a>' + row[1] + '</a>'
                      %endif
@@ -135,7 +135,7 @@
                      { targets: [3], 'render': function(data, type, row) {
                         if (row[2] == null) {return ''};
                             return '<button onclick="bookinfo(\'' + row[11] +
-                                '\')" class="button btn btn-link" type="button">' + row[2] + '</button>';} },
+                                '\')" class="button btn-link text-left" type="button">' + row[2] + '</button>';} },
                      { targets: [4],
                         'class': 'text-center',
                         'render': function(data, type, row) {
@@ -150,7 +150,7 @@
                         else if (percent <= 50) {css = 'warning'}
                         else if (percent <= 75) {css = 'info'}
                         else {css = 'success'};
-                        bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' +
+                        bar = '<div class="progress center-block" style="width: 120px;"><div class="progress-bar-' +
                         css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + percent +
                         '" aria-valuemin="0" aria-valuemax="100" style="width: ' + percent +
                         '%;"><span class="sr-only">' + percent +
