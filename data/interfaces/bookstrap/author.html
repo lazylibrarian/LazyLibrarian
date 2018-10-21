@@ -183,13 +183,13 @@
       <thead>
         <tr>
           <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-          <th class="bookart text-center no-sort hidden-xs">Cover</th>
+          <th class="bookart text-center no-sort">Cover</th>
           <th class="authorname hidden">Author</th>
           <th class="bookname">Title</th>
           <th class="series">Series</th>
-          <th class="stars text-center hidden-xs">Rating</th>
-          <th class="date text-center hidden-xs">Released</th>
-          <th class="date text-center hidden-xs">Added</th>
+          <th class="stars text-center hidden-sm hidden-xs">Rating</th>
+          <th class="date text-center">Date</th>
+          <th class="date text-center">Added</th>
           <th class="status text-center">Status</th>
         </tr>
       </thead>
@@ -272,7 +272,7 @@
                         var limit = window.innerWidth / 30;
                         var title = truncateOnWord(pre[0], limit);
                         var tail = data.slice(pre[0].length);
-                        btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn btn-link" type="button" '
+                        btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn-link text-left" type="button" '
                         return btn + ' title="' + pre[0] + '">' + title + '</button>' + tail ;
                         }
                     },
@@ -348,10 +348,10 @@
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     // hide cover,stars,date on small devices
-                    $('td', nRow).eq(1).addClass('hidden-xs');
-                    $('td', nRow).eq(5).addClass('hidden-xs');
-                    $('td', nRow).eq(6).addClass('hidden-xs');
-                    $('td', nRow).eq(7).addClass('hidden-xs');
+                    //$('td', nRow).eq(1).addClass('hidden-xs');
+                    $('td', nRow).eq(5).addClass('hidden-sm hidden-xs');
+                    //$('td', nRow).eq(6).addClass('hidden-xs');
+                    //$('td', nRow).eq(7).addClass('hidden-xs');
                     return nRow;
                 },
             });

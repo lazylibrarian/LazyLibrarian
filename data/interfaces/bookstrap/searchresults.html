@@ -39,8 +39,8 @@
                 <th class="authorname">Author</th>
                 <th class="bookname">Title</th>
                 <th class="date text-center">Released</th>
-                <th class="stars text-center">Rating</th>
-                <th class="stars text-center">Rating count</th>
+                <th class="stars text-center hidden-sm hidden-xs">Rating</th>
+                <th class="stars text-center hidden-sm hidden-xs">Rating count</th>
                 <th class="addAuthor text-center no-sort">Add</th>
                 <th class="fuzz text-right">Match</th>
              </tr>
@@ -175,6 +175,12 @@
                     "sInfoFiltered":"(filtered from _MAX_ total books)"},
                 "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    // hide cover,stars on small devices
+                    $('td', nRow).eq(4).addClass('hidden-sm hidden-xs');
+                    $('td', nRow).eq(5).addClass('hidden-sm hidden-xs');
+                    return nRow;
+                },
             });
         $('.dataTables_filter input').attr("placeholder", "Search table here");
 

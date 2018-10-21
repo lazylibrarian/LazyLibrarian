@@ -1797,9 +1797,9 @@ class WebInterface(object):
                     title = row[2]
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
-                    title = title + '<br>' + sitelink + '&nbsp;' + worklink
+                    title = title + '<br>' + sitelink + ' ' + worklink
                     if perm & lazylibrarian.perm_edit:
-                        title = title + '&nbsp;' + editpage
+                        title = title + ' ' + editpage
 
                     if not lazylibrarian.GROUP_CONCAT:
                         row.append('')  # empty string for series links as no group_concat

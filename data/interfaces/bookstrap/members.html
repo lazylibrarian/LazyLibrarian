@@ -61,7 +61,7 @@
       <input type="submit" class="markBooks btn btn-sm btn-primary" value="Go">
       %endif
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
-    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Title</a> - <a class="toggle-vis" data-column="3">Author</a> - <a class="toggle-vis" data-column="4">Num</a> - <a class="toggle-vis" data-column="5">Status</a>
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Title</a> - <a class="toggle-vis"  data-column="4">Num</a> - <a class="toggle-vis" data-column="5">Status</a>
     %endif
     </div>
     <p>&nbsp;</p>
@@ -95,7 +95,7 @@
             %endif
             <td class="bookart text-center hidden-xs"><a href="${result['BookImg']}" target="_blank" rel="noreferrer"><img src="${result['BookImg']}" class="bookcover-xs img-responsive" alt="Cover"></a></td>
             <td class="bookname">
-            <button onclick="bookinfo(${result['BookID']})" class="button btn btn-link" type="button">${result['BookName']}</button><br>
+            <button onclick="bookinfo(${result['BookID']})" class="button btn-link text-left" type="button">${result['BookName']}</button><br>
               <a href="${result['BookLink']}" target="_new"><small><i>GoodReads</i></small></a>&nbsp;
               <a href="${result['WorkPage']}" target="_new"><small><i>LibraryThing</i></small></a>&nbsp;
               %if perm&lazylibrarian.perm_edit:

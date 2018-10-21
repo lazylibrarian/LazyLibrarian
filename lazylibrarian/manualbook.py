@@ -121,6 +121,11 @@ def searchItem(item=None, bookid=None, cat=None):
             if not size:
                 size = '1000'
 
+            url = url.encode('utf-8')
+            if mode == 'torznab':
+                if url.startswith('magnet'):
+                    mode = 'magnet'
+
             # calculate match percentage - torrents might have words_with_underscore_separator
             score = fuzz.token_set_ratio(searchterm, title.replace('_', ' '))
             # lose a point for each extra word in the title so we get the closest match
@@ -129,7 +134,7 @@ def searchItem(item=None, bookid=None, cat=None):
             score -= abs(words)
             if score >= 40:  # ignore wildly wrong results?
                 result = {'score': score, 'title': title, 'provider': provider, 'size': size, 'date': date,
-                          'url': quote_plus(url.encode('utf-8')), 'mode': mode}
+                          'url': quote_plus(url), 'mode': mode}
 
                 searchresults.append(result)
 

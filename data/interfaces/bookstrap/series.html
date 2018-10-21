@@ -121,7 +121,7 @@
                     %endif
                     },
                     { targets: [2], 'render': function(data, type, row) {
-                        return '<a href="seriesMembers?seriesid=' + row[5] + '" target="_new">' + row[2] + '</a>';}
+                        return '<a href="seriesMembers?seriesid=' + row[5] + '">' + row[2] + '</a>';}
                     },
                     { targets: [3], 'render': function(data, type, row) {
                         percent = row[8]
@@ -129,7 +129,7 @@
                         else if (percent <= 50) {css = 'warning'}
                         else if (percent <= 75) {css = 'info'}
                         else {css = 'success'};
-                        bar = '<div class="progress center-block" style="width: 150px;"><div class="progress-bar-' +
+                        bar = '<div class="progress center-block" style="width: 120px;"><div class="progress-bar-' +
                         css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + percent +
                         '" aria-valuemin="0" aria-valuemax="100" style="width: ' + percent +
                         '%;"><span class="sr-only">' + percent +

@@ -60,7 +60,7 @@
       <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
       %endif
       %if lazylibrarian.CONFIG['TOGGLES'] == True:
-      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="8">Status</a>
+      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Date</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="8">Status</a>
       %endif
     <p>&nbsp;</p>
     </div>
@@ -77,8 +77,8 @@
             <th class="authorname">Author</th>
             <th class="bookname">Title</th>
             <th class="series">Series</th>
-            <th class="stars text-center">Rating</th>
-            <th class="date text-center">Released</th>
+            <th class="stars text-center hidden-sm hidden-xs">Rating</th>
+            <th class="date text-center">Date</th>
             <th class="date text-center">Added</th>
             <th class="status text-center">Status</th>
           </tr>
@@ -118,7 +118,7 @@
                     return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
                 { targets: [2], 'render': function(data, type, row) {
                   %if perm&lazylibrarian.perm_authorbooks:
-                    btn = '<button class="button btn btn-link" type="button" onclick="window.location.href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</button>'
+                    btn = '<a href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</a>'
                   %else:
                     btn = '<a>' + data + '</a>'
                   %endif
@@ -129,7 +129,7 @@
                     var limit = window.innerWidth / 30;
                     var title = truncateOnWord(pre[0], limit);
                     var tail = data.slice(pre[0].length);
-                    btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn btn-link" type="button" '
+                    btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn-link text-left" type="button" '
                     if (title == pre[0]) { return btn + '>' + title + '</button>' + tail ; }
                     return btn + ' title="' + pre[0] + '">' + title + '</button>' + tail ;
                     }
@@ -203,7 +203,7 @@
                 %endif
                 // hide cover,stars,date on small devices
                 //$('td', nRow).eq(1).addClass('hidden-xs');
-                //$('td', nRow).eq(5).addClass('hidden-xs');
+                $('td', nRow).eq(5).addClass('hidden-sm hidden-xs');
                 //$('td', nRow).eq(6).addClass('hidden-xs');
                 //$('td', nRow).eq(7).addClass('hidden-xs');
                 return nRow;
