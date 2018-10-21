@@ -79,7 +79,7 @@
     </div>
 
     %if lazylibrarian.CONFIG['TOGGLES'] == True:
-    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a>
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Delay</a> - <a class="toggle-vis" data-column="8">Search</a>
     %endif
   </form>
   <br>
@@ -95,7 +95,7 @@
             <th class="authorname">Author</th>
             <th class="bookname">Title</th>
             <th class="series">Series</th>
-            <th class="stars text-center">Rating</th>
+            <th class="stars text-center hidden-sm">Rating</th>
             <th class="date text-center">Released</th>
             %if lazylibrarian.CONFIG['DELAYSEARCH'] == True:
                 %if whichStatus == 'Wanted':
@@ -288,6 +288,17 @@
                 "bServerSide": true,
                 "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&library=${library}&source=Manage',
                 "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    %if perm&lazylibrarian.perm_status == 0:
+                      $('td', nRow).eq(0).addClass("hidden");
+                    %endif
+                    // hide cover,stars,date on small devices
+                    //$('td', nRow).eq(1).addClass('hidden-xs');
+                    $('td', nRow).eq(5).addClass('hidden-sm');
+                    //$('td', nRow).eq(6).addClass('hidden-xs');
+                    //$('td', nRow).eq(7).addClass('hidden-xs');
+                    return nRow;
+                },
             });
         $('.dataTables_filter input').attr("placeholder", "Results filter");
         //$(window).resize(function() {oTable.draw(false)});

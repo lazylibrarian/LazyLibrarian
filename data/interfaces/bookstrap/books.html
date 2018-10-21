@@ -65,7 +65,7 @@
       <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
       %endif
       %if lazylibrarian.CONFIG['TOGGLES'] == True:
-      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Released</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="8">Status</a>
+      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Date</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="8">Status</a>
       %endif
     <p>&nbsp;</p>
     </div>
@@ -82,8 +82,8 @@
             <th class="authorname">Author</th>
             <th class="bookname">Title</th>
             <th class="series">Series</th>
-            <th class="stars text-center">Rating</th>
-            <th class="date text-center">Released</th>
+            <th class="stars text-center hidden-sm">Rating</th>
+            <th class="date text-center">Date</th>
             <th class="date text-center">Added</th>
             <th class="status text-center">Status</th>
           </tr>
@@ -221,6 +221,11 @@
                 %if perm&lazylibrarian.perm_status == 0:
                   $('td', nRow).eq(0).addClass("hidden");
                 %endif
+                // hide cover,stars,date on small devices
+                //$('td', nRow).eq(1).addClass('hidden-xs');
+                $('td', nRow).eq(5).addClass('hidden-sm');
+                //$('td', nRow).eq(6).addClass('hidden-xs');
+                //$('td', nRow).eq(7).addClass('hidden-xs');
                 return nRow;
             },
         });
