@@ -280,9 +280,15 @@ def getLatestVersion_FromGit():
             if branch == 'Package':  # check packages against master
                 branch = 'master'
             # Get the latest commit available from git
-            url = 'https://api.%s/repos/%s/%s/commits/%s' % (
-                lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
-                lazylibrarian.CONFIG['GIT_REPO'], branch)
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+                url = 'https://%s/api/v4/projects/%s%%2F%s/repository/branches/%s' % (
+                    lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                    lazylibrarian.CONFIG['GIT_REPO'], branch)
+            else:
+                url = 'https://api.%s/repos/%s/%s/commits/%s' % (
+                    lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                    lazylibrarian.CONFIG['GIT_REPO'], branch)
+
             logmsg('debug',
                    'Retrieving latest version information from git command=[%s]' % url)
 
@@ -300,6 +306,8 @@ def getLatestVersion_FromGit():
                                                                tm.tm_min, tm.tm_sec)
             try:
                 headers = {'User-Agent': USER_AGENT}
+                if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+                    headers['Private-Token']='_G8Shnw1-xEWsXPi8fB_'
                 if age:
                     logmsg('debug', 'Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
@@ -309,7 +317,10 @@ def getLatestVersion_FromGit():
 
                 if str(r.status_code).startswith('2'):
                     git = r.json()
-                    latest_version = git['sha']
+                    if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+                        latest_version = git['commit']['id']
+                    else:
+                        latest_version = git['sha']
                     logmsg('debug', 'Branch [%s] Latest Version has been set to [%s]' % (
                         branch, latest_version))
                 elif str(r.status_code) == '304':
@@ -337,28 +348,50 @@ def getCommitDifferenceFromGit():
         commit_list = 'Unable to get latest version from git'
         logmsg('info', commit_list)
     elif lazylibrarian.CONFIG['CURRENT_VERSION'] and commits != 0:
-        url = 'https://api.%s/repos/%s/LazyLibrarian/compare/%s...%s' % (
-            lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['CURRENT_VERSION'],
-            lazylibrarian.CONFIG['LATEST_VERSION'])
+        if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+            url = 'https://%s/api/v4/projects/%s%%2F%s/repository/compare?from=%s&to=%s' % (
+                lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['CURRENT_VERSION'],
+                lazylibrarian.CONFIG['LATEST_VERSION'])
+        else:
+            url = 'https://api.%s/repos/%s/%s/compare/%s...%s' % (
+                lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['CURRENT_VERSION'],
+                lazylibrarian.CONFIG['LATEST_VERSION'])
         logmsg('debug', 'Check for differences between local & repo by [%s]' % url)
 
         try:
             headers = {'User-Agent': USER_AGENT}
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+                headers['Private-Token']='_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
             git = r.json()
-            if 'total_commits' in git:
-                commits = int(git['total_commits'])
-                msg = 'Git: Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
-                    git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
-                logmsg('debug', msg)
-            else:
-                logmsg('warn', 'Could not get difference status from git: %s' % str(git))
+            # for gitlab, commits = len(git['commits'])  no status/ahead/behind
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+                if 'commits' in git:
+                    commits = len(git['commits'])
+                    msg = 'Git: Total Commits [%s]' % commits
+                    logmsg('debug', msg)
+                else:
+                    logmsg('warn', 'Could not get difference status from git: %s' % str(git))
 
-            if commits > 0:
-                for item in git['commits']:
-                    commit_list = "%s\n%s" % (item['commit']['message'], commit_list)
+                if commits > 0:
+                    for item in git['commits']:
+                        commit_list = "%s\n%s" % (item['title'], commit_list)
+            else:
+                if 'total_commits' in git:
+                    commits = int(git['total_commits'])
+                    msg = 'Git: Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
+                        git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
+                    logmsg('debug', msg)
+                else:
+                    logmsg('warn', 'Could not get difference status from git: %s' % str(git))
+
+                if commits > 0:
+                    for item in git['commits']:
+                        commit_list = "%s\n%s" % (item['commit']['message'], commit_list)
         except Exception as e:
             logmsg('warn', 'Could not get difference status from git: %s' % type(e).__name__)
 
@@ -429,14 +462,22 @@ def update():
         return True
 
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
-        tar_download_url = 'https://%s/%s/%s/tarball/%s' % (
-            lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
-            lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
+        if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+            tar_download_url = 'https://%s/%s/%s/-/archive/%s/%s-%s.tar.gz' % (
+                lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
+        else:
+            tar_download_url = 'https://%s/%s/%s/tarball/%s' % (
+                lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
 
         try:
             logmsg('info', 'Downloading update from: ' + tar_download_url)
             headers = {'User-Agent': USER_AGENT}
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_BASE']:
+                headers['Private-Token']='_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(tar_download_url, timeout=timeout, headers=headers, proxies=proxies)
