@@ -164,7 +164,7 @@ isbn_978_dict = {
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
-              'GIT_BASE', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
+              'GIT_HOST', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'CHERRYPYLOG',
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME',
@@ -270,7 +270,7 @@ CONFIG_DEFINITIONS = {
     'TASK_AGE': ('int', 'General', 2),
     'OPF_TAGS': ('bool', 'General', 1),
     'WISHLIST_TAGS': ('bool', 'General', 1),
-    'GIT_BASE': ('str', 'Git', 'github.com'),
+    'GIT_HOST': ('str', 'Git', 'github.com'),
     'GIT_USER': ('str', 'Git', 'dobytang'),
     'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
     'GIT_BRANCH': ('str', 'Git', 'master'),

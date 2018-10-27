@@ -3517,7 +3517,7 @@ class WebInterface(object):
         else:
             message = "unknown version"
             messages = "Your version is not recognised at<br>https://%s/%s/%s  Branch: %s" % (
-                lazylibrarian.CONFIG['GIT_BASE'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
                 lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
 
