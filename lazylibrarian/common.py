@@ -53,9 +53,6 @@ from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, \
     getList, makeUnicode, makeBytestr, unaccented, replace_all
 
-USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
-# Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
-
 # Notification Types
 NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
@@ -65,6 +62,14 @@ notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to L
 # dict to remove/replace characters we don't want in a filename - this might be too strict?
 __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', '|': '',
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
+
+
+def getUserAgent():
+    # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
+    if lazylibrarian.CONFIG['USER_AGENT']:
+        return lazylibrarian.CONFIG['USER_AGENT']
+    else:
+        return 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
 
 def mymakedirs(dest_path):

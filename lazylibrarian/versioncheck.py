@@ -28,7 +28,7 @@ except ImportError:
     import lib.requests as requests
 
 from lazylibrarian import logger, version
-from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.common import getUserAgent, proxyList
 from lazylibrarian.formatter import check_int, makeUnicode
 
 
@@ -305,9 +305,9 @@ def getLatestVersion_FromGit():
                                                                MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour,
                                                                tm.tm_min, tm.tm_sec)
             try:
-                headers = {'User-Agent': USER_AGENT}
+                headers = {'User-Agent': getUserAgent()}
                 if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
-                    headers['Private-Token']='_G8Shnw1-xEWsXPi8fB_'
+                    headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
                 if age:
                     logmsg('debug', 'Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
@@ -361,9 +361,9 @@ def getCommitDifferenceFromGit():
         logmsg('debug', 'Check for differences between local & repo by [%s]' % url)
 
         try:
-            headers = {'User-Agent': USER_AGENT}
+            headers = {'User-Agent': getUserAgent()}
             if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
-                headers['Private-Token']='_G8Shnw1-xEWsXPi8fB_'
+                headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
@@ -475,9 +475,9 @@ def update():
 
         try:
             logmsg('info', 'Downloading update from: ' + tar_download_url)
-            headers = {'User-Agent': USER_AGENT}
+            headers = {'User-Agent': getUserAgent()}
             if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
-                headers['Private-Token']='_G8Shnw1-xEWsXPi8fB_'
+                headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(tar_download_url, timeout=timeout, headers=headers, proxies=proxies)

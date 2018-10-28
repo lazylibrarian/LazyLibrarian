@@ -24,7 +24,7 @@ from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.common import getUserAgent, proxyList
 from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr
 
 
@@ -55,7 +55,7 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
     if headers is None:
         # some sites insist on having a user-agent, default is to add one
         # if you don't want any headers, send headers=[]
-        headers = {'User-Agent': USER_AGENT}
+        headers = {'User-Agent': getUserAgent()}
     proxies = proxyList()
     try:
         # jackett query all indexers needs a longer timeout
