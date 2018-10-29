@@ -678,52 +678,72 @@ def showStats():
                                              plural(check_int(lazylibrarian.CACHE_HIT, 0)),
                                              check_int(lazylibrarian.CACHE_MISS, 0)),
               "Sleep %.3f goodreads, %.3f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
+
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
-    result.append("%5i Snatched item%s" % (snatched['counter'], plural(snatched['counter'])))
-    res = myDB.match("SELECT count(*) as counter FROM authors")
-    result.append("%5i Authors" % (res['counter']))
-    res = myDB.match("SELECT count(*) as counter FROM books")
-    result.append("%5i Books" % (res['counter']))
+    if snatched['counter']:
+        result.append("%i Snatched item%s" % (snatched['counter'], plural(snatched['counter'])))
+    else:
+        result.append("No Snatched items")
+
+    series_stats = []
     res = myDB.match("SELECT count(*) as counter FROM series")
-    result.append("%5i Series" % (res['counter']))
+    series_stats.append(['Series', res['counter']])
     res = myDB.match("SELECT count(*) as counter FROM series WHERE Total>0 and Have=0")
-    result.append("%5i Empty Series" % (res['counter']))
+    series_stats.append(['Empty', res['counter']])
     res = myDB.match("SELECT count(*) as counter FROM series WHERE Total>0 AND Have=Total")
-    result.append("%5i Complete Series" % (res['counter']))
+    series_stats.append(['Full', res['counter']])
     res = myDB.match('SELECT count(*) as counter FROM series WHERE Status="Ignored"')
-    result.append("%5i Ignored Series" % (res['counter']))
+    series_stats.append(['Ignored', res['counter']])
     res = myDB.match("SELECT count(*) as counter FROM series WHERE Total=0")
-    result.append("%5i Series with no members" % (res['counter']))
+    series_stats.append(['Blank', res['counter']])
+
+    mag_stats = []
     res = myDB.match("SELECT count(*) as counter FROM magazines")
-    result.append("%5i Magazines" % (res['counter']))
+    mag_stats.append(['Magazine', res['counter']])
     res = myDB.match("SELECT count(*) as counter FROM issues")
-    result.append("%5i Issues" % (res['counter']))
+    mag_stats.append(['Issues', res['counter']])
     cmd = 'select (select count(*) as counter from issues where magazines.title = issues.title) '
     cmd += 'as counter from magazines where counter=0'
     res = myDB.match(cmd)
-    result.append("%5i Magazine%s with no issues" % (len(res), plural(len(res))))
-    for btype in [['AudioBook', 'AudioStatus'], ['eBook', 'Status']]:
-        for status in ['Have', 'Open', 'Wanted', 'Ignored']:
-            res = myDB.match('SELECT count(*) as counter FROM books WHERE %s="%s"' % (btype[1], status))
-            result.append("%5i %7s %s%s" % (res['counter'], status, btype[0], plural(res['counter'])))
+    mag_stats.append(['Empty', len(res)])
+
+    book_stats = []
+    audio_stats = []
+    res = myDB.match("SELECT count(*) as counter FROM books")
+    book_stats.append(['eBooks', res['counter']])
+    audio_stats.append(['Audio', res['counter']])
+    for status in ['Have', 'Open', 'Wanted', 'Ignored']:
+        res = myDB.match('SELECT count(*) as counter FROM books WHERE Status="%s"' % status)
+        book_stats.append([status, res['counter']])
+        res = myDB.match('SELECT count(*) as counter FROM books WHERE AudioStatus="%s"' % status)
+        audio_stats.append([status, res['counter']])
     for column in ['BookISBN', 'BookDesc', 'BookLang']:
         res = myDB.match("SELECT count(*) as counter FROM books WHERE %s is null or %s = '' or %s = 'Unknown'" % (
             column, column, column))
-        result.append("%5i missing %s" % (res['counter'], column))
+        book_stats.append([column.replace('Book', 'No-'), res['counter']])
+
+    author_stats = []
+    res = myDB.match("SELECT count(*) as counter FROM authors")
+    author_stats.append(['Authors', res['counter']])
     for status in ['Active', 'Wanted', 'Ignored', 'Paused']:
         res = myDB.match('SELECT count(*) as counter FROM authors WHERE Status="%s"' % status)
-        result.append("%5i %7s Author%s" % (res['counter'], status, plural(res['counter'])))
-    res = myDB.match("SELECT count(*) as counter FROM authors WHERE TotalBooks=0")
-    result.append("%5i Author%s with no books listed" % (res['counter'], plural(res['counter'])))
+        author_stats.append([status, res['counter']])
     res = myDB.match("SELECT count(*) as counter FROM authors WHERE HaveBooks=0")
-    result.append("%5i Author%s with no books downloaded" % (res['counter'], plural(res['counter'])))
-    overdue, total, name, days = is_overdue()
-    result.append('Oldest author info (%s) is %s day%s old' % (name, days, plural(days)))
-    if not overdue:
-        result.append("There are no authors overdue update")
-    else:
-        result.append("Found %s author%s from %s overdue update" % (overdue, plural(overdue), total))
+    author_stats.append(['Empty', res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM authors WHERE TotalBooks=0")
+    author_stats.append(['Blank', res['counter']])
+    overdue, _, _, _ = is_overdue()
+    author_stats.append(['Overdue', overdue])
+    for stats in [author_stats, book_stats, series_stats, audio_stats, mag_stats]:
+        header = ''
+        data = ''
+        for item in stats:
+            header += "%8s" % item[0]
+            data += "%8i" % item[1]
+        result.append('')
+        result.append(header)
+        result.append(data)
     return result
 
 
@@ -761,6 +781,13 @@ def showJobs():
             timeparts[1] = timeparts[1][:-1]
         jobinfo = "%s: Next run in %s %s" % (jobname, timeparts[0], timeparts[1])
         result.append(jobinfo)
+
+    overdue, total, name, days = is_overdue()
+    result.append('Oldest author info (%s) is %s day%s old' % (name, days, plural(days)))
+    if not overdue:
+        result.append("There are no authors overdue update")
+    else:
+        result.append("Found %s author%s from %s overdue update" % (overdue, plural(overdue), total))
     return result
 
 
