@@ -31,7 +31,8 @@ from lib.six.moves.urllib_parse import quote_plus
 from lib.six import string_types
 
 
-searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags']
+searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags',
+              'RatedBooks', 'RatedAudio']
 
 cmd_list = searchable + ['root', 'Serve', 'search', 'Members', 'Magazine']
 
@@ -68,7 +69,6 @@ class OPDS(object):
         self.searchroot = self.opdsroot.replace('/opds', '')
 
     def checkParams(self, **kwargs):
-
         if 'cmd' not in kwargs:
             self.cmd = 'root'
 
@@ -87,7 +87,6 @@ class OPDS(object):
         self.data = 'OK'
 
     def fetchData(self):
-
         if self.data == 'OK':
             if 'X-Forwarded-For' in cherrypy.request.headers:
                 remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
@@ -175,11 +174,33 @@ class OPDS(object):
         )
         entries.append(
             {
-                'title': 'Recent Magazines',
+                'title': 'Recent Magazine Issues',
                 'id': 'RecentMags',
                 'updated': now(),
-                'content': 'Recently Added Magazines',
+                'content': 'Recently Added Magazine Issues',
                 'href': '%s?cmd=RecentMags' % self.opdsroot,
+                'kind': 'acquisition',
+                'rel': 'subsection',
+            }
+        )
+        entries.append(
+            {
+                'title': 'Best Rated eBooks',
+                'id': 'RatedBooks',
+                'updated': now(),
+                'content': 'Best Rated eBooks',
+                'href': '%s?cmd=RatedBooks' % self.opdsroot,
+                'kind': 'acquisition',
+                'rel': 'subsection',
+            }
+        )
+        entries.append(
+            {
+                'title': 'Best Rated AudioBooks',
+                'id': 'RatedAudio',
+                'updated': now(),
+                'content': 'Best Rated AudioBooks',
+                'href': '%s?cmd=RatedAudio' % self.opdsroot,
                 'kind': 'acquisition',
                 'rel': 'subsection',
             }
@@ -284,7 +305,11 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s author%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s author%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                  fin, len(results)))
         self.data = feed
         return
 
@@ -338,7 +363,11 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s magazine%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s magazine%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                    fin, len(results)))
         self.data = feed
         return
 
@@ -397,7 +426,10 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s series" % len(entries))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s series, %s to %s from %s" % (len(entries), index + 1, fin, len(results)))
         self.data = feed
         return
 
@@ -455,7 +487,11 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s issue%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s issue%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                 fin, len(results)))
         self.data = feed
         return
 
@@ -534,7 +570,11 @@ class OPDS(object):
         feed['links'] = links
         feed['entries'] = entries
         self.data = feed
-        logger.debug("Returning %s book%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s book%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                fin, len(results)))
         return
 
     def _Members(self, **kwargs):
@@ -615,7 +655,11 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s book%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s book%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                fin, len(results)))
         self.data = feed
         return
 
@@ -669,29 +713,39 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s issue%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s issue%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                 fin, len(results)))
         self.data = feed
         return
 
-    def _RecentBooks(self, **kwargs):
+    def _RatedBooks(self, sorder='Rated', **kwargs):
+        return self._RecentBooks(sorder, **kwargs)
+
+    def _RecentBooks(self, sorder='Recent', **kwargs):
         index = 0
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
-        feed = {'title': 'LazyLibrarian OPDS - Recent Books', 'id': 'Recent Books', 'updated': now()}
+        feed = {'title': 'LazyLibrarian OPDS - %s Books' % sorder, 'id': '%s Books' % sorder, 'updated': now()}
         links = []
         entries = []
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='start', title='Home'))
-        links.append(getLink(href='%s?cmd=RecentBooks' % self.opdsroot,
+        links.append(getLink(href='%s?cmd=%sBooks' % (self.opdsroot, sorder),
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
         links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
                              ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
-        cmd = "select BookName,BookID,BookLibrary,BookDate,BookImg,BookDesc,BookAdded,BookFile,AuthorID "
+        cmd = "select BookName,BookID,BookLibrary,BookDate,BookImg,BookDesc,BookRate,BookAdded,BookFile,AuthorID "
         cmd += "from books where Status='Open' "
         if 'query' in kwargs:
             cmd += "AND BookName LIKE '%" + kwargs['query'] + "%' "
-        cmd += "order by BookLibrary DESC"
+        if sorder == 'Recent':
+            cmd += "order by BookLibrary DESC, BookName ASC"
+        if sorder == 'Rated':
+            cmd += "order by BookRate DESC, BookDate DESC"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
@@ -708,7 +762,11 @@ class OPDS(object):
                 mime_type = mimeType(book['AudioFile'])
             if mime_type:
                 title = makeUnicode(book['BookName'])
-                entry = {'title': escape(title),
+                if sorder == 'Rated':
+                    dispname = escape("%s (%s)" % (title, book['BookRate']))
+                else:
+                    dispname = escape(title)
+                entry = {'title': dispname,
                          'id': escape('book:%s' % book['BookID']),
                          'updated': opdstime(book['BookLibrary']),
                          'href': '%s?cmd=Serve&amp;bookid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
@@ -736,43 +794,58 @@ class OPDS(object):
 
         if len(results) > (index + self.PAGE_SIZE):
             links.append(
-                getLink(href='%s?cmd=RecentBooks&amp;index=%s' % (self.opdsroot, index + self.PAGE_SIZE),
+                getLink(href='%s?cmd=%sBooks&amp;index=%s' % (self.opdsroot, sorder, index + self.PAGE_SIZE),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= self.PAGE_SIZE:
             links.append(
-                getLink(href='%s?cmd=RecentBooks&amp;index=%s' % (self.opdsroot, index - self.PAGE_SIZE),
+                getLink(href='%s?cmd=%sBooks&amp;index=%s' % (self.opdsroot, sorder, index - self.PAGE_SIZE),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s book%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s book%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                fin, len(results)))
         self.data = feed
         return
 
-    def _RecentAudio(self, **kwargs):
+    def _RatedAudio(self, sorder='Rated', **kwargs):
+        return self._RecentAudio(sorder, **kwargs)
+
+    def _RecentAudio(self, sorder='Recent', **kwargs):
         index = 0
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
-        feed = {'title': 'LazyLibrarian OPDS - Recent AudioBooks', 'id': 'Recent AudioBooks', 'updated': now()}
+        feed = {'title': 'LazyLibrarian OPDS - %s AudioBooks' % sorder, 'id': '%s AudioBooks' % sorder, 'updated': now()}
         links = []
         entries = []
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='start', title='Home'))
-        links.append(getLink(href='%s?cmd=RecentAudio' % self.opdsroot,
+        links.append(getLink(href='%s?cmd=%sAudio' % (self.opdsroot, sorder),
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
         links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
                              ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
 
-        cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookAdded,AuthorID from books WHERE "
+        cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookRate,BookAdded,AuthorID from books WHERE "
         if 'query' in kwargs:
             cmd += "BookName LIKE '%" + kwargs['query'] + "%' AND "
-        cmd += "AudioStatus='Open' order by AudioLibrary DESC"
+        cmd += "AudioStatus='Open'"
+        if sorder == 'Recent':
+            cmd += " order by AudioLibrary DESC, BookName ASC"
+        if sorder == 'Rated':
+            cmd += " order by BookRate DESC, BookDate DESC"
         results = myDB.select(cmd)
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
             title = makeUnicode(book['BookName'])
-            entry = {'title': escape(title),
+            if sorder == 'Rated':
+                dispname = escape("%s (%s)" % (title, book['BookRate']))
+            else:
+                dispname = escape(title)
+            entry = {'title': dispname,
                      'id': escape('audio:%s' % book['BookID']),
                      'updated': opdstime(book['AudioLibrary']),
                      'href': '%s?cmd=Serve&amp;audioid=%s' % (self.opdsroot, quote_plus(book['BookID'])),
@@ -792,16 +865,20 @@ class OPDS(object):
 
         if len(results) > (index + self.PAGE_SIZE):
             links.append(
-                getLink(href='%s?cmd=RecentAudio&amp;index=%s' % (self.opdsroot, index + self.PAGE_SIZE),
+                getLink(href='%s?cmd=%sAudio&amp;index=%s' % (self.opdsroot, sorder, index + self.PAGE_SIZE),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= self.PAGE_SIZE:
             links.append(
-                getLink(href='%s?cmd=RecentAudio&amp;index=%s' % (self.opdsroot, index - self.PAGE_SIZE),
+                getLink(href='%s?cmd=%sAudio&amp;index=%s' % (self.opdsroot, sorder, index - self.PAGE_SIZE),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links
         feed['entries'] = entries
-        logger.debug("Returning %s result%s" % (len(entries), plural(len(entries))))
+        fin = index + self.PAGE_SIZE
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s AudioBook%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                     fin, len(results)))
         self.data = feed
         return
 
