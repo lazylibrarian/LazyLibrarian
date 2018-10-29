@@ -212,7 +212,7 @@ class OPDS(object):
                     'id': 'ReadBooks',
                     'updated': now(),
                     'content': 'Books marked as Read',
-                    'href': '%s?cmd=ReadBooks&user=%s' % (self.opdsroot, kwargs['user']),
+                    'href': '%s?cmd=ReadBooks&amp;user=%s' % (self.opdsroot, kwargs['user']),
                     'kind': 'acquisition',
                     'rel': 'subsection',
                 }
@@ -223,7 +223,7 @@ class OPDS(object):
                     'id': 'ToReadBooks',
                     'updated': now(),
                     'content': 'Books marked as To-Read',
-                    'href': '%s?cmd=ToReadBooks&user=%s' % (self.opdsroot, kwargs['user']),
+                    'href': '%s?cmd=ToReadBooks&amp;user=%s' % (self.opdsroot, kwargs['user']),
                     'kind': 'acquisition',
                     'rel': 'subsection',
                 }
@@ -769,9 +769,12 @@ class OPDS(object):
         feed = {'title': 'LazyLibrarian OPDS - %s Books' % sorder, 'id': '%s Books' % sorder, 'updated': now()}
         links = []
         entries = []
+        suser=''
+        if 'user' in kwargs:
+            suser = '&amp;user=%s' % kwargs['user']
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='start', title='Home'))
-        links.append(getLink(href='%s?cmd=%sBooks' % (self.opdsroot, sorder),
+        links.append(getLink(href='%s?cmd=%sBooks%s' % (self.opdsroot, sorder, suser),
                              ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
         links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
                              ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
@@ -854,11 +857,11 @@ class OPDS(object):
 
         if len(results) > (index + self.PAGE_SIZE):
             links.append(
-                getLink(href='%s?cmd=%sBooks&amp;index=%s' % (self.opdsroot, sorder, index + self.PAGE_SIZE),
+                getLink(href='%s?cmd=%sBooks&amp;index=%s%s' % (self.opdsroot, sorder, index + self.PAGE_SIZE, suser),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= self.PAGE_SIZE:
             links.append(
-                getLink(href='%s?cmd=%sBooks&amp;index=%s' % (self.opdsroot, sorder, index - self.PAGE_SIZE),
+                getLink(href='%s?cmd=%sBooks&amp;index=%s%s' % (self.opdsroot, sorder, index - self.PAGE_SIZE, suser),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links

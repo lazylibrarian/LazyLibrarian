@@ -11,7 +11,7 @@
     <div class="col-sm-6 col-sm-offset-3">
       <div class="login-container">
             <div class="form-group col-md-6">
-                <label for="user" class="control-label">Select user: </label>
+                <label for="user" class="control-label">Select user</label>
                 <select id="user" class="form-control input" name="user">
                 <option value=""> -- add a new user -- </option>
                 %for item in users:
@@ -19,13 +19,11 @@
                 %endfor
                 </select>
             </div>
-            <fieldset class="form-group col-md-6">
-                <label for="saveusers" class="control-label">Import/Export: </label>
-                <div>
-                    <input type="button" value="Export Users" id="saveusers" class="btn btn-default" />
-                    <input type="button" value="Import Users" id="loadusers" class="btn btn-default" />
-                </div>
-            </fieldset>
+            <div class="form-group col-md-6">
+                <label for="saveusers" class="control-label">Import/Export Users</label>
+                <input type="button" value="Import" id="loadusers" class="btn btn-default" />
+                <input type="button" value="Export" id="saveusers" class="btn btn-default" />
+            </div>
         <div class="row">
           <div class="col-md-12">
               <div class="form-group col-md-12">
@@ -59,12 +57,10 @@
                 <input type="button" value="Generate Password" name="generatepwd" id="generatepwd" class="button btn btn-primary btn-sm">
                 <!-- input type="button" value="Email details to user" name="emailpwd" id="emailpwd" class="pull-right button btn btn-primary btn-sm" -->
               </div>
-              <fieldset class="form-group col-md-6">
-              <div>
+              <div class="form-group col-md-6">
                 <label for="calread">Calibre Read Column</label>
                 <input id="calread" name="calread" class="form-control" value="">
               </div>
-              </fieldset>
               <div class="form-group col-md-6">
                 <label for="caltoread">Calibre ToRead Column</label>
                 <input id="caltoread" name="caltoread" class="form-control" value="">
@@ -72,6 +68,10 @@
               <div class="form-group col-md-6">
                 <label for="booktype">Preferred BookType to open/email</label>
                 <input id="booktype" name="booktype" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="userid">UserID<br>(for information only)</label>
+                <input id="userid" name="userid" class="form-control" value="" readonly>
               </div>
               <fieldset class="form-group col-md-12">
               <div>
@@ -121,6 +121,7 @@
             $("#calread").val(obj['calread']);
             $("#caltoread").val(obj['caltoread']);
             $("#booktype").val(obj['booktype']);
+            $("#userid").val(obj['userid']);
             $("#password").val("");
             });
         });
