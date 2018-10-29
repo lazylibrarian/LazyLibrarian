@@ -32,7 +32,7 @@ from lib.six import string_types
 
 
 searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags',
-              'RatedBooks', 'RatedAudio']
+              'RatedBooks', 'RatedAudio', 'ReadBooks', 'ToReadBooks']
 
 cmd_list = searchable + ['root', 'Serve', 'search', 'Members', 'Magazine']
 
@@ -139,7 +139,7 @@ class OPDS(object):
         cherrypy.response.headers['Content-Type'] = "text/xml"
         return error
 
-    def _root(self):
+    def _root(self, **kwargs):
         myDB = database.DBConnection()
         feed = {'title': 'LazyLibrarian OPDS', 'id': 'OPDSRoot', 'updated': now()}
         links = []
@@ -205,6 +205,30 @@ class OPDS(object):
                 'rel': 'subsection',
             }
         )
+        if 'user' in kwargs:
+            entries.append(
+                {
+                    'title': 'Read Books',
+                    'id': 'ReadBooks',
+                    'updated': now(),
+                    'content': 'Books marked as Read',
+                    'href': '%s?cmd=ReadBooks&user=%s' % (self.opdsroot, kwargs['user']),
+                    'kind': 'acquisition',
+                    'rel': 'subsection',
+                }
+            )
+            entries.append(
+                {
+                    'title': 'To Read Books',
+                    'id': 'ToReadBooks',
+                    'updated': now(),
+                    'content': 'Books marked as To-Read',
+                    'href': '%s?cmd=ToReadBooks&user=%s' % (self.opdsroot, kwargs['user']),
+                    'kind': 'acquisition',
+                    'rel': 'subsection',
+                }
+            )
+
         authors = myDB.select("SELECT authorname from authors WHERE Status != 'Ignored' order by authorname")
         if len(authors) > 0:
             count = len(authors)
@@ -721,10 +745,23 @@ class OPDS(object):
         self.data = feed
         return
 
+    def _ReadBooks(self, sorder='Read', **kwargs):
+        if 'user' not in kwargs:
+            sorder = ''
+        return self._Books(sorder, **kwargs)
+
+    def _ToReadBooks(self, sorder='ToRead', **kwargs):
+        if 'user' not in kwargs:
+            sorder = ''
+        return self._Books(sorder, **kwargs)
+
     def _RatedBooks(self, sorder='Rated', **kwargs):
-        return self._RecentBooks(sorder, **kwargs)
+        return self._Books(sorder, **kwargs)
 
     def _RecentBooks(self, sorder='Recent', **kwargs):
+        return self._Books(sorder, **kwargs)
+
+    def _Books(self, sorder='Recent', **kwargs):
         index = 0
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
@@ -746,7 +783,30 @@ class OPDS(object):
             cmd += "order by BookLibrary DESC, BookName ASC"
         if sorder == 'Rated':
             cmd += "order by BookRate DESC, BookDate DESC"
+
         results = myDB.select(cmd)
+
+        readfilter = None
+        if sorder == 'Read' and 'user' in kwargs:
+            res = myDB.match('SELECT HaveRead from users where userid=?', (kwargs['user'],))
+            if res:
+                readfilter = getList(res['HaveRead'])
+            else:
+                readfilter = []
+        if sorder == 'ToRead' and 'user' in kwargs:
+            res = myDB.match('SELECT ToRead from users where userid=?', (kwargs['user'],))
+            if res:
+                readfilter = getList(res['ToRead'])
+            else:
+                readfilter = []
+
+        if readfilter is not None:
+            filtered = []
+            for res in results:
+                if res['BookID'] in readfilter:
+                    filtered.append(res)
+            results = filtered
+
         page = results[index:(index + self.PAGE_SIZE)]
         for book in page:
             mime_type = None
@@ -812,14 +872,18 @@ class OPDS(object):
         return
 
     def _RatedAudio(self, sorder='Rated', **kwargs):
-        return self._RecentAudio(sorder, **kwargs)
+        return self._Audio(sorder, **kwargs)
 
     def _RecentAudio(self, sorder='Recent', **kwargs):
+        return self._Audio(sorder, **kwargs)
+
+    def _Audio(self, sorder='Recent', **kwargs):
         index = 0
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
         myDB = database.DBConnection()
-        feed = {'title': 'LazyLibrarian OPDS - %s AudioBooks' % sorder, 'id': '%s AudioBooks' % sorder, 'updated': now()}
+        feed = {'title': 'LazyLibrarian OPDS - %s AudioBooks' % sorder, 'id': '%s AudioBooks' % sorder,
+                'updated': now()}
         links = []
         entries = []
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
@@ -829,7 +893,8 @@ class OPDS(object):
         links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
                              ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
 
-        cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookRate,BookAdded,AuthorID from books WHERE "
+        cmd = "select BookName,BookID,AudioLibrary,BookDate,BookImg,BookDesc,BookRate,BookAdded,AuthorID"
+        cmd += " from books WHERE "
         if 'query' in kwargs:
             cmd += "BookName LIKE '%" + kwargs['query'] + "%' AND "
         cmd += "AudioStatus='Open'"
