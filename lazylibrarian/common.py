@@ -673,16 +673,62 @@ def checkRunningJobs():
     ensureRunning('authorUpdate')
 
 
-def showJobs():
+def showStats():
     result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),
                                              plural(check_int(lazylibrarian.CACHE_HIT, 0)),
                                              check_int(lazylibrarian.CACHE_MISS, 0)),
               "Sleep %.3f goodreads, %.3f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
-    wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
-    result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
-    result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
+    result.append("%5i Snatched item%s" % (snatched['counter'], plural(snatched['counter'])))
+    res = myDB.match("SELECT count(*) as counter FROM authors")
+    result.append("%5i Authors" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM books")
+    result.append("%5i Books" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM series")
+    result.append("%5i Series" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM series WHERE Total>0 and Have=0")
+    result.append("%5i Empty Series" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM series WHERE Total>0 AND Have=Total")
+    result.append("%5i Complete Series" % (res['counter']))
+    res = myDB.match('SELECT count(*) as counter FROM series WHERE Status="Ignored"')
+    result.append("%5i Ignored Series" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM series WHERE Total=0")
+    result.append("%5i Series with no members" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM magazines")
+    result.append("%5i Magazines" % (res['counter']))
+    res = myDB.match("SELECT count(*) as counter FROM issues")
+    result.append("%5i Issues" % (res['counter']))
+    cmd = 'select (select count(*) as counter from issues where magazines.title = issues.title) '
+    cmd += 'as counter from magazines where counter=0'
+    res = myDB.match(cmd)
+    result.append("%5i Magazine%s with no issues" % (len(res), plural(len(res))))
+    for btype in [['AudioBook', 'AudioStatus'], ['eBook', 'Status']]:
+        for status in ['Have', 'Open', 'Wanted', 'Ignored']:
+            res = myDB.match('SELECT count(*) as counter FROM books WHERE %s="%s"' % (btype[1], status))
+            result.append("%5i %7s %s%s" % (res['counter'], status, btype[0], plural(res['counter'])))
+    for column in ['BookISBN', 'BookDesc', 'BookLang']:
+        res = myDB.match("SELECT count(*) as counter FROM books WHERE %s is null or %s = '' or %s = 'Unknown'" % (
+            column, column, column))
+        result.append("%5i missing %s" % (res['counter'], column))
+    for status in ['Active', 'Wanted', 'Ignored', 'Paused']:
+        res = myDB.match('SELECT count(*) as counter FROM authors WHERE Status="%s"' % status)
+        result.append("%5i %7s Author%s" % (res['counter'], status, plural(res['counter'])))
+    res = myDB.match("SELECT count(*) as counter FROM authors WHERE TotalBooks=0")
+    result.append("%5i Author%s with no books listed" % (res['counter'], plural(res['counter'])))
+    res = myDB.match("SELECT count(*) as counter FROM authors WHERE HaveBooks=0")
+    result.append("%5i Author%s with no books downloaded" % (res['counter'], plural(res['counter'])))
+    overdue, total, name, days = is_overdue()
+    result.append('Oldest author info (%s) is %s day%s old' % (name, days, plural(days)))
+    if not overdue:
+        result.append("There are no authors overdue update")
+    else:
+        result.append("Found %s author%s from %s overdue update" % (overdue, plural(overdue), total))
+    return result
+
+
+def showJobs():
+    result = []
 
     for job in lazylibrarian.SCHED.get_jobs():
         job = str(job)
@@ -715,13 +761,6 @@ def showJobs():
             timeparts[1] = timeparts[1][:-1]
         jobinfo = "%s: Next run in %s %s" % (jobname, timeparts[0], timeparts[1])
         result.append(jobinfo)
-
-    overdue, total, name, days = is_overdue()
-    result.append('Oldest author info (%s) is %s day%s old' % (name, days, plural(days)))
-    if not overdue:
-        result.append("There are no authors overdue update")
-    else:
-        result.append("Found %s author%s from %s overdue update" % (overdue, plural(overdue), total))
     return result
 
 
