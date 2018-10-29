@@ -123,6 +123,7 @@ def searchItem(item=None, bookid=None, cat=None):
 
             url = url.encode('utf-8')
             if mode == 'torznab':
+                # noinspection PyTypeChecker
                 if url.startswith('magnet'):
                     mode = 'magnet'
 

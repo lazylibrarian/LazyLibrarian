@@ -53,9 +53,6 @@ from lazylibrarian import logger, database
 from lazylibrarian.formatter import plural, next_run, is_valid_booktype, datecompare, check_int, \
     getList, makeUnicode, makeBytestr, unaccented, replace_all
 
-USER_AGENT = 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
-# Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
-
 # Notification Types
 NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
@@ -65,6 +62,14 @@ notifyStrings = {NOTIFY_SNATCH: "Started Download", NOTIFY_DOWNLOAD: "Added to L
 # dict to remove/replace characters we don't want in a filename - this might be too strict?
 __dic__ = {'<': '', '>': '', '...': '', ' & ': ' ', ' = ': ' ', '?': '', '$': 's', '|': '',
            ' + ': ' ', '"': '', ',': '', '*': '', ':': '', ';': '', '\'': '', '//': '/', '\\\\': '\\'}
+
+
+def getUserAgent():
+    # Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36
+    if lazylibrarian.CONFIG['USER_AGENT']:
+        return lazylibrarian.CONFIG['USER_AGENT']
+    else:
+        return 'LazyLibrarian' + ' (' + platform.system() + ' ' + platform.release() + ')'
 
 
 def mymakedirs(dest_path):
@@ -668,16 +673,82 @@ def checkRunningJobs():
     ensureRunning('authorUpdate')
 
 
-def showJobs():
+def showStats():
     result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),
                                              plural(check_int(lazylibrarian.CACHE_HIT, 0)),
                                              check_int(lazylibrarian.CACHE_MISS, 0)),
               "Sleep %.3f goodreads, %.3f librarything" % (lazylibrarian.GR_SLEEP, lazylibrarian.LT_SLEEP)]
+
     myDB = database.DBConnection()
     snatched = myDB.match("SELECT count(*) as counter from wanted WHERE Status = 'Snatched'")
-    wanted = myDB.match("SELECT count(*) as counter FROM books WHERE Status = 'Wanted'")
-    result.append("%i item%s marked as Snatched" % (snatched['counter'], plural(snatched['counter'])))
-    result.append("%i item%s marked as Wanted" % (wanted['counter'], plural(wanted['counter'])))
+    if snatched['counter']:
+        result.append("%i Snatched item%s" % (snatched['counter'], plural(snatched['counter'])))
+    else:
+        result.append("No Snatched items")
+
+    series_stats = []
+    res = myDB.match("SELECT count(*) as counter FROM series")
+    series_stats.append(['Series', res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM series WHERE Total>0 and Have=0")
+    series_stats.append(['Empty', res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM series WHERE Total>0 AND Have=Total")
+    series_stats.append(['Full', res['counter']])
+    res = myDB.match('SELECT count(*) as counter FROM series WHERE Status="Ignored"')
+    series_stats.append(['Ignored', res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM series WHERE Total=0")
+    series_stats.append(['Blank', res['counter']])
+
+    mag_stats = []
+    res = myDB.match("SELECT count(*) as counter FROM magazines")
+    mag_stats.append(['Magazine', res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM issues")
+    mag_stats.append(['Issues', res['counter']])
+    cmd = 'select (select count(*) as counter from issues where magazines.title = issues.title) '
+    cmd += 'as counter from magazines where counter=0'
+    res = myDB.match(cmd)
+    mag_stats.append(['Empty', len(res)])
+
+    book_stats = []
+    audio_stats = []
+    res = myDB.match("SELECT count(*) as counter FROM books")
+    book_stats.append(['eBooks', res['counter']])
+    audio_stats.append(['Audio', res['counter']])
+    for status in ['Have', 'Open', 'Wanted', 'Ignored']:
+        res = myDB.match('SELECT count(*) as counter FROM books WHERE Status="%s"' % status)
+        book_stats.append([status, res['counter']])
+        res = myDB.match('SELECT count(*) as counter FROM books WHERE AudioStatus="%s"' % status)
+        audio_stats.append([status, res['counter']])
+    for column in ['BookISBN', 'BookDesc', 'BookLang']:
+        res = myDB.match("SELECT count(*) as counter FROM books WHERE %s is null or %s = '' or %s = 'Unknown'" % (
+            column, column, column))
+        book_stats.append([column.replace('Book', 'No-'), res['counter']])
+
+    author_stats = []
+    res = myDB.match("SELECT count(*) as counter FROM authors")
+    author_stats.append(['Authors', res['counter']])
+    for status in ['Active', 'Wanted', 'Ignored', 'Paused']:
+        res = myDB.match('SELECT count(*) as counter FROM authors WHERE Status="%s"' % status)
+        author_stats.append([status, res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM authors WHERE HaveBooks=0")
+    author_stats.append(['Empty', res['counter']])
+    res = myDB.match("SELECT count(*) as counter FROM authors WHERE TotalBooks=0")
+    author_stats.append(['Blank', res['counter']])
+    overdue, _, _, _ = is_overdue()
+    author_stats.append(['Overdue', overdue])
+    for stats in [author_stats, book_stats, series_stats, audio_stats, mag_stats]:
+        header = ''
+        data = ''
+        for item in stats:
+            header += "%8s" % item[0]
+            data += "%8i" % item[1]
+        result.append('')
+        result.append(header)
+        result.append(data)
+    return result
+
+
+def showJobs():
+    result = []
 
     for job in lazylibrarian.SCHED.get_jobs():
         job = str(job)

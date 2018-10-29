@@ -164,11 +164,11 @@ isbn_978_dict = {
 # Any undefined on startup will be set to the default value
 # Any _NOT_ in the web ui will remain unchanged on config save
 CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
-              'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
+              'GIT_HOST', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
 CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
                  'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'CHERRYPYLOG',
                  'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME',
-                 'NAME_RATIO', 'NAME_PARTIAL', 'NAME_PARTNAME']
+                 'NAME_RATIO', 'NAME_PARTIAL', 'NAME_PARTNAME', 'USER_AGENT']
 # default interface does not know about these items, so leaves them unchanged
 CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
                      'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'FOUND_STATUS',
@@ -270,6 +270,7 @@ CONFIG_DEFINITIONS = {
     'TASK_AGE': ('int', 'General', 2),
     'OPF_TAGS': ('bool', 'General', 1),
     'WISHLIST_TAGS': ('bool', 'General', 1),
+    'GIT_HOST': ('str', 'Git', 'github.com'),
     'GIT_USER': ('str', 'Git', 'dobytang'),
     'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
     'GIT_BRANCH': ('str', 'Git', 'master'),
@@ -535,6 +536,9 @@ CONFIG_DEFINITIONS = {
     'OPDS_USERNAME': ('str', 'OPDS', ''),
     'OPDS_PASSWORD': ('str', 'OPDS', ''),
     'OPDS_METAINFO': ('bool', 'OPDS', 0),
+    'USER_AGENT': ('str', 'General', ''),
+    # 'USER_AGENT': ('str', 'General',
+    # 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'),
 }
 
 

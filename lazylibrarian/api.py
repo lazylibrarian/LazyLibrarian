@@ -31,7 +31,7 @@ from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, set
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
-    logHeader, authorUpdate
+    logHeader, authorUpdate, showStats
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table
 from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr, replace_all
 from lazylibrarian.gb import GoogleBooks
@@ -126,6 +126,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'listMissingWorkpages': 'list all books with errorpage or no workpage',
             'searchBook': '&id= [&wait] [&type=eBook/AudioBook] search for one book by BookID',
             'searchItem': '&item= get search results for an item (author, title, isbn)',
+            'showStats': 'show database statistics',
             'showJobs': 'show status of running jobs',
             'restartJobs': 'restart background jobs',
             'showThreads': 'show threaded processes',
@@ -1359,6 +1360,9 @@ class Api(object):
 
     def _showJobs(self):
         self.data = showJobs()
+
+    def _showStats(self):
+        self.data = showStats()
 
     def _importAlternate(self, **kwargs):
         if 'dir' in kwargs:

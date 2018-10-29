@@ -28,7 +28,7 @@ except ImportError:
     import lib.requests as requests
 
 from lazylibrarian import logger, version
-from lazylibrarian.common import USER_AGENT, proxyList
+from lazylibrarian.common import getUserAgent, proxyList
 from lazylibrarian.formatter import check_int, makeUnicode
 
 
@@ -247,7 +247,7 @@ def checkForUpdates():
 
 
 def getLatestVersion():
-    # Return latest version from GITHUB
+    # Return latest version from git
     # if GIT install return latest on current branch
     # if nonGIT install return latest from master
 
@@ -279,11 +279,18 @@ def getLatestVersion_FromGit():
         else:
             if branch == 'Package':  # check packages against master
                 branch = 'master'
-            # Get the latest commit available from github
-            url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
-                lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], branch)
+            # Get the latest commit available from git
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+                url = 'https://%s/api/v4/projects/%s%%2F%s/repository/branches/%s' % (
+                    lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                    lazylibrarian.CONFIG['GIT_REPO'], branch)
+            else:
+                url = 'https://api.%s/repos/%s/%s/commits/%s' % (
+                    lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                    lazylibrarian.CONFIG['GIT_REPO'], branch)
+
             logmsg('debug',
-                   'Retrieving latest version information from github command=[%s]' % url)
+                   'Retrieving latest version information from git command=[%s]' % url)
 
             timestamp = check_int(lazylibrarian.CONFIG['GIT_UPDATED'], 0)
             age = ''
@@ -298,7 +305,9 @@ def getLatestVersion_FromGit():
                                                                MONNAMES[tm.tm_mon], tm.tm_year, tm.tm_hour,
                                                                tm.tm_min, tm.tm_sec)
             try:
-                headers = {'User-Agent': USER_AGENT}
+                headers = {'User-Agent': getUserAgent()}
+                if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+                    headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
                 if age:
                     logmsg('debug', 'Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
@@ -308,20 +317,23 @@ def getLatestVersion_FromGit():
 
                 if str(r.status_code).startswith('2'):
                     git = r.json()
-                    latest_version = git['sha']
+                    if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+                        latest_version = git['commit']['id']
+                    else:
+                        latest_version = git['sha']
                     logmsg('debug', 'Branch [%s] Latest Version has been set to [%s]' % (
                         branch, latest_version))
                 elif str(r.status_code) == '304':
                     latest_version = lazylibrarian.CONFIG['CURRENT_VERSION']
                     logmsg('debug', 'Not modified, currently on Latest Version')
                 else:
-                    logmsg('warn', 'Could not get the latest commit from github')
+                    logmsg('warn', 'Could not get the latest commit from git')
                     logmsg('debug', 'git latest version returned %s' % r.status_code)
-                    latest_version = 'Not_Available_From_GitHUB'
+                    latest_version = 'Not_Available_From_Git'
             except Exception as e:
-                logmsg('warn', 'Could not get the latest commit from github')
+                logmsg('warn', 'Could not get the latest commit from git')
                 logmsg('debug', 'git %s for %s: %s' % (type(e).__name__, url, str(e)))
-                latest_version = 'Not_Available_From_GitHUB'
+                latest_version = 'Not_Available_From_Git'
 
     return latest_version
 
@@ -331,35 +343,57 @@ def getCommitDifferenceFromGit():
     # Takes current latest version value and tries to diff it with the latest version in the current branch.
     commit_list = ''
     commits = -1
-    if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
+    if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_Git':
         commits = 0  # don't report a commit diff as we don't know anything
-        commit_list = 'Unable to get latest version from GitHub'
+        commit_list = 'Unable to get latest version from %s' % lazylibrarian.CONFIG['GIT_HOST']
         logmsg('info', commit_list)
     elif lazylibrarian.CONFIG['CURRENT_VERSION'] and commits != 0:
-        url = 'https://api.github.com/repos/%s/LazyLibrarian/compare/%s...%s' % (
-            lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['CURRENT_VERSION'],
-            lazylibrarian.CONFIG['LATEST_VERSION'])
+        if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+            url = 'https://%s/api/v4/projects/%s%%2F%s/repository/compare?from=%s&to=%s' % (
+                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['CURRENT_VERSION'],
+                lazylibrarian.CONFIG['LATEST_VERSION'])
+        else:
+            url = 'https://api.%s/repos/%s/%s/compare/%s...%s' % (
+                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['CURRENT_VERSION'],
+                lazylibrarian.CONFIG['LATEST_VERSION'])
         logmsg('debug', 'Check for differences between local & repo by [%s]' % url)
 
         try:
-            headers = {'User-Agent': USER_AGENT}
+            headers = {'User-Agent': getUserAgent()}
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+                headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
             git = r.json()
-            if 'total_commits' in git:
-                commits = int(git['total_commits'])
-                msg = 'Github: Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
-                    git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
-                logmsg('debug', msg)
-            else:
-                logmsg('warn', 'Could not get difference status from GitHub: %s' % str(git))
+            # for gitlab, commits = len(git['commits'])  no status/ahead/behind
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+                if 'commits' in git:
+                    commits = len(git['commits'])
+                    msg = 'Git: Total Commits [%s]' % commits
+                    logmsg('debug', msg)
+                else:
+                    logmsg('warn', 'Could not get difference status from git: %s' % str(git))
 
-            if commits > 0:
-                for item in git['commits']:
-                    commit_list = "%s\n%s" % (item['commit']['message'], commit_list)
+                if commits > 0:
+                    for item in git['commits']:
+                        commit_list = "%s\n%s" % (item['title'], commit_list)
+            else:
+                if 'total_commits' in git:
+                    commits = int(git['total_commits'])
+                    msg = 'Git: Status [%s] - Ahead [%s] - Behind [%s] - Total Commits [%s]' % (
+                        git['status'], git['ahead_by'], git['behind_by'], git['total_commits'])
+                    logmsg('debug', msg)
+                else:
+                    logmsg('warn', 'Could not get difference status from git: %s' % str(git))
+
+                if commits > 0:
+                    for item in git['commits']:
+                        commit_list = "%s\n%s" % (item['commit']['message'], commit_list)
         except Exception as e:
-            logmsg('warn', 'Could not get difference status from GitHub: %s' % type(e).__name__)
+            logmsg('warn', 'Could not get difference status from git: %s' % type(e).__name__)
 
     if commits > 1:
         logmsg('info', 'New version is available. You are %s commits behind' % commits)
@@ -428,13 +462,22 @@ def update():
         return True
 
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
-        tar_download_url = 'https://github.com/%s/%s/tarball/%s' % (
-            lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
+        if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+            tar_download_url = 'https://%s/%s/%s/-/archive/%s/%s-%s.tar.gz' % (
+                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
+        else:
+            tar_download_url = 'https://%s/%s/%s/tarball/%s' % (
+                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
         update_dir = os.path.join(lazylibrarian.PROG_DIR, 'update')
 
         try:
             logmsg('info', 'Downloading update from: ' + tar_download_url)
-            headers = {'User-Agent': USER_AGENT}
+            headers = {'User-Agent': getUserAgent()}
+            if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
+                headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(tar_download_url, timeout=timeout, headers=headers, proxies=proxies)

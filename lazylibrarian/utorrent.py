@@ -16,7 +16,7 @@ import re
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import getUserAgent
 from lazylibrarian.formatter import check_int, getList
 from lib.six import PY2
 # noinspection PyUnresolvedReferences
@@ -154,7 +154,7 @@ class utorrentclient(object):
         if lazylibrarian.CONFIG['PROXY_HOST']:
             for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
                 request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
-        request.add_header('User-Agent', USER_AGENT)
+        request.add_header('User-Agent', getUserAgent())
 
         if body:
             if PY2:

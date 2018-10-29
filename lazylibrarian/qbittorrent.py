@@ -30,7 +30,7 @@ from lib.six.moves.urllib_request import HTTPCookieProcessor, build_opener, Requ
 
 import lazylibrarian
 from lazylibrarian import logger
-from lazylibrarian.common import USER_AGENT
+from lazylibrarian.common import getUserAgent
 from lazylibrarian.formatter import check_int, getList, makeBytestr, makeUnicode
 
 
@@ -110,7 +110,7 @@ class qbittorrentclient(object):
         if lazylibrarian.CONFIG['PROXY_HOST']:
             for item in getList(lazylibrarian.CONFIG['PROXY_TYPE']):
                 request.set_proxy(lazylibrarian.CONFIG['PROXY_HOST'], item)
-        request.add_header('User-Agent', USER_AGENT)
+        request.add_header('User-Agent', getUserAgent())
 
         try:
             response = self.opener.open(request)

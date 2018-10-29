@@ -33,7 +33,7 @@ from lazylibrarian import logger, database, notifiers, versioncheck, magazinesca
 from lazylibrarian.bookwork import setSeries, deleteEmptySeries, getSeriesAuthors
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import calibreTest, syncCalibreList, calibredb
-from lazylibrarian.common import showJobs, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
+from lazylibrarian.common import showJobs, showStats, restartJobs, clearLog, scheduleJob, checkRunningJobs, setperm, \
     aaUpdate, csv_file, saveLog, logHeader, pwd_generator, pwd_check, isValidEmail, mimeType, zipAudio, runScript
 from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table, restore_table
 from lazylibrarian.downloadmethods import NZBDownloadMethod, TORDownloadMethod, DirectDownloadMethod
@@ -175,7 +175,8 @@ class WebInterface(object):
         cookie = cherrypy.request.cookie
         if cookie and 'll_uid' in list(cookie.keys()):
             myDB = database.DBConnection()
-            user = myDB.match('SELECT UserName,Name,Email,SendTo from users where UserID=?', (cookie['ll_uid'].value,))
+            user = myDB.match('SELECT UserName,UserID,Name,Email,SendTo from users where UserID=?',
+                              (cookie['ll_uid'].value,))
             if user:
                 return serve_template(templatename="profile.html", title=title, user=user)
         return serve_template(templatename="index.html", title=title, authors=[])
@@ -3516,8 +3517,9 @@ class WebInterface(object):
             message = message + '<br><small>' + messages
         else:
             message = "unknown version"
-            messages = "Your version is not recognised at<br>https://github.com/%s/%s  Branch: %s" % (
-                lazylibrarian.CONFIG['GIT_USER'], lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
+            messages = "Your version is not recognised at<br>https://%s/%s/%s  Branch: %s" % (
+                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
             message = message + '<br><small>' + messages
 
         if lazylibrarian.CONFIG['HTTP_LOOK'] == 'legacy':
@@ -3719,6 +3721,16 @@ class WebInterface(object):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         # show the current status of LL cron jobs
         resultlist = showJobs()
+        result = ''
+        for line in resultlist:
+            result = result + line + '\n'
+        return result
+
+    @cherrypy.expose
+    def show_Stats(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        # show some database status info
+        resultlist = showStats()
         result = ''
         for line in resultlist:
             result = result + line + '\n'

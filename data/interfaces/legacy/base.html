@@ -103,21 +103,21 @@
         <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
       </div>
       % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
-      % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_GitHUB':
+      % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_Git':
       <div id="updatebar">
-        Unable to get latest version from GITHub
+        Unable to get latest version from git
       </div>
       % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
                         <div id="updatebar">
-        Running a local updated version. Push changes to GITHub or rollback to Master release
+        Running a local updated version. Push changes to git or rollback to Master release
       </div>
       % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
       <div id="updatebar">
-        A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank"> newer version</a> is available. You're ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+        A <a href="http://${lazylibrarian.CONFIG['GIT_HOST']}/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank"> newer version</a> is available. You're ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
       </div>
       % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
       <div id="updatebar">
-        A <a href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank"> newer version</a> is available. You're one commit behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
+        A <a href="http://${lazylibrarian.CONFIG['GIT_HOST']}/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}/compare/${lazylibrarian.CONFIG['CURRENT_VERSION']}...${lazylibrarian.CONFIG['LATEST_VERSION']}" target="_blank"> newer version</a> is available. You're one commit behind. <a href="update">Update</a> or <a href="#" onclick="$('#updatebar').slideUp('slow');">Close</a>
       </div>
       % endif
       % endif

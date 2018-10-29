@@ -38,7 +38,7 @@ import lazylibrarian
 from lazylibrarian import logger, database, nzbget, sabnzbd, classes, utorrent, transmission, qbittorrent, \
     deluge, rtorrent, synology
 from lazylibrarian.cache import fetchURL
-from lazylibrarian.common import setperm, USER_AGENT, proxyList, mymakedirs
+from lazylibrarian.common import setperm, getUserAgent, proxyList, mymakedirs
 from lazylibrarian.formatter import cleanName, unaccented_str, getList, makeUnicode
 from lazylibrarian.postprocess import delete_task, check_contents
 from lib.deluge_client import DelugeRPCClient
@@ -125,7 +125,7 @@ def DirectDownloadMethod(bookid=None, dl_title=None, dl_url=None, library='eBook
     Source = "DIRECT"
     logger.debug("Starting Direct Download for [%s]" % dl_title)
     proxies = proxyList()
-    headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
+    headers = {'Accept-encoding': 'gzip', 'User-Agent': getUserAgent()}
     try:
         r = requests.get(dl_url, headers=headers, timeout=90, proxies=proxies)
     except requests.exceptions.Timeout:
@@ -243,7 +243,7 @@ def TORDownloadMethod(bookid=None, tor_title=None, tor_url=None, library='eBook'
         if not tor_url.endswith('.torrent') and '.torrent' in tor_url:
             tor_url = tor_url.split('.torrent')[0] + '.torrent'
 
-        headers = {'Accept-encoding': 'gzip', 'User-Agent': USER_AGENT}
+        headers = {'Accept-encoding': 'gzip', 'User-Agent': getUserAgent()}
         proxies = proxyList()
 
         try:

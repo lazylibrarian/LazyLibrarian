@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<%!
+    import lazylibrarian
+%>
 <feed xmlns="http://www.w3.org/2005/Atom"
       xmlns:xhtml="http://www.w3.org/1999/xhtml"
       xmlns:opds="http://opds-spec.org/2010/catalog"
@@ -9,7 +12,7 @@
     <updated>${opds['updated']}</updated>
     <author>
         <name>LazyLibrarian Server</name>
-        <uri>https://github.com/dobytang/lazylibrarian</uri>
+        <uri>https://${lazylibrarian.CONFIG['GIT_HOST']}/${lazylibrarian.CONFIG['GIT_USER']}/${lazylibrarian.CONFIG['GIT_REPO']}</uri>
     </author>
     %for link in opds['links']:
     <%
