@@ -119,7 +119,9 @@ cmd_dict = {'help': 'list available commands. ' +
             'getBookCover': '&id= [&src=] fetch cover link from cache/cover/librarything/goodreads/google for BookID',
             'getAllBooks': 'list all books in the database',
             'listNoLang': 'list all books in the database with unknown language',
+            'listNoDesc': 'list all books in the database with no description',
             'listNoISBN': 'list all books in the database with no isbn',
+            'listNoBooks': 'list all authors in the database with no books',
             'listIgnoredAuthors': 'list all authors in the database marked ignored',
             'listIgnoredBooks': 'list all books in the database marked ignored',
             'listIgnoredSeries': 'list all series in the database marked ignored',
@@ -508,9 +510,18 @@ class Api(object):
         q += ' and BookLang="Unknown" or BookLang="" or BookLang is NULL'
         self.data = self._dic_from_query(q)
 
+    def _listNoDesc(self):
+        q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
+        q += ' and BookDesc="" or BookDesc is NULL'
+        self.data = self._dic_from_query(q)
+
     def _listNoISBN(self):
         q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
-        q += ' and BookISBN is NULL'
+        q += ' and BookISBN="" or BookISBN is NULL'
+        self.data = self._dic_from_query(q)
+
+    def _listNoBooks(self):
+        q = 'SELECT AuthorName from authors where TotalBooks=0'
         self.data = self._dic_from_query(q)
 
     def _listIgnoredSeries(self):
