@@ -24,7 +24,7 @@ except ImportError:
 import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookwork import getWorkSeries, getWorkPage, deleteEmptySeries, \
-    setSeries, setStatus, isbn_from_words, thingLang, get_book_pubdate
+    setSeries, setStatus, isbn_from_words, thingLang, get_book_pubdate, get_book_desc
 from lazylibrarian.images import getBookCover
 from lazylibrarian.cache import gr_xml_request, cache_img
 from lazylibrarian.formatter import plural, today, replace_all, bookSeries, unaccented, split_title, getList, \
@@ -169,6 +169,8 @@ class GoodReads:
                         except (KeyError, AttributeError):
                             bookid = ""
 
+                        if not bookdesc and bookisbn:
+                            bookdesc = get_book_desc(bookisbn)
                         resultlist.append({
                             'authorname': authorNameResult,
                             'bookid': bookid,
@@ -798,6 +800,8 @@ class GoodReads:
                             if locked:
                                 locked_count += 1
                             else:
+                                if not bookdesc and bookisbn:
+                                    bookdesc = get_book_desc(bookisbn)
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,
@@ -1150,6 +1154,8 @@ class GoodReads:
                 logger.debug("isbn found %s for %s" % (res, bookname))
                 bookisbn = res
 
+        if not bookdesc and bookisbn:
+            bookdesc = get_book_desc(bookisbn)
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorID": AuthorID,

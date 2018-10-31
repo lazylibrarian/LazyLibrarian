@@ -20,7 +20,7 @@ from lib.six.moves.urllib_parse import quote_plus, quote, urlencode
 
 import lazylibrarian
 from lazylibrarian import logger, database
-from lazylibrarian.cache import fetchURL, gr_xml_request
+from lazylibrarian.cache import fetchURL, gr_xml_request, gb_json_request
 from lazylibrarian.common import proxyList
 from lazylibrarian.formatter import safe_unicode, plural, cleanName, unaccented, formatAuthorName, \
     check_int, replace_all, check_year, getList
@@ -795,6 +795,19 @@ def getSeriesMembers(seriesID=None, seriesname=None):
                 if 'class="worksinseries"' in data:  # error parsing, or just no series data available?
                     logger.debug('Error in series table for series %s' % seriesID)
     return results, api_hits
+
+
+def get_book_desc(bookisbn):
+    key = ''
+    if lazylibrarian.CONFIG['GB_API']:
+        key = "&key=" + lazylibrarian.CONFIG['GB_API']
+    jsonresults, in_cache = gb_json_request("https://www.googleapis.com/books/v1/volumes?q=isbn:%s%s" % (bookisbn, key))
+    if jsonresults:
+        try:
+            return jsonresults['items'][0]['volumeInfo']['description']
+        except Exception:
+            pass
+    return ''
 
 
 def getWorkSeries(bookID=None):
