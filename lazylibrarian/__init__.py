@@ -180,7 +180,7 @@ CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TA
                      'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
                      'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
                      'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
-                     'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED', 'MAG_DELFOLDER']
+                     'OPDS_PAGE', 'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED', 'MAG_DELFOLDER']
 
 CONFIG_DEFINITIONS = {
     # Name      Type   Section   Default
@@ -536,6 +536,7 @@ CONFIG_DEFINITIONS = {
     'OPDS_USERNAME': ('str', 'OPDS', ''),
     'OPDS_PASSWORD': ('str', 'OPDS', ''),
     'OPDS_METAINFO': ('bool', 'OPDS', 0),
+    'OPDS_PAGE': ('int', 'OPDS', 30),
     'USER_AGENT': ('str', 'General', ''),
     # 'USER_AGENT': ('str', 'General',
     # 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'),
