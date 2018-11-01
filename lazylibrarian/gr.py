@@ -169,8 +169,8 @@ class GoodReads:
                         except (KeyError, AttributeError):
                             bookid = ""
 
-                        if not bookdesc and bookisbn:
-                            bookdesc = get_book_desc(bookisbn)
+                        if not bookdesc:
+                            bookdesc = get_book_desc(isbn=bookisbn, author=authorNameResult, title=bookTitle)
                         resultlist.append({
                             'authorname': authorNameResult,
                             'bookid': bookid,
@@ -800,8 +800,8 @@ class GoodReads:
                             if locked:
                                 locked_count += 1
                             else:
-                                if not bookdesc and bookisbn:
-                                    bookdesc = get_book_desc(bookisbn)
+                                if not bookdesc:
+                                    bookdesc = get_book_desc(isbn=bookisbn, author=authorNameResult, title=bookname)
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,
@@ -1154,8 +1154,8 @@ class GoodReads:
                 logger.debug("isbn found %s for %s" % (res, bookname))
                 bookisbn = res
 
-        if not bookdesc and bookisbn:
-            bookdesc = get_book_desc(bookisbn)
+        if not bookdesc:
+            bookdesc = get_book_desc(isbn=bookisbn, author=authorname, title=bookname)
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorID": AuthorID,

@@ -27,7 +27,8 @@ import lazylibrarian
 from lazylibrarian import logger, database
 from lazylibrarian.bookrename import audioProcess, nameVars
 from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, setAllBookSeries, \
-    getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors, setWorkID
+    getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors, \
+    setWorkID, get_book_desc
 from lazylibrarian.cache import cache_img
 from lazylibrarian.calibre import syncCalibreList, calibreList
 from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
@@ -142,6 +143,7 @@ cmd_dict = {'help': 'list available commands. ' +
             'getBookAuthors': '&id= Get list of authors associated with this book',
             'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
             'deleteEmptySeries': 'Delete any book series that have no members',
+            'setNoDesc': 'Set book descriptions for all books without one',
             'setWorkPages': '[&wait] Set the WorkPages links in the database',
             'setAllBookSeries': '[&wait] Set the series details from goodreads or librarything workpages',
             'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
@@ -514,6 +516,23 @@ class Api(object):
         q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
         q += ' and BookDesc="" or BookDesc is NULL'
         self.data = self._dic_from_query(q)
+
+    def _setNoDesc(self):
+        q = 'SELECT BookID,BookName,AuthorName,BookISBN from books,authors where books.AuthorID = authors.AuthorID'
+        q += ' and BookDesc="" or BookDesc is NULL'
+        myDB = database.DBConnection()
+        res = myDB.select(q)
+        descs = 0
+        for item in res:
+            isbn = item['BookISBN']
+            auth = item['AuthorName']
+            book = item['BookName']
+            if isbn:
+                data = get_book_desc(isbn, auth, book)
+                if data:
+                    descs += 1
+                    myDB.action('UPDATE books SET bookdesc=? WHERE bookid=?', (data, item['BookID']))
+        self.data = "Scanned %s books, found %s new descriptions" % (len(res), descs)
 
     def _listNoISBN(self):
         q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'

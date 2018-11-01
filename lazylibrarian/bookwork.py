@@ -797,16 +797,41 @@ def getSeriesMembers(seriesID=None, seriesname=None):
     return results, api_hits
 
 
-def get_book_desc(bookisbn):
-    key = ''
-    if lazylibrarian.CONFIG['GB_API']:
-        key = "&key=" + lazylibrarian.CONFIG['GB_API']
-    jsonresults, in_cache = gb_json_request("https://www.googleapis.com/books/v1/volumes?q=isbn:%s%s" % (bookisbn, key))
-    if jsonresults:
-        try:
-            return jsonresults['items'][0]['volumeInfo']['description']
-        except Exception:
-            pass
+def get_book_desc(isbn=None, author=None, title=None):
+    """ GoodReads does not always have a book description in its api results
+        due to restrictive TOS from some of its providers.
+        Try to get missing descriptions from googlebooks"""
+    if not author or not title:
+        return ''
+
+    author = cleanName(author)
+    title = cleanName(title)
+    if lazylibrarian.CONFIG['BOOK_API'] == 'GoodReads':
+        baseurl = 'https://www.googleapis.com/books/v1/volumes?q='
+
+        urls = [baseurl + quote_plus('inauthor:%s intitle:%s' % (author, title))]
+        if isbn:
+            urls.insert(0, baseurl + quote_plus('isbn:' + isbn))
+
+        for url in urls:
+            if lazylibrarian.CONFIG['GB_API']:
+                url += '&key=' + lazylibrarian.CONFIG['GB_API']
+            results, cached = gb_json_request(url)
+            if results and not cached:
+                time.sleep(1)
+            if results and 'items' in results:
+                for item in results['items']:
+                    # noinspection PyBroadException
+                    try:
+                        auth = item['volumeInfo']['authors'][0]
+                        book = item['volumeInfo']['title']
+                        desc = item['volumeInfo']['description']
+                        book_fuzz = fuzz.token_set_ratio(book, title)
+                        auth_fuzz = fuzz.token_set_ratio(auth, author)
+                        if book_fuzz > 98 and auth_fuzz > 80:
+                            return desc
+                    except Exception:
+                        pass
     return ''
 
 
