@@ -800,7 +800,8 @@ def getSeriesMembers(seriesID=None, seriesname=None):
 def get_book_desc(isbn=None, author=None, title=None):
     """ GoodReads does not always have a book description in its api results
         due to restrictive TOS from some of its providers.
-        Try to get missing descriptions from googlebooks"""
+        Try to get missing descriptions from googlebooks
+        Return description, empty string if not found, None if error"""
     if not author or not title:
         return ''
 
@@ -817,6 +818,8 @@ def get_book_desc(isbn=None, author=None, title=None):
             if lazylibrarian.CONFIG['GB_API']:
                 url += '&key=' + lazylibrarian.CONFIG['GB_API']
             results, cached = gb_json_request(url)
+            if results is None:  # there was an error
+                return None
             if results and not cached:
                 time.sleep(1)
             if results and 'items' in results:

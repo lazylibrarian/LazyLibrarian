@@ -523,16 +523,21 @@ class Api(object):
         myDB = database.DBConnection()
         res = myDB.select(q)
         descs = 0
+        logger.debug("Checking description for %s book%s" % (len(res), plural(len(res))))
         for item in res:
             isbn = item['BookISBN']
             auth = item['AuthorName']
             book = item['BookName']
-            if isbn:
-                data = get_book_desc(isbn, auth, book)
-                if data:
-                    descs += 1
-                    myDB.action('UPDATE books SET bookdesc=? WHERE bookid=?', (data, item['BookID']))
-        self.data = "Scanned %s books, found %s new descriptions" % (len(res), descs)
+            data = get_book_desc(isbn, auth, book)
+            if data:
+                descs += 1
+                logger.debug("Updated description for %s:%s" % (auth, book))
+                myDB.action('UPDATE books SET bookdesc=? WHERE bookid=?', (data, item['BookID']))
+            elif data is None:
+                self.data = "Error reading description, see debug log"
+                break
+        self.data = "Scanned %s book%s, found %s new description%s" % (len(res), plural(len(res)), descs, pñural(descs))
+        logger.info(self.data)
 
     def _listNoISBN(self):
         q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
