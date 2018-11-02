@@ -311,12 +311,10 @@ class OPDS(object):
 
         feed['links'] = links
         feed['entries'] = entries
-        # logger.debug("Returning %s entries" % len(entries))
         self.data = feed
         return
 
     def _Authors(self, **kwargs):
-        logger.info(str(kwargs))
         index = 0
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
