@@ -536,7 +536,7 @@ class Api(object):
             elif data is None:
                 self.data = "Error reading description, see debug log"
                 break
-        self.data = "Scanned %s book%s, found %s new description%s" % (len(res), plural(len(res)), descs, pñural(descs))
+        self.data = "Scanned %s book%s, found %s new description%s" % (len(res), plural(len(res)), descs, plural(descs))
         logger.info(self.data)
 
     def _listNoISBN(self):

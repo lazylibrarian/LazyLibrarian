@@ -25,7 +25,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import getUserAgent, proxyList
-from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr
+from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr, seconds_to_midnight
 
 
 def gr_api_sleep():
@@ -45,6 +45,16 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
         Return data as raw/bytes in python2 or if raw == True
         On python3 default to unicode, need to set raw=True for images/data
         Allow one retry on timeout by default"""
+
+    if 'googleapis' in URL:
+        lazylibrarian.GB_CALLS += 1
+        for entry in lazylibrarian.PROVIDER_BLOCKLIST:
+            if entry["name"] == 'googleapis':
+                if int(time.time()) < int(entry['resume']):
+                    return None, False
+                else:
+                    lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
+                    lazylibrarian.GB_CALLS = 0
 
     if raw is None:
         if PY2:
@@ -75,6 +85,27 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
             except UnicodeDecodeError:
                 result = r.content.decode('latin-1')
             return result, True
+
+        elif r.status_code == 403 and 'googleapis' in URL:
+            msg = r.content
+            logger.debug(msg)
+            try:
+                source = json.loads(msg)
+                msg = source['error']['message']
+            except Exception:
+                pass
+
+            # how long until midnight Pacific Time when google reset the quotas
+            resume = int(time.time())  # this is "now" in UTC
+            midnight = seconds_to_midnight()  + 28800  # PT is 8hrs behind UTC
+            if midnight > 86400:
+                midnight -= 86400  # no roll-over to next day
+            resume += midnight
+            for entry in lazylibrarian.PROVIDER_BLOCKLIST:
+                if entry["name"] == 'googleapis':
+                    lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
+            newentry = {"name": 'googleapis', "resume": resume, "reason": msg}
+            lazylibrarian.PROVIDER_BLOCKLIST.append(newentry)
 
         # noinspection PyBroadException
         try:
