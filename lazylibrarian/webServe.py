@@ -2328,8 +2328,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,BookDesc,books.Manual,AuthorName,books.AuthorID,BookDate '
-        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,BookDesc,books.Manual,AuthorName,'
+        cmd += 'books.AuthorID,BookDate from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
         bookdata = myDB.match(cmd, (bookid,))
         cmd = 'SELECT SeriesName, SeriesNum from member,series '
         cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
@@ -2354,8 +2354,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
 
         if bookid:
-            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,BookDesc,books.Manual,AuthorName,books.AuthorID '
-            cmd += ' from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,BookDesc,books.Manual,AuthorName,'
+            cmd += 'books.AuthorID from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
             bookdata = myDB.match(cmd, (bookid,))
             if bookdata:
                 edited = ''
