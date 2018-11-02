@@ -97,6 +97,11 @@
             </div>
         </div>
         <div class="form-group">
+          <!--div><p>${config['BookDesc']}</p></div-->
+          <label for="summernote" class="control-label">Book Description</label>
+          <textarea id="summernote" name="editordata" class="form-control" rows="10" placeholder="Book description here...">${config['BookDesc']}</textarea>
+        </div>
+        <div class="form-group">
             <table class="display table table-bordered" id="book_table">
               <thead>
                 <tr>
@@ -146,14 +151,8 @@
 </%def>
 <%def name="javascriptIncludes()">
   <script type="text/javascript">
-    function initThisPage()
-    {
-    }
-
     $(document).ready(function() {
-        initThisPage();
     });
-
     function validateForm() {
         $("#myAlert").removeClass('hidden');
         document.getElementById("markBooks").submit(); }

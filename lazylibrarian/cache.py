@@ -25,7 +25,7 @@ from lib.six import PY2
 import lazylibrarian
 from lazylibrarian import logger
 from lazylibrarian.common import getUserAgent, proxyList
-from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr, seconds_to_midnight
+from lazylibrarian.formatter import check_int, md5_utf8, makeBytestr, makeUnicode, seconds_to_midnight
 
 
 def gr_api_sleep():
@@ -51,7 +51,7 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
         for entry in lazylibrarian.PROVIDER_BLOCKLIST:
             if entry["name"] == 'googleapis':
                 if int(time.time()) < int(entry['resume']):
-                    return None, False
+                    return "Blocked", False
                 else:
                     lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
                     lazylibrarian.GB_CALLS = 0
@@ -87,7 +87,7 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
             return result, True
 
         elif r.status_code == 403 and 'googleapis' in URL:
-            msg = r.content
+            msg = makeUnicode(r.content)
             logger.debug(msg)
             # noinspection PyBroadException
             try:
