@@ -89,6 +89,7 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
         elif r.status_code == 403 and 'googleapis' in URL:
             msg = r.content
             logger.debug(msg)
+            # noinspection PyBroadException
             try:
                 source = json.loads(msg)
                 msg = source['error']['message']
@@ -97,7 +98,7 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
 
             # how long until midnight Pacific Time when google reset the quotas
             resume = int(time.time())  # this is "now" in UTC
-            midnight = seconds_to_midnight()  + 28800  # PT is 8hrs behind UTC
+            midnight = seconds_to_midnight() + 28800  # PT is 8hrs behind UTC
             if midnight > 86400:
                 midnight -= 86400  # no roll-over to next day
             resume += midnight

@@ -146,7 +146,7 @@ class OPDS(object):
         links = []
         entries = []
 
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -156,7 +156,6 @@ class OPDS(object):
                              rel='self'))
         links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
                              ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
-
 
         res = myDB.match("select count(*) as counter from books where Status='Open'")
         if res['counter'] > 0:
@@ -213,8 +212,9 @@ class OPDS(object):
                     'rel': 'subsection',
                 }
             )
-
-        res = myDB.match("select count(*) as counter from books where AudioStatus='Open' and CAST(BookRate AS INTEGER) > 0")
+        cmd = "select count(*) as counter from books"
+        cmd += " where AudioStatus='Open' and CAST(BookRate AS INTEGER) > 0"
+        res = myDB.match(cmd)
         if res['counter'] > 0:
             entries.append(
                 {
@@ -321,7 +321,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -389,7 +389,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -456,7 +456,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -528,7 +528,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -571,18 +571,18 @@ class OPDS(object):
         feed['updated'] = now()
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='start', title='Home'))
-        links.append(getLink(href='%s?cmd=Magazine&amp;magid=%s%s' % (self.opdsroot, quote_plus(kwargs['magid']), userid),
-                             ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        links.append(getLink(href='%s?cmd=Magazine&amp;magid=%s%s' % (self.opdsroot, quote_plus(kwargs['magid']),
+                             userid), ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
 
         if len(results) > (index + limit):
             links.append(
-                getLink(href='%s?cmd=Magazine&amp;magid=%s&amp;index=%s%s' % (self.opdsroot, quote_plus(kwargs['magid']),
-                                                                            index + limit, userid),
+                getLink(href='%s?cmd=Magazine&amp;magid=%s&amp;index=%s%s' % (self.opdsroot,
+                        quote_plus(kwargs['magid']), index + limit, userid),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= limit:
             links.append(
-                getLink(href='%s?cmd=Magazine&amp;magid=%s&amp;index=%s%s' % (self.opdsroot, quote_plus(kwargs['magid']),
-                                                                            index - limit, userid),
+                getLink(href='%s?cmd=Magazine&amp;magid=%s&amp;index=%s%s' % (self.opdsroot,
+                        quote_plus(kwargs['magid']), index - limit, userid),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links
@@ -600,7 +600,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -667,14 +667,12 @@ class OPDS(object):
         if len(results) > (index + limit):
             links.append(
                 getLink(href='%s?cmd=Author&amp;authorid=%s&amp;index=%s%s' % (self.opdsroot,
-                                                                             quote_plus(kwargs['authorid']),
-                                                                             index + limit, userid),
+                        quote_plus(kwargs['authorid']), index + limit, userid),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= limit:
             links.append(
                 getLink(href='%s?cmd=Author&amp;authorid=%s&amp;index=%s%s' % (self.opdsroot,
-                                                                             quote_plus(kwargs['authorid']),
-                                                                             index - limit, userid),
+                        quote_plus(kwargs['authorid']), index - limit, userid),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
         feed['links'] = links
         feed['entries'] = entries
@@ -691,7 +689,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -763,13 +761,13 @@ class OPDS(object):
 
         if len(results) > (index + limit):
             links.append(
-                getLink(href='%s?cmd=Members&amp;seriesid=%s&amp;index=%s%s' % (self.opdsroot, kwargs['seriesid'],
-                                                                              index + limit, userid),
+                getLink(href='%s?cmd=Members&amp;seriesid=%s&amp;index=%s%s' % (self.opdsroot,
+                        kwargs['seriesid'], index + limit, userid),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
         if index >= limit:
             links.append(
-                getLink(href='%s?cmd=Members&amp;seriesid=%s&amp;index=%s%s' % (self.opdsroot, kwargs['seriesid'],
-                                                                              index - limit, userid),
+                getLink(href='%s?cmd=Members&amp;seriesid=%s&amp;index=%s%s' % (self.opdsroot,
+                        kwargs['seriesid'], index - limit, userid),
                         ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
 
         feed['links'] = links
@@ -787,7 +785,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -870,7 +868,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 
@@ -995,7 +993,7 @@ class OPDS(object):
         limit = self.PAGE_SIZE
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
-        userid=''
+        userid = ''
         if 'user' in kwargs:
             userid = '&amp;user=%s' % kwargs['user']
 

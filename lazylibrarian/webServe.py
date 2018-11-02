@@ -490,7 +490,8 @@ class WebInterface(object):
         if match:
             res = simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
                                     'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead'],
-                                    'sendto': match['SendTo'], 'booktype': match['BookType'], 'userid': match['UserID']})
+                                    'sendto': match['SendTo'], 'booktype': match['BookType'],
+                                    'userid': match['UserID']})
         else:
             res = simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': '',
                                     'sendto': '', 'booktype': '', 'userid': ''})
