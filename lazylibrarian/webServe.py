@@ -4091,7 +4091,11 @@ class WebInterface(object):
             resume = int(line['resume']) - int(time.time())
             if resume > 0:
                 resume = int(resume / 60) + (resume % 60 > 0)
-                new_entry = "%s blocked for %s minute%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
+                if resume > 180:
+                    resume = int(resume / 60) + (resume % 60 > 0)
+                    new_entry = "%s blocked for %s hour%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
+                else:
+                    new_entry = "%s blocked for %s minute%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
                 result = result + new_entry
 
         if result == '':

@@ -38,7 +38,7 @@
           % if entry['rel'] == 'multi':
             ${entry['type']}
           %else:
-            <link href="${entry['href']}" rel= "${entry['rel']}" type="application/atom+xml; profile=opds-catalog; kind=${entry['kind']}"/>
+            <link href="${entry['href']}" rel="${entry['rel']}" type="application/atom+xml; profile=opds-catalog; kind=${entry['kind']}"/>
           %endif
         %endif
         %if 'thumbnail' in entry and entry['thumbnail']:
