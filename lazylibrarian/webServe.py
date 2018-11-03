@@ -490,7 +490,8 @@ class WebInterface(object):
         if match:
             res = simplejson.dumps({'email': match['Email'], 'name': match['Name'], 'perms': match['Perms'],
                                     'calread': match['CalibreRead'], 'caltoread': match['CalibreToRead'],
-                                    'sendto': match['SendTo'], 'booktype': match['BookType'], 'userid': match['UserID']})
+                                    'sendto': match['SendTo'], 'booktype': match['BookType'],
+                                    'userid': match['UserID']})
         else:
             res = simplejson.dumps({'email': '', 'name': '', 'perms': '0', 'calread': '', 'caltoread': '',
                                     'sendto': '', 'booktype': '', 'userid': ''})
@@ -2327,8 +2328,8 @@ class WebInterface(object):
         myDB = database.DBConnection()
         authors = myDB.select(
             "SELECT AuthorName from authors WHERE Status !='Ignored' ORDER by AuthorName COLLATE NOCASE")
-        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,books.Manual,AuthorName,books.AuthorID,BookDate '
-        cmd += 'from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+        cmd = 'SELECT BookName,BookID,BookSub,BookGenre,BookLang,BookDesc,books.Manual,AuthorName,'
+        cmd += 'books.AuthorID,BookDate from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
         bookdata = myDB.match(cmd, (bookid,))
         cmd = 'SELECT SeriesName, SeriesNum from member,series '
         cmd += 'where series.SeriesID=member.SeriesID and BookID=?'
@@ -2348,13 +2349,13 @@ class WebInterface(object):
 
     @cherrypy.expose
     def bookUpdate(self, bookname='', bookid='', booksub='', bookgenre='', booklang='', bookdate='',
-                   manual='0', authorname='', cover='', newid='', **kwargs):
+                   manual='0', authorname='', cover='', newid='', editordata='', **kwargs):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
         myDB = database.DBConnection()
 
         if bookid:
-            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,books.Manual,AuthorName,books.AuthorID '
-            cmd += ' from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
+            cmd = 'SELECT BookName,BookSub,BookGenre,BookLang,BookImg,BookDate,BookDesc,books.Manual,AuthorName,'
+            cmd += 'books.AuthorID from books,authors WHERE books.AuthorID = authors.AuthorID and BookID=?'
             bookdata = myDB.match(cmd, (bookid,))
             if bookdata:
                 edited = ''
@@ -2377,6 +2378,8 @@ class WebInterface(object):
                     edited += "Title "
                 if not (bookdata["BookSub"] == booksub):
                     edited += "Subtitle "
+                if not (bookdata["BookDesc"] == editordata):
+                    edited += "Description "
                 if not (bookdata["BookGenre"] == bookgenre):
                     edited += "Genre "
                 if not (bookdata["BookLang"] == booklang):
@@ -2444,6 +2447,7 @@ class WebInterface(object):
                         'BookGenre': bookgenre,
                         'BookLang': booklang,
                         'BookDate': bookdate,
+                        'BookDesc': editordata,
                         'BookImg': coverlink,
                         'Manual': bool(manual)
                     }
