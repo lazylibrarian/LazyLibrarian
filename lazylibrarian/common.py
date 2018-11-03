@@ -677,7 +677,8 @@ def showStats():
     gb_status = "Active"
     for entry in lazylibrarian.PROVIDER_BLOCKLIST:
         if entry["name"] == 'googleapis':
-            gb_status = "Blocked"
+            if int(time.time()) < int(entry['resume']):
+                gb_status = "Blocked"
             break
 
     result = ["Cache %i hit%s, %i miss, " % (check_int(lazylibrarian.CACHE_HIT, 0),

@@ -508,18 +508,18 @@ class Api(object):
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
 
     def _listNoLang(self):
-        q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
-        q += ' and BookLang="Unknown" or BookLang="" or BookLang is NULL'
+        q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where '
+        q += '(BookLang="Unknown" or BookLang="" or BookLang is NULL) and books.AuthorID = authors.AuthorID'
         self.data = self._dic_from_query(q)
 
     def _listNoDesc(self):
-        q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
-        q += ' and BookDesc="" or BookDesc is NULL'
+        q = 'SELECT BookID,BookName,AuthorName from books,authors where '
+        q += '(BookDesc="" or BookDesc is NULL) and books.AuthorID = authors.AuthorID'
         self.data = self._dic_from_query(q)
 
     def _setNoDesc(self):
-        q = 'SELECT BookID,BookName,AuthorName,BookISBN from books,authors where books.AuthorID = authors.AuthorID'
-        q += ' and BookDesc="" or BookDesc is NULL'
+        q = 'SELECT BookID,BookName,AuthorName,BookISBN from books,authors where '
+        q += '(BookDesc="" or BookDesc is NULL) and books.AuthorID = authors.AuthorID'
         myDB = database.DBConnection()
         res = myDB.select(q)
         descs = 0
