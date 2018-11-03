@@ -541,7 +541,7 @@ class Api(object):
 
     def _listNoISBN(self):
         q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
-        q += ' and BookISBN="" or BookISBN is NULL'
+        q += ' and (BookISBN="" or BookISBN is NULL)'
         self.data = self._dic_from_query(q)
 
     def _listNoBooks(self):
