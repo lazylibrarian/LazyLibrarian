@@ -3645,18 +3645,16 @@ class WebInterface(object):
                 userid = cookie['ll_uid'].value
 
         scheme, netloc, path, qs, anchor = urlsplit(cherrypy.url())
-        try:
-            netloc = cherrypy.request.headers['X-Forwarded-Host']
-        except KeyError:
-            pass
+        netloc = cherrypy.request.headers.get('X-Forwarded-Host')
+        if not netloc:
+            netloc = cherrypy.request.headers.get('Host')
 
-        if 'X-Forwarded-For' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
-        elif 'X-Host' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-        elif 'Remote-Addr' in cherrypy.request.headers:
-            remote_ip = cherrypy.request.headers['Remote-Addr']
-        else:
+        remote_ip = cherrypy.request.headers.get('X-Forwarded-For')  # apache2
+        if not remote_ip:
+            remote_ip = cherrypy.request.headers.get('X-Host')  # lighthttpd
+        if not remote_ip:
+            remote_ip = cherrypy.request.headers.get('Remote-Addr')
+        if not remote_ip:
             remote_ip = cherrypy.request.remote.ip
 
         filename = 'LazyLibrarian_RSS_' + ftype + '.xml'
@@ -4091,7 +4089,11 @@ class WebInterface(object):
             resume = int(line['resume']) - int(time.time())
             if resume > 0:
                 resume = int(resume / 60) + (resume % 60 > 0)
-                new_entry = "%s blocked for %s minute%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
+                if resume > 180:
+                    resume = int(resume / 60) + (resume % 60 > 0)
+                    new_entry = "%s blocked for %s hour%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
+                else:
+                    new_entry = "%s blocked for %s minute%s, %s\n" % (line['name'], resume, plural(resume), line['reason'])
                 result = result + new_entry
 
         if result == '':
