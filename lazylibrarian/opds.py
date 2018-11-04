@@ -52,7 +52,7 @@ class OPDS(object):
         self.PAGE_SIZE = check_int(lazylibrarian.CONFIG['OPDS_PAGE'], 0)
 
         if lazylibrarian.CONFIG['HTTP_ROOT'] is None:
-            #self.opdsroot = '/opds'
+            self.opdsroot = '/opds'
         elif lazylibrarian.CONFIG['HTTP_ROOT'].endswith('/'):
             self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
         else:
