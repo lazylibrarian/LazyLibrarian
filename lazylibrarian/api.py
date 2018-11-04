@@ -222,12 +222,11 @@ class Api(object):
         threading.currentThread().name = "API"
 
         if self.data == 'OK':
-            if 'X-Forwarded-For' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
-            elif 'X-Host' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-            elif 'Remote-Addr' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['Remote-Addr']
+            remote_ip = cherrypy.request.headers.get('X-Forwarded-For')  # apache2
+            if not remote_ip:
+                remote_ip = cherrypy.request.headers.get('X-Host')  # lighthttpd
+            if not remote_ip:
+                remote_ip = cherrypy.request.headers.get('Remote-Addr')
             else:
                 remote_ip = cherrypy.request.remote.ip
             logger.debug('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
@@ -281,10 +280,9 @@ class Api(object):
 
         userid = 0
         scheme, netloc, path, qs, anchor = urlsplit(cherrypy.url())
-        try:
-            netloc = cherrypy.request.headers['X-Forwarded-Host']
-        except KeyError:
-            pass
+        netloc = cherrypy.request.headers.get('X-Forwarded-Host')
+        if not netloc:
+            netloc = cherrypy.request.headers.get('Host')
         path = path.replace('rssFeed', '').rstrip('/')
         baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
         self.data = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)

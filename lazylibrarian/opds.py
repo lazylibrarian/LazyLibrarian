@@ -46,11 +46,13 @@ class OPDS(object):
         self.filename = None
         self.kwargs = None
         self.data = None
+        self.user_agent = ''
+        self.reader = ''
 
         self.PAGE_SIZE = check_int(lazylibrarian.CONFIG['OPDS_PAGE'], 0)
 
         if lazylibrarian.CONFIG['HTTP_ROOT'] is None:
-            self.opdsroot = '/opds'
+            #self.opdsroot = '/opds'
         elif lazylibrarian.CONFIG['HTTP_ROOT'].endswith('/'):
             self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
         else:
@@ -60,10 +62,9 @@ class OPDS(object):
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
 
         my_ip = None
-        if 'X-Forwarded-Host' in cherrypy.request.headers:
-            my_ip = cherrypy.request.headers['X-Forwarded-Host']
-        elif 'Host' in cherrypy.request.headers:
-            my_ip = cherrypy.request.headers['Host']
+        my_ip = cherrypy.request.headers.get('X-Forwarded-Host')
+        if not my_ip:
+            my_ip = cherrypy.request.headers.get('Host')
         if my_ip:
             self.opdsroot = '%s://%s%s' % (cherrypy.request.scheme, my_ip, self.opdsroot)
 
@@ -89,15 +90,28 @@ class OPDS(object):
 
     def fetchData(self):
         if self.data == 'OK':
-            if 'X-Forwarded-For' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['X-Forwarded-For']  # apache2
-            elif 'X-Host' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['X-Host']  # lighthttpd
-            elif 'Remote-Addr' in cherrypy.request.headers:
-                remote_ip = cherrypy.request.headers['Remote-Addr']
-            else:
+            remote_ip = cherrypy.request.headers.get('X-Forwarded-For')  # apache2
+            if not remote_ip:
+                remote_ip = cherrypy.request.headers.get('X-Host')  # lighthttpd
+            if not remote_ip:
+                remote_ip = cherrypy.request.headers.get('Remote-Addr')
+            if not remote_ip:
                 remote_ip = cherrypy.request.remote.ip
-            logger.debug('Received OPDS command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
+
+            self.user_agent = cherrypy.request.headers.get('User-Agent')
+            if lazylibrarian.LOGLEVEL & lazylibrarian.log_dlcomms:
+                logger.debug(self.user_agent)
+
+            # NOTE Moon+ identifies as Aldiko/Moon+  so check for Moon+ first
+            # at the moment we only need to identify Aldiko as it doesn't paginate properly
+            IDs = ['Moon+', 'FBReader', 'Aldiko']
+            for item in IDs:
+                if item in self.user_agent:
+                    self.reader = ' (' + item + ')'
+                    break
+
+            logger.debug('Received OPDS command from %s%s %s %s' % (remote_ip, self.reader, self.cmd, self.kwargs))
+
             if self.cmd == 'search':
                 if 't' in self.kwargs and self.kwargs['t'] in searchable:
                     self.cmd = self.kwargs['t']
@@ -317,6 +331,9 @@ class OPDS(object):
     def _Authors(self, **kwargs):
         index = 0
         limit = self.PAGE_SIZE
+        if 'Aldiko' in self.reader:  # Aldiko doesn't paginate long lists
+            limit = 0
+
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
         userid = ''
@@ -385,6 +402,9 @@ class OPDS(object):
     def _Magazines(self, **kwargs):
         index = 0
         limit = self.PAGE_SIZE
+        if 'Aldiko' in self.reader:
+            limit = 0
+
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
         userid = ''
@@ -452,6 +472,9 @@ class OPDS(object):
     def _Series(self, **kwargs):
         index = 0
         limit = self.PAGE_SIZE
+        if 'Aldiko' in self.reader:
+            limit = 0
+
         if 'index' in kwargs:
             index = check_int(kwargs['index'], 0)
         userid = ''
