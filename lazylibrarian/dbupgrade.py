@@ -87,6 +87,7 @@ def upgrade_needed():
     # 40 add CoverPage to magazines table
     # 41 add Requester and AudioRequester to books table
     # 42 add SendTo to users table
+    # 43 move hosting to gitlab
 
     db_current_version = 42
 
@@ -121,11 +122,8 @@ def dbupgrade(db_current_version):
             check = myDB.match('PRAGMA integrity_check')
             if check and check[0]:
                 result = check[0]
-                if result == 'ok':
-                    logger.debug('Database integrity check: %s' % result)
-                else:
-                    logger.error('Database integrity check: %s' % result)
-                    # should probably abort now
+                logger.error('Database integrity check: %s' % result)
+                # should probably abort now if result is not "ok"
 
             if db_version < db_current_version:
                 myDB = database.DBConnection()
@@ -258,6 +256,23 @@ def check_db(myDB):
             for author in authors:
                 authorid = author["AuthorID"]
                 myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+
+        for entry in [
+                        ['authorid', 'books', 'authors'],
+                        ['seriesid', 'member', 'series'],
+                        ['seriesid', 'seriesauthors', 'series'],
+                        ['authorid', 'seriesauthors', 'authors'],
+                        ['title', 'issues', 'magazines'],
+                     ]:
+            orphans = myDB.select('select %s from %s except select %s from %s' %
+                                  (entry[0], entry[1], entry[0], entry[2]))
+            if orphans:
+                msg = 'Found %s orphan %s in %s' % (len(orphans), entry[0], entry[1])
+                logger.warn(msg)
+                for orphan in orphans:
+                    myDB.action('DELETE from %s WHERE %s="%s"' % (entry[1], entry[0], orphan[0]))
+
     except Exception as e:
         msg = 'Error: %s %s' % (type(e).__name__, str(e))
         logger.error(msg)
@@ -1134,3 +1149,22 @@ def db_v42(myDB, upgradelog):
         myDB.action('ALTER TABLE users ADD COLUMN SendTo TEXT')
     upgradelog.write("%s v42: complete\n" % time.ctime())
 
+
+"""
+def db_v43(myDB, upgradelog):
+    if lazylibrarian.CONFIG['GIT_USER'].lower() == 'philborman':
+        upgradelog.write("%s v43: %s\n" % (time.ctime(), "Updating git host"))
+        timer = 60
+        while timer > 0:
+            msg = "<mark>IMPORTANT MESSAGE</mark><p>LazyLibrarian hosting has moved, the new location is<p>"
+            msg += "<mark>https://gitlab.com/LazyLibrarian/lazylibrarian</mark><p>"
+            msg += "Your config has been updated to the new location<p>"
+            msg += "Startup will continue in %s seconds" % timer
+            lazylibrarian.UPDATE_MSG = msg
+            time.sleep(1)
+            timer -= 1
+        lazylibrarian.CONFIG['GIT_USER'] = 'LazyLibrarian'
+        lazylibrarian.CONFIG['GIT_HOST'] = 'gitlab.com'
+        lazylibrarian.config_write('Git')
+    upgradelog.write("%s v43: complete\n" % time.ctime())
+"""
