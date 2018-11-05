@@ -87,6 +87,7 @@ def upgrade_needed():
     # 40 add CoverPage to magazines table
     # 41 add Requester and AudioRequester to books table
     # 42 add SendTo to users table
+    # 43 move hosting to gitlab
 
     db_current_version = 42
 
@@ -121,11 +122,8 @@ def dbupgrade(db_current_version):
             check = myDB.match('PRAGMA integrity_check')
             if check and check[0]:
                 result = check[0]
-                if result == 'ok':
-                    logger.debug('Database integrity check: %s' % result)
-                else:
-                    logger.error('Database integrity check: %s' % result)
-                    # should probably abort now
+                logger.error('Database integrity check: %s' % result)
+                # should probably abort now if result is not "ok"
 
             if db_version < db_current_version:
                 myDB = database.DBConnection()
@@ -151,54 +149,45 @@ def dbupgrade(db_current_version):
                                 'LastBookImg TEXT, LastLink TEXT, LastDate TEXT, HaveBooks INTEGER DEFAULT 0, ' +
                                 'TotalBooks INTEGER DEFAULT 0, AuthorBorn TEXT, AuthorDeath TEXT, ' +
                                 'UnignoredBooks INTEGER DEFAULT 0, Manual TEXT, GRfollow TEXT, LastBookID TEXT)')
-                    myDB.action('CREATE TABLE books (AuthorID TEXT, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
+                    myDB.action('CREATE TABLE books (AuthorID TEXT REFERENCES authors (AuthorID) ' +
+                                'ON DELETE CASCADE, BookName TEXT, BookSub TEXT, BookDesc TEXT, ' +
                                 'BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, BookRate INTEGER DEFAULT 0, ' +
                                 'BookImg TEXT, BookPages INTEGER DEFAULT 0, BookLink TEXT, BookID TEXT UNIQUE, ' +
                                 'BookFile TEXT, BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, ' +
-                                'WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, AudioFile TEXT, ' +
-                                'AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ScanResult TEXT, ' +
-                                'OriginalPubDate TEXT, Requester TEXT, AudioRequester TEXT,' +
-                                ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
-                                'ON DELETE CASCADE)')
-                    myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
+                                'WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, ' +
+                                'AudioFile TEXT, AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ' +
+                                'ScanResult TEXT, OriginalPubDate TEXT, Requester TEXT, AudioRequester TEXT)')
+                    myDB.action('CREATE TABLE wanted (BookID TEXT REFERENCES books (BookID) ON DELETE CASCADE, ' +
+                                'NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
                                 'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
-                                'Source TEXT, DownloadID TEXT, DLResult TEXT,' +
-                                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
-                                'ON DELETE CASCADE)')
+                                'Source TEXT, DownloadID TEXT, DLResult TEXT)')
                     myDB.action('CREATE TABLE magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, ' +
                                 'MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT, ' +
                                 'Reject TEXT, LatestCover TEXT, DateType TEXT, CoverPage INTEGER DEFAULT 1)')
                     myDB.action('CREATE TABLE languages (isbn TEXT, lang TEXT)')
-                    myDB.action('CREATE TABLE issues (Title TEXT, IssueID TEXT UNIQUE, IssueAcquired TEXT, ' +
-                                'IssueDate TEXT, IssueFile TEXT,' +
-                                ' CONSTRAINT fk_m FOREIGN KEY (Title) REFERENCES magazines (Title) ' +
-                                'ON DELETE CASCADE)')
+                    myDB.action('CREATE TABLE issues (Title TEXT REFERENCES magazines (Title) ON DELETE CASCADE, ' +
+                                'IssueID TEXT UNIQUE, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
                     myDB.action('CREATE TABLE stats (authorname text, GR_book_hits int, GR_lang_hits int, ' +
                                 'LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, ' +
                                 'uncached int, duplicates int)')
                     myDB.action('CREATE TABLE series (SeriesID INTEGER UNIQUE, SeriesName TEXT, Status TEXT, ' +
                                 'Have INTEGER DEFAULT 0, Total INTEGER DEFAULT 0)')
-                    myDB.action('CREATE TABLE member (SeriesID INTEGER, BookID TEXT, WorkID TEXT, SeriesNum TEXT,' +
-                                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
-                                'ON DELETE CASCADE, ' +
-                                ' CONSTRAINT fk_s FOREIGN KEY (SeriesID) REFERENCES series (SeriesID) ' +
-                                'ON DELETE CASCADE)')
-                    myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, AuthorID TEXT, ' +
-                                'UNIQUE (SeriesID,AuthorID),' +
-                                ' CONSTRAINT fk_a FOREIGN KEY (AuthorID) REFERENCES authors (AuthorID) ' +
-                                'ON DELETE CASCADE)')
+                    myDB.action('CREATE TABLE member (SeriesID INTEGER REFERENCES series (SeriesID) ' +
+                                'ON DELETE CASCADE, BookID TEXT REFERENCES books (BookID) ON DELETE CASCADE, ' +
+                                'WorkID TEXT, SeriesNum TEXT)')
+                    myDB.action('CREATE TABLE seriesauthors (SeriesID INTEGER, ' +
+                                'AuthorID TEXT REFERENCES authors (AuthorID) ON DELETE CASCADE, ' +
+                                'UNIQUE (SeriesID,AuthorID))')
                     myDB.action('CREATE TABLE downloads (Count INTEGER DEFAULT 0, Provider TEXT)')
                     myDB.action('CREATE TABLE users (UserID TEXT UNIQUE, UserName TEXT UNIQUE, Password TEXT, ' +
                                 'Email TEXT, Name TEXT, Perms INTEGER DEFAULT 0, HaveRead TEXT, ToRead TEXT, ' +
                                 'CalibreRead TEXT, CalibreToRead TEXT, BookType TEXT, SendTo TEXT)')
-                    myDB.action('CREATE TABLE sync (UserID TEXT, Label TEXT, Date TEXT, SyncList TEXT,' +
-                                ' CONSTRAINT fk_u FOREIGN KEY (UserID) REFERENCES users (UserID) ' +
-                                'ON DELETE CASCADE)')
+                    myDB.action('CREATE TABLE sync (UserID TEXT REFERENCES users (UserID) ON DELETE CASCADE, ' +
+                                'Label TEXT, Date TEXT, SyncList TEXT)')
                     myDB.action('CREATE TABLE isbn (Words TEXT, ISBN TEXT)')
-                    myDB.action('CREATE TABLE failedsearch (BookID TEXT, Library TEXT, Time TEXT, ' +
-                                'Interval INTEGER DEFAULT 0, Count INTEGER DEFAULT 0,' +
-                                ' CONSTRAINT fk_b FOREIGN KEY (BookID) REFERENCES books (BookID) ' +
-                                'ON DELETE CASCADE)')
+                    myDB.action('CREATE TABLE failedsearch (BookID TEXT REFERENCES books (BookID) ' +
+                                'ON DELETE CASCADE, Library TEXT, Time TEXT, Interval INTEGER DEFAULT 0, ' +
+                                'Count INTEGER DEFAULT 0)')
 
                     # pastissues table has same layout as wanted table, code below is to save typos if columns change
                     res = myDB.match("SELECT sql FROM sqlite_master WHERE type='table' AND name='wanted'")
@@ -258,6 +247,23 @@ def check_db(myDB):
             for author in authors:
                 authorid = author["AuthorID"]
                 myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+                myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+
+        for entry in [
+                        ['authorid', 'books', 'authors'],
+                        ['seriesid', 'member', 'series'],
+                        ['seriesid', 'seriesauthors', 'series'],
+                        ['authorid', 'seriesauthors', 'authors'],
+                        ['title', 'issues', 'magazines'],
+                     ]:
+            orphans = myDB.select('select %s from %s except select %s from %s' %
+                                  (entry[0], entry[1], entry[0], entry[2]))
+            if orphans:
+                msg = 'Found %s orphan %s in %s' % (len(orphans), entry[0], entry[1])
+                logger.warn(msg)
+                for orphan in orphans:
+                    myDB.action('DELETE from %s WHERE %s="%s"' % (entry[1], entry[0], orphan[0]))
+
     except Exception as e:
         msg = 'Error: %s %s' % (type(e).__name__, str(e))
         logger.error(msg)
@@ -1134,3 +1140,22 @@ def db_v42(myDB, upgradelog):
         myDB.action('ALTER TABLE users ADD COLUMN SendTo TEXT')
     upgradelog.write("%s v42: complete\n" % time.ctime())
 
+
+"""
+def db_v43(myDB, upgradelog):
+    if lazylibrarian.CONFIG['GIT_USER'].lower() == 'philborman':
+        upgradelog.write("%s v43: %s\n" % (time.ctime(), "Updating git host"))
+        timer = 60
+        while timer > 0:
+            msg = "<mark>IMPORTANT MESSAGE</mark><p>LazyLibrarian hosting has moved, the new location is<p>"
+            msg += "<mark>https://gitlab.com/LazyLibrarian/lazylibrarian</mark><p>"
+            msg += "Your config has been updated to the new location<p>"
+            msg += "Startup will continue in %s seconds" % timer
+            lazylibrarian.UPDATE_MSG = msg
+            time.sleep(1)
+            timer -= 1
+        lazylibrarian.CONFIG['GIT_USER'] = 'LazyLibrarian'
+        lazylibrarian.CONFIG['GIT_HOST'] = 'gitlab.com'
+        lazylibrarian.config_write('Git')
+    upgradelog.write("%s v43: complete\n" % time.ctime())
+"""

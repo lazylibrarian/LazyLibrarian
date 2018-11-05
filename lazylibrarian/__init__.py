@@ -529,6 +529,7 @@ CONFIG_DEFINITIONS = {
     'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
     'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
     'GB_API': ('str', 'API', ''),  # API key has daily limits, each user needs their own
+    'GB_COUNTRY': ('str', 'API', ''),  # optional two letter country code for geographically restricted results
     'FMT_SERNAME': ('str', 'FMT', '$SerName'),
     'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
     'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )'),

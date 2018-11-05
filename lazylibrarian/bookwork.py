@@ -817,6 +817,8 @@ def get_book_desc(isbn=None, author=None, title=None):
         for url in urls:
             if lazylibrarian.CONFIG['GB_API']:
                 url += '&key=' + lazylibrarian.CONFIG['GB_API']
+            if lazylibrarian.CONFIG['GB_COUNTRY'] and len(lazylibrarian.CONFIG['GB_COUNTRY'] == 2):
+                url += '&country=' + lazylibrarian.CONFIG['GB_COUNTRY']
             results, cached = gb_json_request(url)
             if results is None:  # there was an error
                 return None
