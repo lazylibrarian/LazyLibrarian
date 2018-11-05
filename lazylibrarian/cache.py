@@ -96,16 +96,20 @@ def fetchURL(URL, headers=None, retry=True, raw=None):
             except Exception:
                 pass
 
-            # how long until midnight Pacific Time when google reset the quotas
-            resume = int(time.time())  # this is "now" in UTC
-            midnight = seconds_to_midnight() + 28800  # PT is 8hrs behind UTC
-            if midnight > 86400:
-                midnight -= 86400  # no roll-over to next day
-            resume += midnight
+            if 'Limit Exceeded' in msg:
+                # how long until midnight Pacific Time when google reset the quotas
+                delay = seconds_to_midnight() + 28800  # PT is 8hrs behind UTC
+                if delay > 86400:
+                    delay -= 86400  # no roll-over to next day
+            else:
+                # might be forbidden for a different reason where midnight might not matter
+                # eg "Cannot determine user location for geographically restricted operation"
+                delay = 3600
+
             for entry in lazylibrarian.PROVIDER_BLOCKLIST:
                 if entry["name"] == 'googleapis':
                     lazylibrarian.PROVIDER_BLOCKLIST.remove(entry)
-            newentry = {"name": 'googleapis', "resume": resume, "reason": msg}
+            newentry = {"name": 'googleapis', "resume": int(time.time()) + delay, "reason": msg}
             lazylibrarian.PROVIDER_BLOCKLIST.append(newentry)
 
         # noinspection PyBroadException
