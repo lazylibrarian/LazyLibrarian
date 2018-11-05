@@ -61,7 +61,6 @@ class OPDS(object):
             else:
                 self.opdsroot = lazylibrarian.CONFIG['HTTP_ROOT'] + 'opds'
 
-        my_ip = None
         my_ip = cherrypy.request.headers.get('X-Forwarded-Host')
         if not my_ip:
             my_ip = cherrypy.request.headers.get('Host')
@@ -967,12 +966,13 @@ class OPDS(object):
                          'type': mime_type}
 
                 if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                    author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
-                    author = makeUnicode(author['AuthorName'])
-                    entry['image'] = self.searchroot + '/' + book['BookImg']
-                    entry['thumbnail'] = entry['image']
-                    entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
-                    entry['author'] = escape('%s' % author)
+                    auth = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
+                    if auth:
+                        author = makeUnicode(auth['AuthorName'])
+                        entry['image'] = self.searchroot + '/' + book['BookImg']
+                        entry['thumbnail'] = entry['image']
+                        entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
+                        entry['author'] = escape('%s' % author)
                 else:
                     entry['content'] = escape('%s (%s)' % (title, book['BookAdded']))
                 entries.append(entry)
@@ -1060,12 +1060,13 @@ class OPDS(object):
                      'rel': 'file',
                      'type': mimeType("we_send.zip")}
             if lazylibrarian.CONFIG['OPDS_METAINFO']:
-                author = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
-                author = makeUnicode(author['AuthorName'])
-                entry['image'] = self.searchroot + '/' + book['BookImg']
-                entry['thumbnail'] = entry['image']
-                entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
-                entry['author'] = escape('%s' % author)
+                auth = myDB.match("SELECT AuthorName from authors WHERE AuthorID=?", (book['AuthorID'],))
+                if auth:
+                    author = makeUnicode(auth['AuthorName'])
+                    entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['thumbnail'] = entry['image']
+                    entry['content'] = escape('%s - %s' % (title, book['BookDesc']))
+                    entry['author'] = escape('%s' % author)
             else:
                 entry['content'] = escape('%s (%s)' % (title, book['BookAdded']))
             entries.append(entry)
