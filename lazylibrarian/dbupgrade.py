@@ -232,22 +232,73 @@ def dbupgrade(db_current_version):
 
 
 def check_db(myDB):
+    cnt = 0
     try:
-        cmd = 'UPDATE books SET BookLang="Unknown" WHERE BookLang is NULL '
-        cmd += 'or instr(BookLang, "<") or instr(BookLang, "invalid")'
-        myDB.action(cmd)
+        # replace faulty/html language results with Unknown
+        filt = 'BookLang is NULL or instr(BookLang, "<") or instr(BookLang, "invalid")'
+        cmd = 'SELECT count(*) as counter from books WHERE ' + filt
+        res = myDB.match(cmd)
+        tot = res['counter']
+        if tot:
+            cnt += tot
+            msg = 'Updating %s book%s with no language to "Unknown"' % (tot, plural(tot))
+            logger.debug(msg)
+            cmd = 'UPDATE books SET BookLang="Unknown" WHERE ' + filt
+            myDB.action(cmd)
+
         # delete html error pages
-        myDB.action("delete from languages where length(lang) > 30")
-        # suppress duplicates
-        myDB.action("delete from languages where rowid not in (select max(rowid) from languages group by isbn)")
+        filt = 'length(lang) > 30'
+        cmd = 'SELECT count(*) as counter from languages WHERE ' + filt
+        res = myDB.match(cmd)
+        tot = res['counter']
+        if tot:
+            cnt += tot
+            msg = 'Updating %s language%s with bad data' % (tot, plural(tot))
+            logger.debug(msg)
+            cmd = 'DELETE from languages WHERE ' + filt
+            myDB.action(cmd)
+
+        # suppress duplicate entries in language table
+        filt = 'rowid not in (select max(rowid) from languages group by isbn)'
+        cmd = 'SELECT count(*) as counter from languages WHERE ' + filt
+        res = myDB.match(cmd)
+        tot = res['counter']
+        if tot:
+            cnt += tot
+            msg = 'Deleting %s duplicate language%s' % (tot, plural(tot))
+            logger.debug(msg)
+            cmd = 'DELETE from languages WHERE ' + filt
+            myDB.action(cmd)
+
+        # remove authors with no name
         authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
         if authors:
-            msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))
+            cnt += len(authors)
+            msg = 'Removing %s author%s with no name' % (len(authors), plural(len(authors)))
             logger.debug(msg)
             for author in authors:
                 authorid = author["AuthorID"]
                 myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
-                myDB.action('DELETE from books WHERE AuthorID=?', (authorid,))
+
+        # remove authors with no books
+        authors = myDB.select('SELECT AuthorID FROM authors WHERE TotalBooks=0')
+        if authors:
+            cnt += len(authors)
+            msg = 'Removing %s author%s with no books' % (len(authors), plural(len(authors)))
+            logger.debug(msg)
+            for author in authors:
+                authorid = author["AuthorID"]
+                myDB.action('DELETE from authors WHERE AuthorID=?', (authorid,))
+
+        # remove series with no members
+        series = myDB.select('SELECT SeriesID FROM series WHERE Total=0')
+        if series:
+            cnt += len(series)
+            msg = 'Removing %s series with no members' % len(series)
+            logger.debug(msg)
+            for item in series:
+                seriesid = item["SeriesID"]
+                myDB.action('DELETE from series WHERE SeriesID=?', (seriesid,))
 
         for entry in [
                         ['authorid', 'books', 'authors'],
@@ -259,6 +310,7 @@ def check_db(myDB):
             orphans = myDB.select('select %s from %s except select %s from %s' %
                                   (entry[0], entry[1], entry[0], entry[2]))
             if orphans:
+                cnt += len(orphans)
                 msg = 'Found %s orphan %s in %s' % (len(orphans), entry[0], entry[1])
                 logger.warn(msg)
                 for orphan in orphans:
@@ -267,6 +319,8 @@ def check_db(myDB):
     except Exception as e:
         msg = 'Error: %s %s' % (type(e).__name__, str(e))
         logger.error(msg)
+
+    logger.info("Database check found %s error%s" % (cnt, plural(cnt)))
 
 
 def db_v2(myDB, upgradelog):
