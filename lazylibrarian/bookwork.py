@@ -928,7 +928,7 @@ def get_book_pubdate(bookid, refresh=False):
     except (KeyError, AttributeError):
         logger.error("Error reading pubdate for GoodReads bookid %s pubdate [%s]" % (bookid, bookdate))
 
-    logger.debug("GoodReads bookid %s pubdate [%s]" % (bookid, bookdate))
+    logger.debug("GoodReads bookid %s pubdate [%s] %s" % (bookid, bookdate, in_cache))
     return bookdate, in_cache
 
 

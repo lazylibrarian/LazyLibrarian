@@ -232,6 +232,7 @@ def dbupgrade(db_current_version):
 
 
 def check_db(myDB):
+    cnt = 0
     try:
         cmd = 'UPDATE books SET BookLang="Unknown" WHERE BookLang is NULL '
         cmd += 'or instr(BookLang, "<") or instr(BookLang, "invalid")'
@@ -242,6 +243,7 @@ def check_db(myDB):
         myDB.action("delete from languages where rowid not in (select max(rowid) from languages group by isbn)")
         authors = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL or AuthorName = ""')
         if authors:
+            cnt += len(authors)
             msg = 'Removing %s un-named author%s from database' % (len(authors), plural(len(authors)))
             logger.debug(msg)
             for author in authors:
@@ -259,6 +261,7 @@ def check_db(myDB):
             orphans = myDB.select('select %s from %s except select %s from %s' %
                                   (entry[0], entry[1], entry[0], entry[2]))
             if orphans:
+                cnt += len(orphans)
                 msg = 'Found %s orphan %s in %s' % (len(orphans), entry[0], entry[1])
                 logger.warn(msg)
                 for orphan in orphans:
@@ -267,6 +270,8 @@ def check_db(myDB):
     except Exception as e:
         msg = 'Error: %s %s' % (type(e).__name__, str(e))
         logger.error(msg)
+
+    logger.debug("Database check found %s error%s" % (cnt, plural(cnt)))
 
 
 def db_v2(myDB, upgradelog):
