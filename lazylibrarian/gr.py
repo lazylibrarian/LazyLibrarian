@@ -747,32 +747,12 @@ class GoodReads:
                                 added = today()
                                 locked = False
 
-                            if not rejected:
-                                serieslist = []
-                                if series:
-                                    serieslist = [('', seriesNum, cleanName(unaccented(series), '&/'))]
-                                if lazylibrarian.CONFIG['ADD_SERIES']:
-                                    newserieslist = getWorkSeries(workid)
-                                    if newserieslist:
-                                        serieslist = newserieslist
-                                        logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
-                                    _api_hits, originalpubdate = setSeries(serieslist, bookid, authorid, workid)
-                                    api_hits += _api_hits
-                                    # setSeries will return the OriginalPubDate from the series page
-                                    # if goodreads knows it, so set a dummy value so we know not to ask again
-                                    if not originalpubdate:
-                                        originalpubdate = '0000'
-
-                                new_status = setStatus(bookid, serieslist, book_status)
-                                if new_status != book_status:
-                                    book_status = new_status
-
-                            if not originalpubdate:  # already set with language code or series or existing book?
+                            if not originalpubdate:  # already set with language code or existing book?
                                 originalpubdate, in_cache = get_book_pubdate(bookid)
                                 if not in_cache:
                                     api_hits += 1
 
-                            if originalpubdate and originalpubdate != '0000':
+                            if originalpubdate:
                                 bookdate = originalpubdate
 
                             if not rejected:
@@ -826,7 +806,25 @@ class GoodReads:
                                 }
 
                                 myDB.upsert("books", newValueDict, controlValueDict)
-                                # logger.debug("Book found: %s %s" % (bookname, bookdate))
+
+                                updateValueDict = {}
+                                # need to run getWorkSeries AFTER adding to book table (foreign key constraint)
+                                serieslist = []
+                                if series:
+                                    serieslist = [('', seriesNum, cleanName(unaccented(series), '&/'))]
+                                if lazylibrarian.CONFIG['ADD_SERIES']:
+                                    newserieslist = getWorkSeries(workid)
+                                    if newserieslist:
+                                        serieslist = newserieslist
+                                        logger.debug('Updated series: %s [%s]' % (bookid, serieslist))
+                                    _api_hits, pubdate = setSeries(serieslist, bookid, authorid, workid)
+                                    api_hits += _api_hits
+                                    if pubdate and pubdate != originalpubdate:
+                                        updateValueDict["OriginalPubDate"] = pubdate
+
+                                new_status = setStatus(bookid, serieslist, book_status)
+                                if new_status != book_status:
+                                    updateValueDict["Status"] = new_status
 
                                 if 'nocover' in bookimg or 'nophoto' in bookimg:
                                     # try to get a cover from another source
@@ -838,9 +836,7 @@ class GoodReads:
 
                                     if workcover:
                                         logger.debug('Updated cover for %s using %s' % (bookname, source))
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {"BookImg": workcover}
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                        updateValueDict["BookImg"] = workcover
 
                                 elif bookimg and bookimg.startswith('http'):
                                     start = time.time()
@@ -849,17 +845,16 @@ class GoodReads:
                                         cover_count += 1
                                         cover_time += (time.time() - start)
                                     if success:
-                                        controlValueDict = {"BookID": bookid}
-                                        newValueDict = {"BookImg": link}
-                                        myDB.upsert("books", newValueDict, controlValueDict)
+                                        updateValueDict["BookImg"] = link
                                     else:
                                         logger.debug('Failed to cache image for %s' % bookimg)
 
                                 worklink = getWorkPage(bookid)
                                 if worklink:
-                                    controlValueDict = {"BookID": bookid}
-                                    newValueDict = {"WorkPage": worklink}
-                                    myDB.upsert("books", newValueDict, controlValueDict)
+                                    updateValueDict["WorkPage"] = worklink
+
+                                if updateValueDict:
+                                    myDB.upsert("books", updateValueDict, controlValueDict)
 
                                 if not existing:
                                     logger.debug("[%s] Added book: %s [%s] status %s" %
