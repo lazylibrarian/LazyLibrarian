@@ -107,6 +107,10 @@ def initialize(options=None):
             'tools.staticfile.on': True,
             'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchbooks.xml')
         },
+        '/opensearchgenres.xml': {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchgenres.xml')
+        },
         '/opensearchmagazines.xml': {
             'tools.staticfile.on': True,
             'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchmagazines.xml')
@@ -161,6 +165,7 @@ def initialize(options=None):
         for item in [('Authors', 'Authors'),
                      ('Magazines', 'RecentMags'),
                      ('Books', 'RecentBooks'),
+                     ('Genres', 'Genres'),
                      ('Series', 'Series')]:
             with open(opensearch.replace('.template', '%s.xml' % item[0].lower()), 'w') as t:
                 for l in data:

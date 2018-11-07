@@ -32,7 +32,7 @@ from lib.six import string_types
 
 
 searchable = ['Authors', 'Magazines', 'Series', 'Author', 'RecentBooks', 'RecentAudio', 'RecentMags',
-              'RatedBooks', 'RatedAudio', 'ReadBooks', 'ToReadBooks']
+              'RatedBooks', 'RatedAudio', 'ReadBooks', 'ToReadBooks', 'Genre', 'Genres']
 
 cmd_list = searchable + ['root', 'Serve', 'search', 'Members', 'Magazine']
 
@@ -198,7 +198,7 @@ class OPDS(object):
                 }
             )
 
-        res = myDB.match("select count(*) as counter from books where Status='Open'")
+        res = myDB.match("select count(*) as counter from issues where IssueFile != ''")
         if res['counter'] > 0:
             entries.append(
                 {
@@ -225,6 +225,7 @@ class OPDS(object):
                     'rel': 'subsection',
                 }
             )
+
         cmd = "select count(*) as counter from books"
         cmd += " where AudioStatus='Open' and CAST(BookRate AS INTEGER) > 0"
         res = myDB.match(cmd)
@@ -308,6 +309,20 @@ class OPDS(object):
                 }
             )
 
+        res = myDB.select("select distinct BookGenre from books where Status='Open' and BookGenre != ''")
+        if res and len(res) > 0:
+            entries.append(
+                {
+                    'title': 'Genres (%i)' % len(res),
+                    'id': 'Genres',
+                    'updated': now(),
+                    'content': 'Genres',
+                    'href': '%s?cmd=Genres%s' % (self.opdsroot, userid),
+                    'kind': 'acquisition',
+                    'rel': 'subsection',
+                }
+            )
+
         res = myDB.match("SELECT count(*) as counter from magazines WHERE LastAcquired != ''")
         if res['counter'] > 0:
             entries.append(
@@ -326,6 +341,171 @@ class OPDS(object):
         feed['entries'] = entries
         self.data = feed
         return
+
+    def _Genres(self, **kwargs):
+        index = 0
+        limit = self.PAGE_SIZE
+        if 'Aldiko' in self.reader:  # Aldiko doesn't paginate long lists
+            limit = 0
+
+        if 'index' in kwargs:
+            index = check_int(kwargs['index'], 0)
+        userid = ''
+        if 'user' in kwargs:
+            userid = '&amp;user=%s' % kwargs['user']
+
+        myDB = database.DBConnection()
+        feed = {'title': 'LazyLibrarian OPDS - Genres', 'id': 'Genres', 'updated': now()}
+        links = []
+        entries = []
+        links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
+                             rel='start', title='Home'))
+        links.append(getLink(href='%s?cmd=Genres%s' % (self.opdsroot, userid),
+                             ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        links.append(getLink(href='%s/opensearchgenres.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Genre'))
+        cmd = "SELECT distinct BookGenre from books WHERE Status='Open' AND "
+        if 'query' in kwargs:
+            cmd += "BookGenre LIKE '%" + kwargs['query'] + "%' AND "
+        cmd += "BookGenre !='' order by BookGenre"
+        results = myDB.select(cmd)
+        if limit:
+            page = results[index:(index + limit)]
+        else:
+            page = results
+            limit = len(page)
+        for genre in page:
+            res = myDB.match('SELECT count(*) as counter from books where Status="Open" AND BookGenre=?',
+                             (genre['BookGenre'],))
+            totalbooks = res['counter']
+            name = makeUnicode(genre['BookGenre'])
+            entry = {
+                    'title': escape('%s (%s)' % (name, totalbooks)),
+                    'id': escape('genre:%s' % genre['BookGenre']),
+                    'updated': now(),
+                    'content': escape('%s (%s)' % (name, totalbooks)),
+                    'href': '%s?cmd=Genre&amp;genre=%s%s' % (self.opdsroot, quote_plus(genre['BookGenre']), userid),
+                    'author': escape('%s' % name),
+                    'kind': 'navigation',
+                    'rel': 'subsection',
+                }
+
+            entries.append(entry)
+
+        if len(results) > (index + limit):
+            links.append(
+                getLink(href='%s?cmd=Genres&amp;index=%s%s' % (self.opdsroot, index + limit, userid),
+                        ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
+        if index >= limit:
+            links.append(
+                getLink(href='%s?cmd=Genres&amp;index=%s%s' % (self.opdsroot, index - limit, userid),
+                        ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
+
+        feed['links'] = links
+        feed['entries'] = entries
+        fin = index + limit
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s genre%s, %s to %s from %s" % (len(entries), plural(len(entries)), index + 1,
+                                                                 fin, len(results)))
+        self.data = feed
+        return
+
+
+    def _Genre(self, **kwargs):
+        index = 0
+        limit = self.PAGE_SIZE
+        if 'index' in kwargs:
+            index = check_int(kwargs['index'], 0)
+        userid = ''
+        if 'user' in kwargs:
+            userid = '&amp;user=%s' % kwargs['user']
+
+        myDB = database.DBConnection()
+        if 'genre' not in kwargs:
+            self.data = self._error_with_message('No Genre Provided')
+            return
+        links = []
+        entries = []
+        cmd = "SELECT BookName,BookDate,BookAdded,BookDesc,BookImg,BookFile,AudioFile,books.BookID "
+        cmd += "from books where (Status='Open' or AudioStatus='Open') and BookGenre=? "
+        cmd += "order by BookName"
+        results = myDB.select(cmd, (kwargs['genre'],))
+        if not len(results):
+            self.data = self._error_with_message('No results for Genre "%s"' % kwargs['genre'])
+            return
+
+        if limit:
+            page = results[index:(index + limit)]
+        else:
+            page = results
+            limit = len(page)
+        for book in page:
+            mime_type = None
+            rel = 'file'
+            if book['BookFile']:
+                mime_type = self.multiLink(book['BookFile'], book['BookID'])
+                if mime_type:
+                    rel = 'multi'
+                else:
+                    mime_type = mimeType(book['BookFile'])
+
+            elif book['AudioFile']:
+                mime_type = mimeType(book['AudioFile'])
+            if mime_type:
+                cmd = 'SELECT AuthorName from authors,books WHERE authors.authorid = books.authorid AND '
+                cmd += 'books.bookid=?'
+                res = myDB.match(cmd, (book['BookID'],))
+                author = res['AuthorName']
+                entry = {'title': escape('%s' % book['BookName']),
+                         'id': escape('book:%s' % book['BookID']),
+                         'updated': opdstime(book['BookAdded']),
+                         'href': '%s?cmd=Serve&amp;bookid=%s%s' % (self.opdsroot, book['BookID'], userid),
+                         'kind': 'acquisition',
+                         'rel': rel,
+                         'author': escape("%s" % author),
+                         'type': mime_type}
+
+                if lazylibrarian.CONFIG['OPDS_METAINFO']:
+                    entry['image'] = self.searchroot + '/' + book['BookImg']
+                    entry['thumbnail'] = entry['image']
+                    entry['content'] = escape('%s %s' % (book['BookName'], book['BookDesc']))
+                else:
+                    entry['content'] = escape('%s %s' % (book['BookName'], book['BookAdded']))
+                entries.append(entry)
+
+        feed = {}
+        feed['title'] = 'LazyLibrarian OPDS - Genre %s' % escape(kwargs['genre'])
+        feed['id'] = 'genre:%s' % escape(kwargs['genre'])
+        feed['updated'] = now()
+        links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
+                             rel='start', title='Home'))
+        links.append(getLink(href='%s?cmd=Genres%s' % (self.opdsroot, userid),
+                             ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='self'))
+        links.append(getLink(href='%s/opensearchbooks.xml' % self.searchroot,
+                             ftype='application/opensearchdescription+xml', rel='search', title='Search Books'))
+
+        if len(results) > (index + limit):
+            links.append(
+                getLink(href='%s?cmd=Genre&amp;genre=%s&amp;index=%s%s' % (self.opdsroot,
+                        quote_plus(kwargs['genre']), index + limit, userid),
+                        ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='next'))
+        if index >= limit:
+            links.append(
+                getLink(href='%s?cmd=Genre&amp;genre=%s&amp;index=%s%s' % (self.opdsroot,
+                        quote_plus(kwargs['genre']), index - limit, userid),
+                        ftype='application/atom+xml; profile=opds-catalog; kind=navigation', rel='previous'))
+
+        feed['links'] = links
+        feed['entries'] = entries
+        fin = index + limit
+        if fin > len(results):
+            fin = len(results)
+        logger.debug("Returning %s %s book%s, %s to %s from %s" % (len(entries), escape(kwargs['genre']),
+                                                                   plural(len(entries)), index + 1, fin, len(results)))
+        self.data = feed
+        return
+
 
     def _Authors(self, **kwargs):
         index = 0
