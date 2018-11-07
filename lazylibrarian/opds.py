@@ -411,7 +411,6 @@ class OPDS(object):
         self.data = feed
         return
 
-
     def _Genre(self, **kwargs):
         index = 0
         limit = self.PAGE_SIZE
@@ -474,10 +473,8 @@ class OPDS(object):
                     entry['content'] = escape('%s %s' % (book['BookName'], book['BookAdded']))
                 entries.append(entry)
 
-        feed = {}
-        feed['title'] = 'LazyLibrarian OPDS - Genre %s' % escape(kwargs['genre'])
-        feed['id'] = 'genre:%s' % escape(kwargs['genre'])
-        feed['updated'] = now()
+        feed = {'title': 'LazyLibrarian OPDS - Genre %s' % escape(kwargs['genre']),
+                'id': 'genre:%s' % escape(kwargs['genre']), 'updated': now()}
         links.append(getLink(href=self.opdsroot, ftype='application/atom+xml; profile=opds-catalog; kind=navigation',
                              rel='start', title='Home'))
         links.append(getLink(href='%s?cmd=Genres%s' % (self.opdsroot, userid),
@@ -505,7 +502,6 @@ class OPDS(object):
                                                                    plural(len(entries)), index + 1, fin, len(results)))
         self.data = feed
         return
-
 
     def _Authors(self, **kwargs):
         index = 0
