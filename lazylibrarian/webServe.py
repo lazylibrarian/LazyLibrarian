@@ -1654,15 +1654,15 @@ class WebInterface(object):
             if lazylibrarian.GROUP_CONCAT:
                 cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,books.bookid,booklang,'
                 cmd += ' booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary,'
-                cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series'
+                cmd += ' group_concat(series.seriesid || "~" || series.seriesname, "^") as series,bookgenre'
                 cmd += ' FROM books, authors'
                 cmd += ' LEFT OUTER JOIN member ON (books.BookID = member.BookID)'
                 cmd += ' LEFT OUTER JOIN series ON (member.SeriesID = series.SeriesID)'
                 cmd += ' WHERE books.AuthorID = authors.AuthorID'
             else:
                 cmd = 'SELECT bookimg,authorname,bookname,bookrate,bookdate,books.status,bookid,booklang,'
-                cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary'
-                cmd += ' from books,authors where books.AuthorID = authors.AuthorID'
+                cmd += 'booksub,booklink,workpage,books.authorid,seriesdisplay,booklibrary,audiostatus,audiolibrary,'
+                cmd += 'bookgenre from books,authors where books.AuthorID = authors.AuthorID'
 
             library = 'eBook'
             status_type = 'books.status'
@@ -1700,7 +1700,7 @@ class WebInterface(object):
             if lazylibrarian.GROUP_CONCAT:
                 cmd += ' GROUP BY bookimg, authorname, bookname, bookrate, bookdate, books.status, books.bookid,'
                 cmd += ' booklang, booksub, booklink, workpage, books.authorid, seriesdisplay, booklibrary, '
-                cmd += ' audiostatus, audiolibrary'
+                cmd += ' audiostatus, audiolibrary, bookgenre'
 
             if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                 logger.debug("getBooks %s: %s" % (cmd, str(args)))
@@ -1721,12 +1721,11 @@ class WebInterface(object):
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_serverside:
                         logger.debug("filter %s" % sSearch)
                     if library is not None:
+                        searchFields = ['AuthorName', 'BookName', 'BookDate', 'Status', 'BookID',
+                                        'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay', 'BookGenre']
                         if library == 'AudioBook':
-                            searchFields = ['AuthorName', 'BookName', 'BookDate', 'AudioStatus',
-                                            'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
-                        else:
-                            searchFields = ['AuthorName', 'BookName', 'BookDate', 'Status',
-                                            'BookID', 'BookLang', 'BookSub', 'AuthorID', 'SeriesDisplay']
+                            searchFields[3] = 'AudioStatus'
+
                         filtered = list()
                         sSearch_lower = sSearch.lower()
                         for row in rowlist:
@@ -1800,8 +1799,13 @@ class WebInterface(object):
                     if row[8]:  # is there a sub-title
                         title = '%s<br><small><i>%s</i></small>' % (title, row[8])
                     title = title + '<br>' + sitelink + ' ' + worklink
+                    bookgenre = row[-1]
+
                     if perm & lazylibrarian.perm_edit:
                         title = title + ' ' + editpage
+
+                    if bookgenre:
+                        title += ' [' + bookgenre + ']'
 
                     if not lazylibrarian.GROUP_CONCAT:
                         row.append('')  # empty string for series links as no group_concat

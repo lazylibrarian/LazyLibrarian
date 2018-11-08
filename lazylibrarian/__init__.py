@@ -100,6 +100,7 @@ AUTHORS_UPDATE = 0
 LOGIN_MSG = ''
 GROUP_CONCAT = 0
 HIST_REFRESH = 1000
+GITLAB_TOKEN = 'gitlab+deploy-token-25650:dPocQXZTi--s69kykCxJ@gitlab.com'
 
 # extended loglevels
 log_magdates = 1 << 2  # 4 magazine date matching

@@ -282,7 +282,7 @@ def getLatestVersion_FromGit():
             # Get the latest commit available from git
             if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
                 url = 'https://%s/api/v4/projects/%s%%2F%s/repository/branches/%s' % (
-                    lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                    lazylibrarian.GITLAB_TOKEN, lazylibrarian.CONFIG['GIT_USER'],
                     lazylibrarian.CONFIG['GIT_REPO'], branch)
             else:
                 url = 'https://api.%s/repos/%s/%s/commits/%s' % (
@@ -306,8 +306,6 @@ def getLatestVersion_FromGit():
                                                                tm.tm_min, tm.tm_sec)
             try:
                 headers = {'User-Agent': getUserAgent()}
-                if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
-                    headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
                 if age:
                     logmsg('debug', 'Checking if modified since %s' % age)
                     headers.update({'If-Modified-Since': age})
@@ -350,7 +348,7 @@ def getCommitDifferenceFromGit():
     elif lazylibrarian.CONFIG['CURRENT_VERSION'] and commits != 0:
         if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
             url = 'https://%s/api/v4/projects/%s%%2F%s/repository/compare?from=%s&to=%s' % (
-                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.GITLAB_TOKEN, lazylibrarian.CONFIG['GIT_USER'],
                 lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['CURRENT_VERSION'],
                 lazylibrarian.CONFIG['LATEST_VERSION'])
         else:
@@ -362,8 +360,6 @@ def getCommitDifferenceFromGit():
 
         try:
             headers = {'User-Agent': getUserAgent()}
-            if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
-                headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(url, timeout=timeout, headers=headers, proxies=proxies)
@@ -464,7 +460,7 @@ def update():
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
             tar_download_url = 'https://%s/%s/%s/-/archive/%s/%s-%s.tar.gz' % (
-                lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
+                lazylibrarian.GITLAB_TOKEN, lazylibrarian.CONFIG['GIT_USER'],
                 lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'],
                 lazylibrarian.CONFIG['GIT_REPO'], lazylibrarian.CONFIG['GIT_BRANCH'])
         else:
@@ -476,8 +472,6 @@ def update():
         try:
             logmsg('info', 'Downloading update from: ' + tar_download_url)
             headers = {'User-Agent': getUserAgent()}
-            if 'gitlab' in lazylibrarian.CONFIG['GIT_HOST']:
-                headers['Private-Token'] = '_G8Shnw1-xEWsXPi8fB_'
             proxies = proxyList()
             timeout = check_int(lazylibrarian.CONFIG['HTTP_TIMEOUT'], 30)
             r = requests.get(tar_download_url, timeout=timeout, headers=headers, proxies=proxies)
