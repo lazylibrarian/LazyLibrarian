@@ -164,12 +164,12 @@
                 % endif
                 % if lazylibrarian.SHOW_AUDIO != 0:
                   %if perm&lazylibrarian.perm_audio:
-                  <li><a id="audio" href="audio" class="navbarele">AudioBooks</a></li>
+                  <li><a id="audio" href="audio" class="navbarele">Audio</a></li>
                   % endif
                 % endif
                 % if lazylibrarian.SHOW_MAGS != 0:
                   %if perm&lazylibrarian.perm_magazines:
-                  <li><a id="magazines" href="magazines" class="navbarele">Magazines</a></li>
+                  <li><a id="magazines" href="magazines" class="navbarele">Mags</a></li>
                   % endif
                 % endif
                 %if perm&lazylibrarian.perm_managebooks:
@@ -184,6 +184,7 @@
                 %if perm&lazylibrarian.perm_config:
                   <li><a id="config" href="config" class="navbarcfg"><i class="fa fa-cog"></i> Config</a></li>
                 % endif
+                <li><a id="help" href="https://lazylibrarian.gitlab.io/" class="navbarele" target="_new"><i class="fa fa-question-circle"></i> Help</a></li>
               </ul>
             </div>
           </div>
