@@ -159,7 +159,7 @@ def getCurrentVersion():
 
     elif lazylibrarian.CONFIG['INSTALL_TYPE'] in ['source', 'package']:
 
-        version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+        version_file = os.path.join(lazylibrarian.CACHEDIR, 'version.txt')
 
         if not os.path.isfile(version_file):
             VERSION = 'No Version File'
@@ -405,7 +405,7 @@ def getCommitDifferenceFromGit():
 
 def updateVersionFile(new_version_id):
     # Update version.txt located in LL home dir.
-    version_path = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+    version_path = os.path.join(lazylibrarian.CACHEDIR, 'version.txt')
 
     try:
         logmsg('debug', "Updating [%s] with value [%s]" % (version_path, new_version_id))
