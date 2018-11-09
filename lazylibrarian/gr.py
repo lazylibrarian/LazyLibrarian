@@ -169,8 +169,10 @@ class GoodReads:
                         except (KeyError, AttributeError):
                             bookid = ""
 
-                        if not bookdesc:
-                            bookdesc = get_book_desc(isbn=bookisbn, author=authorNameResult, title=bookTitle)
+                        # Don't query google for every book we find, it's too slow and too many
+                        # api hits. Only query the ones we want to add to db later
+                        # if not bookdesc:
+                        #     bookdesc = get_book_desc(isbn=bookisbn, author=authorNameResult, title=bookTitle)
                         resultlist.append({
                             'authorname': authorNameResult,
                             'bookid': bookid,
