@@ -101,27 +101,27 @@ def initialize(options=None):
         },
         '/opensearch.xml': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearch.xml')
+            'tools.staticfile.filename': os.path.join(lazylibrarian.CACHEDIR, 'opensearch.xml')
         },
         '/opensearchbooks.xml': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchbooks.xml')
+            'tools.staticfile.filename': os.path.join(lazylibrarian.CACHEDIR, 'opensearchbooks.xml')
         },
         '/opensearchgenres.xml': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchgenres.xml')
+            'tools.staticfile.filename': os.path.join(lazylibrarian.CACHEDIR, 'opensearchgenres.xml')
         },
         '/opensearchmagazines.xml': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchmagazines.xml')
+            'tools.staticfile.filename': os.path.join(lazylibrarian.CACHEDIR, 'opensearchmagazines.xml')
         },
         '/opensearchseries.xml': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchseries.xml')
+            'tools.staticfile.filename': os.path.join(lazylibrarian.CACHEDIR, 'opensearchseries.xml')
         },
         '/opensearchauthors.xml': {
             'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(lazylibrarian.PROG_DIR, 'data', 'opensearchauthors.xml')
+            'tools.staticfile.filename': os.path.join(lazylibrarian.CACHEDIR, 'opensearchauthors.xml')
         }
     }
 
@@ -167,7 +167,7 @@ def initialize(options=None):
                      ('Books', 'RecentBooks'),
                      ('Genres', 'Genres'),
                      ('Series', 'Series')]:
-            with open(opensearch.replace('.template', '%s.xml' % item[0].lower()), 'w') as t:
+            with open(os.path.join(lazylibrarian.CACHEDIR, 'opensearch%s.xml' % item[0].lower()), 'w') as t:
                 for l in data:
                     t.write(l.replace('{label}', item[0]).replace(
                                       '{func}', 't=%s&amp;' % item[1]).replace(

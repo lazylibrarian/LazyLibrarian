@@ -113,7 +113,7 @@ def main():
         # This is the "emergency recovery" update in case lazylibrarian won't start.
         # Set up some dummy values for the update as we have not read the config file yet
         lazylibrarian.CONFIG['GIT_PROGRAM'] = ''
-        lazylibrarian.CONFIG['GIT_USER'] = 'dobytang'
+        lazylibrarian.CONFIG['GIT_USER'] = 'lazylibrarian'
         lazylibrarian.CONFIG['GIT_REPO'] = 'lazylibrarian'
         lazylibrarian.CONFIG['LOGLIMIT'] = 2000
         versioncheck.getInstallType()
@@ -186,7 +186,23 @@ def main():
                     lazylibrarian.CONFIG['GIT_UPDATED'] = str(int(time.time()))
                     logger.debug('Setting update timestamp to now')
 
-    version_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+    # flatpak insists on PROG_DIR being read-only so we have to move version.txt into CACHEDIR
+    old_file = os.path.join(lazylibrarian.PROG_DIR, 'version.txt')
+    version_file = os.path.join(lazylibrarian.CACHEDIR, 'version.txt')
+    if os.path.isfile(old_file):
+        if not os.path.isfile(version_file):
+            try:
+                with open(old_file, 'r') as s:
+                    with open(version_file, 'w') as d:
+                        d.write(s.read())
+            except OSError:
+                logger.warn("Unable to copy version.txt")
+        try:
+            os.remove(old_file)
+        except OSError:
+            pass
+
+
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so try to force update
         lazylibrarian.CONFIG['COMMITS_BEHIND'] = 1
