@@ -87,9 +87,10 @@ def upgrade_needed():
     # 40 add CoverPage to magazines table
     # 41 add Requester and AudioRequester to books table
     # 42 add SendTo to users table
-    # 43 move hosting to gitlab
+    # 43 remove foreign key constraint on wanted tabe
+    # 44 move hosting to gitlab
 
-    db_current_version = 42
+    db_current_version = 43
 
     if db_version < db_current_version:
         return db_current_version
@@ -157,8 +158,7 @@ def dbupgrade(db_current_version):
                                 'WorkPage TEXT, Manual TEXT, SeriesDisplay TEXT, BookLibrary TEXT, ' +
                                 'AudioFile TEXT, AudioLibrary TEXT, AudioStatus TEXT, WorkID TEXT, ' +
                                 'ScanResult TEXT, OriginalPubDate TEXT, Requester TEXT, AudioRequester TEXT)')
-                    myDB.action('CREATE TABLE wanted (BookID TEXT REFERENCES books (BookID) ON DELETE CASCADE, ' +
-                                'NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
+                    myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
                                 'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
                                 'Source TEXT, DownloadID TEXT, DLResult TEXT)')
                     myDB.action('CREATE TABLE magazines (Title TEXT UNIQUE, Regex TEXT, Status TEXT, ' +
@@ -1195,10 +1195,24 @@ def db_v42(myDB, upgradelog):
     upgradelog.write("%s v42: complete\n" % time.ctime())
 
 
-"""
 def db_v43(myDB, upgradelog):
+    lazylibrarian.UPDATE_MSG = 'Removing foreign key from wanted table'
+    upgradelog.write("%s v43: %s\n" % (time.ctime(), lazylibrarian.UPDATE_MSG))
+    myDB.action('DROP TABLE IF EXISTS temp_table')
+    myDB.action('ALTER TABLE wanted RENAME TO temp_table')
+    myDB.action('CREATE TABLE wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, ' +
+                'NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT, ' +
+                'Source TEXT, DownloadID TEXT, DLResult TEXT)')
+    myDB.action('INSERT INTO wanted SELECT BookID,NZBurl,NZBtitle,NZBdate,NZBprov,Status,NZBsize,AuxInfo,NZBmode,' +
+                'Source,DownloadID,DLResult FROM temp_table')
+    myDB.action('DROP TABLE temp_table')
+    upgradelog.write("%s v43: complete\n" % time.ctime())
+
+
+"""
+def db_v44(myDB, upgradelog):
     if lazylibrarian.CONFIG['GIT_USER'].lower() == 'philborman':
-        upgradelog.write("%s v43: %s\n" % (time.ctime(), "Updating git host"))
+        upgradelog.write("%s v44: %s\n" % (time.ctime(), "Updating git host"))
         timer = 60
         while timer > 0:
             msg = "<mark>IMPORTANT MESSAGE</mark><p>LazyLibrarian hosting has moved, the new location is<p>"
@@ -1211,5 +1225,5 @@ def db_v43(myDB, upgradelog):
         lazylibrarian.CONFIG['GIT_USER'] = 'LazyLibrarian'
         lazylibrarian.CONFIG['GIT_HOST'] = 'gitlab.com'
         lazylibrarian.config_write('Git')
-    upgradelog.write("%s v43: complete\n" % time.ctime())
+    upgradelog.write("%s v44: complete\n" % time.ctime())
 """

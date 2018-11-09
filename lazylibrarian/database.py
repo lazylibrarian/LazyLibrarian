@@ -78,7 +78,7 @@ class DBConnection:
                 # but this would also ignore null values as we can't specify which errors to ignore :-(
                 # Also the python interface to sqlite only returns english text messages, not error codes
                 msg = str(e).lower()
-                if 'UNIQUE' in suppress and ('not unique' in msg or 'unique constraint failed' in msg):
+                if suppress and 'UNIQUE' in suppress and ('not unique' in msg or 'unique constraint failed' in msg):
                     if lazylibrarian.LOGLEVEL & lazylibrarian.log_dbcomms:
                         logger.debug('Suppressed [%s] %s' % (query, e))
                         logger.debug("Suppressed args: [%s]" % str(args))
