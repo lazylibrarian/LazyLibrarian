@@ -725,7 +725,7 @@ class GoodReads:
                         if not rejected or (rejected and rejected[0] in ignorable and
                                             lazylibrarian.CONFIG['IMP_IGNORE']):
                             cmd = 'SELECT Status,AudioStatus,BookFile,AudioFile,Manual,BookAdded,BookName,'
-                            cmd += 'OriginalPubDate FROM books WHERE BookID=?'
+                            cmd += 'OriginalPubDate,BookDesc FROM books WHERE BookID=?'
                             existing = myDB.match(cmd, (bookid,))
                             if existing:
                                 book_status = existing['Status']
@@ -782,8 +782,13 @@ class GoodReads:
                             if locked:
                                 locked_count += 1
                             else:
-                                if not bookdesc:
-                                    bookdesc = get_book_desc(isbn=bookisbn, author=authorNameResult, title=bookname)
+                                if not bookdesc:  # nothing in the xml
+                                    if existing:  # but we might have tried google before
+                                        bookdesc = existing['BookDesc']
+                                    if not bookdesc:
+                                        bookdesc = get_book_desc(isbn=bookisbn, author=authorNameResult, title=bookname)
+                                        if not bookdesc:  # nothing from google, don't keep trying (except via api)
+                                            bookdesc = "No Description"
                                 controlValueDict = {"BookID": bookid}
                                 newValueDict = {
                                     "AuthorID": authorid,
@@ -1153,6 +1158,8 @@ class GoodReads:
 
         if not bookdesc:
             bookdesc = get_book_desc(isbn=bookisbn, author=authorname, title=bookname)
+            if not bookdesc:
+                bookdesc = 'No Description'
         controlValueDict = {"BookID": bookid}
         newValueDict = {
             "AuthorID": AuthorID,
