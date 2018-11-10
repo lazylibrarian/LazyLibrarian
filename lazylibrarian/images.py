@@ -311,7 +311,7 @@ def getBookCover(bookID=None, src=None):
                     img = ''
                     if source:
                         # noinspection PyUnresolvedReferences
-                        k = source.keys()[0]
+                        k = list(source.keys())[0]
                         try:
                             img = source[k]['cover']['medium']
                         except KeyError:

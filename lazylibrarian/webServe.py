@@ -2646,6 +2646,7 @@ class WebInterface(object):
                         if authorcheck:
                             if authorcheck['Status'] not in ['Active', 'Wanted']:
                                 myDB.action('delete from books where bookid=?', (bookid,))
+                                myDB.action('delete from wanted where bookid=?', (bookid,))
                                 logger.info('Removed "%s" from database' % bookname)
                             elif 'eBook' in library:
                                 myDB.upsert("books", {"Status": "Ignored"}, {"BookID": bookid})
@@ -2655,6 +2656,7 @@ class WebInterface(object):
                                 logger.debug('AudioStatus set to Ignored for "%s"' % bookname)
                         else:
                             myDB.action('delete from books where bookid=?', (bookid,))
+                            myDB.action('delete from wanted where bookid=?', (bookid,))
                             logger.info('Removed "%s" from database' % bookname)
 
         if check_totals:

@@ -22,13 +22,13 @@
     DIV#main.main.container { width: 90%; }
   </style>
   %if lazylibrarian.CONFIG['TOGGLES'] == True:
-  Toggle: <a class="toggle-vis" data-column="0">Timestamp</a>
-        - <a class="toggle-vis" data-column="1">Level</a>
+  Toggle: <a class="toggle-vis" data-column="0">Timestamp - </a>
+        <a class="toggle-vis" data-column="1">Level</a>
         %if lazylibrarian.LOGLEVEL >= 2:
-          - <a class="toggle-vis" data-column="2">Thread</a>
-          - <a class="toggle-vis" data-column="3">File</a>
-          - <a class="toggle-vis" data-column="4">Method</a>
-          - <a class="toggle-vis" data-column="5">Line No</a>
+          <a class="toggle-vis" data-column="2"> - Thread - </a>
+          <a class="toggle-vis" data-column="3">File - </a>
+          <a class="toggle-vis" data-column="4">Method - </a>
+          <a class="toggle-vis" data-column="5">Line No</a>
         %endif:
 
   %endif

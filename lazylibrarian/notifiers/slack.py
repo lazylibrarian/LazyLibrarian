@@ -57,9 +57,7 @@ class SlackNotifier:
         headers = {"Content-Type": "application/json"}
 
         postdata = '{"username": "LazyLibrarian", '
-#        postdata += '"attachments": [{"text": "%s", "thumb_url": ' % message
-#        postdata += '"https://github.com/DobyTang/LazyLibrarian/raw/master/data/images/ll.png"}], '
-#   Removed attachment approach to text and icon_url in slack formatting cleanup effort - bbq 20180724
+        #   Removed attachment approach to text and icon_url in slack formatting cleanup effort - bbq 20180724
         postdata += '"icon_url": "https://%s/%s/%s/raw/master/data/images/ll.png", ' % \
                     (lazylibrarian.CONFIG['GIT_HOST'], lazylibrarian.CONFIG['GIT_USER'],
                      lazylibrarian.CONFIG['GIT_REPO'])

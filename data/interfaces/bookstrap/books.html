@@ -65,7 +65,14 @@
       <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
       %endif
       %if lazylibrarian.CONFIG['TOGGLES'] == True:
-      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Title</a> - <a class="toggle-vis" data-column="4">Series</a> - <a class="toggle-vis" data-column="5">Rating</a> - <a class="toggle-vis" data-column="6">Date</a> - <a class="toggle-vis" data-column="7">Added</a> - <a class="toggle-vis" data-column="8">Status</a>
+      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover - </a>
+      <a class="toggle-vis" data-column="2">Author - </a>
+      <a class="toggle-vis" data-column="3">Title - </a>
+      <a class="toggle-vis" data-column="4">Series - </a>
+      <a class="toggle-vis hidden-sm hidden-xs" data-column="5">Rating - </a>
+      <a class="toggle-vis" data-column="6">Date - </a>
+      <a class="toggle-vis" data-column="7">Added - </a>
+      <a class="toggle-vis" data-column="8">Status</a>
       %endif
     <p>&nbsp;</p>
     </div>

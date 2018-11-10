@@ -517,7 +517,7 @@ class Api(object):
 
     def _setNoDesc(self):
         q = 'SELECT BookID,BookName,AuthorName,BookISBN from books,authors where '
-        q += '(BookDesc="" or BookDesc is NULL) and books.AuthorID = authors.AuthorID'
+        q += '(BookDesc="" or BookDesc="No Description" or BookDesc is NULL) and books.AuthorID = authors.AuthorID'
         myDB = database.DBConnection()
         res = myDB.select(q)
         descs = 0
