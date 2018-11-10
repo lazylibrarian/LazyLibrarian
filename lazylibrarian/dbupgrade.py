@@ -1208,10 +1208,9 @@ def db_v43(myDB, upgradelog):
     myDB.action('DROP TABLE temp_table')
     upgradelog.write("%s v43: complete\n" % time.ctime())
 
-
 """
 def db_v44(myDB, upgradelog):
-    if lazylibrarian.CONFIG['GIT_USER'].lower() == 'philborman':
+    if lazylibrarian.CONFIG['GIT_USER'].lower() == 'dobytang':
         upgradelog.write("%s v44: %s\n" % (time.ctime(), "Updating git host"))
         timer = 60
         while timer > 0:
@@ -1224,6 +1223,7 @@ def db_v44(myDB, upgradelog):
             timer -= 1
         lazylibrarian.CONFIG['GIT_USER'] = 'LazyLibrarian'
         lazylibrarian.CONFIG['GIT_HOST'] = 'gitlab.com'
+        lazylibrarian.CONFIG['GITLAB_TOKEN'] = 'gitlab+deploy-token-25650:dPocQXZTi--s69kykCxJ@gitlab.com'
         lazylibrarian.config_write('Git')
     upgradelog.write("%s v44: complete\n" % time.ctime())
 """

@@ -6,13 +6,13 @@
 <div id="subhead_container">
     <div id="subhead_menu">
       <a onclick="self.shutdownQA(this)" class="button btn btn-sm btn-danger" data-toggle="tooltip" data-placement="bottom" title="Terminate the LazyLibrarian process - Be careful if you're doing this remotely"><i class="fa fa-power-off"></i> Shutdown</a>
-      <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')" data-toggle="tooltip" data-placement="bottom" title="Restart LazyLibrarian"><i class="fa fa-sync"></i> Restart</a>
+      <a class="button btn btn-sm btn-warning" onclick="self.restartQA(this, '', '')"><i class="fa fa-sync"></i> Restart</a>
       <button class="button btn btn-sm btn-primary" type="button" value="System Info" id="sysinfo"><i class="fa fa-cogs"></i> System Info</button>
       <button class="button btn btn-sm btn-primary" type="button" value="Show Jobs" id="show_Jobs"><i class="fa fa-list-ul"></i> Job Status</button>
       <button class="button btn btn-sm btn-primary" type="button" value="Show Stats" id="show_Stats"><i class="fa fa-list-ul"></i> DB Stats</button>
       <button class="button btn btn-sm btn-primary" type="button" value="checkforupdates" id="checkforupdates"><i class="fa fa-list-alt"></i> Check Version</button>
       %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
-      <a class="button btn btn-sm btn-primary" href="userAdmin" data-toggle="tooltip" data-placement="bottom" title="Manage user accounts"><i class="fa fa-user"></i> User Admin</a>
+      <a class="button btn btn-sm btn-primary" href="userAdmin"><i class="fa fa-user"></i> User Admin</a>
       %endif
      <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Checking, please wait...</button>
     </div>
