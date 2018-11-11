@@ -90,7 +90,7 @@ def upgrade_needed():
     # 43 remove foreign key constraint on wanted tabe
     # 44 move hosting to gitlab
 
-    db_current_version = 43
+    db_current_version = 44
 
     if db_version < db_current_version:
         return db_current_version
@@ -1208,7 +1208,7 @@ def db_v43(myDB, upgradelog):
     myDB.action('DROP TABLE temp_table')
     upgradelog.write("%s v43: complete\n" % time.ctime())
 
-"""
+    
 def db_v44(myDB, upgradelog):
     if lazylibrarian.CONFIG['GIT_USER'].lower() == 'dobytang':
         upgradelog.write("%s v44: %s\n" % (time.ctime(), "Updating git host"))
@@ -1226,4 +1226,3 @@ def db_v44(myDB, upgradelog):
         lazylibrarian.CONFIG['GITLAB_TOKEN'] = 'gitlab+deploy-token-25650:dPocQXZTi--s69kykCxJ@gitlab.com'
         lazylibrarian.config_write('Git')
     upgradelog.write("%s v44: complete\n" % time.ctime())
-"""
