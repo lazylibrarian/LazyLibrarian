@@ -23,6 +23,7 @@ from lazylibrarian import logger, database
 from lazylibrarian.common import restartJobs, pwd_generator
 from lazylibrarian.formatter import plural, makeUnicode, makeBytestr, md5_utf8
 from lazylibrarian.importer import addAuthorToDB, update_totals
+from lazylibrarian.versioncheck import runGit
 
 
 def upgrade_needed():
