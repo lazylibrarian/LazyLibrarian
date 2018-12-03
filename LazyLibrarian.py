@@ -9,6 +9,7 @@ import platform
 import sys
 import threading
 import time
+import shutil
 
 import lazylibrarian
 from lazylibrarian import webStart, logger, versioncheck, dbupgrade
@@ -202,6 +203,13 @@ def main():
         except OSError:
             pass
 
+    # for dockers that haven't updated correctly from github to gitlab, force source install
+    if lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
+        if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' and lazylibrarian.CONFIG['COMMITS_BEHIND'] == 0:
+            if os.path.exists('/app/lazylibrarian/.git'):
+                os.remove(version_file)
+                shutil.rmtree('/app/lazylibrarian/.git')
+                lazylibrarian.CONFIG['INSTALL_TYPE'] = 'source'
 
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so try to force update
