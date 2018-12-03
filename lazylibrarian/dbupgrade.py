@@ -1232,6 +1232,10 @@ def db_v44(myDB, upgradelog):
 def db_v45(myDB, upgradelog):
     if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git':
         upgradelog.write("%s v45: %s\n" % (time.ctime(), "Updating local git repo"))
+        lazylibrarian.CONFIG['GIT_USER'] = 'LazyLibrarian'
+        lazylibrarian.CONFIG['GIT_HOST'] = 'gitlab.com'
+        lazylibrarian.CONFIG['GITLAB_TOKEN'] = 'gitlab+deploy-token-25650:dPocQXZTi--s69kykCxJ@gitlab.com'
+        lazylibrarian.config_write('Git')
         runGit('remote rm origin')
         runGit('remote add origin https://gitlab.com/LazyLibrarian/LazyLibrarian.git')
         runGit('config master.remote origin')
@@ -1240,3 +1244,5 @@ def db_v45(myDB, upgradelog):
         runGit('pull origin master --allow-unrelated-histories')
         runGit('branch --set-upstream-to=origin/master master')
     upgradelog.write("%s v45: complete\n" % time.ctime())
+    lazylibrarian.SIGNAL = 'update'
+    
