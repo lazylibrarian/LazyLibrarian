@@ -210,6 +210,10 @@ def main():
                 os.remove(version_file)
                 shutil.rmtree('/app/lazylibrarian/.git')
                 lazylibrarian.CONFIG['INSTALL_TYPE'] = 'source'
+                lazylibrarian.CONFIG['GIT_USER'] = 'LazyLibrarian'
+                lazylibrarian.CONFIG['GIT_HOST'] = 'gitlab.com'
+                lazylibrarian.CONFIG['GITLAB_TOKEN'] = 'gitlab+deploy-token-26212:Hbo3d8rfZmSx4hL1Fdms@gitlab.com'
+                lazylibrarian.config_write('Git')
 
     if not os.path.isfile(version_file) and lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
         # User may be running an old source zip, so try to force update
