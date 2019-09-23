@@ -1,0 +1,137 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+            <li><a href="forceUpdate" id="button"> Refresh Active Authors </a></li>
+         <li><a href="libraryScan" id="button"> Library Scan </a></li>
+        </ul>
+    </div>
+</%def>
+
+<%def name="body()">
+<BR><BR>
+<h1>&nbsp;&nbsp;${title}</h1>
+    <table class="display" id="author_table">
+            <%
+            if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'class="hidden"'
+            %>
+<thead>
+  <tr>
+    <th id="status" ${hidden}>Image</th>
+    <th id="authorname">Author</th>
+    <th id="bookname">Latest Book</th>
+    <th id="date">Released</th>
+    <th id="have">Downloaded</th>
+    <th id="status">Status</th>
+  </tr>
+</thead>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+</%def>
+<%def name="headIncludes()">
+  <link rel="stylesheet" href="css/data_table.css">
+</%def>
+<%def name="javascriptIncludes()">
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script src="js/libs/natural.js"></script>
+  <script>
+    $(document).ready(function()
+    {
+        var show = ""+${lazylibrarian.CONFIG['AUTHOR_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        $('#author_table').dataTable(
+            {
+                "bAutoWidth": false,
+                "aoColumns": [
+                    {"bSortable": false,
+                     "bVisible": showimg,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[0] + '" target="_new"><img src="' + oObj.aData[0] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        return '<a href="authorPage?AuthorID=' + oObj.aData[10] + '">' + oObj.aData[1] + '</a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        if ( oObj.aData[2] == null) {return ''}
+                        return '<a href="' + oObj.aData[7] + '" target="_new">' + oObj.aData[2] + '</a>'
+                      }
+                    },
+                    null,
+                    { "fnRender": function ( oObj ) {
+                        return oObj.aData[11]
+                      }
+                    },
+                    null
+                    ],
+                "responsive": true,
+                "order": [[ 1, 'asc']],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ authors per page",
+                    "sEmptyTable": "No authors found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ authors",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 authors",
+                    "sInfoFiltered":"(filtered from _MAX_ total authors)"},
+                "bServerSide": true,
+                "sAjaxSource": 'getIndex',
+                "bFilter": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "sPaginationType": "full_numbers",
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    if ( show != '1' )
+                    {
+                        $('td', nRow).eq(2).addClass('center');
+                        $('td', nRow).eq(3).addClass('center');
+                        $('td', nRow).eq(4).addClass('center');
+                    }
+                    else
+                    {
+                        $('td', nRow).eq(3).addClass('center');
+                        $('td', nRow).eq(4).addClass('center');
+                        $('td', nRow).eq(5).addClass('center');
+                    }
+
+                    var w = window.innerWidth;
+                    if ( w < 1024 )
+                    {   // hide date on ipad_landscape
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        //$('td', nRow).eq(6).addClass('hidden');
+                    };
+                    if ( w < 768 )
+                    {   // hide latest book on ipad_portrait
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
+                        //$('td', nRow).eq(4).addClass('hidden');
+                    };
+                    return nRow;
+                },
+                "aaSorting": [[1, 'asc']],
+            });
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+    });
+  </script>
+</%def>

@@ -1,99 +1,252 @@
 <%inherit file="base.html"/>
-
+<%!
+    import lazylibrarian
+%>
 <%def name="headerIncludes()">
-    <div id="subhead_container">
-        <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-refresh"></i> Refresh Active Authors</a>
-        <a href="libraryScan" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-flash"></i> Library Scan</a>
+    <div id="subhead_container" class="row">
+      <form action="search" method="get">
+        <div id="subhead_menu"  class="col-xs-12 col-md-8">
+            %if perm&lazylibrarian.perm_force:
+            <a href="forceUpdate" class="btn btn-sm btn-primary" id="refresh"><i class="fa fa-sync"></i> Refresh Active Authors</a>
+            %endif
+            %if lazylibrarian.IGNORED_AUTHORS == True:
+              <a href="toggleAuth" class="button btn btn-sm btn-primary"><i class="fa fa-user"></i> Show Active Authors</a>
+            %else:
+              <a href="toggleAuth" class="button btn btn-sm btn-primary"><i class="fa fa-user-secret"></i> Show Ignored Authors</a>
+            %endif
+        </div>
+        <div class="clearfix visible-xs"><hr/></div>
+        %if perm&lazylibrarian.perm_search:
+        <div class="col-xs-12 col-md-4">
+        <div class="form-group">
+          <label class="sr-only">Search</label>
+          <div class="input-group">
+            <input type="search" id="name" name="name" placeholder="Title / Author / ISBN" class="form-control input-sm col-xs-12">
+            <span class="input-group-btn">
+              <button type="submit" value="Book" class="btn btn-sm btn-primary" data-toggle="tooltip" data-placement="bottom" title="Search for book"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        </div>
+        %endif
+      </form>
     </div>
 </%def>
 
 <%def name="body()">
-<h1>Authors</h1>    
-<div class="table-responsive">
+<h1>${title}</h1>
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <p>
+    <button onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Author Refresh in progress ...</button>
+    </p>
+  %endif
+
+<form name="markAuthors" id="markAuthors" action="markAuthors" method="get" class="form-inline" onsubmit="return false;">
+  <div class="indented">
+    %if perm&lazylibrarian.perm_status:
+      <div class="form-group">
+        <label for="markAuthors" class="control-label">Mark selected as</label>
+        <select class="markAuthors form-control input-sm" id="action" name="action">
+          <option value="Active">Active</option>
+          <option value="Wanted">Wanted</option>
+          <option value="Ignored">Ignored</option>
+          <option value="Paused">Paused</option>
+          <option value="Remove">Remove</option>
+          <option value="Delete">Delete</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
+      %endif
+      %if lazylibrarian.CONFIG['TOGGLES'] == True:
+        &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Image</a> - <a class="toggle-vis" data-column="2">Author</a> - <a class="toggle-vis" data-column="3">Latest</a> - <a class="toggle-vis" data-column="4">Released</a> - <a class="toggle-vis" data-column="5">Downloaded</a> - <a class="toggle-vis" data-column="6">Status</a>
+        <p>&nbsp;</p>
+      %endif
+  <div class="table-responsive">
     <table class="display table table-striped table-hover table-bordered" id="author_table">
-        <thead>
-            <tr>
-                <th class="authorname col-xs-3">Author</th>
-                <th class="bookname col-xs-4">Latest Book</th>
-                <th class="date col-xs-1 text-center">Released</th>
-                <th class="have col-xs-3 text-center">Downloaded</th>
-                <th class="status col-xs-1 text-center">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-        %for author in authors:
-            <%
-        		totalbooks = author['UnignoredBooks']
-        		havebooks = author['HaveBooks']
-        		if not havebooks:
-        			havebooks = 0
-        		try:
-        			percent = (havebooks*100.0)/totalbooks
-        			if percent > 100:
-        				percent = 100
-        			if percent <= 100:
-        				css = 'success'
-        			if percent <= 75:
-        				css = 'info'
-        			if percent <= 50:
-        				css = 'warning'
-        			if percent <= 25:
-        				css = 'danger'
-        		except (ZeroDivisionError, TypeError):
-        			percent = 0
-        			totalbooks = '0'        			
-                                css = 'danger'
-
-        		if author['Status'] == 'Paused':
-        			grade = 'X'
-
-            %>
-            <tr>
-                <td class="name"><span title="${author['AuthorName']}"></span><a href="authorPage?AuthorName=${author['AuthorName']|u}">${author['AuthorName']}</a></td>
-                <td class="bookname"><span title="${author['LastBook']}"></span><a href="${author['LastLink']}" target="_blank" rel="noreferrer">${author['LastBook']}</a></td>
-                <td class="date text-center">${author['LastDate']}</td>
-                <td class="have "><span title="${percent}" class="sr-only">${percent}% Complete</span>
-                    <div class="progress center-block" style="width: 150px;">
-                        <div class="progress-bar-${css} progress-bar progress-bar-striped" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100" style="width: ${percent}%;">
-                            <span class="sr-only">${percent}% Complete</span><span class="progressbar-front-text">${havebooks}/${totalbooks}</span>
-                        </div>                    
-                    </div>                    				    
-                </td>
-				
-                <td class="status text-center">${author['Status']}</td>
-            </tr>
-        %endfor
-        </tbody>
+        <%
+        if lazylibrarian.CONFIG['TOGGLES'] == True:
+            hidden = ''
+        else:
+            if lazylibrarian.CONFIG['AUTHOR_IMG'] == True:
+                hidden = ''
+            else:
+                hidden = 'hidden'
+        %>
+      <thead>
+        <tr>
+            %if perm&lazylibrarian.perm_status:
+            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            %else:
+            <th class="hidden"></th>
+            %endif
+          <th class="authorimg no-sort ${hidden}">Image</th>
+          <th class="authorname">Author</th>
+          <th class="bookname">Latest Book</th>
+          <th class="date text-center">Released</th>
+          <th class="have text-center">Downloaded</th>
+          <th class="status text-center">Status</th>
+        </tr>
+      </thead>
     </table>
-</div>
-<p>&nbsp;</p>
+  </div>
+</form>
 </%def>
-
 <%def name="headIncludes()">
-    
+  %if lazylibrarian.AUTHORS_UPDATE == True:
+    <meta http-equiv="refresh" content="20">
+  %endif
 </%def>
-
 <%def name="javascriptIncludes()">
-
-    <script type="text/javascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
-        $('#author_table').dataTable(
+        $('input.deletable').wrap('<span class="deleteicon" />').after($('<span/>').click(function() {
+            $(this).prev('input').val('').trigger('change').focus();
+        }));
+        var show = ""+${lazylibrarian.CONFIG['AUTHOR_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        var table = $('#author_table').DataTable(
             {
                 "responsive": true,
+                "bAutoWidth": false,
+                "stateSave": true,
+                "order": [[ 2, 'asc']],
+                "columnDefs":
+                    [{ targets: 'no-sort', orderable: false },
+                     { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + row[10] + '" class="checkbox" />';}
+                     },
+                     { targets: [1],
+                         'visible': showimg,
+                         'render': function(data, type, row) {
+                            return '<a href="' + row[0] + '" target="_blank" rel="noreferrer"><img src="' + row[0] + '" alt="Cover" class="bookcover-sm"></a>';} },
+                     { targets: [2], 'render': function(data, type, row) {
+                     %if perm&lazylibrarian.perm_authorbooks:
+                        btn = '<a href=\'authorPage?AuthorID=' + row[10] + '\'">' + row[1] + '</a>'
+                     %else:
+                        btn = '<a>' + row[1] + '</a>'
+                     %endif
+                     return btn ;}
+                     },
+                     { targets: [3], 'render': function(data, type, row) {
+                        if (row[2] == null) {return ''};
+                            return '<button onclick="bookinfo(\'' + row[11] +
+                                '\')" class="button btn-link text-left" type="button">' + row[2] + '</button>';} },
+                     { targets: [4],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return row[3];} },
+                     { targets: [5],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                        var have = +row[8] || 0;
+                        var tot = +row[9] || 0;
+                        var percent = (have * 100 / tot);
+                        if (percent <= 25) {css = 'danger'}
+                        else if (percent <= 50) {css = 'warning'}
+                        else if (percent <= 75) {css = 'info'}
+                        else {css = 'success'};
+                        bar = '<div class="progress center-block" style="width: 120px;"><div class="progress-bar-' +
+                        css + ' progress-bar progress-bar-striped" role="progressbar" aria-valuenow="' + percent +
+                        '" aria-valuemin="0" aria-valuemax="100" style="width: ' + percent +
+                        '%;"><span class="sr-only">' + percent +
+                        '% Complete</span><span class="progressbar-front-text">' + have + '/' + tot +
+                        '</span></div></div>';
+                        return bar;} },
+                     { targets: [6],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return row[5];} },
+                     { type: 'natural-nohtml', targets: 5 }],
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No authors found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
-                "bStateSave": true,
+                "bServerSide": true,
+                "sAjaxSource": 'getIndex',
+                "bFilter": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    %if perm&lazylibrarian.perm_status == 0:
+                      $('td', nRow).eq(0).addClass("hidden");
+                    %endif
+                    return nRow;
+                },
+                "aaSorting": [[2, 'asc']],
             });
-			$('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Results filter");
+        $('a.toggle-vis').click(function (e) {
+            e.preventDefault();
+            var column = table.column( $(this).attr('data-column') );
+            column.visible( ! column.visible() );
+        } );
     });
-    </script>
+
+    function validateForm() {
+        var x = document.forms["markAuthors"]["action"].value;
+        var c = (document.querySelectorAll('input[class="checkbox"]:checked').length);
+        if (c > 0 && (x == "Delete" || x == "Remove")) {
+            if (x == "Delete") {
+                if (c == 1){ msg = "Are you sure you want to permanently delete the selected author and their books?"}
+                if (c > 1){ msg = "Are you sure you want to permanently delete the " + c +
+                            " selected authors and their books?"}
+                };
+            if (x == "Remove") {
+                if (c == 1){ msg = "Are you sure you want to remove the selected author?"}
+                if (c > 1){ msg = "Are you sure you want to remove the " + c + " selected authors?"}
+                };
+            bootbox.confirm({
+                message: msg,
+                buttons: {
+                    confirm: {
+                        label: 'Yes',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'No',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function (result) {
+                    if (result) { document.getElementById("markAuthors").submit(); }
+                }
+            });
+            return false;
+        }
+        else { document.getElementById("markAuthors").submit(); }
+    }
+
+    function bookinfo(bookid) {
+        $.get('bookdesc', {'bookid': bookid},
+        function(data) {
+            var $textAndPic = $('<div></div>');
+            $textAndPic.append('<img src="./cache/book/' + bookid + '.jpg" />');
+            var res = data.split('^');
+            var title = res[0]
+            var desc = res[1]
+            $textAndPic.append('<br>' + desc + ' <br />');
+            bootbox.dialog({
+                size: "large",
+                title: title,
+                message: $textAndPic,
+                buttons: {
+                   primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            });
+        });
+    };
+
+  </script>
 </%def>

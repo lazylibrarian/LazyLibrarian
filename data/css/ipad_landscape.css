@@ -37,7 +37,7 @@ table#book_table th#authorname, td#authorname {  }
 table#book_table th#status, td#status {  }
 table#book_table th#date, td#date { display:none; }
 table#book_table th#series, td#series {  }
-table#book_table th#seriesNum, td#seriesNum { }
+table#book_table th#seriesNum, td#seriesNum { vertical-align: middle; }
 table#book_table th#language, td#language {  }
 table#book_table th#stars, td#stars { display:none; }
 

@@ -1,0 +1,173 @@
+<%inherit file="base.html" />
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li><a href="importAlternate" id="button"> Import Book </a></li>
+      <li><a href="importCSV&amp;library=eBook" id="button"> Import CSV Wishlist </a></li>
+      <li><a href="exportCSV&amp;library=eBook" id="button"> Export CSV Wishlist </a></li>
+    </ul>
+  </div>
+</%def>
+<%def name="body()">
+  <BR><BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <br>
+  <form action="manage" method="get">
+    <label>&nbsp;&nbsp;Books with status: </label>
+    <select name="whichStatus">
+      %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
+      <option value="${item}"
+            %if item == whichStatus:
+                selected = "selected"
+            %endif
+            >${item}</option>
+      %endfor
+    </select>
+    <input  class="btn" type="submit" value="Manage" />
+  </form>
+  <br>
+  <form action="markBooks" method="get"><input type="hidden" name="redirect" value="manage">
+    <table class="display" id="book_table" style="width:100%;">
+      <thead>
+        <tr>
+          <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="bookart">Cover</th>
+          <th id="authorname">Author</th>
+          <th id="bookname">Title</th>
+          <th id="series">Series</th>
+          <th id="stars" class="center">Rating</th>
+          <th id="date" class="center">Released</th>
+        </tr>
+      </thead>
+    </table>
+    <p>
+      &nbsp;&nbsp;Change selected books to:
+      <select class="markBooks" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
+        <option value="${item}">${item}</option>
+        %endfor
+      </select>
+      <input type="submit" class="markBooks" value="Go">
+    </p>
+  </form>
+</%def>
+<%def name="headIncludes()">
+  <link rel="stylesheet" href="css/data_table.css">
+</%def>
+<%def name="javascriptIncludes()">
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
+    $(document).ready(function()
+    {
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        var oTable = $('#book_table').dataTable(
+            {
+                "bAutoWidth": false,
+                "order": [[ 2, 'asc' ]],
+                "aoColumns": [
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    {"bSortable": false,
+                     "bVisible": showimg,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        return '<a href="authorPage?AuthorID=' + oObj.aData[8] + '">' + oObj.aData[2] + '</a>'
+                      }
+                    },
+                    null,
+                    null,
+                    { "fnRender": function ( oObj ) {
+                        return '<img src="images/' + oObj.aData[5] + '-stars.png" alt="Rating">'
+                      }
+                    },
+                    null
+                    ],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No books found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "sPaginationType": "full_numbers",
+                "aaSorting": [[2, 'asc']],
+                "bServerSide": true,
+                "bFilter": true,
+                "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&source=Manage',
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass('center');
+                    if ( show != '1' )
+                    {
+                        $('td', nRow).eq(4).addClass('center');
+                        $('td', nRow).eq(5).addClass('center');
+                    }
+                    else
+                    {
+                        $('td', nRow).eq(5).addClass('center');
+                        $('td', nRow).eq(6).addClass('center');
+                    }
+                    var w = window.innerWidth;
+                    if ( w < 1024 )
+                    {   // hide stars,date on medium devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                        }
+                    }
+                    if ( w < 768 )
+                    {   // hide cover,stars,date on small devices
+                        if ( show == '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                    }
+                    if ( w < 640 )
+                    {   // hide cover,series,stars,date on smaller devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                        }
+                    }
+                    if ( w < 320 )
+                    {   // hide cover,author,series,stars,date on smallest devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                        }
+                    }
+                    return nRow;
+                },
+            });
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        //$(window).resize(function() {oTable.fnDraw(false)});
+    });
+  </script>
+</%def>

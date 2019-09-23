@@ -1,0 +1,92 @@
+<%inherit file="base.html" />
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+  <div id="subhead_container">
+  </div>
+</%def>
+<%def name="body()">
+  <BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <br>
+  <form action="pastIssues" method="get">
+    Manage Issues with status <select name="whichStatus">
+      %for item in ['Skipped', 'Ignored', 'Wanted', 'Snatched']:
+      <option value="${item}"
+                %if whichStatus == item:
+                    selected = "selected"
+                %endif
+            >${item}</option>
+      %endfor
+    </select>
+    <input  class="btn" type="submit" value="Manage" />
+  </form>
+  <br>
+  <h3>Magazines with status ${whichStatus}</h3>
+  <br>
+  <form action="markPastIssues" method="get"><input type="hidden" name="redirect" value="manageissues">
+    <table class="display" id="book_table">
+      <thead>
+        <tr>
+          <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="magtitle">Title</th>
+          <th id="lastacquired">NZBdate</th>
+          <th id="issuedate">Issue Date</th>
+          <th id="provider">NZBprov</th>
+        </tr>
+      </thead>
+    </table>
+    <p>
+      Change selected magazines to <select class="markPastIssues" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+        %for item in ['Skipped', 'Wanted', 'Ignored', 'Remove']:
+        %if whichStatus != item:
+        <option value="${item}">${item}</option>
+        %endif
+        %endfor
+      </select>
+      <input type="submit" class="markPastIssues" value="Go">
+    </p>
+  </form>
+</%def>
+<%def name="headIncludes()">
+  <link rel="stylesheet" href="css/data_table.css">
+</%def>
+<%def name="javascriptIncludes()">
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
+    $(document).ready(function()
+    {
+        $('#book_table').dataTable(
+            {
+                "order": [[ 1, 'asc' ]],
+                "aoColumns": [
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    null,
+                    null,
+                    null,
+                    null
+                    ],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ magazines per page",
+                    "sEmptyTable": "No matching issues found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 magazines",
+                    "sInfoFiltered":"(filtered from _MAX_ total magazines)"},
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "sPaginationType": "full_numbers",
+                "aaSorting": [[1, 'asc']],
+                "bServerSide": true,
+                // need to pass requested status filter
+                "sAjaxSource": 'getPastIssues?whichStatus=${whichStatus}',
+                "bFilter": true,
+            });
+            $('.dataTables_filter input').attr("placeholder", "Search table here");
+    });
+  </script>
+</%def>

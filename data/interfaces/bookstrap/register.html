@@ -1,0 +1,77 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<h1>LazyLibrarian ${title}</h1>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6 col-sm-offset-3">
+      <h4 class="">Please complete this short form and press "Submit"</h4>
+      <h5 class="">Your message will be reviewed and you will receive a reply by email</h5>
+    </div>
+    <div class="col-sm-6 col-sm-offset-3 ptop21">
+      <div class="login-container">
+        <div class="row">
+          <div class="col-xs-12">
+              <div class="form-group">
+                <label for="fullname">Full Name</label>
+                <input id="fullname" type="fullname" class="form-control" name="fullname" value="">
+              </div>
+              <div class="form-group">
+                <label for="username">Username (if already registered)</label>
+                <input id="username" type="username" class="form-control" name="username" value="">
+              </div>
+              <div class="form-group">
+                <label class="ptop15" for="email">Email Address (required for reply)</label>
+                <div class="">
+                  <input id="email" type="email" class="form-control" name="email">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="ptop15" for="message">Message to Admin (optional)</label>
+                <div class="">
+                  <input id="message" type="message" class="form-control" name="message">
+                </div>
+              </div>
+              <div class="ptop21">
+                <button name='register' id='register' class="btn btn-primary btn-block btn-lg btn-inverse">Submit</button>
+              </div>
+            <h4 id="message">${lazylibrarian.LOGIN_MSG}</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+  <script type="text/javascript">
+    $(document).ready(function(){
+        $('#register').on('click', function(e) {
+            var fullname = $.trim($("#fullname").val());
+            var username = $.trim($("#username").val());
+            var email = $.trim($("#email").val());
+            var message = $.trim($("#message").val());
+            $.get('user_contact', {'fullname': fullname, 'username': username, 'email': email, 'message': message},
+                function(data) {
+                bootbox.dialog({
+                    title: 'User Registration',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+    });
+  </script>
+</%def>

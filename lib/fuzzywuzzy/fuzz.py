@@ -25,46 +25,38 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 from __future__ import unicode_literals
+import platform
 import warnings
 
 try:
-    from StringMatcher import StringMatcher as SequenceMatcher
+    from .StringMatcher import StringMatcher as SequenceMatcher
 except ImportError:
-    #warnings.warn('Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning')
+    #if platform.python_implementation() != "PyPy":
+    #    warnings.warn('Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning')
     from difflib import SequenceMatcher
-import utils
+
+from . import utils
 
 
 ###########################
 # Basic Scoring Functions #
 ###########################
 
+@utils.check_for_none
+@utils.check_empty_string
 def ratio(s1, s2):
-    if s1 is None:
-        raise TypeError("s1 is None")
-    if s2 is None:
-        raise TypeError("s2 is None")
     s1, s2 = utils.make_type_consistent(s1, s2)
-
-    if len(s1) == 0 or len(s2) == 0:
-        return 0
 
     m = SequenceMatcher(None, s1, s2)
     return utils.intr(100 * m.ratio())
 
 
-# todo: skip duplicate indexes for a little more speed
+@utils.check_for_none
+@utils.check_empty_string
 def partial_ratio(s1, s2):
     """"Return the ratio of the most similar substring
     as a number between 0 and 100."""
-
-    if s1 is None:
-        raise TypeError("s1 is None")
-    if s2 is None:
-        raise TypeError("s2 is None")
     s1, s2 = utils.make_type_consistent(s1, s2)
-    if len(s1) == 0 or len(s2) == 0:
-        return 0
 
     if len(s1) <= len(s2):
         shorter = s1
@@ -95,17 +87,18 @@ def partial_ratio(s1, s2):
         else:
             scores.append(r)
 
-    return int(100 * max(scores))
+    return utils.intr(100 * max(scores))
 
 
 ##############################
 # Advanced Scoring Functions #
 ##############################
 
-def _process_and_sort(s, force_ascii):
+def _process_and_sort(s, force_ascii, full_process=True):
     """Return a cleaned string with token sorted."""
     # pull tokens
-    tokens = utils.full_process(s, force_ascii=force_ascii).split()
+    ts = utils.full_process(s, force_ascii=force_ascii) if full_process else s
+    tokens = ts.split()
 
     # sort tokens and join
     sorted_string = u" ".join(sorted(tokens))
@@ -116,15 +109,10 @@ def _process_and_sort(s, force_ascii):
 #   find all alphanumeric tokens in the string
 #   sort those tokens and take ratio of resulting joined strings
 #   controls for unordered string elements
-def _token_sort(s1, s2, partial=True, force_ascii=True):
-
-    if s1 is None:
-        raise TypeError("s1 is None")
-    if s2 is None:
-        raise TypeError("s2 is None")
-
-    sorted1 = _process_and_sort(s1, force_ascii)
-    sorted2 = _process_and_sort(s2, force_ascii)
+@utils.check_for_none
+def _token_sort(s1, s2, partial=True, force_ascii=True, full_process=True):
+    sorted1 = _process_and_sort(s1, force_ascii, full_process=full_process)
+    sorted2 = _process_and_sort(s2, force_ascii, full_process=full_process)
 
     if partial:
         return partial_ratio(sorted1, sorted2)
@@ -132,21 +120,22 @@ def _token_sort(s1, s2, partial=True, force_ascii=True):
         return ratio(sorted1, sorted2)
 
 
-def token_sort_ratio(s1, s2, force_ascii=True):
+def token_sort_ratio(s1, s2, force_ascii=True, full_process=True):
     """Return a measure of the sequences' similarity between 0 and 100
     but sorting the token before comparing.
     """
-    return _token_sort(s1, s2, partial=False, force_ascii=force_ascii)
+    return _token_sort(s1, s2, partial=False, force_ascii=force_ascii, full_process=full_process)
 
 
-def partial_token_sort_ratio(s1, s2, force_ascii=True):
+def partial_token_sort_ratio(s1, s2, force_ascii=True, full_process=True):
     """Return the ratio of the most similar substring as a number between
     0 and 100 but sorting the token before comparing.
     """
-    return _token_sort(s1, s2, partial=True, force_ascii=force_ascii)
+    return _token_sort(s1, s2, partial=True, force_ascii=force_ascii, full_process=full_process)
 
 
-def _token_set(s1, s2, partial=True, force_ascii=True):
+@utils.check_for_none
+def _token_set(s1, s2, partial=True, force_ascii=True, full_process=True):
     """Find all alphanumeric tokens in each string...
         - treat them as a set
         - construct two strings of the form:
@@ -154,13 +143,8 @@ def _token_set(s1, s2, partial=True, force_ascii=True):
         - take ratios of those two strings
         - controls for unordered partial matches"""
 
-    if s1 is None:
-        raise TypeError("s1 is None")
-    if s2 is None:
-        raise TypeError("s2 is None")
-
-    p1 = utils.full_process(s1, force_ascii=force_ascii)
-    p2 = utils.full_process(s2, force_ascii=force_ascii)
+    p1 = utils.full_process(s1, force_ascii=force_ascii) if full_process else s1
+    p2 = utils.full_process(s2, force_ascii=force_ascii) if full_process else s2
 
     if not utils.validate_string(p1):
         return 0
@@ -168,8 +152,8 @@ def _token_set(s1, s2, partial=True, force_ascii=True):
         return 0
 
     # pull tokens
-    tokens1 = set(utils.full_process(p1).split())
-    tokens2 = set(utils.full_process(p2).split())
+    tokens1 = set(p1.split())
+    tokens2 = set(p2.split())
 
     intersection = tokens1.intersection(tokens2)
     diff1to2 = tokens1.difference(tokens2)
@@ -200,15 +184,13 @@ def _token_set(s1, s2, partial=True, force_ascii=True):
     return max(pairwise)
 
 
-def token_set_ratio(s1, s2, force_ascii=True):
-    return _token_set(s1, s2, partial=False, force_ascii=force_ascii)
+def token_set_ratio(s1, s2, force_ascii=True, full_process=True):
+    return _token_set(s1, s2, partial=False, force_ascii=force_ascii, full_process=full_process)
 
 
-def partial_token_set_ratio(s1, s2, force_ascii=True):
-    return _token_set(s1, s2, partial=True, force_ascii=force_ascii)
+def partial_token_set_ratio(s1, s2, force_ascii=True, full_process=True):
+    return _token_set(s1, s2, partial=True, force_ascii=force_ascii, full_process=full_process)
 
-
-# TODO: numerics
 
 ###################
 # Combination API #
@@ -264,17 +246,17 @@ def WRatio(s1, s2, force_ascii=True):
 
     if try_partial:
         partial = partial_ratio(p1, p2) * partial_scale
-        ptsor = partial_token_sort_ratio(p1, p2, force_ascii=force_ascii) \
+        ptsor = partial_token_sort_ratio(p1, p2, full_process=False) \
             * unbase_scale * partial_scale
-        ptser = partial_token_set_ratio(p1, p2, force_ascii=force_ascii) \
+        ptser = partial_token_set_ratio(p1, p2, full_process=False) \
             * unbase_scale * partial_scale
 
-        return int(max(base, partial, ptsor, ptser))
+        return utils.intr(max(base, partial, ptsor, ptser))
     else:
-        tsor = token_sort_ratio(p1, p2, force_ascii=force_ascii) * unbase_scale
-        tser = token_set_ratio(p1, p2, force_ascii=force_ascii) * unbase_scale
+        tsor = token_sort_ratio(p1, p2, full_process=False) * unbase_scale
+        tser = token_set_ratio(p1, p2, full_process=False) * unbase_scale
 
-        return int(max(base, tsor, tser))
+        return utils.intr(max(base, tsor, tser))
 
 
 def UWRatio(s1, s2):

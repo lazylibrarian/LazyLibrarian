@@ -1,0 +1,17 @@
+This version of TinyTag included with lazylibrarian
+has "composer" field added as we need it for audiobooks
+and m4b added as equivalent filetype to m4a
+and a block on the end to allow testing from commandline
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2 or '-?' in sys.argv:
+        print("Give me a filename")
+    else:
+        id3 = TinyTag.get(sys.argv[1])
+        print('Artist      :', id3.artist)
+        print('Album       :', id3.album)
+        print('AlbumArtist :', id3.albumartist)
+        print('Composer    :', id3.composer)
+        print('Title       :', id3.title)
+        print('Track       :', id3.track)
+        print('EndTrack    :', id3.track_total)

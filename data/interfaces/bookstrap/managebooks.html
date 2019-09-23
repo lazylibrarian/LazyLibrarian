@@ -5,120 +5,339 @@
 
 <%def name="headerIncludes()">
     <div id="subhead_container">
-        <div id="subhead_menu">
-        <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import Book</a>
-        <a href="importCSV" class="button btn btn-sm btn-primary"><i class="fa fa-upload"></i> Import CSV Wishlist</a>
-        <a href="exportCSV" class="button btn btn-sm btn-primary"><i class="fa fa-download"></i> Export CSV Wishlist</a>
-        </div>
+      <form id="subhead_menu" action="search" method="get">
+        <div class="col-xs-10">
+          %if perm&lazylibrarian.perm_force:
+            %if library != 'AudioBook':
+              <a href="importAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import eBooks</a>
+              <a href="includeAlternate" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include eBooks</a>
+              %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
+                <button class="button btn btn-sm btn-primary" type="button" value="synctocalibre" id="synctocalibre">
+                <i class="fa fa-link"></i> Calibre Sync</button>
+              %endif
+            %else:
+              <a href="importAlternate?library=AudioBook" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Import AudioBooks</a>
+              <a href="includeAlternate?library=AudioBook" class="button btn btn-sm btn-primary"><i class="fa fa-book"></i> Include AudioBooks</a>
+            %endif
+            <a href="forceWish?source=books" class="button btn btn-sm btn-primary"><i class="fa fa-search"></i> WishLists</a>
+            <button class="button btn btn-sm btn-primary" type="button" value="importcsv" id="importcsv">
+            <i class="fa fa-download"></i> Import CSV</button>
+            <button class="button btn btn-sm btn-primary" type="button" value="exportcsv" id="exportcsv">
+            <i class="fa fa-upload"></i> Export CSV</button>
+            %if lazylibrarian.CONFIG['GR_SYNC'] == True:
+              <button class="button btn btn-sm btn-primary" type="button" value="synctogoodreads" id="synctogoodreads">
+              <i class="fa fa-link"></i> Goodreads Sync</button>
+            %endif
+          %endif
+          </div>
+            %if len(types) > 1:
+              %if  perm&lazylibrarian.perm_audio:
+                <div class="form-group pull-right">
+                <!--label for="chooselib"><small>Library</small></label-->
+                <select class="form-control input-sm" name="chooselib" id="chooselib">
+                  %for item in types:
+                    <option value="${item}"
+                        %if library == item:
+                            selected = "selected"
+                        %endif
+                    >${item}</option>
+                  %endfor
+                </select>
+                </div>
+              %endif
+            %endif
+      </form>
     </div>
+    <button class="hidden" onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Syncing, please wait...</button>
 </%def>
-
 <%def name="body()">
-    <p>&nbsp;</p>
-    <form action="manage" method="get" class="form-inline">
-        <div class="form-group">
-            <label for="whichStatus" class="control-label">Manage books with status:</label>
-            <select name="whichStatus" class="form-control input-sm">
+  <h1>${title}</h1>
+  <form action="manage" method="get" class="form-inline">
+    <div class="form-group">
+      <label for="whichStatus" class="control-label">Status:</label>
+      <select name="whichStatus" id="whichStatus" class="form-control input-sm">
         %for item in ['Skipped', 'Wanted', 'Open', 'Have', 'Ignored']:
-            <option value="${item}"
+        <option value="${item}"
                 %if whichStatus == item:
                     selected = "selected"
                 %endif
             >${item}</option>
         %endfor
-            </select>            
-        </div>
-    <input  class="btn btn-sm btn-default" type="submit" value="Manage" />
-    </form>
-    <br>
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Read"
+            %if whichStatus == "Read":
+                selected = "selected"
+            %endif
+            >Read</option>
+        <option value="ToRead"
+            %if whichStatus == "ToRead":
+                selected = "selected"
+            %endif
+            >To Read</option >
+        %endif
+      </select>
+    </div>
 
-    <h3>Books with status ${whichStatus}</h3>
-        <br>
-    <form action="markBooks" method="get" class="form-inline">
-        <input type="hidden" name="redirect" value="manage">
-        <div class="table-responsive">
-            <table class="display table table-striped table-hover table-bordered" id="book_table">
-                <thead>
-                    <tr>
-                        <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
-                        <th class="authorname">Author</th>
-                        <th class="bookname">Title</th>
-                        <th class="series">Series</th>
-                        <th class="seriesNum text-center">Num</th>
-                        <th class="date text-center">Released</th>
-                    </tr>
-                </thead>
-<!--
-                <tbody>
-                %for result in books:
-                        <tr>
-                            <td class="select text-center"><input type="checkbox" name="${result['BookID']}" class="checkbox" /></td>
-                            <td class="authorname"><a href="authorPage?AuthorName=${result['AuthorName']}">${result['authorname']}</a></td>
-                            %if result['booksub']:
-                                <td class="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a><br>
-                                <i class="smalltext">${result['booksub']}</i></td>
-                            %else:
-                                <td class="bookname"><a href="${result['booklink']}" target="_new">${result['bookname']}</a></td>
-                            %endif
-                            <td class="series">${result['Series']}</td>
-                            <td class="seriesNum text-center">${result['seriesNum']}</td>
-                            <td class="date text-center">${result['BookDate']}</td>
-                        </tr>
-                %endfor
-                </tbody>
--->
-            </table>
-        </div>
-    
-
-        <div class="form-group">
-            <label for="markBooks" class="control-label">Change selected books to: </label>
-            <select id="markBooks" class="markBooks form-control input-sm" name="action">
-            %for item in ['Skipped', 'Wanted', 'Snatched', 'Have', 'Ignored']:
-                %if whichStatus != item:
-                    <option value="${item}">${item}</option>
+    %if lazylibrarian.CONFIG['TOGGLES'] == True:
+    &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover - </a>
+    <a class="toggle-vis" data-column="2">Author - </a>
+    <a class="toggle-vis" data-column="3">Title - </a>
+    <a class="toggle-vis" data-column="4">Series - </a>
+    <a class="toggle-vis hidden-sm hidden-xs" data-column="5">Rating - </a>
+    <a class="toggle-vis" data-column="6">Released - </a>
+    <a class="toggle-vis" data-column="7">Delay - </a>
+    <a class="toggle-vis" data-column="8">Search</a>
+    %endif
+  </form>
+  <br>
+  <form action="markBooks" method="get" class="form-inline">
+    <input type="hidden" name="redirect" value="manage">
+    <input type="hidden" name="library" value="${library}">
+    <div class="table-responsive">
+      <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+          <tr>
+            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            <th class="bookart text-center no-sort">Cover</th>
+            <th class="authorname">Author</th>
+            <th class="bookname">Title</th>
+            <th class="series">Series</th>
+            <th class="stars text-center hidden-sm hidden-xs">Rating</th>
+            <th class="date text-center">Released</th>
+            %if lazylibrarian.CONFIG['DELAYSEARCH'] == True:
+                %if whichStatus == 'Wanted':
+                    <th class="stars text-center no-sort">Delay</th>
+                    <th class="date text-center no-sort">Last Search</th>
                 %endif
-            %endfor
-            </select>
-        </div>
-        <input type="submit" class="markBooks btn btn-sm btn-default" value="Go">    
-    </form>
-
-    <p>&nbsp;</p>
+            %endif
+          </tr>
+        </thead>
+      </table>
+    </div>
+    %if perm&lazylibrarian.perm_status:
+    <div class="form-group">
+      <label for="markBooks" class="control-label">Change selected books to: </label>
+      <select id="markBooks" class="markBooks form-control input-sm" name="action">
+        %for item in ['Skipped', 'Wanted', 'Have', 'Ignored']:
+        <option value="${item}">${item}</option>
+        %endfor
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS']:
+        <option value="Unread">Unread</option>
+        <option value="Read">Read</option>
+        <option value="ToRead">To Read</option>
+        %endif
+        %if lazylibrarian.CONFIG['DELAYSEARCH']:
+        <option value="NoDelay">No Delay</option>
+        %endif
+      </select>
+    </div>
+    <input type="submit" class="markBooks btn btn-sm btn-default" value="Go">
+    %endif
+  </form>
+  <p>&nbsp;</p>
 </%def>
-
 <%def name="headIncludes()">
-    
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script type="text/ecmascript">
+  <script type="text/javascript">
     $(document).ready(function()
     {
-        $('#book_table').dataTable(
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        $('#chooselib').change(function(){
+            new_settings = 'manage?whichStatus=' + $('#whichStatus').val() + '&library=' + $(this).val()
+            window.location = new_settings
+        })
+
+        $('#whichStatus').change(function(){
+            new_settings = 'manage?whichStatus=' + $(this).val() + '&library=' + $('#chooselib').val()
+            window.location = new_settings
+        })
+
+        $('#exportcsv').on('click', function(e) {
+            $.get('exportCSV', {'library': $('#chooselib').val()}, function(data) {
+                bootbox.dialog({
+                    title: 'CSV Export Result',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+            });
+        });
+
+        $('#synctogoodreads').on('click', function(e) {
+            $("#myAlert").removeClass('hidden');
+            $.get('syncToGoodreads', function(data) {
+                $("#myAlert").addClass('hidden');
+                bootbox.dialog({
+                    title: 'Goodreads Sync Result',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+            });
+        });
+
+        $('#synctocalibre').on('click', function(e) {
+            $("#myAlert").removeClass('hidden');
+            $.get('syncToCalibre', function(data) {
+                $("#myAlert").addClass('hidden');
+                bootbox.dialog({
+                    title: 'Calibre Sync Result',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+            });
+        });
+
+        $('#importcsv').on('click', function(e) {
+            $.get('importCSV', {'library': $('#chooselib').val()}, function(data) {
+                var myModal = bootbox.dialog({
+                    title: 'CSV Import Info',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        },
+                    }
+                });
+                setTimeout(function(){
+                myModal.modal('hide');
+                }, 5000);
+            });
+        });
+
+         var table = $('#book_table').DataTable(
             {
-                "responsive": true,
-                "order": [[ 1, 'asc' ]],
-                "columnDefs": 
-                    [{ targets: 'no-sort', orderable: false }]
-                ,                
+                "bAutoWidth": false,
+                "stateSave": true,
+                "order": [[ 2, 'asc' ]],
+                "columnDefs":[
+                    { targets: 'no-sort', orderable: false },
+                    { targets: [0],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                            return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                    { targets: [1],
+                        'visible': showimg,
+                        'render': function(data, type, row) {
+                        return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                    { targets: [2], 'render': function(data, type, row) {
+                        return '<a href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</a>';}
+                    },
+                    { targets: [3], 'render': function(data, type, row) {
+                        var pre = data.split('<');
+                        var limit = window.innerWidth / 30;
+                        var title = truncateOnWord(pre[0], limit);
+                        var tail = data.slice(pre[0].length);
+                        btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn-link text-left" type="button" '
+                        if (title == pre[0]) { return btn + '>' + title + '</button>' + tail ; }
+                        return btn + ' title="' + pre[0] + '">' + title + '</button>' + tail ;
+                        }
+                    },
+                    { targets: [4], 'render': function(data, type, row){
+                        if (row[12] === null ) { return data; }
+                        if (row[12] === '' ) { return row[4]; }
+                        var series = row[12].split('^');
+                        var output = [];
+                        for (var index=0; index < series.length; ++index) {
+                            var link_data = series[index].split("~");
+                            output.push('<a href=seriesMembers?seriesid=' + link_data[0] + '>' + link_data[1] + '</a>')
+                        }
+                        return output.join('<br>');
+                    }},
+                    { targets: [5],
+                        'class': 'text-center',
+                        'render': function(data, type, row) {
+                        return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
+                    { targets: [6],
+                        'class': 'text-center'},
+                    %if lazylibrarian.CONFIG['DELAYSEARCH'] == True:
+                        %if whichStatus == 'Wanted':
+                            { targets: [7],
+                                'class': 'text-center',
+                                'render': function(data, type, row) {
+                                    return row[14];} },
+                            { targets: [8],
+                                'class': 'text-center',
+                                'render': function(data, type, row) {
+                                    return row[15];} }
+                        %endif
+                    %endif
+                    ],
                 "oLanguage": {
+                    "sSearch": "Filter: ",
                     "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No books found",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"},
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
-                "aaSorting": [[0, 'asc']],
+                "aaSorting": [[2, 'asc']],
                 "bServerSide": true,
-                // need to pass requested status to getManage 
-                "sAjaxSource": 'getManage?whichStatus="Skipped"',
+                "sAjaxSource": 'getBooks?whichStatus=${whichStatus}&library=${library}&source=Manage',
                 "bFilter": true,
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    %if perm&lazylibrarian.perm_status == 0:
+                      $('td', nRow).eq(0).addClass("hidden");
+                    %endif
+                    // hide cover,stars,date on small devices
+                    //$('td', nRow).eq(1).addClass('hidden-xs');
+                    $('td', nRow).eq(5).addClass('hidden-sm hidden-xs');
+                    //$('td', nRow).eq(6).addClass('hidden-xs');
+                    //$('td', nRow).eq(7).addClass('hidden-xs');
+                    return nRow;
+                },
             });
-			$('.dataTables_filter input').attr("placeholder", "Search filter");
+        $('.dataTables_filter input').attr("placeholder", "Results filter");
+        //$(window).resize(function() {oTable.draw(false)});
+        $('a.toggle-vis').click(function (e) {
+            e.preventDefault();
+            var column = table.column( $(this).attr('data-column') );
+            column.visible( ! column.visible() );
+        } );
     });
-    </script>
+
+    function bookinfo(bookid) {
+        $.get('bookdesc', {'bookid': bookid},
+        function(data) {
+            var $textAndPic = $('<div></div>');
+            $textAndPic.append('<img src="./cache/book/' + bookid + '.jpg" class="box-shadow img-responsive" />');
+            var res = data.split('^');
+            var title = res[0]
+            var desc = res[1]
+            $textAndPic.append('<br>' + desc + ' <br />');
+            bootbox.dialog({
+                size: "large",
+                title: title,
+                message: $textAndPic,
+                buttons: {
+                   primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            });
+        });
+    };
+
+  </script>
 </%def>

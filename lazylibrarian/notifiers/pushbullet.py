@@ -17,31 +17,30 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-import base64
-import urllib
-import urllib2
-import time
 import lazylibrarian
-import lazylibrarian.common as common
 
-from httplib import HTTPSConnection, HTTPException
-from urllib import urlencode
 from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-from pushbullet2 import PushBullet
+from lazylibrarian.formatter import unaccented
+from .pushbullet2 import PushBullet
+
 
 class PushbulletNotifier:
 
-    def _sendPushbullet(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
+    def __init__(self):
+        pass
 
-        if not lazylibrarian.USE_PUSHBULLET and not force:
+    @staticmethod
+    def _sendPushbullet(message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
+
+        if not lazylibrarian.CONFIG['USE_PUSHBULLET'] and not force:
             return False
 
-        if pushbullet_token == None:
-            pushbullet_token = lazylibrarian.PUSHBULLET_TOKEN
-        if pushbullet_deviceid == None:
-            if lazylibrarian.PUSHBULLET_DEVICEID:
-                pushbullet_deviceid = lazylibrarian.PUSHBULLET_DEVICEID
+        if pushbullet_token is None:
+            pushbullet_token = lazylibrarian.CONFIG['PUSHBULLET_TOKEN']
+        if pushbullet_deviceid is None:
+            if lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']:
+                pushbullet_deviceid = lazylibrarian.CONFIG['PUSHBULLET_DEVICEID']
 
         logger.debug("Pushbullet event: " + str(event))
         logger.debug("Pushbullet message: " + str(message))
@@ -49,20 +48,20 @@ class PushbulletNotifier:
         logger.debug("Pushbullet devices: " + str(pushbullet_deviceid))
 
         pb = PushBullet(str(pushbullet_token))
-        
-        if event == 'LLTest': # special case, return device list
+
+        if event == 'DeviceList':  # special case, return device list
             devices = pb.getDevices()
             ret = ""
             for device in devices:
                 logger.info("Pushbullet: %s [%s]" % (device["nickname"], device["iden"]))
                 ret += "\nPushbullet: %s [%s]" % (device["nickname"], device["iden"])
-            push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
+            _ = pb.pushNote(pushbullet_deviceid, str(event), str(message))
             return ret
         else:
             push = pb.pushNote(pushbullet_deviceid, str(event), str(message))
             return push
 
-    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None):
+    def _notify(self, message=None, event=None, pushbullet_token=None, pushbullet_deviceid=None, force=False):
         """
         Sends a pushbullet notification based on the provided info or LL config
 
@@ -72,34 +71,37 @@ class PushbulletNotifier:
         force: If True then the notification will be sent even if pushbullet is disabled in the config
         """
         try:
-            message = common.remove_accents(message)
-        except Exception, e:
+            message = unaccented(message)
+        except Exception as e:
             logger.warn("Pushbullet: could not convert  message: %s" % e)
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_PUSHBULLET and not force:
+        if not lazylibrarian.CONFIG['USE_PUSHBULLET'] and not force:
             return False
-
         logger.debug("Pushbullet: Sending notification " + str(message))
 
-        return self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid)
+        return self._sendPushbullet(message, event, pushbullet_token, pushbullet_deviceid, force=force)
 
 #
 # Public functions
 #
 
     def notify_snatch(self, title):
-        if lazylibrarian.PUSHBULLET_NOTIFY_ONSNATCH:
+        if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONSNATCH']:
             self._notify(message=title, event=notifyStrings[NOTIFY_SNATCH])
 
     def notify_download(self, title):
-        if lazylibrarian.PUSHBULLET_NOTIFY_ONDOWNLOAD:
+        if lazylibrarian.CONFIG['PUSHBULLET_NOTIFY_ONDOWNLOAD']:
             self._notify(message=title, event=notifyStrings[NOTIFY_DOWNLOAD])
 
-    def test_notify(self, title="LLTest"):
-        return self._notify("This test notification asks for the device list", event=title)
+    def test_notify(self, title="Test"):
+        res = self._notify("This test notification asks for the device list", event='DeviceList', force=True)
+        if res:
+            _ = self._notify("This is a test notification from LazyLibrarian", event=title, force=True)
+        return res
 
     def update_library(self, showName=None):
         pass
+
 
 notifier = PushbulletNotifier

@@ -1,28 +1,31 @@
 <%inherit file="base.html"/>
-
-<%def name="headIncludes()">
-    
-</%def>
-
-<%def name="body()">
+  <%def name="headIncludes()">
+  </%def>
+  <%def name="body()">
     <p>&nbsp;</p>
-    <div id="shutdown" class="alert alert-info">            
-        <h1><i class="fa fa-circle-o-notch fa-spin"></i> Library is ${message}</h1>
-        <h2 id="countdown">&nbsp;</h2>
+    <div id="shutdown" class="alert alert-info">
+      <h1>${title}</h1>
+      %if timer == 0:
+        <h2>${prefix} ${message}</h2>
+      %else:
+        <h2><i class="fas fa-circle-notch fa-spin"></i>&nbsp;&nbsp;${prefix} ${message}</h2>
+      %endif
+      <h3 id="countdown">&nbsp;</h3>
     </div>
-</%def>
-
-<%def name="javascriptIncludes()">
-<script type="text/javascript">    
-    $(function(){
-        var countdown = 30;
-        setInterval(function() {
-            countdown--;
-            $('#countdown').html('Refreshing in '+countdown+' seconds');
-            if (countdown <= 0) {
-                window.location = '/index';
-            }
-        }, 1000);
-    });
-</script>
-</%def>
+  </%def>
+  <%def name="javascriptIncludes()">
+    <script type="text/javascript">
+      $(function(){
+          var countdown = ${timer};
+          if (countdown > 0) {
+            setInterval(function() {
+                  countdown--;
+                  $('#countdown').html('Refreshing in '+countdown+' seconds');
+                  if (countdown <= 0) {
+                      window.location = 'index';
+                  }
+            }, 1000);
+          }
+      });
+    </script>
+  </%def>

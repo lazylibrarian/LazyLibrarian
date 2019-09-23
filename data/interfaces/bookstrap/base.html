@@ -3,202 +3,349 @@
 %>
 <!doctype html>
 <html>
-<head>
+  <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
     <title>LazyLibrarian - ${title}</title>
     <meta name="description" content="">
     <meta name="author" content="">
-
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    
     <link rel="shortcut icon" type="image/png"  href="images/ll.ico">
-    <link rel="apple-touch-icon" href="images/templogo.png">
-    <!--<link rel="stylesheet" href="css/style.css?v=2">-->
-    
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.css"/>
-    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/${lazylibrarian.BOOKSTRAP_THEME}/bootstrap.min.css" rel="stylesheet">
-    <!--<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">-->
-    
-    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet">
-    
+    <link rel="apple-touch-icon" href="images/ll.png">
+    <link rel="manifest" href="images/manifest.json">
+    <link rel="stylesheet" type="text/css" href="css/datatables.min.css"/>
+    %if lazylibrarian.BOOKSTRAP_THEMELIST:
+    <link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/${lazylibrarian.CONFIG['BOOKSTRAP_THEME']}/bootstrap.min.css" rel="stylesheet">
+    %else:
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    %endif
+    <!--link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous"-->
+    <link href="css/fontawesome/fontawesome-all.css" rel="stylesheet">
     <link href="css/bookstrap.css" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-1.12.0.min.js"></script>
-    <script src="https://code.jquery.com/jquery-migrate-1.3.0.min.js"></script>
-    <!--<script src="js/script.js"></script>-->    
+    <style>
+      input[type="search"]::-webkit-search-cancel-button {
+        -webkit-appearance: searchfield-cancel-button;
+      }
+    </style>
+    <script src="js/jquery-1.12.0.min.js"></script>
+    <script src="js/jquery-migrate-1.3.0.min.js"></script>
     <script src="js/lazylibrarian-bs.js"></script>
-    ${next.headIncludes()}
 
-    
-    <script type="text/javascript">
+    <!-- include summernote css/js -->
+    <link href="css/summernote.css" rel="stylesheet">
+    <script src="js/summernote.js"></script>
+
+    ${next.headIncludes()}
+    <!-- script type="text/javascript">
         // Allow the user to reset the search filter
         $(document).ready(function () {
             $.fn.dataTableExt.oApi.clearSearch = function ( oSettings ) {
                 var table = this;
-
-                //var clearSearch = $('<img title="Delete" alt="" src="data:image/png;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAD2SURBVHjaxFM7DoMwDH2pOESHHgDPcB223gKpAxK34EAMMIe1FCQOgFQxuflARVBSVepQS5Ht2PHn2RHMjF/ohB8p2gSZpprtyxEHX8dGTeMG0A5UlsD5rCSGvF55F4SpqpSm1GmCzPO3LXJy1LXllwvodoMsCpNVy2hbYBjCLRiaZ8u7Dng+QXlu9b4H7ncvBmKbwoYBWR4kaXv3YmAMyoEpjv2PdWUHcP1j1ECqFpyj777YA6Yss9KyuEeDaW0cCsCUJMDjYUE8kr5TNuOzC+JiMI5uz2rmJvNWvidwcJXXx8IAuwb6uMqrY2iVgzbx99/4EmAAarFu0IJle5oAAAAASUVORK5CYII=" style="vertical-align:text-bottom;cursor:pointer;" />');
-                
-                var clearSearch = $('<i class="fa fa-remove" style="cursor:pointer;width:16px;text-align:left;" title="Reset Search"></i>');
-                
-                $(clearSearch).click( function ()
-                        {
+                var clearSearch = $('<i id="Clear" title="Clear" class="fa fa-times" style="height:20px;width:20px;vertical-align:center;cursor:pointer;">&nbsp;</i>');
+                $(clearSearch).click( function () {
                                 table.fnFilter('');
                                 $('input[type=search]').val('');
-                        });
+                });
                 $(oSettings.nTableWrapper).find('div.dataTables_filter').append(clearSearch);
-                $(oSettings.nTableWrapper).find('div.dataTables_filter label').css('margin-right', '-16px');//16px the image width
-                $(oSettings.nTableWrapper).find('div.dataTables_filter input').css('padding-right', '16px');
+                $(oSettings.nTableWrapper).find('div.dataTables_filter label').css('margin-right', '-20px');
+                $(oSettings.nTableWrapper).find('div.dataTables_filter input').css('padding-right', '20px');
             }
-
             //auto-execute, no code needs to be added
             $.fn.dataTable.models.oSettings['aoInitComplete'].push( {
                 "fn": $.fn.dataTableExt.oApi.clearSearch,
                 "sName": 'whatever'
             });
         });
-    </script>
-    
+    </script -->
+
     ${next.javascriptIncludes()}
     <script type="text/javascript">
-        // Check or uncheck all checkboxes in the same table
-        function toggleAll(e) {
-            var table = $(e).closest('table');
-            $('td input:checkbox', table).prop('checked', e.checked);
-        }
+      // Check or uncheck all checkboxes in the same table
+      function toggleAll(e) {
+          var table = $(e).closest('table');
+          $('td input:checkbox', table).prop('checked', e.checked);
+      }
     </script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/s/bs-3.3.5/jqc-1.11.3,dt-1.10.10,b-1.1.0/datatables.min.js"></script>    
-    <script src="js/bootbox.min.js"></script>
-    <script src="js/bootstrap-notify.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/datatables.min.js"></script>
+    <script type="text/javascript" src="js/natural.js"></script>
+    <script type="text/javascript" src="js/bootbox.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap-notify.min.js"></script>
+<style>
 
+#myBtn {
+  display: none;
+  position: fixed;
+  bottom: 10px;
+  right: 15px;
+  z-index: 99;
+  font-size: 18px;
+  border: none;
+  outline: none;
+  background-color: #888;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  opacity: 0.4;
+  filter: alpha(opacity=40); /* For IE8 and earlier */
+}
+
+#myBtn:hover {
+  background-color: #555;
+  opacity: 1.0;
+  filter: alpha(opacity=100); /* For IE8 and earlier */
+}
+#Clear:hover {
+  color: #555;
+  opacity: 1.0;
+  filter: alpha(opacity=100); /* For IE8 and earlier */
+}
+
+#myAlert {
+  display: block;
+  position: fixed;
+  bottom: 48px;
+  right: 15px;
+  z-index: 99;
+  font-size: 14px;
+  border: 2px solid lightgrey;
+  outline: none;
+  background-color: #888;
+  color: white;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  opacity: 0.4;
+  filter: alpha(opacity=40); /* For IE8 and earlier */
+}
+
+#myAlert:hover {
+  background-color: #555;
+  opacity: 1.0;
+  filter: alpha(opacity=100); /* For IE8 and earlier */
+}
+</style>
 </head>
-<body>
+  <body>
     <div id="container">
-                    
-        <header>
-            <div id="headercontainer" class="navbar navbar-default navbar-fixed-top">
-                <div class="container">
-                    <div class="navbar-header">
-                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#MainNav" aria-expanded="false">
-                            <span class="sr-only">Toggle navigation</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                        <a class="navbar-brand" href="home"><i class="fa fa-home"></i> LazyLibrarian</a>
-                    </div>
-                    
-                    <div class="collapse navbar-collapse" id="MainNav">
-                        <ul class="nav navbar-nav">
-                            <li><a href="home" class="navbarele">Authors</a></li>
-                            <li><a href="books" class="navbarele">Books</a></li>
-                            <li><a href="magazines" class="navbarele">Magazines</a></li>
-                            <li><a href="manage" class="navbarele">Manage</a></li>
-                            <li><a href="history" class="navbarele">History</a></li>
-                            <li><a href="logs" class="navbarele">Logs</a></li>
-                            <li><a href="config" class="navbarcfg"><i class="fa fa-cog"></i> Config</a></li>
-                        </ul>
-                        
-                        <form class="navbar-form navbar-right" action="search" method="get">
-                            <div class="form-group">
-                                <div class="input-group">
-                                    <input type="text" class="form-control deletable input-sm" value="" onfocus="if(this.value==this.defaultValue) this.value='';" name="name" placeholder="Title / Author / ISBN" id="searchbox">
-                                    <span class="input-group-btn">
-                                        <button type="submit" class="btn btn-sm btn-default"><i class="fa fa-search"></i></button>
-                                    </span>
-                                    
-                                </div>
-                            </div>
-                            
-                        </form>                        
-                    </div>
-                </div>
-            
-                <div id="subnav" class="navbar-inverse">
-                    <div id="subhead" class="container">
-                        ${next.headerIncludes()}
-                    </div>
-                </div>
-            </div>    
-        </header>
-
-        <div id="main" class="main container">
-            ${next.body()}
-        </div>
-    </div>
-
-<script type="text/javascript">    
-    msg = '';
-        % if lazylibrarian.INSTALL_TYPE != 'win':
-            % if not lazylibrarian.CURRENT_VERSION:    
-                msg = 'You\'re running an unknown version of lazylibrarian.<br/><a href="update" class="btn btn-xs btn-primary pull-right">Update</a>'
-            % elif (lazylibrarian.INSTALL_TYPE == 'source' and lazylibrarian.CURRENT_VERSION == 'No Version File' ):
-                msg = 'Running Unknown version via source install. Update from central area now <a href="update" class="btn btn-xs btn-primary pull-right">Update</a>
-            % elif lazylibrarian.CURRENT_VERSION != lazylibrarian.LATEST_VERSION:
-                msg = 'Not latest version'
-                % if lazylibrarian.COMMITS_BEHIND < 0:
-                    msg = 'Running a local updated version. Push changes to GITHub or rollback to Master release'
-                % else:
-                    msg = 'New version available. You are ${lazylibrarian.COMMITS_BEHIND} commits behind.<br/><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
-                    //<a class="btn btn-xs btn-primary pull-right" href="http://github.com/DobyTang/LazyLibrarian/compare/${lazylibrarian.CURRENT_VERSION}...${lazylibrarian.LATEST_VERSION}" target="_blank">Click Here</a>'
+      <header>
+        <div id="headercontainer" class="navbar navbar-default navbar-fixed-top">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#MainNav" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <a class="navbar-brand" href="home"><i class="fa fa-home"></i> LazyLibrarian</a>
+            </div>
+            <div class="collapse navbar-collapse" id="MainNav">
+              <ul class="nav navbar-nav">
+                <!--li><a href="home" class="navbarele">Authors</a></li-->
+                %if perm > 0:
+                  %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
+                    %if lazylibrarian.SHOWLOGOUT == 1:
+                      <li><a href="logout" class="navbarele" id="logout">Logout</a></li>
+                    %endif
+                    %if perm&lazylibrarian.perm_config == 0:
+                      <li><a href="profile" class="navbarele" id="profile">User</a></li>
+                    %endif
+                  %endif
+                %endif
+                % if perm&lazylibrarian.perm_ebook:
+                <li><a id="books" href="books" class="navbarele">eBooks</a></li>
+                %endif
+                % if lazylibrarian.SHOW_SERIES != 0:
+                  %if perm&lazylibrarian.perm_series:
+                  <li><a id="series" href="series" class="navbarele">Series</a></li>
+                  % endif
                 % endif
-            % endif
-        % endif
+                % if lazylibrarian.SHOW_AUDIO != 0:
+                  %if perm&lazylibrarian.perm_audio:
+                  <li><a id="audio" href="audio" class="navbarele">Audio</a></li>
+                  % endif
+                % endif
+                % if lazylibrarian.SHOW_MAGS != 0:
+                  %if perm&lazylibrarian.perm_magazines:
+                  <li><a id="magazines" href="magazines" class="navbarele">Mags</a></li>
+                  % endif
+                % endif
+                %if perm&lazylibrarian.perm_managebooks:
+                  <li><a id="manage" href="manage" class="navbarele">Manage</a></li>
+                % endif
+                %if perm&lazylibrarian.perm_history:
+                  <li><a id="history" href="history" class="navbarele">History</a></li>
+                % endif
+                %if perm&lazylibrarian.perm_logs:
+                  <li><a id="logs" href="logs" class="navbarele">Logs</a></li>
+                % endif
+                %if perm&lazylibrarian.perm_config:
+                  <li><a id="config" href="config" class="navbarcfg"><i class="fa fa-cog"></i> Config</a></li>
+                % endif
+                <li><a id="help" href="https://lazylibrarian.gitlab.io/" class="navbarele" target="_new"><i class="fa fa-question-circle"></i> Help</a></li>
+              </ul>
+            </div>
+          </div>
+          <div id="subnav" class="navbar-inverse">
+            <div id="subhead" class="container">
+              ${next.headerIncludes()}
+            </div>
+          </div>
+        </div>
+      </header>
+      <div id="main" class="main container">
+        ${next.body()}
+      </div>
+      <button onclick="topFunction()" id="myBtn" title="Go to top"><i class="fa fa-arrow-up"></i></button>
+    </div>
+    <script type="text/javascript">
+      msg = '';
+      % if lazylibrarian.CONFIG['INSTALL_TYPE'] == 'git' or lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source':
+          title = 'LazyLibrarian Update'
+          % if not lazylibrarian.CONFIG['CURRENT_VERSION']:
+              msg = '<div class="input-group">You are running an unknown version of lazylibrarian</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+          % elif (lazylibrarian.CONFIG['INSTALL_TYPE'] == 'source' and lazylibrarian.CONFIG['CURRENT_VERSION'] == 'No Version File' ):
+              msg = '<div class="input-group">You are running an unknown version via source install</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release">Update</a></div>'
+          % elif lazylibrarian.CONFIG['CURRENT_VERSION'] != lazylibrarian.CONFIG['LATEST_VERSION']:
+              % if lazylibrarian.CONFIG['LATEST_VERSION'] == 'Not_Available_From_Git':
+                  msg = '<div class="input-group">Unable to get latest version from git</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the warning for 24 hours" id="ignoreUpdate">Ignore</a></div>'
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] < 0:
+                  msg = '<div class="input-group">Running a local updated version. Push changes to git or rollback to Master release</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the warning for 24 hours" id="ignoreUpdate">Ignore</a></div>'
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] > 1:
+                  msg = '<div class="input-group">New version available. You are ${lazylibrarian.CONFIG['COMMITS_BEHIND']} commits behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release" id="doUpdate">Update</a></div>'
+              % elif lazylibrarian.CONFIG['COMMITS_BEHIND'] == 1:
+                  msg = '<div class="input-group">New version available. You are one commit behind.</div><div class="pull-right"><a href="#" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Ignore the update message for 24 hours" id="ignoreUpdate">Ignore</a>&nbsp;<a href="update" class="btn btn-xs btn-primary" data-toggle="tooltip" title="Update to the latest release" id="doUpdate">Update</a></div>'
+              % endif
+          % endif
+      % endif
 
-$(document).ready(function() {
-    if (msg != '' && readCookie('ignoreUpdate') === null) {
-        $.notify({
-            icon: 'fa fa-check-square-o',
-            message: msg
-        },{
-            type: 'warning'    
+      $(document).ready(function() {
+        if (readCookie('ignoreUpdate') != null) { msg = '' }
+
+        if (msg != '') {
+          $.notify({
+              icon: "images/ll48.png",
+              title: '<strong>'+title+'</strong>',
+              message: msg
+          },{
+              icon_type: 'image'
+          },{
+                type: 'warning'
+            });
+        }
+
+        $('#ignoreUpdate').click(function() {
+            createCookie("ignoreUpdate", true, 1);
         });
+
+        $('#doUpdate').click(function () {
+            createCookie("ignoreUpdate", true, 0.01);  // suppress popup while updating
+        });
+      });
+
+      // Initialise tooltips
+      $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+      })
+
+        function truncateOnWord(str, limit) {
+            var trimmable = '\u0009\u000A\u000B\u000C\u000D\u0020\u00A0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u2028\u2029\u3000\uFEFF';
+            var reg = new RegExp('(?=[' + trimmable + '])');
+            var words = str.split(reg);
+            var count = 0;
+            var result = words.filter(function(word) {
+                count += word.length;
+                return count <= limit;
+            }).join('');
+            if (str.length - result.length <= 4) {return str};
+            return result + ' ...'
+        }
+
+        // When the user scrolls down 20px from the top of the document, show the button
+        window.onscroll = function() {scrollFunction()};
+
+        function scrollFunction() {
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                document.getElementById("myBtn").style.display = "block";
+            } else {
+                document.getElementById("myBtn").style.display = "none";
+            }
+        }
+
+        // When the user clicks on the button, scroll to the top of the document
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+
+      function createCookie(name, value, days) {
+      var expires;
+
+      if (days) {
+          var date = new Date();
+          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          expires = "; expires=" + date.toGMTString();
+      } else {
+          expires = "";
+      }
+      document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
+      }
+
+      function readCookie(name) {
+      var nameEQ = encodeURIComponent(name) + "=";
+      var ca = document.cookie.split(';');
+      for (var i = 0; i < ca.length; i++) {
+          var c = ca[i];
+          while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+          if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+      }
+      return null;
+      }
+
+      function eraseCookie(name) {
+      createCookie(name, "", -1);
+      }
+
+      function bookinfo(bookid) {
+        $.get('bookdesc', {'bookid': bookid},
+        function(data) {
+            var $textAndPic = $('<div></div>');
+            $textAndPic.append('<img src="./cache/book/' + bookid + '.jpg" class="box-shadow img-responsive" />');
+            var res = data.split('^');
+            var title = res[0]
+            var desc = res[1]
+            $textAndPic.append('<br>' + desc + ' <br />');
+            bootbox.dialog({
+                size: "large",
+                title: title,
+                message: $textAndPic,
+                buttons: {
+                   primary: {
+                        label: "Close",
+                        className: 'btn-primary'
+                    }
+                }
+            })
+        })
+      }
+
+    // Read a page's GET URL variables and return them as an associative array.
+    function getUrlVars() {
+        var vars = [], hash;
+        var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+        for(var i = 0; i < hashes.length; i++) {
+            hash = hashes[i].split('=');
+            vars.push(hash[0]);
+            vars[hash[0]] = hash[1];
+        }
+        return vars;
     }
-    
-    $('#ignoreUpdate').click(function() {
-        createCookie("ignoreUpdate", true, 1);
-    });
-});
 
-// Initialise tooltips
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
-
-
-function createCookie(name, value, days) {
-    var expires;
-
-    if (days) {
-        var date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toGMTString();
-    } else {
-        expires = "";
-    }
-    document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + expires + "; path=/";
-}
-
-function readCookie(name) {
-    var nameEQ = encodeURIComponent(name) + "=";
-    var ca = document.cookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
-    }
-    return null;
-}
-
-function eraseCookie(name) {
-    createCookie(name, "", -1);
-}
-</script>
-    
-</body>
+    </script>
+  </body>
 </html>
-
 <%def name="javascriptIncludes()"></%def>
 <%def name="headIncludes()"></%def>
 <%def name="headerIncludes()"></%def>

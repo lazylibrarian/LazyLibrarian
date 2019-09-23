@@ -1,0 +1,261 @@
+<%inherit file="base.html" />
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+  <div id="subhead_container" class="row">
+    <form id="subhead_menu" class="form-inline">
+      <div class="col-xs-10">
+        %if perm&lazylibrarian.perm_force:
+        <a id="forcesearch" class="btn btn-sm btn-primary" href="forceSearch?source=audio"><i class="fa fa-search"></i> Search</a>
+        <a id="forcepostprocess" class="btn btn-sm btn-primary" href="forceProcess?source=audio"><i class="fa fa-cogs"></i> Run Post-Processor</a>
+        <a href="libraryScan?library=AudioBook" class="btn btn-sm btn-primary" id="scan"><i class="fa fa-bolt"></i> Library Scan</a>
+        %endif
+        <a href="audioWall" class="button btn btn-sm btn-primary"><i class="fa fa-calendar-check"></i> Recent AudioBooks</a>
+        %if lazylibrarian.CONFIG['USER_ACCOUNTS'] == True:
+        <a href="rssFeed?user=${user}&type=AudioBook&limit=10.xml" class="button btn btn-sm btn-primary" data-toggle="tooltip" title="RSS feed of recent downloads"><i class="fa fa-rss"></i></a>
+        <link rel="alternate" type="application/rss+xml" title="LazyLibrarian latest AudioBooks" href="rssFeed?user=${user}&type=AudioBook&limit=10.xml">
+        %endif
+      </div>
+      <div class="col-xs-2">
+        %if len(languages) > 1:
+        <div class="form-group">
+          <label for="chooselanguage"><small>Language</small></label>
+          <select class="form-control input-sm" name="chooselanguage" id="chooselanguage" onchange="window.location = 'audio?BookLang=' + this.options[this.selectedIndex].value">
+            <option value="">All</option>
+            %for language in languages:
+            <option value="${language['BookLang']}">${language['BookLang']}</option>
+            %endfor
+          </select>
+        </div>
+        %endif
+      </div>
+    </form>
+  </div>
+</%def>
+<%def name="body()">
+  <h1>${title}</h1>
+  %if lazylibrarian.AUDIO_UPDATE == True:
+      <p>
+    <button onclick="" id="myAlert" title=""><i class="fa fa-circle-notch fa-spin"></i> Libraryscan in progress ...</button>
+    </p>
+  %endif
+  <form name="markBooks" id="markBooks" action="markBooks" method="get" class="form-inline" onsubmit="return false;">
+    <div class="indented">
+      <input type="hidden" name="booklang" value=${booklang}>
+      <input type="hidden" name="redirect" value='audio'>
+      %if perm&lazylibrarian.perm_status:
+      <div class="form-group">
+        <label for="markBooks" class="control-label">Mark selected as</label>
+        <select class="markBooks form-control input-sm" id="action" name="action">
+          <option value="Wanted">Wanted</option>
+          <option value="Have">Have</option>
+          <option value="Ignored">Ignored</option>
+          <option value="Skipped">Skipped</option>
+          <option value="Remove">Remove</option>
+          <option value="Delete">Delete</option>
+          <option value="Leave" hidden>Leave</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary" onclick="validateForm()">Go</button>
+      %endif
+      %if lazylibrarian.CONFIG['TOGGLES'] == True:
+      &nbsp;&nbsp;Toggle: <a class="toggle-vis" data-column="1">Cover - </a>
+      <a class="toggle-vis" data-column="2">Author - </a>
+      <a class="toggle-vis" data-column="3">Title - </a>
+      <a class="toggle-vis" data-column="4">Series - </a>
+      <a class="toggle-vis hidden-sm hidden-xs" data-column="5">Rating - </a>
+      <a class="toggle-vis" data-column="6">Date - </a>
+      <a class="toggle-vis" data-column="7">Added - </a>
+      <a class="toggle-vis" data-column="8">Status</a>
+      %endif
+    <p>&nbsp;</p>
+    </div>
+    <div class="table-responsive">
+      <table class="display table table-striped table-hover table-bordered" id="book_table">
+        <thead>
+          <tr>
+            %if perm&lazylibrarian.perm_status:
+            <th class="select text-center no-sort"><input type="checkbox" onClick="toggleAll(this)" /></th>
+            %else:
+            <th class="hidden"></th>
+            %endif
+            <th class="bookart text-center no-sort">Cover</th>
+            <th class="authorname">Author</th>
+            <th class="bookname">Title</th>
+            <th class="series">Series</th>
+            <th class="stars text-center hidden-sm hidden-xs">Rating</th>
+            <th class="date text-center">Date</th>
+            <th class="date text-center">Added</th>
+            <th class="status text-center">Status</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+  </form>
+</%def>
+<%def name="headIncludes()">
+  %if lazylibrarian.AUDIO_UPDATE == True:
+  <meta http-equiv="refresh" content="10">
+  %endif
+</%def>
+<%def name="javascriptIncludes()">
+  <script type="text/javascript">
+    $(document).ready(function() {
+
+        $('#chooselanguage').val(getUrlVars()['BookLang']);
+
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        var table = $('#book_table').DataTable({
+            "bAutoWidth": false,
+            "stateSave": true,
+            "order": [[ 2, 'asc' ]],
+            "columnDefs":[
+                { targets: 'no-sort', orderable: false },
+                { targets: [0],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                        return '<input type="checkbox" name="' + data + '" class="checkbox" />';} },
+                { targets: [1],
+                    'visible': showimg,
+                    'render': function(data, type, row) {
+                    return '<a href="' + data + '" target="_blank" rel="noreferrer"><img src="' + data + '" alt="Cover" class="bookcover-sm img-responsive"></a>';} },
+                { targets: [2], 'render': function(data, type, row) {
+                  %if perm&lazylibrarian.perm_authorbooks:
+                    btn = '<a href=\'authorPage?AuthorID=' + row[8] + '\'">' + data + '</a>'
+                  %else:
+                    btn = '<a>' + data + '</a>'
+                  %endif
+                  return btn ;}
+                },
+                { targets: [3], 'render': function(data, type, row) {
+                    var pre = data.split('<');
+                    var limit = window.innerWidth / 30;
+                    var title = truncateOnWord(pre[0], limit);
+                    var tail = data.slice(pre[0].length);
+                    btn = '<button onclick="bookinfo(\'' + row[9] + '\')" class="button btn-link text-left" type="button" '
+                    if (title == pre[0]) { return btn + '>' + title + '</button>' + tail ; }
+                    return btn + ' title="' + pre[0] + '">' + title + '</button>' + tail ;
+                    }
+                },
+                { targets: [4], 'render': function(data, type, row){
+                    if (row[12] === null ) { return data; }
+                    if (row[12] === '' ) { return row[4]; }
+                    var series = row[12].split('^');
+                    var output = [];
+                    for (var index=0; index < series.length; ++index) {
+                        var link_data = series[index].split("~");
+                        output.push('<a href=seriesMembers?seriesid=' + link_data[0] + '>' + link_data[1] + '</a>')
+                    }
+                    return output.join('<br>');
+                }},
+                { targets: [5],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                        return '<img src="images/' + data + '-stars.png" alt="Rating">';} },
+                { targets: [6],
+                    'class': 'text-center'},
+                { targets: [7],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                    var str = row[10];
+                    if (str === "null"){ str = ""}
+                    return str ;} },
+                { targets: [8],
+                    'class': 'text-center',
+                    'render': function(data, type, row) {
+                    var btn = row[11]
+                    var flag = row[13]
+                    btn = btn + flag
+                    if ( btn.indexOf('Open') >= 0 ) {
+                            btn = '<a class="button green btn btn-xs btn-warning" href="openBook?bookid=' + row[9] +
+                                '&library=AudioBook" target="_self"><i class="fa fa-headphones"></i> ' + btn + '</a>'
+                    }
+                    else if ( btn.indexOf('Wanted') >= 0 ) {
+                        %if perm&lazylibrarian.perm_force:
+                            btn = '<p><a class="a btn btn-xs btn-danger">' + btn + '</a></p><p><a class="b btn btn-xs btn-success" href="searchForBook?bookid=' + row[9] + '&library=AudioBook" target="_self"><i class="fa fa-search"></i> Search</a></p>'
+                        %else:
+                            btn = '<a class="button btn btn-xs btn-default grey">' + btn + '</a>'
+                        %endif
+                    }
+                    else if ( btn.indexOf('Snatched') >= 0 ) {
+                        btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
+                    else if ( btn.indexOf('Have') >= 0 ) {
+                        btn = '<a class="button btn btn-xs btn-info">' + btn + '</a>'}
+                    else {
+                        btn = '<a class="button btn btn-xs btn-default grey">' + btn + '</a>'}
+                    return btn;} }
+                ],
+            "oLanguage": {
+                "sSearch": "Filter: ",
+                "sLengthMenu":"_MENU_ rows per page",
+                "sEmptyTable": "No books found",
+                "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+
+            "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+            "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+            "sPaginationType": "full_numbers",
+            "aaSorting": [[0, 'asc']],
+            "bServerSide": true,
+            "sAjaxSource": 'getBooks?source=Audio&library=AudioBook&booklang=${booklang}',
+            "bFilter": true,
+            "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                %if perm&lazylibrarian.perm_status == 0:
+                  $('td', nRow).eq(0).addClass("hidden");
+                %endif
+                // hide cover,stars,date on small devices
+                //$('td', nRow).eq(1).addClass('hidden-xs');
+                $('td', nRow).eq(5).addClass('hidden-sm hidden-xs');
+                //$('td', nRow).eq(6).addClass('hidden-xs');
+                //$('td', nRow).eq(7).addClass('hidden-xs');
+                return nRow;
+            },
+        });
+
+        $('.dataTables_filter input').attr("placeholder", "Results filter");
+        //$(window).resize(function() {table.draw('page')});
+
+        $('a.toggle-vis').click(function (e) {
+            e.preventDefault();
+            var column = table.column( $(this).attr('data-column') );
+            column.visible( ! column.visible() );
+        } );
+        //enable datatables console logging
+        //table.on(function ( e ) {
+        //   console.log( e ); } );
+    });
+
+    function validateForm() {
+        var x = document.forms["markBooks"]["action"].value;
+        var c = (document.querySelectorAll('input[class="checkbox"]:checked').length);
+        if (c > 0 && x == "Delete") {
+            if (c == 1) {msg = "Are you sure you want to permanently delete the selected audiobook?"}
+            if (c > 1) {msg = "Are you sure you want to permanently delete the " + c + " selected audiobooks?"}
+            bootbox.confirm({
+                message: msg,
+                buttons: {
+                    confirm: {
+                        label: 'Yes',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'No',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function (result) {
+                    if (result) { document.getElementById("markBooks").submit(); }
+                }
+            });
+            return false;
+        }
+        else { document.getElementById("markBooks").submit(); }
+    }
+
+  </script>
+</%def>

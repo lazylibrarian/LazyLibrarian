@@ -1,497 +1,766 @@
+#  This file is part of Lazylibrarian.
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import print_function
 from __future__ import with_statement
 
+import calendar
+import json
+import locale
 import os
-import sys
+import platform
 import subprocess
+import sys
 import threading
-import cherrypy
+import time
 import webbrowser
 import sqlite3
-import re
 
-import datetime
-import locale
-import calendar
-import time
-import subprocess
-import ConfigParser
+import cherrypy
+from lazylibrarian import logger, database, versioncheck, postprocess, searchbook, searchmag, searchrss, \
+    importer, grsync, webServe
+from lazylibrarian.cache import fetchURL
+from lazylibrarian.common import restartJobs, logHeader, scheduleJob
+from lazylibrarian.formatter import getList, bookSeries, plural, unaccented, check_int, unaccented_str, makeUnicode
+from lazylibrarian.dbupgrade import check_db
 from lib.apscheduler.scheduler import Scheduler
+from lib.six import PY2, text_type
+# noinspection PyUnresolvedReferences
+from lib.six.moves import configparser
 
-import urllib2
-import socket
-import json
-
-from lazylibrarian import logger, postprocess, searchnzb, searchtorrents, searchrss, formatter, \
-    librarysync, versioncheck, database, searchmag, magazinescan, common, bookwork
-
-try:
-    from wand.image import Image
-    MAGICK = "wand"
-except ImportError:
-    try:
-        import PythonMagick
-        MAGICK = "pythonmagick"
-    except:
-        MAGICK = 'convert'  # may have external, don't know yet
-
+# Transient globals NOT stored in config
+# These are used/modified by LazyLibrarian.py before config.ini is read
 FULL_PATH = None
 PROG_DIR = None
-
 ARGS = None
-SIGNAL = None
-
 DAEMON = False
-PIDFILE = None
+SIGNAL = None
+PIDFILE = ''
+DATADIR = ''
+CONFIGFILE = ''
+SYS_ENCODING = ''
+LOGLEVEL = 1
+CONFIG = {}
+CFG = ''
+DBFILE = None
+COMMIT_LIST = None
+SHOWLOGOUT = 1
+CHERRYPYLOG = 0
 
-SYS_ENCODING = None
-
-SCHED = Scheduler()
-
+# These are only used in startup
+SCHED = None
 INIT_LOCK = threading.Lock()
 __INITIALIZED__ = False
 started = False
 
-GIT_USER = None
-GIT_REPO = None
-GIT_BRANCH = None
-INSTALL_TYPE = None
-CURRENT_VERSION = None
-LATEST_VERSION = None
-COMMITS_BEHIND = None
-
-DATADIR = None
-DBFILE = None
-CONFIGFILE = None
-CFG = None
-
-LOGDIR = None
+# Transients used by logger process
 LOGLIST = []
-# Info 1, Debug 2, >2 don't toggle console/file
-LOGLEVEL = 2
-LOGLIMIT = 500
-LOGFULL = False  # include debug on screen if true
-LOGFILES = 10  # 10 log files
-LOGSIZE = 204800  # each up to 200K
+LOGTOGGLE = 2  # normal debug
 
-MATCH_RATIO = 80
-
-HTTP_HOST = None
-HTTP_PORT = 5299
-HTTP_USER = None
-HTTP_PASS = None
-HTTP_PROXY = None
-HTTP_ROOT = None
-HTTP_LOOK = None
-HTTPS_ENABLED = 0
-HTTPS_CERT = None
-HTTPS_KEY = None
-LAUNCH_BROWSER = 0
-API_ENABLED = 0
-API_KEY = None
-
-PROXY_HOST = None
-PROXY_TYPE = None
-
-SAB_HOST = None
-SAB_PORT = 0
-SAB_SUBDIR = None
-SAB_USER = None
-SAB_PASS = None
-SAB_API = None
-SAB_CAT = None
-
-NZBGET_HOST = None
-NZBGET_PORT = 0
-NZBGET_USER = None
-NZBGET_PASS = None
-NZBGET_CATEGORY = None
-NZBGET_PRIORITY = 0
-
-DESTINATION_COPY = 0
-DESTINATION_DIR = None
-ALTERNATE_DIR = None
-DOWNLOAD_DIR = None
-
-IMP_PREFLANG = None
-IMP_MONTHLANG = None
-IMP_ONLYISBN = 0
-IMP_SINGLEBOOK = 1
-IMP_AUTOADD = None
-IMP_CONVERT = None
-GIT_PROGRAM = None
-
-BOOK_API = None
-GR_API = None
-GB_API = None
-
-NZBMATRIX = 0
-NZBMATRIX_USER = None
-NZBMATRIX_API = None
-
-NEWZBIN = 0
-NEWZBIN_UID = None
-NEWZBIN_PASSWORD = None
-EBOOK_TYPE = None
-MAG_TYPE = None
-REJECT_WORDS = None
-
-TOR_DOWNLOADER_BLACKHOLE = 0
-TOR_DOWNLOADER_UTORRENT = 0
-TOR_DOWNLOADER_QBITTORRENT = 0
-TOR_DOWNLOADER_TRANSMISSION = 0
-TOR_DOWNLOADER_DELUGE = 0
-NUMBEROFSEEDERS = 10
-TORRENT_DIR = None
-
-UTORRENT_HOST = None
-UTORRENT_PORT = 0
-UTORRENT_USER = None
-UTORRENT_PASS = None
-UTORRENT_LABEL = None
-
-QBITTORRENT_HOST = None
-QBITTORRENT_PORT = 0
-QBITTORRENT_USER = None
-QBITTORRENT_PASS = None
-QBITTORRENT_LABEL = None
-
-TRANSMISSION_HOST = None
-TRANSMISSION_PORT = 0
-TRANSMISSION_USER = None
-TRANSMISSION_PASS = None
-
-DELUGE_PORT = 0
-DELUGE_HOST = None
-DELUGE_USER = None
-DELUGE_PASS = None
-DELUGE_LABEL = None
-
-KAT = 0
-KAT_HOST = None
-
-NZB_DOWNLOADER_SABNZBD = 0
-NZB_DOWNLOADER_NZBGET = 0
-NZB_DOWNLOADER_BLACKHOLE = 0
-NZB_BLACKHOLEDIR = None
-USENET_RETENTION = 0
-
-VERSIONCHECK_INTERVAL = 24  # Every 2 hours
-SEARCH_INTERVAL = 720  # Every 12 hours
-SCAN_INTERVAL = 10  # Every 10 minutes
-SEARCHRSS_INTERVAL = 20  # Every 20 minutes
-FULL_SCAN = 0  # full scan would remove books from db
-ADD_AUTHOR = 1  # auto add authors not found in db from goodreads
-# value to mark missing books (deleted/removed) in db, can be 'Open', 'Ignored', 'Wanted','Skipped'
-NOTFOUND_STATUS = 'Skipped'
-# value to mark new books (when importing a new author), can be 'Open', 'Ignored', 'Wanted','Skipped'
-NEWBOOK_STATUS = 'Skipped'
-EBOOK_DEST_FOLDER = None
-EBOOK_DEST_FILE = None
-MAG_DEST_FOLDER = None
-MAG_DEST_FILE = None
-MAG_RELATIVE = 1
-
-USE_TWITTER = 0
-TWITTER_NOTIFY_ONSNATCH = 0
-TWITTER_NOTIFY_ONDOWNLOAD = 0
-TWITTER_USERNAME = None
-TWITTER_PASSWORD = None
-TWITTER_PREFIX = 'LazyLibrarian'
-
-USE_BOXCAR = 0
-BOXCAR_TOKEN = None
-BOXCAR_NOTIFY_ONSNATCH = 0
-BOXCAR_NOTIFY_ONDOWNLOAD = 0
-
-USE_PUSHBULLET = 0
-PUSHBULLET_TOKEN = None
-PUSHBULLET_DEVICEID = None
-PUSHBULLET_NOTIFY_ONSNATCH = 0
-PUSHBULLET_NOTIFY_ONDOWNLOAD = 0
-
-USE_PUSHOVER = 0
-PUSHOVER_APITOKEN = None
-PUSHOVER_KEYS = None
-PUSHOVER_DEVICE = None
-PUSHOVER_ONSNATCH = 0
-PUSHOVER_ONDOWNLOAD = 0
-PUSHOVER_PRIORITY = 0
-
-USE_ANDROIDPN = 0
-ANDROIDPN_NOTIFY_ONSNATCH = 0
-ANDROIDPN_NOTIFY_ONDOWNLOAD = 0
-ANDROIDPN_URL = None
-ANDROIDPN_BROADCAST = 0
-ANDROIDPN_USERNAME = None
-
-USE_NMA = 0
-NMA_APIKEY = None
-NMA_PRIORITY = 0
-NMA_ONSNATCH = None
-NMA_ONDOWNLOAD = None
-
-# Month names table to hold long/short month names for multiple languages
-# which we can match against magazine issues
-# Defined as global and initialised early, because locale changes are not thread safe
-# This means changes to languages require a restart
-MONTH0 = ['en_GB.UTF-8', 'en_GB.UTF-8']  # This holds the language code
-MONTH1 = [u'january', u'jan']  # multiple names for first month
-MONTH2 = [u'february', u'feb']  # etc...
-MONTH3 = [u'march', u'mar']
-MONTH4 = [u'april', u'apr']
-MONTH5 = [u'may', u'may']
-MONTH6 = [u'june', u'jun']
-MONTH7 = [u'july', u'jul']
-MONTH8 = [u'august', u'aug']
-MONTH9 = [u'september', u'sep']
-MONTH10 = [u'october', u'oct']
-MONTH11 = [u'november', u'nov']
-MONTH12 = [u'december', u'dec']
-MONTHNAMES = [MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6,
-              MONTH7, MONTH8, MONTH9, MONTH10, MONTH11, MONTH12]
+# These are globals
+UPDATE_MSG = ''
+NO_TOR_MSG = 0
+NO_RSS_MSG = 0
+NO_NZB_MSG = 0
+NO_DIRECT_MSG = 0
+IGNORED_AUTHORS = 0
+CURRENT_TAB = '1'
 CACHE_HIT = 0
 CACHE_MISS = 0
 LAST_GOODREADS = 0
 LAST_LIBRARYTHING = 0
-CACHE_AGE = 30
-
-BOOKSTRAP_THEME = ''
+GR_SLEEP = 0.0
+LT_SLEEP = 0.0
+GB_CALLS = 0
+MONTHNAMES = []
+CACHEDIR = ''
+NEWZNAB_PROV = []
+TORZNAB_PROV = []
+NABAPICOUNT = ''
+RSS_PROV = []
 BOOKSTRAP_THEMELIST = []
+PROVIDER_BLOCKLIST = []
+USER_BLOCKLIST = []
+SHOW_MAGS = 1
+SHOW_SERIES = 1
+SHOW_AUDIO = 0
+MAG_UPDATE = 0
+EBOOK_UPDATE = 0
+AUDIO_UPDATE = 0
+AUTHORS_UPDATE = 0
+LOGIN_MSG = ''
+GROUP_CONCAT = 0
+HIST_REFRESH = 1000
+GITLAB_TOKEN = 'gitlab+deploy-token-25650:dPocQXZTi--s69kykCxJ@gitlab.com'
+
+# extended loglevels
+log_magdates = 1 << 2  # 4 magazine date matching
+log_searchmag = 1 << 3  # 8 extra searchmag logging
+log_dlcomms = 1 << 4  # 16 detailed downloader communication
+log_dbcomms = 1 << 5  # 32 database comms
+log_postprocess = 1 << 6  # 64 detailed postprocessing
+log_fuzz = 1 << 7  # 128 fuzzy logic
+log_serverside = 1 << 8  # 256 serverside processing
+log_fileperms = 1 << 9  # 512 changes to file permissions
+log_grsync = 1 << 10  # 1024 detailed goodreads sync
+log_cache = 1 << 11  # 2048 cache results
+log_libsync = 1 << 12  # 4096 librarysync details
+log_admin = 1 << 13  # 8192 admin logging
+
+# user permissions
+perm_config = 1 << 0  # 1 access to config page
+perm_logs = 1 << 1  # 2 access to logs
+perm_history = 1 << 2  # 4 access to history
+perm_managebooks = 1 << 3  # 8 access to manage page
+perm_magazines = 1 << 4  # 16 access to magazines/issues/pastissues
+perm_audio = 1 << 5  # 32 access to audiobooks page
+perm_ebook = 1 << 6  # 64 can access ebooks page
+perm_series = 1 << 7  # 128 access to series/seriesmembers
+perm_edit = 1 << 8  # 256 can edit book or author details
+perm_search = 1 << 9  # 512 can search goodreads/googlebooks for books/authors
+perm_status = 1 << 10  # 1024 can change book status (wanted/skipped etc)
+perm_force = 1 << 11  # 2048 can use background tasks (refresh authors/libraryscan/postprocess/searchtasks)
+perm_download = 1 << 12  # 4096 can download existing books/mags
+
+perm_authorbooks = perm_audio + perm_ebook
+perm_guest = perm_download + perm_series + perm_authorbooks + perm_magazines
+perm_friend = perm_guest + perm_search + perm_status
+perm_admin = 65535
+
+# Shared dictionaries
+isbn_979_dict = {
+    "10": "fre",
+    "11": "kor",
+    "12": "ita"
+}
+isbn_978_dict = {
+    "0": "eng",
+    "1": "eng",
+    "2": "fre",
+    "3": "ger",
+    "4": "jap",
+    "5": "rus",
+    "7": "chi",
+    "80": "cze",
+    "82": "pol",
+    "83": "nor",
+    "84": "spa",
+    "85": "bra",
+    "87": "den",
+    "88": "ita",
+    "89": "kor",
+    "91": "swe",
+    "93": "ind"
+}
+# These are the items in config.ini
+# Not all are accessible from the web ui
+# Any undefined on startup will be set to the default value
+# Any _NOT_ in the web ui will remain unchanged on config save
+CONFIG_GIT = ['GIT_REPO', 'GIT_USER', 'GIT_BRANCH', 'LATEST_VERSION', 'GIT_UPDATED', 'CURRENT_VERSION',
+              'GIT_HOST', 'COMMITS_BEHIND', 'INSTALL_TYPE', 'AUTO_UPDATE']
+CONFIG_NONWEB = ['NAME_POSTFIX', 'DIR_PERM', 'FILE_PERM', 'BLOCKLIST_TIMER', 'DISPLAYLENGTH', 'ISBN_LOOKUP',
+                 'WALL_COLUMNS', 'ADMIN_EMAIL', 'HTTP_TIMEOUT', 'PROXY_LOCAL', 'SKIPPED_EXT', 'CHERRYPYLOG',
+                 'SYS_ENCODING', 'LT_DEVKEY', 'HIST_REFRESH', 'HTTP_EXT_TIMEOUT', 'CALIBRE_RENAME',
+                 'NAME_RATIO', 'NAME_PARTIAL', 'NAME_PARTNAME', 'USER_AGENT']
+# default interface does not know about these items, so leaves them unchanged
+CONFIG_NONDEFAULT = ['BOOKSTRAP_THEME', 'AUDIOBOOK_TYPE', 'AUDIO_DIR', 'AUDIO_TAB', 'REJECT_AUDIO',
+                     'REJECT_MAXAUDIO', 'REJECT_MINAUDIO', 'NEWAUDIO_STATUS', 'TOGGLES', 'FOUND_STATUS',
+                     'USER_ACCOUNTS', 'GR_SYNC', 'GR_SECRET', 'GR_OAUTH_TOKEN', 'GR_OAUTH_SECRET',
+                     'GR_OWNED', 'GR_WANTED', 'GR_UNIQUE', 'GR_FOLLOW', 'GR_FOLLOWNEW', 'GOODREADS_INTERVAL',
+                     'AUDIOBOOK_DEST_FILE', 'SINGLE_USER', 'FMT_SERNAME', 'FMT_SERNUM', 'FMT_SERIES',
+                     'AUTOADDMAG', 'AUTOADD_MAGONLY', 'TRANSMISSION_DIR', 'DELUGE_DIR', 'QBITTORRENT_DIR',
+                     'BANNED_EXT', 'MAG_RENAME', 'LOGFILES', 'LOGSIZE', 'ISS_FORMAT', 'DATE_FORMAT',
+                     'NO_ISBN', 'NO_SETS', 'NO_LANG', 'NO_PUBDATE', 'IMP_IGNORE', 'IMP_GOOGLEIMAGE', 'DELETE_CSV',
+                     'BLACKLIST_FAILED', 'BLACKLIST_PROCESSED', 'WISHLIST_INTERVAL', 'IMP_PREPROCESS',
+                     'OPDS_ENABLED', 'OPDS_AUTHENTICATION', 'OPDS_USERNAME', 'OPDS_PASSWORD', 'OPDS_METAINFO',
+                     'OPDS_PAGE', 'DELAYSEARCH', 'SEED_WAIT', 'GR_AOWNED', 'GR_AWANTED', 'MAG_DELFOLDER']
+
+CONFIG_DEFINITIONS = {
+    # Name      Type   Section   Default
+    'USER_ACCOUNTS': ('bool', 'General', 0),
+    'SINGLE_USER': ('bool', 'General', 0),
+    'ADMIN_EMAIL': ('str', 'General', ''),
+    'SYS_ENCODING': ('str', 'General', ''),
+    'LOGDIR': ('str', 'General', ''),
+    'LOGLIMIT': ('int', 'General', 500),
+    'LOGFILES': ('int', 'General', 10),
+    'LOGSIZE': ('int', 'General', 204800),
+    'LOGLEVEL': ('int', 'General', 1),
+    'WALL_COLUMNS': ('int', 'General', 6),
+    'FILE_PERM': ('str', 'General', '0o644'),
+    'DIR_PERM': ('str', 'General', '0o755'),
+    'BLOCKLIST_TIMER': ('int', 'General', 3600),
+    'MAX_PAGES': ('int', 'General', 0),
+    'MAX_BOOKPAGES': ('int', 'General', 0),
+    'MAX_WALL': ('int', 'General', 0),
+    'MATCH_RATIO': ('int', 'General', 80),
+    'DLOAD_RATIO': ('int', 'General', 90),
+    'NAME_RATIO': ('int', 'General', 90),
+    'NAME_PARTIAL': ('int', 'General', 95),
+    'NAME_PARTNAME': ('int', 'General', 95),
+    'DISPLAYLENGTH': ('int', 'General', 10),
+    'HIST_REFRESH': ('int', 'General', 1000),
+    'HTTP_PORT': ('int', 'General', 5299),
+    'HTTP_HOST': ('str', 'General', '0.0.0.0'),
+    'HTTP_USER': ('str', 'General', ''),
+    'HTTP_PASS': ('str', 'General', ''),
+    'HTTP_PROXY': ('bool', 'General', 0),
+    'HTTP_ROOT': ('str', 'General', ''),
+    'HTTP_LOOK': ('str', 'General', 'bookstrap'),
+    'HTTPS_ENABLED': ('bool', 'General', 0),
+    'HTTPS_CERT': ('str', 'General', ''),
+    'HTTPS_KEY': ('str', 'General', ''),
+    'HTTP_TIMEOUT': ('int', 'General', 30),
+    'HTTP_EXT_TIMEOUT': ('int', 'General', 90),
+    'BOOKSTRAP_THEME': ('str', 'General', 'slate'),
+    'MAG_SINGLE': ('bool', 'General', 1),
+    'AUTHOR_IMG': ('bool', 'General', 1),
+    'BOOK_IMG': ('bool', 'General', 1),
+    'MAG_IMG': ('bool', 'General', 1),
+    'SERIES_TAB': ('bool', 'General', 1),
+    'MAG_TAB': ('bool', 'General', 1),
+    'AUDIO_TAB': ('bool', 'General', 1),
+    'TOGGLES': ('bool', 'General', 1),
+    'SORT_DEFINITE': ('bool', 'General', 0),
+    'SORT_SURNAME': ('bool', 'General', 0),
+    'LAUNCH_BROWSER': ('bool', 'General', 1),
+    'API_ENABLED': ('bool', 'General', 0),
+    'API_KEY': ('str', 'General', ''),
+    'PROXY_HOST': ('str', 'General', ''),
+    'PROXY_TYPE': ('str', 'General', ''),
+    'PROXY_LOCAL': ('str', 'General', ''),
+    'NAME_POSTFIX': ('str', 'General', 'snr, jnr, jr, sr, phd'),
+    'SKIPPED_EXT': ('str', 'General', 'fail, part, bts, !ut, torrent, magnet, nzb, unpack'),
+    'BANNED_EXT': ('str', 'General', 'avi, mp4, mov, iso, m4v'),
+    'IMP_PREFLANG': ('str', 'General', 'en, eng, en-US, en-GB'),
+    'ISS_FORMAT': ('str', 'General', '$Y-$m-$d'),
+    'DATE_FORMAT': ('str', 'General', '$Y-$m-$d'),
+    'IMP_MONTHLANG': ('str', 'General', ''),
+    'IMP_AUTOADD': ('str', 'General', ''),
+    'IMP_AUTOADD_COPY': ('bool', 'General', 1),
+    'IMP_AUTOADD_BOOKONLY': ('bool', 'General', 0),
+    'IMP_AUTOADDMAG': ('str', 'General', ''),
+    'IMP_AUTOADDMAG_COPY': ('bool', 'General', 1),
+    'IMP_AUTOADD_MAGONLY': ('bool', 'General', 0),
+    'IMP_AUTOSEARCH': ('bool', 'General', 0),
+    'IMP_CALIBREDB': ('str', 'General', ''),
+    'BLACKLIST_FAILED': ('bool', 'General', 1),
+    'BLACKLIST_PROCESSED': ('bool', 'General', 0),
+    'CALIBRE_USE_SERVER': ('bool', 'General', 0),
+    'CALIBRE_SERVER': ('str', 'General', ''),
+    'CALIBRE_USER': ('str', 'General', ''),
+    'CALIBRE_PASS': ('str', 'General', ''),
+    'CALIBRE_RENAME': ('bool', 'General', 0),
+    'IMP_SINGLEBOOK': ('bool', 'General', 0),
+    'IMP_RENAME': ('bool', 'General', 0),
+    'MAG_RENAME': ('bool', 'General', 0),
+    'IMP_MAGOPF': ('bool', 'General', 1),
+    'IMP_MAGCOVER': ('bool', 'General', 1),
+    'IMP_CONVERT': ('str', 'General', ''),
+    'IMP_PREPROCESS': ('str', 'General', ''),
+    'GIT_PROGRAM': ('str', 'General', ''),
+    'CACHE_AGE': ('int', 'General', 30),
+    'TASK_AGE': ('int', 'General', 2),
+    'OPF_TAGS': ('bool', 'General', 1),
+    'WISHLIST_TAGS': ('bool', 'General', 1),
+    'GIT_HOST': ('str', 'Git', 'github.com'),
+    'GIT_USER': ('str', 'Git', 'dobytang'),
+    'GIT_REPO': ('str', 'Git', 'lazylibrarian'),
+    'GIT_BRANCH': ('str', 'Git', 'master'),
+    'GIT_UPDATED': ('int', 'Git', 0),
+    'INSTALL_TYPE': ('str', 'Git', ''),
+    'CURRENT_VERSION': ('str', 'Git', ''),
+    'LATEST_VERSION': ('str', 'Git', ''),
+    'COMMITS_BEHIND': ('int', 'Git', 0),
+    'AUTO_UPDATE': ('int', 'Git', 0),
+    'SAB_HOST': ('str', 'SABnzbd', ''),
+    'SAB_PORT': ('int', 'SABnzbd', 0),
+    'SAB_SUBDIR': ('str', 'SABnzbd', ''),
+    'SAB_USER': ('str', 'SABnzbd', ''),
+    'SAB_PASS': ('str', 'SABnzbd', ''),
+    'SAB_API': ('str', 'SABnzbd', ''),
+    'SAB_CAT': ('str', 'SABnzbd', ''),
+    'NZBGET_HOST': ('str', 'NZBGet', ''),
+    'NZBGET_PORT': ('int', 'NZBGet', '0'),
+    'NZBGET_USER': ('str', 'NZBGet', ''),
+    'NZBGET_PASS': ('str', 'NZBGet', ''),
+    'NZBGET_CATEGORY': ('str', 'NZBGet', ''),
+    'NZBGET_PRIORITY': ('int', 'NZBGet', '0'),
+    'DESTINATION_COPY': ('bool', 'General', 0),
+    'EBOOK_DIR': ('str', 'General', ''),
+    'AUDIO_DIR': ('str', 'General', ''),
+    'ALTERNATE_DIR': ('str', 'General', ''),
+    'DELETE_CSV': ('bool', 'General', 0),
+    'DOWNLOAD_DIR': ('str', 'General', ''),
+    'NZB_DOWNLOADER_SABNZBD': ('bool', 'USENET', 0),
+    'NZB_DOWNLOADER_NZBGET': ('bool', 'USENET', 0),
+    'NZB_DOWNLOADER_SYNOLOGY': ('bool', 'USENET', 0),
+    'NZB_DOWNLOADER_BLACKHOLE': ('bool', 'USENET', 0),
+    'NZB_BLACKHOLEDIR': ('str', 'USENET', ''),
+    'USENET_RETENTION': ('int', 'USENET', 0),
+    'NZBMATRIX_USER': ('str', 'NZBMatrix', ''),
+    'NZBMATRIX_API': ('str', 'NZBMatrix', ''),
+    'NZBMATRIX': ('bool', 'NZBMatrix', 0),
+    'TOR_DOWNLOADER_BLACKHOLE': ('bool', 'TORRENT', 0),
+    'TOR_CONVERT_MAGNET': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_UTORRENT': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_RTORRENT': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_QBITTORRENT': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_TRANSMISSION': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_SYNOLOGY': ('bool', 'TORRENT', 0),
+    'TOR_DOWNLOADER_DELUGE': ('bool', 'TORRENT', 0),
+    'NUMBEROFSEEDERS': ('int', 'TORRENT', 10),
+    'KEEP_SEEDING': ('bool', 'TORRENT', 1),
+    'SEED_WAIT': ('bool', 'TORRENT', 1),
+    'PREFER_MAGNET': ('bool', 'TORRENT', 1),
+    'TORRENT_DIR': ('str', 'TORRENT', ''),
+    'RTORRENT_HOST': ('str', 'RTORRENT', ''),
+    'RTORRENT_USER': ('str', 'RTORRENT', ''),
+    'RTORRENT_PASS': ('str', 'RTORRENT', ''),
+    'RTORRENT_LABEL': ('str', 'RTORRENT', ''),
+    'RTORRENT_DIR': ('str', 'RTORRENT', ''),
+    'UTORRENT_HOST': ('str', 'UTORRENT', ''),
+    'UTORRENT_PORT': ('int', 'UTORRENT', 0),
+    'UTORRENT_USER': ('str', 'UTORRENT', ''),
+    'UTORRENT_PASS': ('str', 'UTORRENT', ''),
+    'UTORRENT_LABEL': ('str', 'UTORRENT', ''),
+    'QBITTORRENT_HOST': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_PORT': ('int', 'QBITTORRENT', 0),
+    'QBITTORRENT_USER': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_PASS': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_LABEL': ('str', 'QBITTORRENT', ''),
+    'QBITTORRENT_DIR': ('str', 'QBITTORRENT', ''),
+    'TRANSMISSION_HOST': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_BASE': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_PORT': ('int', 'TRANSMISSION', 0),
+    'TRANSMISSION_USER': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_PASS': ('str', 'TRANSMISSION', ''),
+    'TRANSMISSION_DIR': ('str', 'TRANSMISSION', ''),
+    'DELUGE_CERT': ('str', 'DELUGE', ''),
+    'DELUGE_HOST': ('str', 'DELUGE', ''),
+    'DELUGE_BASE': ('str', 'DELUGE', ''),
+    'DELUGE_PORT': ('int', 'DELUGE', 0),
+    'DELUGE_USER': ('str', 'DELUGE', ''),
+    'DELUGE_PASS': ('str', 'DELUGE', ''),
+    'DELUGE_LABEL': ('str', 'DELUGE', ''),
+    'DELUGE_DIR': ('str', 'DELUGE', ''),
+    'SYNOLOGY_HOST': ('str', 'SYNOLOGY', ''),
+    'SYNOLOGY_PORT': ('int', 'SYNOLOGY', 0),
+    'SYNOLOGY_USER': ('str', 'SYNOLOGY', ''),
+    'SYNOLOGY_PASS': ('str', 'SYNOLOGY', ''),
+    'SYNOLOGY_DIR': ('str', 'SYNOLOGY', 'Multimedia/Download'),
+    'USE_SYNOLOGY': ('bool', 'SYNOLOGY', 0),
+    'KAT_HOST': ('str', 'KAT', 'kickass.cd'),
+    'KAT': ('bool', 'KAT', 0),
+    'KAT_DLPRIORITY': ('int', 'KAT', 0),
+    'KAT_DLTYPES': ('str', 'KAT', 'A,E,M'),
+    'WWT_HOST': ('str', 'WWT', 'https://worldwidetorrents.me'),
+    'WWT': ('bool', 'WWT', 0),
+    'WWT_DLPRIORITY': ('int', 'WWT', 0),
+    'WWT_DLTYPES': ('str', 'WWT', 'A,E,M'),
+    'TPB_HOST': ('str', 'TPB', 'https://pirateproxy.cc'),
+    'TPB': ('bool', 'TPB', 0),
+    'TPB_DLPRIORITY': ('int', 'TPB', 0),
+    'TPB_DLTYPES': ('str', 'TPB', 'A,E,M'),
+    'ZOO_HOST': ('str', 'ZOO', 'https://zooqle.com'),
+    'ZOO': ('bool', 'ZOO', 0),
+    'ZOO_DLPRIORITY': ('int', 'ZOO', 0),
+    'ZOO_DLTYPES': ('str', 'ZOO', 'A,E,M'),
+    # 'EXTRA_HOST': ('str', 'EXTRA', 'extratorrent.cc'),
+    # 'EXTRA': ('bool', 'EXTRA', 0),
+    # 'EXTRA_DLPRIORITY': ('int', 'EXTRA', 0),
+    'TDL_HOST': ('str', 'TDL', 'torrentdownloads.me'),
+    'TDL': ('bool', 'TDL', 0),
+    'TDL_DLPRIORITY': ('int', 'TDL', 0),
+    'TDL_DLTYPES': ('str', 'TDL', 'A,E,M'),
+    'GEN_HOST': ('str', 'GEN', 'libgen.io'),
+    'GEN_SEARCH': ('str', 'GEN', 'search.php'),
+    'GEN': ('bool', 'GEN', 0),
+    'GEN_DLPRIORITY': ('int', 'GEN', 0),
+    'GEN_DLTYPES': ('str', 'GEN', 'EM'),
+    'GEN2_HOST': ('str', 'GEN', 'libgen.io'),
+    'GEN2_SEARCH': ('str', 'GEN', 'foreignfiction/index.php'),
+    'GEN2': ('bool', 'GEN', 0),
+    'GEN2_DLPRIORITY': ('int', 'GEN', 0),
+    'GEN2_DLTYPES': ('str', 'GEN2', 'EM'),
+    'LIME_HOST': ('str', 'LIME', 'https://www.limetorrents.cc'),
+    'LIME': ('bool', 'LIME', 0),
+    'LIME_DLPRIORITY': ('int', 'LIME', 0),
+    'LIME_DLTYPES': ('str', 'LIME', 'A,E,M'),
+    'NEWZBIN_UID': ('str', 'Newzbin', ''),
+    'NEWZBIN_PASS': ('str', 'Newzbin', ''),
+    'NEWZBIN': ('bool', 'Newzbin', 0),
+    'EBOOK_TYPE': ('str', 'General', 'epub, mobi, pdf'),
+    'AUDIOBOOK_TYPE': ('str', 'General', 'mp3'),
+    'MAG_TYPE': ('str', 'General', 'pdf'),
+    'REJECT_WORDS': ('str', 'General', 'audiobook, mp3'),
+    'REJECT_AUDIO': ('str', 'General', 'epub, mobi'),
+    'REJECT_MAGS': ('str', 'General', ''),
+    'REJECT_MAXSIZE': ('int', 'General', 0),
+    'REJECT_MINSIZE': ('int', 'General', 0),
+    'REJECT_MAXAUDIO': ('int', 'General', 0),
+    'REJECT_MINAUDIO': ('int', 'General', 0),
+    'REJECT_MAGSIZE': ('int', 'General', 0),
+    'REJECT_MAGMIN': ('int', 'General', 0),
+    'MAG_AGE': ('int', 'General', 31),
+    'SEARCH_BOOKINTERVAL': ('int', 'SearchScan', '360'),
+    'SEARCH_MAGINTERVAL': ('int', 'SearchScan', '360'),
+    'SCAN_INTERVAL': ('int', 'SearchScan', '10'),
+    'SEARCHRSS_INTERVAL': ('int', 'SearchScan', '20'),
+    'WISHLIST_INTERVAL': ('int', 'SearchScan', '24'),
+    'VERSIONCHECK_INTERVAL': ('int', 'SearchScan', '24'),
+    'GOODREADS_INTERVAL': ('int', 'SearchScan', '48'),
+    'DELAYSEARCH': ('bool', 'SearchScan', 0),
+    'FULL_SCAN': ('bool', 'LibraryScan', 0),
+    'ADD_AUTHOR': ('bool', 'LibraryScan', 1),
+    'ADD_SERIES': ('bool', 'LibraryScan', 1),
+    'NOTFOUND_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'FOUND_STATUS': ('str', 'LibraryScan', 'Open'),
+    'NEWBOOK_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUDIO_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUTHOR_STATUS': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUTHOR_AUDIO': ('str', 'LibraryScan', 'Skipped'),
+    'NEWAUTHOR_BOOKS': ('bool', 'LibraryScan', 0),
+    'NO_FUTURE': ('bool', 'LibraryScan', 0),
+    'NO_PUBDATE': ('bool', 'LibraryScan', 0),
+    'NO_ISBN': ('bool', 'LibraryScan', 0),
+    'NO_SETS': ('bool', 'LibraryScan', 0),
+    'NO_LANG': ('bool', 'LibraryScan', 0),
+    'ISBN_LOOKUP': ('bool', 'LibraryScan', 1),
+    'IMP_IGNORE': ('bool', 'LibraryScan', 0),
+    'IMP_GOOGLEIMAGE': ('bool', 'LibraryScan', 0),
+    'EBOOK_DEST_FOLDER': ('str', 'PostProcess', '$Author/$Title'),
+    'EBOOK_DEST_FILE': ('str', 'PostProcess', '$Title - $Author'),
+    'AUDIOBOOK_DEST_FILE': ('str', 'PostProcess', '$Author - $Title Part $Part of $Total'),
+    'ONE_FORMAT': ('bool', 'PostProcess', 0),
+    'MAG_DEST_FOLDER': ('str', 'PostProcess', '_Magazines/$Title/$IssueDate'),
+    'MAG_DEST_FILE': ('str', 'PostProcess', '$IssueDate - $Title'),
+    'MAG_RELATIVE': ('bool', 'PostProcess', 1),
+    'MAG_DELFOLDER': ('bool', 'PostProcess', 1),
+    'USE_TWITTER': ('bool', 'Twitter', 0),
+    'TWITTER_NOTIFY_ONSNATCH': ('bool', 'Twitter', 0),
+    'TWITTER_NOTIFY_ONDOWNLOAD': ('bool', 'Twitter', 0),
+    'TWITTER_USERNAME': ('str', 'Twitter', ''),
+    'TWITTER_PASSWORD': ('str', 'Twitter', ''),
+    'TWITTER_PREFIX': ('str', 'Twitter', 'LazyLibrarian'),
+    'USE_BOXCAR': ('bool', 'Boxcar', 0),
+    'BOXCAR_NOTIFY_ONSNATCH': ('bool', 'Boxcar', 0),
+    'BOXCAR_NOTIFY_ONDOWNLOAD': ('bool', 'Boxcar', 0),
+    'BOXCAR_TOKEN': ('str', 'Boxcar', ''),
+    'USE_PUSHBULLET': ('bool', 'Pushbullet', 0),
+    'PUSHBULLET_NOTIFY_ONSNATCH': ('bool', 'Pushbullet', 0),
+    'PUSHBULLET_NOTIFY_ONDOWNLOAD': ('bool', 'Pushbullet', 0),
+    'PUSHBULLET_TOKEN': ('str', 'Pushbullet', ''),
+    'PUSHBULLET_DEVICEID': ('str', 'Pushbullet', ''),
+    'USE_PUSHOVER': ('bool', 'Pushover', 0),
+    'PUSHOVER_ONSNATCH': ('bool', 'Pushover', 0),
+    'PUSHOVER_ONDOWNLOAD': ('bool', 'Pushover', 0),
+    'PUSHOVER_KEYS': ('str', 'Pushover', ''),
+    'PUSHOVER_APITOKEN': ('str', 'Pushover', ''),
+    'PUSHOVER_PRIORITY': ('int', 'Pushover', 0),
+    'PUSHOVER_DEVICE': ('str', 'Pushover', ''),
+    'USE_ANDROIDPN': ('bool', 'AndroidPN', 0),
+    'ANDROIDPN_NOTIFY_ONSNATCH': ('bool', 'AndroidPN', 0),
+    'ANDROIDPN_NOTIFY_ONDOWNLOAD': ('bool', 'AndroidPN', 0),
+    'ANDROIDPN_URL': ('str', 'AndroidPN', ''),
+    'ANDROIDPN_USERNAME': ('str', 'AndroidPN', ''),
+    'ANDROIDPN_BROADCAST': ('bool', 'AndroidPN', 0),
+    'USE_TELEGRAM': ('bool', 'Telegram', 0),
+    'TELEGRAM_TOKEN': ('str', 'Telegram', ''),
+    'TELEGRAM_USERID': ('str', 'Telegram', ''),
+    'TELEGRAM_ONSNATCH': ('bool', 'Telegram', 0),
+    'TELEGRAM_ONDOWNLOAD': ('bool', 'Telegram', 0),
+    'USE_PROWL': ('bool', 'Prowl', 0),
+    'PROWL_APIKEY': ('str', 'Prowl', ''),
+    'PROWL_PRIORITY': ('int', 'Prowl', 0),
+    'PROWL_ONSNATCH': ('bool', 'Prowl', 0),
+    'PROWL_ONDOWNLOAD': ('bool', 'Prowl', 0),
+    'USE_GROWL': ('bool', 'Growl', 0),
+    'GROWL_HOST': ('str', 'Growl', ''),
+    'GROWL_PASSWORD': ('str', 'Growl', ''),
+    'GROWL_ONSNATCH': ('bool', 'Growl', 0),
+    'GROWL_ONDOWNLOAD': ('bool', 'Growl', 0),
+    'USE_NMA': ('bool', 'NMA', 0),
+    'NMA_APIKEY': ('str', 'NMA', ''),
+    'NMA_PRIORITY': ('int', 'NMA', 0),
+    'NMA_ONSNATCH': ('bool', 'NMA', 0),
+    'NMA_ONDOWNLOAD': ('bool', 'NMA', 0),
+    'USE_SLACK': ('bool', 'Slack', 0),
+    'SLACK_NOTIFY_ONSNATCH': ('bool', 'Slack', 0),
+    'SLACK_NOTIFY_ONDOWNLOAD': ('bool', 'Slack', 0),
+    'SLACK_TOKEN': ('str', 'Slack', ''),
+    'SLACK_URL': ('str', 'Slack', "https://hooks.slack.com/services/"),
+    'USE_CUSTOM': ('bool', 'Custom', 0),
+    'CUSTOM_NOTIFY_ONSNATCH': ('bool', 'Custom', 0),
+    'CUSTOM_NOTIFY_ONDOWNLOAD': ('bool', 'Custom', 0),
+    'CUSTOM_SCRIPT': ('str', 'Custom', ''),
+    'USE_EMAIL': ('bool', 'Email', 0),
+    'EMAIL_NOTIFY_ONSNATCH': ('bool', 'Email', 0),
+    'EMAIL_NOTIFY_ONDOWNLOAD': ('bool', 'Email', 0),
+    'EMAIL_SENDFILE_ONDOWNLOAD': ('bool', 'Email', 0),
+    'EMAIL_FROM': ('str', 'Email', ''),
+    'EMAIL_TO': ('str', 'Email', ''),
+    'EMAIL_SSL': ('bool', 'Email', 0),
+    'EMAIL_SMTP_SERVER': ('str', 'Email', ''),
+    'EMAIL_SMTP_PORT': ('int', 'Email', 25),
+    'EMAIL_TLS': ('bool', 'Email', 0),
+    'EMAIL_SMTP_USER': ('str', 'Email', ''),
+    'EMAIL_SMTP_PASSWORD': ('str', 'Email', ''),
+    'BOOK_API': ('str', 'API', 'GoodReads'),
+    'LT_DEVKEY': ('str', 'API', ''),
+    'GR_API': ('str', 'API', 'ckvsiSDsuqh7omh74ZZ6Q'),
+    'GR_SYNC': ('bool', 'API', 0),
+    'GR_SECRET': ('str', 'API', ''),  # tied to users own api key
+    'GR_OAUTH_TOKEN': ('str', 'API', ''),  # gives access to users bookshelves
+    'GR_OAUTH_SECRET': ('str', 'API', ''),  # gives access to users bookshelves
+    'GR_WANTED': ('str', 'API', ''),  # sync wanted to this shelf
+    'GR_OWNED': ('str', 'API', ''),  # sync open/have to this shelf
+    'GR_AWANTED': ('str', 'API', ''),  # sync wanted to this shelf
+    'GR_AOWNED': ('str', 'API', ''),  # sync open/have to this shelf
+    'GR_UNIQUE': ('bool', 'API', 0),  # delete from wanted if already owned
+    'GR_FOLLOW': ('bool', 'API', 0),  # follow authors on goodreads
+    'GR_FOLLOWNEW': ('bool', 'API', 0),  # follow new authors on goodreads
+    'GB_API': ('str', 'API', ''),  # API key has daily limits, each user needs their own
+    'GB_COUNTRY': ('str', 'API', ''),  # optional two letter country code for geographically restricted results
+    'FMT_SERNAME': ('str', 'FMT', '$SerName'),
+    'FMT_SERNUM': ('str', 'FMT', 'Book #$SerNum -$$'),
+    'FMT_SERIES': ('str', 'FMT', '( $FmtName $FmtNum )'),
+    'OPDS_ENABLED': ('bool', 'OPDS', 0),
+    'OPDS_AUTHENTICATION': ('bool', 'OPDS', 0),
+    'OPDS_USERNAME': ('str', 'OPDS', ''),
+    'OPDS_PASSWORD': ('str', 'OPDS', ''),
+    'OPDS_METAINFO': ('bool', 'OPDS', 0),
+    'OPDS_PAGE': ('int', 'OPDS', 30),
+    'USER_AGENT': ('str', 'General', ''),
+    # 'USER_AGENT': ('str', 'General',
+    # 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36'),
+}
 
 
 def check_section(sec):
     """ Check if INI section exists, if not create it """
+    # noinspection PyUnresolvedReferences
     if CFG.has_section(sec):
         return True
     else:
+        # noinspection PyUnresolvedReferences
         CFG.add_section(sec)
         return False
 
 
-def check_setting_bool(config, cfg_name, item_name, def_val, log=True):
-    """ Check if option exists and coerce to boolean, if not create it """
-    try:
-        my_val = config.getboolean(cfg_name, item_name)
-    except:
-        my_val = def_val
-        check_section(cfg_name)
-        config.set(cfg_name, item_name, my_val)
+def check_setting(cfg_type, cfg_name, item_name, def_val, log=True):
+    """ Check option exists, coerce to correct type, or return default"""
+    my_val = def_val
+    if cfg_type == 'int':
+        try:
+            # noinspection PyUnresolvedReferences
+            my_val = CFG.getint(cfg_name, item_name)
+        except configparser.Error:
+            # no such item, might be a new entry
+            my_val = int(def_val)
+        except Exception as e:
+            logger.warn('Invalid int for %s: %s, using default %s' % (cfg_name, item_name, int(def_val)))
+            logger.debug(str(e))
+            my_val = int(def_val)
+
+    elif cfg_type == 'bool':
+        try:
+            # noinspection PyUnresolvedReferences
+            my_val = CFG.getboolean(cfg_name, item_name)
+        except configparser.Error:
+            my_val = bool(def_val)
+        except Exception as e:
+            logger.warn('Invalid bool for %s: %s, using default %s' % (cfg_name, item_name, bool(def_val)))
+            logger.debug(str(e))
+            my_val = bool(def_val)
+
+    elif cfg_type == 'str':
+        try:
+            # noinspection PyUnresolvedReferences
+            my_val = CFG.get(cfg_name, item_name)
+            # Old config file format had strings in quotes. ConfigParser doesn't.
+            if my_val.startswith('"') and my_val.endswith('"'):
+                my_val = my_val[1:-1]
+            if not len(my_val):
+                my_val = def_val
+        except configparser.Error:
+            my_val = str(def_val)
+        except Exception as e:
+            logger.warn('Invalid str for %s: %s, using default %s' % (cfg_name, item_name, str(def_val)))
+            logger.debug(str(e))
+            my_val = str(def_val)
+        finally:
+            my_val = makeUnicode(my_val)
+
+    check_section(cfg_name)
+    # noinspection PyUnresolvedReferences
+    CFG.set(cfg_name, item_name, my_val)
     if log:
-        logger.debug(cfg_name + ":" + item_name + " -> " + str(my_val))
+        logger.debug("%s : %s -> %s" % (cfg_name, item_name, my_val))
+
     return my_val
 
-
-def check_setting_int(config, cfg_name, item_name, def_val, log=True):
-    """ Check if option exists and coerce to int, if not create it """
-    try:
-        my_val = config.getint(cfg_name, item_name)
-    except:
-        my_val = def_val
-        check_section(cfg_name)
-        config.set(cfg_name, item_name, my_val)
-    if log:
-        logger.debug(cfg_name + ":" + item_name + " -> " + str(my_val))
-    return my_val
-
-
-def check_setting_str(config, cfg_name, item_name, def_val, log=True):
-    """ Check if option exists and coerce to string, if not create it """
-    try:
-        my_val = config.get(cfg_name, item_name)
-        # Old config file format had strings in quotes. ConfigParser doesn't.
-        if my_val.startswith('"'):
-            my_val = my_val[1:]
-        if my_val.endswith('"'):
-            my_val = my_val[:-1]
-    except:
-        my_val = def_val
-        check_section(cfg_name)
-        config.set(cfg_name, item_name, my_val)
-    if log:
-        logger.debug(cfg_name + ":" + item_name + " -> " + my_val)
-
-    return my_val.decode('utf-8')
 
 def initialize():
+    global FULL_PATH, PROG_DIR, ARGS, DAEMON, SIGNAL, PIDFILE, DATADIR, CONFIGFILE, SYS_ENCODING, LOGLEVEL, \
+        CONFIG, CFG, DBFILE, COMMIT_LIST, SCHED, INIT_LOCK, __INITIALIZED__, started, LOGLIST, LOGTOGGLE, \
+        UPDATE_MSG, CURRENT_TAB, CACHE_HIT, CACHE_MISS, LAST_LIBRARYTHING, LAST_GOODREADS, SHOW_SERIES, SHOW_MAGS, \
+        SHOW_AUDIO, CACHEDIR, BOOKSTRAP_THEMELIST, MONTHNAMES, CONFIG_DEFINITIONS, isbn_979_dict, isbn_978_dict, \
+        CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, MAG_UPDATE, AUDIO_UPDATE, EBOOK_UPDATE, \
+        GROUP_CONCAT, GR_SLEEP, LT_SLEEP, GB_CALLS
 
     with INIT_LOCK:
-        global __INITIALIZED__, LOGDIR, LOGLIMIT, LOGFILES, LOGSIZE, CFG, CFGLOGLEVEL, LOGLEVEL, \
-            LOGFULL, CACHEDIR, DATADIR, LAST_LIBRARYTHING, LAST_GOODREADS, BOOKLANGFILTER, MANAGEFILTER, \
-            ISSUEFILTER, IMP_MONTHLANG, BOOKSTRAP_THEMELIST
-        
+
         if __INITIALIZED__:
             return False
 
+        SCHED = Scheduler(misfire_grace_time=30)
+
         check_section('General')
+        # False to silence logging until logger initialised
+        for key in ['LOGLIMIT', 'LOGFILES', 'LOGSIZE', 'LOGDIR']:
+            item_type, section, default = CONFIG_DEFINITIONS[key]
+            CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default, log=False)
 
-        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
-        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
-        LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
-        LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
+        if not CONFIG['LOGDIR']:
+            CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
 
-        if not LOGDIR:
-            LOGDIR = os.path.join(DATADIR, 'Logs')
         # Create logdir
-        if not os.path.exists(LOGDIR):
+        if not os.path.isdir(CONFIG['LOGDIR']):
             try:
-                os.makedirs(LOGDIR)
-            except OSError:
-                if LOGLEVEL:
-                    print '%s : Unable to create folder for logs. Only logging to console.' % LOGDIR
+                os.makedirs(CONFIG['LOGDIR'])
+            except OSError as e:
+                print('%s : Unable to create folder for logs: %s' % (CONFIG['LOGDIR'], str(e)))
 
         # Start the logger, silence console logging if we need to
-        CFGLOGLEVEL = check_setting_int(CFG, 'General', 'loglevel', 3)
-        if CFGLOGLEVEL == 3:  # default value if none in config
-            LOGLEVEL = 2  # If not set in Config, then lets set to DEBUG
-        else:
-            LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
+        CFGLOGLEVEL = check_int(check_setting('int', 'General', 'loglevel', 1, log=False), 9)
+        if LOGLEVEL == 1:  # default if no debug or quiet on cmdline
+            if CFGLOGLEVEL == 9:  # default value if none in config
+                LOGLEVEL = 1  # If not set in Config or cmdline, then lets set to NORMAL
+            else:
+                LOGLEVEL = CFGLOGLEVEL  # Config setting picked up
 
-        logger.lazylibrarian_log.initLogger(loglevel=LOGLEVEL)
+        CONFIG['LOGLEVEL'] = LOGLEVEL
+        logger.lazylibrarian_log.initLogger(loglevel=CONFIG['LOGLEVEL'])
         logger.info("Log level set to [%s]- Log Directory is [%s] - Config level is [%s]" % (
-            LOGLEVEL, LOGDIR, CFGLOGLEVEL))
-        if LOGLEVEL > 2:
-            LOGFULL = True
+            CONFIG['LOGLEVEL'], CONFIG['LOGDIR'], CFGLOGLEVEL))
+        if CONFIG['LOGLEVEL'] > 2:
+            logger.info("Screen Log set to EXTENDED DEBUG")
+        elif CONFIG['LOGLEVEL'] == 2:
             logger.info("Screen Log set to DEBUG")
+        elif CONFIG['LOGLEVEL'] == 1:
+            logger.info("Screen Log set to INFO")
         else:
-            LOGFULL = False
-            logger.info("Screen Log set to INFO/WARN/ERROR")
+            logger.info("Screen Log set to WARN/ERROR")
 
         config_read()
-        
+
+        # override detected encoding if required
+        if CONFIG['SYS_ENCODING']:
+            SYS_ENCODING = CONFIG['SYS_ENCODING']
+
         # Put the cache dir in the data dir for now
         CACHEDIR = os.path.join(DATADIR, 'cache')
-        if not os.path.exists(CACHEDIR):
+        if not os.path.isdir(CACHEDIR):
             try:
                 os.makedirs(CACHEDIR)
-            except OSError:
-                logger.error('Could not create cachedir. Check permissions of: ' + DATADIR)
+            except OSError as e:
+                logger.error('Could not create cachedir; %s' % e)
+
+        for item in ['book', 'author', 'SeriesCache', 'JSONCache', 'XMLCache', 'WorkCache', 'magazine']:
+            cachelocation = os.path.join(CACHEDIR, item)
+            if not os.path.isdir(cachelocation):
+                try:
+                    os.makedirs(cachelocation)
+                except OSError as e:
+                    logger.error('Could not create %s: %s' % (cachelocation, e))
 
         # keep track of last api calls so we don't call more than once per second
         # to respect api terms, but don't wait un-necessarily either
+        # keep track of how long we slept
         time_now = int(time.time())
         LAST_LIBRARYTHING = time_now
         LAST_GOODREADS = time_now
-
-        MANAGEFILTER = "Skipped"
-        ISSUEFILTER = "Skipped"
-        BOOKLANGFILTER = "eng"
+        GR_SLEEP = 0.0
+        LT_SLEEP = 0.0
+        GB_CALLS = 0
 
         # Initialize the database
         try:
-            dbcheck()
+            myDB = database.DBConnection()
+            result = myDB.match('PRAGMA user_version')
+            check = myDB.match('PRAGMA integrity_check')
+            if result:
+                version = result[0]
+            else:
+                version = 0
+            logger.info("Database is version %s, integrity check: %s" % (version, check[0]))
         except Exception as e:
-            logger.error("Can't connect to the database: %s" % e)
+            logger.error("Can't connect to the database: %s %s" % (type(e).__name__, str(e)))
+            sys.exit(0)
 
-        build_monthtable()
-        BOOKSTRAP_THEMELIST = build_bookstrap_themes()
+        if version:
+            check_db(myDB)
+
+        # group_concat needs sqlite3 >= 3.5.4
+        GROUP_CONCAT = False
+        try:
+            sqlv = getattr(sqlite3, 'sqlite_version', None)
+            parts = sqlv.split('.')
+            if int(parts[0]) == 3:
+                if int(parts[1]) > 5 or int(parts[1]) == 5 and int(parts[2]) >= 4:
+                    GROUP_CONCAT = True
+        except Exception as e:
+            logger.warn("Unable to parse sqlite3 version: %s %s" % (type(e).__name__, str(e)))
+
+        debuginfo = logHeader()
+        for item in debuginfo.splitlines():
+            if 'missing' in item:
+                logger.warn(item)
+
+        try:  # optional module, check database health, could also be upgraded to modify/repair db or run other code
+            # noinspection PyUnresolvedReferences
+            from .dbcheck import dbcheck
+            dbcheck()
+        except ImportError:
+            pass
+
+        MONTHNAMES = build_monthtable()
+        BOOKSTRAP_THEMELIST = build_bookstrap_themes(PROG_DIR)
 
         __INITIALIZED__ = True
         return True
 
+
+# noinspection PyUnresolvedReferences
 def config_read(reloaded=False):
-        global FULL_PATH, PROG_DIR, DAEMON, \
-            HTTP_HOST, HTTP_PORT, HTTP_USER, HTTP_PASS, HTTP_PROXY, HTTP_ROOT, HTTP_LOOK, API_KEY, API_ENABLED, \
-            LAUNCH_BROWSER, LOGDIR, CACHE_AGE, MATCH_RATIO, PROXY_HOST, PROXY_TYPE, GIT_PROGRAM, \
-            IMP_ONLYISBN, IMP_SINGLEBOOK, IMP_PREFLANG, IMP_MONTHLANG, IMP_AUTOADD, IMP_CONVERT, \
-            MONTHNAMES, MONTH0, MONTH1, MONTH2, MONTH3, MONTH4, MONTH5, MONTH6, MONTH7, \
-            MONTH8, MONTH9, MONTH10, MONTH11, MONTH12, CONFIGFILE, CFG, LOGLIMIT, \
-            SAB_HOST, SAB_PORT, SAB_SUBDIR, SAB_API, SAB_USER, SAB_PASS, SAB_CAT, \
-            DESTINATION_DIR, DESTINATION_COPY, DOWNLOAD_DIR, USENET_RETENTION, NZB_BLACKHOLEDIR, \
-            ALTERNATE_DIR, GR_API, GB_API, BOOK_API, MAGICK, \
-            NZBGET_HOST, NZBGET_USER, NZBGET_PASS, NZBGET_CATEGORY, NZBGET_PRIORITY, \
-            NZBGET_PORT, NZB_DOWNLOADER_NZBGET, NZBMATRIX, NZBMATRIX_USER, NZBMATRIX_API, \
-            NEWZBIN, NEWZBIN_UID, NEWZBIN_PASS, EBOOK_TYPE, MAG_TYPE, KAT, KAT_HOST, \
-            NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, REJECT_WORDS, \
-            VERSIONCHECK_INTERVAL, SEARCH_INTERVAL, SCAN_INTERVAL, SEARCHRSS_INTERVAL, \
-            EBOOK_DEST_FOLDER, EBOOK_DEST_FILE, MAG_RELATIVE, MAG_DEST_FOLDER, MAG_DEST_FILE, \
-            USE_TWITTER, TWITTER_NOTIFY_ONSNATCH, TWITTER_NOTIFY_ONDOWNLOAD, \
-            TWITTER_USERNAME, TWITTER_PASSWORD, TWITTER_PREFIX, \
-            USE_BOXCAR, BOXCAR_NOTIFY_ONSNATCH, BOXCAR_NOTIFY_ONDOWNLOAD, BOXCAR_TOKEN, \
-            TORRENT_DIR, TOR_DOWNLOADER_BLACKHOLE, TOR_DOWNLOADER_UTORRENT, \
-            TOR_DOWNLOADER_QBITTORRENT, NZB_DOWNLOADER_SABNZBD, NZB_DOWNLOADER_BLACKHOLE, \
-            USE_PUSHBULLET, PUSHBULLET_NOTIFY_ONSNATCH, PUSHBULLET_NOTIFY_ONDOWNLOAD, \
-            PUSHBULLET_TOKEN, PUSHBULLET_DEVICEID, \
-            UTORRENT_HOST, UTORRENT_PORT, UTORRENT_USER, UTORRENT_PASS, UTORRENT_LABEL, \
-            QBITTORRENT_HOST, QBITTORRENT_PORT, QBITTORRENT_USER, QBITTORRENT_PASS, QBITTORRENT_LABEL, \
-            USE_PUSHOVER, PUSHOVER_ONSNATCH, PUSHOVER_KEYS, PUSHOVER_APITOKEN, \
-            PUSHOVER_PRIORITY, PUSHOVER_ONDOWNLOAD, PUSHOVER_DEVICE, \
-            USE_ANDROIDPN, ANDROIDPN_NOTIFY_ONSNATCH, ANDROIDPN_NOTIFY_ONDOWNLOAD, \
-            ANDROIDPN_URL, ANDROIDPN_USERNAME, ANDROIDPN_BROADCAST, \
-            TOR_DOWNLOADER_TRANSMISSION, TRANSMISSION_HOST, TRANSMISSION_PORT, TRANSMISSION_PASS, TRANSMISSION_USER, \
-            TOR_DOWNLOADER_DELUGE, DELUGE_HOST, DELUGE_USER, DELUGE_PASS, DELUGE_PORT, DELUGE_LABEL, \
-            FULL_SCAN, ADD_AUTHOR, NOTFOUND_STATUS, NEWBOOK_STATUS, \
-            USE_NMA, NMA_APIKEY, NMA_PRIORITY, NMA_ONSNATCH, NMA_ONDOWNLOAD, \
-            GIT_USER, GIT_REPO, GIT_BRANCH, INSTALL_TYPE, CURRENT_VERSION, \
-            LATEST_VERSION, COMMITS_BEHIND, NUMBEROFSEEDERS, SCHED, CACHE_HIT, CACHE_MISS, \
-            BOOKSTRAP_THEME, LOGFILES, LOGSIZE, HTTPS_ENABLED, HTTPS_CERT, HTTPS_KEY
-
-        NEWZNAB_PROV = []
-        TORZNAB_PROV = []
-        RSS_PROV = []
-
-        # we read the log details earlier for starting the logger process,
-        # but read them again here so they get listed in the debug log
-        LOGDIR = check_setting_str(CFG, 'General', 'logdir', '')
-        LOGLIMIT = check_setting_int(CFG, 'General', 'loglimit', 500)
-        LOGFILES = check_setting_int(CFG, 'General', 'logfiles', 10)
-        LOGSIZE = check_setting_int(CFG, 'General', 'logsize', 204800)
-
-        try:
-            HTTP_PORT = check_setting_int(CFG, 'General', 'http_port', 5299)
-        except:
-            HTTP_PORT = 5299
-
-        if HTTP_PORT < 21 or HTTP_PORT > 65535:
-            HTTP_PORT = 5299
-
-        MATCH_RATIO = check_setting_int(CFG, 'General', 'match_ratio', 80)
-        HTTP_HOST = check_setting_str(CFG, 'General', 'http_host', '0.0.0.0')
-        HTTP_USER = check_setting_str(CFG, 'General', 'http_user', '')
-        HTTP_PASS = check_setting_str(CFG, 'General', 'http_pass', '')
-        HTTP_PROXY = check_setting_bool(CFG, 'General', 'http_proxy', 0)
-        HTTP_ROOT = check_setting_str(CFG, 'General', 'http_root', '')
-        HTTP_LOOK = check_setting_str(CFG, 'General', 'http_look', 'default')
-        HTTPS_ENABLED = check_setting_bool(CFG, 'General', 'https_enabled', 0)
-        HTTPS_CERT = check_setting_str(CFG, 'General', 'https_cert', '')
-        HTTPS_KEY = check_setting_str(CFG, 'General', 'https_key', '')
-        BOOKSTRAP_THEME = check_setting_str(CFG, 'General', 'bookstrap_theme', 'slate')
-
-        LAUNCH_BROWSER = check_setting_bool(CFG, 'General', 'launch_browser', 1)
-        API_ENABLED = check_setting_bool(CFG, 'General', 'api_enabled', 0)
-        API_KEY = check_setting_str(CFG, 'General', 'api_key', '')
-
-        PROXY_HOST = check_setting_str(CFG, 'General', 'proxy_host', '')
-        PROXY_TYPE = check_setting_str(CFG, 'General', 'proxy_type', '')
-
-        IMP_PREFLANG = check_setting_str(CFG, 'General', 'imp_preflang', 'en, eng, en-US, en-GB')
-        IMP_MONTHLANG = check_setting_str(CFG, 'General', 'imp_monthlang', '')
-        IMP_AUTOADD = check_setting_str(CFG, 'General', 'imp_autoadd', '')
-        IMP_ONLYISBN = check_setting_bool(CFG, 'General', 'imp_onlyisbn', 0)
-        IMP_SINGLEBOOK = check_setting_bool(CFG, 'General', 'imp_singlebook', 0)
-        IMP_CONVERT = check_setting_str(CFG, 'General', 'imp_convert', '')
-        GIT_PROGRAM = check_setting_str(CFG, 'General', 'git_program','')
-        CACHE_AGE = check_setting_int(CFG, 'General', 'cache_age', 30)
-
-        GIT_USER = check_setting_str(CFG, 'Git', 'git_user', 'dobytang')
-        GIT_REPO = check_setting_str(CFG, 'Git', 'git_repo', 'lazylibrarian')
-        GIT_BRANCH = check_setting_str(CFG, 'Git', 'git_branch', 'master')
-        INSTALL_TYPE = check_setting_str(CFG, 'Git', 'install_type', '')
-        CURRENT_VERSION = check_setting_str(CFG, 'Git', 'current_version', '')
-        LATEST_VERSION = check_setting_str(CFG, 'Git', 'latest_version', '')
-        COMMITS_BEHIND = check_setting_str(CFG, 'Git', 'commits_behind', '')
-
-        SAB_HOST = check_setting_str(CFG, 'SABnzbd', 'sab_host', '')
-        SAB_PORT = check_setting_int(CFG, 'SABnzbd', 'sab_port', 0)
-        SAB_SUBDIR = check_setting_str(CFG, 'SABnzbd', 'sab_subdir', '')
-        SAB_USER = check_setting_str(CFG, 'SABnzbd', 'sab_user', '')
-        SAB_PASS = check_setting_str(CFG, 'SABnzbd', 'sab_pass', '')
-        SAB_API = check_setting_str(CFG, 'SABnzbd', 'sab_api', '')
-        SAB_CAT = check_setting_str(CFG, 'SABnzbd', 'sab_cat', '')
-
-        # legacy name conversion, separate out nzbget host/port
-        if not CFG.has_option('NZBGet', 'nzbget_port'):
+    global CONFIG, CONFIG_DEFINITIONS, CONFIG_NONWEB, CONFIG_NONDEFAULT, NEWZNAB_PROV, TORZNAB_PROV, RSS_PROV, \
+        CONFIG_GIT, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, NABAPICOUNT
+    # legacy name conversion
+    if not CFG.has_option('General', 'ebook_dir'):
+        ebook_dir = check_setting('str', 'General', 'destination_dir', '')
+        CFG.set('General', 'ebook_dir', ebook_dir)
+        CFG.remove_option('General', 'destination_dir')
+    # legacy type conversion
+    if CFG.has_option('Git', 'git_updated'):
+        val = CFG.get('Git', 'git_updated')
+        newval = check_int(val, 0)
+        if newval != val:
+            CFG.set('Git', 'git_updated', newval)
+    # legacy name conversions, separate out host/port
+    for provider in ['NZBGet', 'UTORRENT', 'QBITTORRENT', 'TRANSMISSION']:
+        if not CFG.has_option(provider, '%s_port' % provider.lower()):
             port = 0
-            host = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
+            host = check_setting('str', provider, '%s_host' % provider.lower(), '')
             if host.startswith('http'):
                 hostpart = 2
             else:
@@ -500,602 +769,520 @@ def config_read(reloaded=False):
             if len(words) > hostpart:
                 host = ':'.join(words[:hostpart])
                 port = ':'.join(words[hostpart:])
-            CFG.set('NZBGet', 'nzbget_port', port)
-            CFG.set('NZBGet', 'nzbget_host', host)
+            CFG.set(provider, '%s_port' % provider.lower(), port)
+            CFG.set(provider, '%s_host' % provider.lower(), host)
 
-        NZBGET_HOST = check_setting_str(CFG, 'NZBGet', 'nzbget_host', '')
-        NZBGET_PORT = check_setting_int(CFG, 'NZBGet', 'nzbget_port', '0')
-        NZBGET_USER = check_setting_str(CFG, 'NZBGet', 'nzbget_user', '')
-        NZBGET_PASS = check_setting_str(CFG, 'NZBGet', 'nzbget_pass', '')
-        NZBGET_CATEGORY = check_setting_str(CFG, 'NZBGet', 'nzbget_cat', '')
-        NZBGET_PRIORITY = check_setting_int(CFG, 'NZBGet', 'nzbget_priority', '0')
+    count = 0
+    while CFG.has_section('Newznab%i' % count):
+        newz_name = 'Newznab%i' % count
+        # legacy name conversions
+        if CFG.has_option(newz_name, 'newznab%i' % count):
+            CFG.set(newz_name, 'ENABLED', CFG.getboolean(newz_name, 'newznab%i' % count))
+            CFG.remove_option(newz_name, 'newznab%i' % count)
+        if CFG.has_option(newz_name, 'newznab_host%i' % count):
+            CFG.set(newz_name, 'HOST', CFG.get(newz_name, 'newznab_host%i' % count))
+            CFG.remove_option(newz_name, 'newznab_host%i' % count)
+        if CFG.has_option(newz_name, 'newznab_api%i' % count):
+            CFG.set(newz_name, 'API', CFG.get(newz_name, 'newznab_api%i' % count))
+            CFG.remove_option(newz_name, 'newznab_api%i' % count)
+        if CFG.has_option(newz_name, 'nzedb'):
+            CFG.remove_option(newz_name, 'nzedb')
+        disp_name = check_setting('str', newz_name, 'dispname', newz_name)
 
-        DESTINATION_COPY = check_setting_bool(CFG, 'General', 'destination_copy', 0)
-        DESTINATION_DIR = check_setting_str(CFG, 'General', 'destination_dir', '')
-        ALTERNATE_DIR = check_setting_str(CFG, 'General', 'alternate_dir', '')
-        DOWNLOAD_DIR = check_setting_str(CFG, 'General', 'download_dir', '')
-        if not DOWNLOAD_DIR:
-            logger.warn("Download dir not found, books will be downloaded to %s" % os.getcwd())
-        elif not os.path.isdir(DOWNLOAD_DIR):
-            logger.warn("Download dir [%s] not found, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
-        elif not os.access(DOWNLOAD_DIR, os.W_OK | os.X_OK):
-            logger.warn("Download dir [%s] not writeable, books will be downloaded to %s" % (repr(DOWNLOAD_DIR), os.getcwd()))
-
-        NZB_DOWNLOADER_SABNZBD = check_setting_bool(CFG, 'USENET', 'nzb_downloader_sabnzbd', 0)
-        NZB_DOWNLOADER_NZBGET = check_setting_bool(CFG, 'USENET', 'nzb_downloader_nzbget', 0)
-        NZB_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'USENET', 'nzb_downloader_blackhole', 0)
-        NZB_BLACKHOLEDIR = check_setting_str(CFG, 'USENET', 'nzb_blackholedir', '')
-        USENET_RETENTION = check_setting_int(CFG, 'USENET', 'usenet_retention', 0)
-
-        NZBMATRIX = check_setting_bool(CFG, 'NZBMatrix', 'nzbmatrix', 0)
-        NZBMATRIX_USER = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_user', '')
-        NZBMATRIX_API = check_setting_str(CFG, 'NZBMatrix', 'nzbmatrix_api', '')
-
-        count = 0
-        while CFG.has_section('Newznab%i' % count):
-            newz_name = 'Newznab%i' % count
-            # legacy name conversions
-            if CFG.has_option(newz_name, 'newznab%i' % count):
-                CFG.set(newz_name, 'ENABLED', CFG.getboolean(newz_name, 'newznab%i' % count))
-                CFG.remove_option(newz_name, 'newznab%i' % count)
-            if CFG.has_option(newz_name, 'newznab_host%i' % count):
-                CFG.set(newz_name, 'HOST', CFG.get(newz_name, 'newznab_host%i' % count))
-                CFG.remove_option(newz_name, 'newznab_host%i' % count)
-            if CFG.has_option(newz_name, 'newznab_api%i' % count):
-                CFG.set(newz_name, 'API', CFG.get(newz_name, 'newznab_api%i' % count))
-                CFG.remove_option(newz_name, 'newznab_api%i' % count)
-            if CFG.has_option(newz_name, 'nzedb'):
-                CFG.remove_option(newz_name, 'nzedb')
-
-            NEWZNAB_PROV.append({"NAME": newz_name,
-                                 "ENABLED": check_setting_bool(CFG, newz_name, 'enabled', 0),
-                                 "HOST": check_setting_str(CFG, newz_name, 'host', ''),
-                                 "API": check_setting_str(CFG, newz_name, 'api', ''),
-                                 "GENERALSEARCH": check_setting_str(CFG, newz_name, 'generalsearch', 'search'),
-                                 "BOOKSEARCH": check_setting_str(CFG, newz_name, 'booksearch', 'book'),
-                                 "MAGSEARCH": check_setting_str(CFG, newz_name, 'magsearch', ''),
-                                 "BOOKCAT": check_setting_str(CFG, newz_name, 'bookcat', '7000,7020'),
-                                 "MAGCAT": check_setting_str(CFG, newz_name, 'magcat', '7010'),
-                                 "EXTENDED": check_setting_str(CFG, newz_name, 'extended', '1'),
-                                 "UPDATED": check_setting_str(CFG, newz_name, 'updated', ''),
-                                 "MANUAL": check_setting_bool(CFG, newz_name, 'manual', 0)
-                                 })
-            count = count + 1
-        # if the last slot is full, add an empty one on the end
-        add_newz_slot()
-
-        count = 0
-        while CFG.has_section('Torznab%i' % count):
-            torz_name = 'Torznab%i' % count
-            # legacy name conversions
-            if CFG.has_option(torz_name, 'torznab%i' % count):
-                CFG.set(torz_name, 'ENABLED', CFG.getboolean(torz_name, 'torznab%i' % count))
-                CFG.remove_option(torz_name, 'torznab%i' % count)
-            if CFG.has_option(torz_name, 'torznab_host%i' % count):
-                CFG.set(torz_name, 'HOST', CFG.get(torz_name, 'torznab_host%i' % count))
-                CFG.remove_option(torz_name, 'torznab_host%i' % count)
-            if CFG.has_option(torz_name, 'torznab_api%i' % count):
-                CFG.set(torz_name, 'API', CFG.get(torz_name, 'torznab_api%i' % count))
-                CFG.remove_option(torz_name, 'torznab_api%i' % count)
-            if CFG.has_option(torz_name, 'nzedb'):
-                CFG.remove_option(torz_name, 'nzedb')
-
-            TORZNAB_PROV.append({"NAME": torz_name,
-                                 "ENABLED": check_setting_bool(CFG, torz_name, 'enabled', 0),
-                                 "HOST": check_setting_str(CFG, torz_name, 'host', ''),
-                                 "API": check_setting_str(CFG, torz_name, 'api', ''),
-                                 "GENERALSEARCH": check_setting_str(CFG, torz_name, 'generalsearch', 'search'),
-                                 "BOOKSEARCH": check_setting_str(CFG, torz_name, 'booksearch', 'book'),
-                                 "MAGSEARCH": check_setting_str(CFG, torz_name, 'magsearch', ''),
-                                 "BOOKCAT": check_setting_str(CFG, torz_name, 'bookcat', '8000,8010'),
-                                 "MAGCAT": check_setting_str(CFG, torz_name, 'magcat', '8030'),
-                                 "EXTENDED": check_setting_str(CFG, torz_name, 'extended', '1'),
-                                 "UPDATED": check_setting_str(CFG, torz_name, 'updated', ''),
-                                 "MANUAL": check_setting_bool(CFG, torz_name, 'manual', 0)
-                                 })
-            count = count + 1
-        # if the last slot is full, add an empty one on the end
-        add_torz_slot()
-
-        count = 0
-        while CFG.has_section('RSS_%i' % count):
-            rss_name = 'RSS_%i' % count
-            # legacy name conversions
-            if CFG.has_option(rss_name, 'rss%i' % count):
-                CFG.set(rss_name, 'ENABLED', CFG.getboolean(rss_name, 'rss%i' % count))
-                CFG.remove_option(rss_name, 'rss%i' % count)
-            if CFG.has_option(rss_name, 'rss_host%i' % count):
-                CFG.set(rss_name, 'HOST', CFG.get(rss_name, 'rss_host%i' % count))
-                CFG.remove_option(rss_name, 'rss_host%i' % count)
-            if CFG.has_option(rss_name, 'rss_user%i' % count):
-                CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
-                CFG.remove_option(rss_name, 'rss_user%i' % count)
-            if CFG.has_option(rss_name, 'rss_pass%i' % count):
-                CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
-                CFG.remove_option(rss_name, 'rss_pass%i' % count)
-
-            RSS_PROV.append({"NAME": rss_name,
-                             "ENABLED": check_setting_bool(CFG, rss_name, 'ENABLED', 0),
-                             "HOST": check_setting_str(CFG, rss_name, 'HOST', ''),
-                             "USER": check_setting_str(CFG, rss_name, 'USER', ''),
-                             "PASS": check_setting_str(CFG, rss_name, 'PASS', '')
+        NEWZNAB_PROV.append({"NAME": newz_name,
+                             "DISPNAME": disp_name,
+                             "ENABLED": check_setting('bool', newz_name, 'enabled', 0),
+                             "HOST": check_setting('str', newz_name, 'host', ''),
+                             "API": check_setting('str', newz_name, 'api', ''),
+                             "GENERALSEARCH": check_setting('str', newz_name, 'generalsearch', 'search'),
+                             "BOOKSEARCH": check_setting('str', newz_name, 'booksearch', ''),
+                             "MAGSEARCH": check_setting('str', newz_name, 'magsearch', ''),
+                             "AUDIOSEARCH": check_setting('str', newz_name, 'audiosearch', ''),
+                             "BOOKCAT": check_setting('str', newz_name, 'bookcat', '7000,7020'),
+                             "MAGCAT": check_setting('str', newz_name, 'magcat', '7010'),
+                             "AUDIOCAT": check_setting('str', newz_name, 'audiocat', '3030'),
+                             "EXTENDED": check_setting('str', newz_name, 'extended', '1'),
+                             "UPDATED": check_setting('str', newz_name, 'updated', ''),
+                             "MANUAL": check_setting('bool', newz_name, 'manual', 0),
+                             "APILIMIT": check_setting('int', newz_name, 'apilimit', 0),
+                             "APICOUNT": 0,
+                             "DLPRIORITY": check_setting('int', newz_name, 'dlpriority', 0),
+                             "DLTYPES": check_setting('str', newz_name, 'dltypes', 'A,E,M'),
                              })
-            count = count + 1
-        # if the last slot is full, add an empty one on the end
-        add_rss_slot()
-
-        TOR_DOWNLOADER_BLACKHOLE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_blackhole', 0)
-        TOR_DOWNLOADER_UTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_utorrent', 0)
-        TOR_DOWNLOADER_QBITTORRENT = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_qbittorrent', 0)
-        TOR_DOWNLOADER_TRANSMISSION = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_transmission', 0)
-        TOR_DOWNLOADER_DELUGE = check_setting_bool(CFG, 'TORRENT', 'tor_downloader_deluge', 0)
-        NUMBEROFSEEDERS = check_setting_int(CFG, 'TORRENT', 'numberofseeders', 10)
-        TORRENT_DIR = check_setting_str(CFG, 'TORRENT', 'torrent_dir', '')
-
-        # legacy name conversion, separate out utorrent host/port
-        if not CFG.has_option('UTORRENT', 'utorrent_port'):
-            port = 0
-            host = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
-            if host.startswith('http'):
-                hostpart = 2
-            else:
-                hostpart = 1
-            words = host.split(':')
-            if len(words) > hostpart:
-                host = ':'.join(words[:hostpart])
-                port = ':'.join(words[hostpart:])
-            CFG.set('UTORRENT', 'utorrent_port', port)
-            CFG.set('UTORRENT', 'utorrent_host', host)
-
-        UTORRENT_HOST = check_setting_str(CFG, 'UTORRENT', 'utorrent_host', '')
-        UTORRENT_PORT = check_setting_int(CFG, 'UTORRENT', 'utorrent_port', 0)
-        UTORRENT_USER = check_setting_str(CFG, 'UTORRENT', 'utorrent_user', '')
-        UTORRENT_PASS = check_setting_str(CFG, 'UTORRENT', 'utorrent_pass', '')
-        UTORRENT_LABEL = check_setting_str(CFG, 'UTORRENT', 'utorrent_label', '')
-
-        # legacy name conversion, separate out qbittorrent host/port
-        if not CFG.has_option('QBITTORRENT', 'qbittorrent_port'):
-            port = 0
-            host = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
-            if host.startswith('http'):
-                hostpart = 2
-            else:
-                hostpart = 1
-            words = host.split(':')
-            if len(words) > hostpart:
-                host = ':'.join(words[:hostpart])
-                port = ':'.join(words[hostpart:])
-            CFG.set('QBITTORRENT', 'qbittorrent_port', port)
-            CFG.set('QBITTORRENT', 'qbittorrent_host', host)
-
-        QBITTORRENT_HOST = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_host', '')
-        QBITTORRENT_PORT = check_setting_int(CFG, 'QBITTORRENT', 'qbittorrent_port', 0)
-        QBITTORRENT_USER = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_user', '')
-        QBITTORRENT_PASS = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_pass', '')
-        QBITTORRENT_LABEL = check_setting_str(CFG, 'QBITTORRENT', 'qbittorrent_label', '')
-
-        # legacy name conversion, separate out transmission host/port
-        if not CFG.has_option('TRANSMISSION', 'transmission_port'):
-            port = 0
-            host = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
-            if host.startswith('http'):
-                hostpart = 2
-            else:
-                hostpart = 1
-            words = host.split(':')
-            if len(words) > hostpart:
-                host = ':'.join(words[:hostpart])
-                port = ':'.join(words[hostpart:])
-            CFG.set('TRANSMISSION', 'transmission_port', port)
-            CFG.set('TRANSMISSION', 'transmission_host', host)
-
-        TRANSMISSION_HOST = check_setting_str(CFG, 'TRANSMISSION', 'transmission_host', '')
-        TRANSMISSION_PORT = check_setting_int(CFG, 'TRANSMISSION', 'transmission_port', 0)
-        TRANSMISSION_USER = check_setting_str(CFG, 'TRANSMISSION', 'transmission_user', '')
-        TRANSMISSION_PASS = check_setting_str(CFG, 'TRANSMISSION', 'transmission_pass', '')
-
-        DELUGE_HOST = check_setting_str(CFG, 'DELUGE', 'deluge_host', '')
-        DELUGE_PORT = check_setting_int(CFG, 'DELUGE', 'deluge_port', 0)
-        DELUGE_USER = check_setting_str(CFG, 'DELUGE', 'deluge_user', '')
-        DELUGE_PASS = check_setting_str(CFG, 'DELUGE', 'deluge_pass', '')
-        DELUGE_LABEL = check_setting_str(CFG, 'DELUGE', 'deluge_label', '')
-
-        KAT = check_setting_bool(CFG, 'KAT', 'kat', 0)
-        KAT_HOST = check_setting_str(CFG, 'KAT', 'kat_host', 'kat.cr')
-
-        NEWZBIN = check_setting_bool(CFG, 'Newzbin', 'newzbin', 0)
-        NEWZBIN_UID = check_setting_str(CFG, 'Newzbin', 'newzbin_uid', '')
-        NEWZBIN_PASS = check_setting_str(CFG, 'Newzbin', 'newzbin_pass', '')
-        EBOOK_TYPE = check_setting_str(CFG, 'General', 'ebook_type', 'epub, mobi, pdf')
-        EBOOK_TYPE = EBOOK_TYPE.lower()  # to make extension matching easier
-        MAG_TYPE = check_setting_str(CFG, 'General', 'mag_type', 'pdf')
-        MAG_TYPE = MAG_TYPE.lower()  # to make extension matching easier
-        REJECT_WORDS = check_setting_str(CFG, 'General', 'reject_words', 'audiobook, mp3')
-        REJECT_WORDS = REJECT_WORDS.lower()
-
-        SEARCH_INTERVAL = check_setting_int(CFG, 'SearchScan', 'search_interval', '360')
-        SCAN_INTERVAL = check_setting_int(CFG, 'SearchScan', 'scan_interval', '10')
-        SEARCHRSS_INTERVAL = check_setting_int(CFG, 'SearchScan', 'searchrss_interval', '20')
-        VERSIONCHECK_INTERVAL = check_setting_int(CFG, 'SearchScan', 'versioncheck_interval', '24')
-
-        FULL_SCAN = check_setting_bool(CFG, 'LibraryScan', 'full_scan', 0)
-        ADD_AUTHOR = check_setting_bool(CFG, 'LibraryScan', 'add_author', 1)
-        NOTFOUND_STATUS = check_setting_str(CFG, 'LibraryScan', 'notfound_status', 'Skipped')
-        NEWBOOK_STATUS = check_setting_str(CFG, 'LibraryScan', 'newbook_status', 'Skipped')
-
-        EBOOK_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'ebook_dest_folder', '$Author/$Title')
-        EBOOK_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'ebook_dest_file', '$Title - $Author')
-        MAG_DEST_FOLDER = check_setting_str(CFG, 'PostProcess', 'mag_dest_folder', '_Magazines/$Title/$IssueDate')
-        MAG_DEST_FILE = check_setting_str(CFG, 'PostProcess', 'mag_dest_file', '$IssueDate - $Title')
-        MAG_RELATIVE = check_setting_bool(CFG, 'PostProcess', 'mag_relative', 1)
-
-        USE_TWITTER = check_setting_bool(CFG, 'Twitter', 'use_twitter', 0)
-        TWITTER_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Twitter', 'twitter_notify_onsnatch', 0)
-        TWITTER_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Twitter', 'twitter_notify_ondownload', 0)
-        TWITTER_USERNAME = check_setting_str(CFG, 'Twitter', 'twitter_username', '')
-        TWITTER_PASSWORD = check_setting_str(CFG, 'Twitter', 'twitter_password', '')
-        TWITTER_PREFIX = check_setting_str(CFG, 'Twitter', 'twitter_prefix', 'LazyLibrarian')
-
-        USE_BOXCAR = check_setting_bool(CFG, 'Boxcar', 'use_boxcar', 0)
-        BOXCAR_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Boxcar', 'boxcar_notify_onsnatch', 0)
-        BOXCAR_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Boxcar', 'boxcar_notify_ondownload', 0)
-        BOXCAR_TOKEN = check_setting_str(CFG, 'Boxcar', 'boxcar_token', '')
-
-        USE_PUSHBULLET = check_setting_bool(CFG, 'Pushbullet', 'use_pushbullet', 0)
-        PUSHBULLET_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'Pushbullet', 'pushbullet_notify_onsnatch', 0)
-        PUSHBULLET_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'Pushbullet', 'pushbullet_notify_ondownload', 0)
-        PUSHBULLET_TOKEN = check_setting_str(CFG, 'Pushbullet', 'pushbullet_token', '')
-        PUSHBULLET_DEVICEID = check_setting_str(CFG, 'Pushbullet', 'pushbullet_deviceid', '')
-
-        USE_PUSHOVER = check_setting_bool(CFG, 'Pushover', 'use_pushover', 0)
-        PUSHOVER_ONSNATCH = check_setting_bool(CFG, 'Pushover', 'pushover_onsnatch', 0)
-        PUSHOVER_ONDOWNLOAD = check_setting_bool(CFG, 'Pushover', 'pushover_ondownload', 0)
-        PUSHOVER_KEYS = check_setting_str(CFG, 'Pushover', 'pushover_keys', '')
-        PUSHOVER_APITOKEN = check_setting_str(CFG, 'Pushover', 'pushover_apitoken', '')
-        PUSHOVER_PRIORITY = check_setting_int(CFG, 'Pushover', 'pushover_priority', 0)
-        PUSHOVER_DEVICE = check_setting_str(CFG, 'Pushover', 'pushover_device', '')
-
-        USE_ANDROIDPN = check_setting_bool(CFG, 'AndroidPN', 'use_androidpn', 0)
-        ANDROIDPN_NOTIFY_ONSNATCH = check_setting_bool(CFG, 'AndroidPN', 'androidpn_notify_onsnatch', 0)
-        ANDROIDPN_NOTIFY_ONDOWNLOAD = check_setting_bool(CFG, 'AndroidPN', 'androidpn_notify_ondownload', 0)
-        ANDROIDPN_URL = check_setting_str(CFG, 'AndroidPN', 'androidpn_url', '')
-        ANDROIDPN_USERNAME = check_setting_str(CFG, 'AndroidPN', 'androidpn_username', '')
-        ANDROIDPN_BROADCAST = check_setting_bool(CFG, 'AndroidPN', 'androidpn_broadcast', 0)
-
-        USE_NMA = check_setting_bool(CFG, 'NMA', 'use_nma', 0)
-        NMA_APIKEY = check_setting_str(CFG, 'NMA', 'nma_apikey', '')
-        NMA_PRIORITY = check_setting_int(CFG, 'NMA', 'nma_priority', 0)
-        NMA_ONSNATCH = check_setting_bool(CFG, 'NMA', 'nma_onsnatch', 0)
-        NMA_ONDOWNLOAD = check_setting_bool(CFG, 'NMA', 'nma_ondownload', 0)
-
-        BOOK_API = check_setting_str(CFG, 'API', 'book_api', 'GoodReads')
-        GR_API = check_setting_str(CFG, 'API', 'gr_api', 'ckvsiSDsuqh7omh74ZZ6Q')
-        GB_API = check_setting_str(CFG, 'API', 'gb_api', '')
-
-        if reloaded:
-            logger.info('Config file reloaded')
-        else:
-            logger.info('Config file loaded')
-
-
-def config_write():
-    check_section('General')
-    CFG.set('General', 'http_port', HTTP_PORT)
-    CFG.set('General', 'http_host', HTTP_HOST)
-    CFG.set('General', 'http_user', HTTP_USER)
-    CFG.set('General', 'http_pass', HTTP_PASS)
-    CFG.set('General', 'http_proxy', HTTP_PROXY)
-    CFG.set('General', 'http_root', HTTP_ROOT)
-    CFG.set('General', 'http_look', HTTP_LOOK)
-    CFG.set('General', 'https_enabled', HTTPS_ENABLED)
-    CFG.set('General', 'https_cert', HTTPS_CERT)
-    CFG.set('General', 'https_key', HTTPS_KEY)
-    CFG.set('General', 'bookstrap_theme', BOOKSTRAP_THEME)
-    CFG.set('General', 'launch_browser', LAUNCH_BROWSER)
-    CFG.set('General', 'api_enabled', API_ENABLED)
-    CFG.set('General', 'api_key', API_KEY)
-    CFG.set('General', 'proxy_host', PROXY_HOST)
-    CFG.set('General', 'proxy_type', PROXY_TYPE)
-    CFG.set('General', 'logdir', LOGDIR.encode('utf-8'))
-    CFG.set('General', 'loglimit', LOGLIMIT)
-    CFG.set('General', 'loglevel', LOGLEVEL)
-    CFG.set('General', 'logsize', LOGSIZE)
-    CFG.set('General', 'logfiles', LOGFILES)
-    CFG.set('General', 'match_ratio', MATCH_RATIO)
-    CFG.set('General', 'imp_onlyisbn', IMP_ONLYISBN)
-    CFG.set('General', 'imp_singlebook', IMP_SINGLEBOOK)
-    CFG.set('General', 'imp_preflang', IMP_PREFLANG)
-    CFG.set('General', 'imp_monthlang', IMP_MONTHLANG)
-    CFG.set('General', 'imp_autoadd', IMP_AUTOADD)
-    CFG.set('General', 'imp_convert', IMP_CONVERT.strip())
-    CFG.set('General', 'git_program', GIT_PROGRAM.strip())
-    CFG.set('General', 'ebook_type', EBOOK_TYPE.lower())
-    CFG.set('General', 'mag_type', MAG_TYPE.lower())
-    CFG.set('General', 'reject_words', REJECT_WORDS.encode('utf-8').lower())
-    CFG.set('General', 'destination_dir', DESTINATION_DIR.encode('utf-8'))
-    CFG.set('General', 'alternate_dir', ALTERNATE_DIR.encode('utf-8'))
-    CFG.set('General', 'destination_copy', DESTINATION_COPY)
-    CFG.set('General', 'download_dir', DOWNLOAD_DIR.encode('utf-8'))
-    CFG.set('General', 'cache_age', CACHE_AGE)
-#
-    check_section('Git')
-    CFG.set('Git', 'git_user', GIT_USER)
-    CFG.set('Git', 'git_repo', GIT_REPO)
-    CFG.set('Git', 'git_branch', GIT_BRANCH)
-    CFG.set('Git', 'install_type', INSTALL_TYPE)
-    CFG.set('Git', 'current_version', CURRENT_VERSION)
-    CFG.set('Git', 'latest_version', LATEST_VERSION)
-    CFG.set('Git', 'commits_behind', COMMITS_BEHIND)
-#
-    check_section('USENET')
-    CFG.set('USENET', 'nzb_downloader_sabnzbd', NZB_DOWNLOADER_SABNZBD)
-    CFG.set('USENET', 'nzb_downloader_nzbget', NZB_DOWNLOADER_NZBGET)
-    CFG.set('USENET', 'nzb_downloader_blackhole', NZB_DOWNLOADER_BLACKHOLE)
-    CFG.set('USENET', 'nzb_blackholedir', NZB_BLACKHOLEDIR)
-    CFG.set('USENET', 'usenet_retention', USENET_RETENTION)
-#
-    check_section('SABnzbd')
-    CFG.set('SABnzbd', 'sab_host', SAB_HOST)
-    CFG.set('SABnzbd', 'sab_port', SAB_PORT)
-    CFG.set('SABnzbd', 'sab_subdir', SAB_SUBDIR)
-    CFG.set('SABnzbd', 'sab_user', SAB_USER)
-    CFG.set('SABnzbd', 'sab_pass', SAB_PASS)
-    CFG.set('SABnzbd', 'sab_api', SAB_API)
-    CFG.set('SABnzbd', 'sab_cat', SAB_CAT)
-#
-    check_section('NZBGet')
-    CFG.set('NZBGet', 'nzbget_host', NZBGET_HOST)
-    CFG.set('NZBGet', 'nzbget_port', NZBGET_PORT)
-    CFG.set('NZBGet', 'nzbget_user', NZBGET_USER)
-    CFG.set('NZBGet', 'nzbget_pass', NZBGET_PASS)
-    CFG.set('NZBGet', 'nzbget_cat', NZBGET_CATEGORY)
-    CFG.set('NZBGet', 'nzbget_priority', NZBGET_PRIORITY)
-#
-    check_section('API')
-    CFG.set('API', 'book_api', BOOK_API)
-    CFG.set('API', 'gr_api', GR_API)
-    CFG.set('API', 'gb_api', GB_API)
-#
-    check_section('NZBMatrix')
-    CFG.set('NZBMatrix', 'nzbmatrix', NZBMATRIX)
-    CFG.set('NZBMatrix', 'nzbmatrix_user', NZBMATRIX_USER)
-    CFG.set('NZBMatrix', 'nzbmatrix_api', NZBMATRIX_API)
-#
-    for provider in NEWZNAB_PROV:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        oldprovider = check_setting_str(CFG, provider['NAME'], 'HOST', '', log=False)
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'API', provider['API'])
-        CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
-        CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
-        CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
-        CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        if provider['HOST'] == oldprovider:
-            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
-        else:
-            logger.debug('Reset %s as provider changed' % provider['NAME'])
-            CFG.set(provider['NAME'], 'UPDATED', '')
-            CFG.set(provider['NAME'], 'MANUAL', False)
+        count += 1
+    # if the last slot is full, add an empty one on the end
     add_newz_slot()
-#
-    for provider in TORZNAB_PROV:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        oldprovider = check_setting_str(CFG, provider['NAME'], 'HOST', '', log=False)
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'API', provider['API'])
-        CFG.set(provider['NAME'], 'GENERALSEARCH', provider['GENERALSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKSEARCH', provider['BOOKSEARCH'])
-        CFG.set(provider['NAME'], 'MAGSEARCH', provider['MAGSEARCH'])
-        CFG.set(provider['NAME'], 'BOOKCAT', provider['BOOKCAT'])
-        CFG.set(provider['NAME'], 'MAGCAT', provider['MAGCAT'])
-        CFG.set(provider['NAME'], 'EXTENDED', provider['EXTENDED'])
-        if provider['HOST'] == oldprovider:
-            CFG.set(provider['NAME'], 'UPDATED', provider['UPDATED'])
-            CFG.set(provider['NAME'], 'MANUAL', provider['MANUAL'])
-        else:
-            logger.debug('Reset %s as provider changed' % provider['NAME'])
-            CFG.set(provider['NAME'], 'UPDATED', '')
-            CFG.set(provider['NAME'], 'MANUAL', False)
-        
+
+    count = 0
+    while CFG.has_section('Torznab%i' % count):
+        torz_name = 'Torznab%i' % count
+        # legacy name conversions
+        if CFG.has_option(torz_name, 'torznab%i' % count):
+            CFG.set(torz_name, 'ENABLED', CFG.getboolean(torz_name, 'torznab%i' % count))
+            CFG.remove_option(torz_name, 'torznab%i' % count)
+        if CFG.has_option(torz_name, 'torznab_host%i' % count):
+            CFG.set(torz_name, 'HOST', CFG.get(torz_name, 'torznab_host%i' % count))
+            CFG.remove_option(torz_name, 'torznab_host%i' % count)
+        if CFG.has_option(torz_name, 'torznab_api%i' % count):
+            CFG.set(torz_name, 'API', CFG.get(torz_name, 'torznab_api%i' % count))
+            CFG.remove_option(torz_name, 'torznab_api%i' % count)
+        if CFG.has_option(torz_name, 'nzedb'):
+            CFG.remove_option(torz_name, 'nzedb')
+        disp_name = check_setting('str', torz_name, 'dispname', torz_name)
+
+        TORZNAB_PROV.append({"NAME": torz_name,
+                             "DISPNAME": disp_name,
+                             "ENABLED": check_setting('bool', torz_name, 'enabled', 0),
+                             "HOST": check_setting('str', torz_name, 'host', ''),
+                             "API": check_setting('str', torz_name, 'api', ''),
+                             "GENERALSEARCH": check_setting('str', torz_name, 'generalsearch', 'search'),
+                             "BOOKSEARCH": check_setting('str', torz_name, 'booksearch', ''),
+                             "MAGSEARCH": check_setting('str', torz_name, 'magsearch', ''),
+                             "AUDIOSEARCH": check_setting('str', torz_name, 'audiosearch', ''),
+                             "BOOKCAT": check_setting('str', torz_name, 'bookcat', '8000,8010'),
+                             "MAGCAT": check_setting('str', torz_name, 'magcat', '8030'),
+                             "AUDIOCAT": check_setting('str', torz_name, 'audiocat', '3030'),
+                             "EXTENDED": check_setting('str', torz_name, 'extended', '1'),
+                             "UPDATED": check_setting('str', torz_name, 'updated', ''),
+                             "MANUAL": check_setting('bool', torz_name, 'manual', 0),
+                             "APILIMIT": check_setting('int', torz_name, 'apilimit', 0),
+                             "APICOUNT": 0,
+                             "DLPRIORITY": check_setting('int', torz_name, 'dlpriority', 0),
+                             "DLTYPES": check_setting('str', torz_name, 'dltypes', 'A,E,M'),
+                             })
+        count += 1
+    # if the last slot is full, add an empty one on the end
     add_torz_slot()
-#
-    for provider in RSS_PROV:
-        check_section(provider['NAME'])
-        CFG.set(provider['NAME'], 'ENABLED', provider['ENABLED'])
-        CFG.set(provider['NAME'], 'HOST', provider['HOST'])
-        CFG.set(provider['NAME'], 'USER', provider['USER'])
-        CFG.set(provider['NAME'], 'PASS', provider['PASS'])
+
+    count = 0
+    while CFG.has_section('RSS_%i' % count):
+        rss_name = 'RSS_%i' % count
+        # legacy name conversions
+        if CFG.has_option(rss_name, 'rss%i' % count):
+            CFG.set(rss_name, 'ENABLED', CFG.getboolean(rss_name, 'rss%i' % count))
+            CFG.remove_option(rss_name, 'rss%i' % count)
+        if CFG.has_option(rss_name, 'rss_host%i' % count):
+            CFG.set(rss_name, 'HOST', CFG.get(rss_name, 'rss_host%i' % count))
+            CFG.remove_option(rss_name, 'rss_host%i' % count)
+        if CFG.has_option(rss_name, 'rss_user%i' % count):
+            # CFG.set(rss_name, 'USER', CFG.get(rss_name, 'rss_user%i' % count))
+            CFG.remove_option(rss_name, 'rss_user%i' % count)
+        if CFG.has_option(rss_name, 'rss_pass%i' % count):
+            # CFG.set(rss_name, 'PASS', CFG.get(rss_name, 'rss_pass%i' % count))
+            CFG.remove_option(rss_name, 'rss_pass%i' % count)
+        if CFG.has_option(rss_name, 'PASS'):
+            CFG.remove_option(rss_name, 'PASS')
+        if CFG.has_option(rss_name, 'USER'):
+            CFG.remove_option(rss_name, 'USER')
+        disp_name = check_setting('str', rss_name, 'dispname', rss_name)
+
+        RSS_PROV.append({"NAME": rss_name,
+                         "DISPNAME": disp_name,
+                         "ENABLED": check_setting('bool', rss_name, 'ENABLED', 0),
+                         "HOST": check_setting('str', rss_name, 'HOST', ''),
+                         "DLPRIORITY": check_setting('int', rss_name, 'DLPRIORITY', 0),
+                         "DLTYPES": check_setting('str', rss_name, 'dltypes', 'E'),
+                         })
+        count += 1
+    # if the last slot is full, add an empty one on the end
     add_rss_slot()
-#
-    check_section('Newzbin')
-    CFG.set('Newzbin', 'newzbin', NEWZBIN)
-    CFG.set('Newzbin', 'newzbin_uid', NEWZBIN_UID)
-    CFG.set('Newzbin', 'newzbin_pass', NEWZBIN_PASS)
-#
-    check_section('TORRENT')
-    CFG.set('TORRENT', 'tor_downloader_blackhole', TOR_DOWNLOADER_BLACKHOLE)
-    CFG.set('TORRENT', 'tor_downloader_utorrent', TOR_DOWNLOADER_UTORRENT)
-    CFG.set('TORRENT', 'tor_downloader_qbittorrent', TOR_DOWNLOADER_QBITTORRENT)
-    CFG.set('TORRENT', 'tor_downloader_transmission', TOR_DOWNLOADER_TRANSMISSION)
-    CFG.set('TORRENT', 'tor_downloader_deluge', TOR_DOWNLOADER_DELUGE)
-    CFG.set('TORRENT', 'numberofseeders', NUMBEROFSEEDERS)
-    CFG.set('TORRENT', 'torrent_dir', TORRENT_DIR)
-#
-    check_section('UTORRENT')
-    CFG.set('UTORRENT', 'utorrent_host', UTORRENT_HOST)
-    CFG.set('UTORRENT', 'utorrent_port', UTORRENT_PORT)
-    CFG.set('UTORRENT', 'utorrent_user', UTORRENT_USER)
-    CFG.set('UTORRENT', 'utorrent_pass', UTORRENT_PASS)
-    CFG.set('UTORRENT', 'utorrent_label', UTORRENT_LABEL)
-#
-    check_section('QBITTORRENT')
-    CFG.set('QBITTORRENT', 'qbittorrent_host', QBITTORRENT_HOST)
-    CFG.set('QBITTORRENT', 'qbittorrent_port', QBITTORRENT_PORT)
-    CFG.set('QBITTORRENT', 'qbittorrent_user', QBITTORRENT_USER)
-    CFG.set('QBITTORRENT', 'qbittorrent_pass', QBITTORRENT_PASS)
-    CFG.set('QBITTORRENT', 'qbittorrent_label', QBITTORRENT_LABEL)
-#
-    check_section('TRANSMISSION')
-    CFG.set('TRANSMISSION', 'transmission_host', TRANSMISSION_HOST)
-    CFG.set('TRANSMISSION', 'transmission_port', TRANSMISSION_PORT)
-    CFG.set('TRANSMISSION', 'transmission_user', TRANSMISSION_USER)
-    CFG.set('TRANSMISSION', 'transmission_pass', TRANSMISSION_PASS)
-#
-    check_section('DELUGE')
-    CFG.set('DELUGE', 'deluge_host', DELUGE_HOST)
-    CFG.set('DELUGE', 'deluge_port', DELUGE_PORT)
-    CFG.set('DELUGE', 'deluge_user', DELUGE_USER)
-    CFG.set('DELUGE', 'deluge_pass', DELUGE_PASS)
-    CFG.set('DELUGE', 'deluge_label', DELUGE_LABEL)
-#
-    check_section('KAT')
-    CFG.set('KAT', 'kat', KAT)
-    CFG.set('KAT', 'kat_host', KAT_HOST)
-#
-    check_section('SearchScan')
-    CFG.set('SearchScan', 'search_interval', SEARCH_INTERVAL)
-    CFG.set('SearchScan', 'scan_interval', SCAN_INTERVAL)
-    CFG.set('SearchScan', 'searchrss_interval', SEARCHRSS_INTERVAL)
-    CFG.set('SearchScan', 'versioncheck_interval', VERSIONCHECK_INTERVAL)
-#
-    check_section('LibraryScan')
-    CFG.set('LibraryScan', 'full_scan', FULL_SCAN)
-    CFG.set('LibraryScan', 'add_author', ADD_AUTHOR)
-    CFG.set('LibraryScan', 'notfound_status', NOTFOUND_STATUS)
-    CFG.set('LibraryScan', 'newbook_status', NEWBOOK_STATUS)
-#
-    check_section('PostProcess')
-    CFG.set('PostProcess', 'ebook_dest_folder', EBOOK_DEST_FOLDER.encode('utf-8'))
-    CFG.set('PostProcess', 'ebook_dest_file', EBOOK_DEST_FILE.encode('utf-8'))
-    CFG.set('PostProcess', 'mag_dest_folder', MAG_DEST_FOLDER.encode('utf-8'))
-    CFG.set('PostProcess', 'mag_dest_file', MAG_DEST_FILE.encode('utf-8'))
-    CFG.set('PostProcess', 'mag_relative', MAG_RELATIVE)
-#
-    check_section('Twitter')
-    CFG.set('Twitter', 'use_twitter', USE_TWITTER)
-    CFG.set('Twitter', 'twitter_notify_onsnatch', TWITTER_NOTIFY_ONSNATCH)
-    CFG.set('Twitter', 'twitter_notify_ondownload', TWITTER_NOTIFY_ONDOWNLOAD)
-    CFG.set('Twitter', 'twitter_username', TWITTER_USERNAME)
-    CFG.set('Twitter', 'twitter_password', TWITTER_PASSWORD)
-    CFG.set('Twitter', 'twitter_prefix', TWITTER_PREFIX)
-#
-    check_section('Boxcar')
-    CFG.set('Boxcar', 'use_boxcar', USE_BOXCAR)
-    CFG.set('Boxcar', 'boxcar_notify_onsnatch', BOXCAR_NOTIFY_ONSNATCH)
-    CFG.set('Boxcar', 'boxcar_notify_ondownload', BOXCAR_NOTIFY_ONDOWNLOAD)
-    CFG.set('Boxcar', 'boxcar_token', BOXCAR_TOKEN)
-#
-    check_section('Pushbullet')
-    CFG.set('Pushbullet', 'use_pushbullet', USE_PUSHBULLET)
-    CFG.set('Pushbullet', 'pushbullet_notify_onsnatch', PUSHBULLET_NOTIFY_ONSNATCH)
-    CFG.set('Pushbullet', 'pushbullet_notify_ondownload', PUSHBULLET_NOTIFY_ONDOWNLOAD)
-    CFG.set('Pushbullet', 'pushbullet_token', PUSHBULLET_TOKEN)
-    CFG.set('Pushbullet', 'pushbullet_deviceid', PUSHBULLET_DEVICEID)
-#
-    check_section('Pushover')
-    CFG.set('Pushover', 'use_pushover', USE_PUSHOVER)
-    CFG.set('Pushover', 'pushover_onsnatch', PUSHOVER_ONSNATCH)
-    CFG.set('Pushover', 'pushover_ondownload', PUSHOVER_ONDOWNLOAD)
-    CFG.set('Pushover', 'pushover_priority', PUSHOVER_PRIORITY)
-    CFG.set('Pushover', 'pushover_keys', PUSHOVER_KEYS)
-    CFG.set('Pushover', 'pushover_apitoken', PUSHOVER_APITOKEN)
-    CFG.set('Pushover', 'pushover_device', PUSHOVER_DEVICE)
-#
-    check_section('AndroidPN')
-    CFG.set('AndroidPN', 'use_androidpn', USE_ANDROIDPN)
-    CFG.set('AndroidPN', 'androidpn_notify_onsnatch', ANDROIDPN_NOTIFY_ONSNATCH)
-    CFG.set('AndroidPN', 'androidpn_notify_ondownload', ANDROIDPN_NOTIFY_ONDOWNLOAD)
-    CFG.set('AndroidPN', 'androidpn_url', ANDROIDPN_URL)
-    CFG.set('AndroidPN', 'androidpn_username', ANDROIDPN_USERNAME)
-    CFG.set('AndroidPN', 'androidpn_broadcast', ANDROIDPN_BROADCAST)
-#
-    check_section('NMA')
-    CFG.set('NMA', 'use_nma', USE_NMA)
-    CFG.set('NMA', 'nma_apikey', NMA_APIKEY)
-    CFG.set('NMA', 'nma_priority', NMA_PRIORITY)
-    CFG.set('NMA', 'nma_onsnatch', NMA_ONSNATCH)
-    CFG.set('NMA', 'nma_ondownload', NMA_ONDOWNLOAD)
 
-    with open(CONFIGFILE, 'wb') as configfile:
-        CFG.write(configfile)
+    for key in list(CONFIG_DEFINITIONS.keys()):
+        item_type, section, default = CONFIG_DEFINITIONS[key]
+        CONFIG[key.upper()] = check_setting(item_type, section, key.lower(), default)
+    if not CONFIG['LOGDIR']:
+        CONFIG['LOGDIR'] = os.path.join(DATADIR, 'Logs')
+    if CONFIG['HTTP_PORT'] < 21 or CONFIG['HTTP_PORT'] > 65535:
+        CONFIG['HTTP_PORT'] = 5299
+
+    # to make extension matching easier
+    CONFIG['EBOOK_TYPE'] = CONFIG['EBOOK_TYPE'].lower()
+    CONFIG['AUDIOBOOK_TYPE'] = CONFIG['AUDIOBOOK_TYPE'].lower()
+    CONFIG['MAG_TYPE'] = CONFIG['MAG_TYPE'].lower()
+    CONFIG['REJECT_MAGS'] = CONFIG['REJECT_MAGS'].lower()
+    CONFIG['REJECT_WORDS'] = CONFIG['REJECT_WORDS'].lower()
+    CONFIG['REJECT_AUDIO'] = CONFIG['REJECT_AUDIO'].lower()
+    CONFIG['BANNED_EXT'] = CONFIG['BANNED_EXT'].lower()
+    if CONFIG['HTTP_LOOK'] == 'default':
+        logger.warn('default interface is deprecated, new features are in bookstrap')
+        CONFIG['HTTP_LOOK'] = 'legacy'
+
+    myDB = database.DBConnection()
+    # check if we have an active database yet, not a fresh install
+    result = myDB.match('PRAGMA user_version')
+    if result:
+        version = result[0]
+    else:
+        version = 0
+
+    ###################################################################
+    # ensure all these are boolean 1 0, not True False for javascript #
+    ###################################################################
+    # Suppress series tab if there are none and user doesn't want to add any
+    series_list = ''
+    if version:  # if zero, there is no series table yet
+        series_list = myDB.select('SELECT SeriesID from series')
+
+    SHOW_SERIES = len(series_list)
+    if CONFIG['ADD_SERIES']:
+        SHOW_SERIES = 1
+    # Or suppress if tab is disabled
+    if not CONFIG['SERIES_TAB']:
+        SHOW_SERIES = 0
+    # Suppress magazine tab if disabled
+    if CONFIG['MAG_TAB']:
+        SHOW_MAGS = 1
+    else:
+        SHOW_MAGS = 0
+    # Suppress audio tab if on legacy interface
+    if CONFIG['HTTP_LOOK'] == 'legacy':
+        SHOW_AUDIO = 0
+    # or if disabled
+    elif CONFIG['AUDIO_TAB']:
+        SHOW_AUDIO = 1
+    else:
+        SHOW_AUDIO = 0
+
+    for item in ['BOOK_IMG', 'MAG_IMG', 'AUTHOR_IMG', 'TOGGLES']:
+        if CONFIG[item]:
+            CONFIG[item] = 1
+        else:
+            CONFIG[item] = 0
+
+    if reloaded:
+        logger.info('Config file reloaded')
+    else:
+        logger.info('Config file loaded')
 
 
+# noinspection PyUnresolvedReferences
+def config_write(part=None):
+    global SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO, CONFIG_NONWEB, CONFIG_NONDEFAULT, CONFIG_GIT, LOGLEVEL, NEWZNAB_PROV, \
+        TORZNAB_PROV, RSS_PROV
+
+    if part:
+        logger.info("Writing config for section [%s]" % part)
+
+    currentname = threading.currentThread().name
+    threading.currentThread().name = "CONFIG_WRITE"
+    myDB = database.DBConnection()
+
+    interface = CFG.get('General', 'http_look')
+
+    for key in list(CONFIG_DEFINITIONS.keys()):
+        item_type, section, default = CONFIG_DEFINITIONS[key]
+        if key in ['WALL_COLUMNS', 'DISPLAY_LENGTH']:  # may be modified by user interface but not on config page
+            value = check_int(CONFIG[key], 5)
+        elif part and section != part:
+            value = CFG.get(section, key.lower())  # keep the old value
+            # if CONFIG['LOGLEVEL'] > 2:
+            #     logger.debug("Leaving %s unchanged (%s)" % (key, value))
+        elif key not in CONFIG_NONWEB and not (interface == 'legacy' and key in CONFIG_NONDEFAULT):
+            check_section(section)
+            value = CONFIG[key]
+            if key == 'LOGLEVEL':
+                LOGLEVEL = check_int(value, 1)
+            elif key in ['REJECT_WORDS', 'REJECT_AUDIO', 'REJECT_MAGS', 'MAG_TYPE', 'EBOOK_TYPE',
+                         'BANNED_EXT', 'AUDIOBOOK_TYPE']:
+                value = value.lower()
+        else:
+            # keep the old value
+            value = CFG.get(section, key.lower())
+            CONFIG[key] = value
+            # if CONFIG['LOGLEVEL'] > 2:
+            #    logger.debug("Leaving %s unchanged (%s)" % (key, value))
+
+        if isinstance(value, text_type):
+            if PY2:
+                try:
+                    value = value.encode(SYS_ENCODING)
+                except UnicodeError:
+                    logger.debug("Unable to convert value of %s (%s) to SYS_ENCODING" % (key, repr(value)))
+                    value = unaccented_str(value)
+            value = value.strip()
+            if 'DLTYPES' in key:
+                value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                if not value:
+                    value = 'E'
+                CONFIG[key] = value
+
+        if key in ['SEARCH_BOOKINTERVAL', 'SEARCH_MAGINTERVAL', 'SCAN_INTERVAL', 'VERSIONCHECK_INTERVAL',
+                   'SEARCHRSS_INTERVAL', 'GOODREADS_INTERVAL', 'WISHLIST_INTERVAL']:
+            oldvalue = CFG.get(section, key.lower())
+            if value != oldvalue:
+                if key == 'SEARCH_BOOKINTERVAL':
+                    scheduleJob('Restart', 'search_book')
+                elif key == 'SEARCH_MAGINTERVAL':
+                    scheduleJob('Restart', 'search_magazine')
+                elif key == 'SEARCHRSS_INTERVAL':
+                    scheduleJob('Restart', 'search_rss_book')
+                elif key == 'WISHLIST_INTERVAL':
+                    scheduleJob('Restart', 'search_wishlist')
+                elif key == 'SCAN_INTERVAL':
+                    scheduleJob('Restart', 'PostProcessor')
+                elif key == 'VERSIONCHECK_INTERVAL':
+                    scheduleJob('Restart', 'checkForUpdates')
+                elif key == 'GOODREADS_INTERVAL' and CONFIG['GR_SYNC']:
+                    scheduleJob('Restart', 'sync_to_gr')
+
+        CFG.set(section, key.lower(), value)
+
+    # sanity check for typos...
+    for key in list(CONFIG.keys()):
+        if key not in list(CONFIG_DEFINITIONS.keys()):
+            logger.warn('Unsaved/invalid config key: %s' % key)
+
+    if not part or part.startswith('Newznab') or part.startswith('Torznab'):
+        NAB_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'API', 'GENERALSEARCH', 'BOOKSEARCH', 'MAGSEARCH',
+                     'AUDIOSEARCH', 'BOOKCAT', 'MAGCAT', 'AUDIOCAT', 'EXTENDED', 'DLPRIORITY', 'DLTYPES',
+                     'UPDATED', 'MANUAL', 'APILIMIT']
+        for entry in [[NEWZNAB_PROV, 'Newznab'], [TORZNAB_PROV, 'Torznab']]:
+            new_list = []
+            # strip out any empty slots
+            for provider in entry[0]:  # type: dict
+                if provider['HOST']:
+                    new_list.append(provider)
+
+            if part:  # only update the named provider
+                for provider in new_list:
+                    if provider['NAME'].lower() != part.lower():  # keep old values
+                        if CONFIG['LOGLEVEL'] > 2:
+                            logger.debug("Keep %s" % provider['NAME'])
+                        for item in NAB_ITEMS:
+                            provider[item] = CFG.get(provider['NAME'], item.lower())
+
+            # renumber the items
+            for index, item in enumerate(new_list):
+                item['NAME'] = '%s%i' % (entry[1], index)
+
+            # delete the old entries
+            sections = CFG.sections()
+            for item in sections:
+                if item.startswith(entry[1]):
+                    CFG.remove_section(item)
+
+            for provider in new_list:
+                check_section(provider['NAME'])
+                for item in NAB_ITEMS:
+                    value = provider[item]
+                    if isinstance(value, text_type):
+                        value = value.strip()
+                    if item == 'DLTYPES':
+                        value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                        if not value:
+                            value = 'E'
+                        provider['DLTYPES'] = value
+                    CFG.set(provider['NAME'], item, value)
+
+            if entry[1] == 'Newznab':
+                NEWZNAB_PROV = new_list
+                add_newz_slot()
+            else:
+                TORZNAB_PROV = new_list
+                add_torz_slot()
+
+    if not part or part.startswith('rss_'):
+        RSS_ITEMS = ['ENABLED', 'DISPNAME', 'HOST', 'DLPRIORITY', 'DLTYPES']
+        new_list = []
+        # strip out any empty slots
+        for provider in RSS_PROV:
+            if provider['HOST']:
+                new_list.append(provider)
+
+        if part:  # only update the named provider
+            for provider in new_list:
+                if provider['NAME'].lower() != part:  # keep old values
+                    if CONFIG['LOGLEVEL'] > 2:
+                        logger.debug("Keep %s" % provider['NAME'])
+                    for item in RSS_ITEMS:
+                        provider[item] = CFG.get(provider['NAME'], item.lower())
+
+        # renumber the items
+        for index, item in enumerate(new_list):
+            item['NAME'] = 'RSS_%i' % index
+
+        # strip out the old config entries
+        sections = CFG.sections()
+        for item in sections:
+            if item.startswith('RSS_'):
+                CFG.remove_section(item)
+
+        for provider in new_list:
+            check_section(provider['NAME'])
+            for item in RSS_ITEMS:
+                value = provider[item]
+                if isinstance(value, text_type):
+                    value = value.strip()
+                if item == 'DLTYPES':
+                    value = ','.join(sorted(set([i for i in value.upper() if i in 'AEM'])))
+                    if not value:
+                        value = 'E'
+                    provider['DLTYPES'] = value
+                CFG.set(provider['NAME'], item, value)
+
+        RSS_PROV = new_list
+        add_rss_slot()
+    #
+    series_list = myDB.select('SELECT SeriesID from series')
+    SHOW_SERIES = len(series_list)
+    if CONFIG['ADD_SERIES']:
+        SHOW_SERIES = 1
+    if not CONFIG['SERIES_TAB']:
+        SHOW_SERIES = 0
+
+    SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
+    if not CONFIG['MAG_TAB']:
+        SHOW_MAGS = 0
+
+    if CONFIG['HTTP_LOOK'] == 'legacy':
+        SHOW_AUDIO = 0
+    elif CONFIG['AUDIO_TAB']:
+        SHOW_AUDIO = 1
+    else:
+        SHOW_AUDIO = 0
+
+    msg = None
+    try:
+        if PY2:
+            fmode = 'wb'
+        else:
+            fmode = 'w'
+        with open(CONFIGFILE + '.new', fmode) as configfile:
+            CFG.write(configfile)
+    except Exception as e:
+        msg = '{} {} {} {}'.format('Unable to create new config file:', CONFIGFILE, type(e).__name__, str(e))
+        logger.warn(msg)
+        threading.currentThread().name = currentname
+        return
+    try:
+        os.remove(CONFIGFILE + '.bak')
+    except OSError as e:
+        if e.errno is not 2:  # doesn't exist is ok
+            msg = '{} {}{} {} {}'.format(type(e).__name__, 'deleting backup file:', CONFIGFILE, '.bak', e.strerror)
+            logger.warn(msg)
+    try:
+        os.rename(CONFIGFILE, CONFIGFILE + '.bak')
+    except OSError as e:
+        if e.errno is not 2:  # doesn't exist is ok as wouldn't exist until first save
+            msg = '{} {} {} {}'.format('Unable to backup config file:', CONFIGFILE, type(e).__name__, e.strerror)
+            logger.warn(msg)
+    try:
+        os.rename(CONFIGFILE + '.new', CONFIGFILE)
+    except OSError as e:
+        msg = '{} {} {} {}'.format('Unable to rename new config file:', CONFIGFILE, type(e).__name__, e.strerror)
+        logger.warn(msg)
+
+    if not msg:
+        if part is None:
+            part = ''
+        msg = 'Config file [%s] %s has been updated' % (CONFIGFILE, part)
+        logger.info(msg)
+
+    threading.currentThread().name = currentname
+
+
+# noinspection PyUnresolvedReferences
 def add_newz_slot():
     count = len(NEWZNAB_PROV)
     if count == 0 or len(CFG.get('Newznab%i' % int(count - 1), 'HOST')):
-        newz_name = 'Newznab%i' % count
-        check_section(newz_name)
-        CFG.set(newz_name, 'ENABLED', False)
-        CFG.set(newz_name, 'HOST', '')
-        CFG.set(newz_name, 'API', '')
-        CFG.set(newz_name, 'GENERALSEARCH', 'search')
-        CFG.set(newz_name, 'BOOKSEARCH', 'book')
-        CFG.set(newz_name, 'MAGSEARCH', '')
-        CFG.set(newz_name, 'BOOKCAT', '7000,7020')
-        CFG.set(newz_name, 'MAGCAT', '7010')
-        CFG.set(newz_name, 'EXTENDED', '1')
-        CFG.set(newz_name, 'UPDATED', '')
-        CFG.set(newz_name, 'MANUAL', False)
-        
-        NEWZNAB_PROV.append({"NAME": newz_name,
-                             "ENABLED": 0,
-                             "HOST": '',
-                             "API": '',
-                             "GENERALSEARCH": 'search',
-                             "BOOKSEARCH": 'book',
-                             "MAGSEARCH": '',
-                             "BOOKCAT": '7000,7020',
-                             "MAGCAT": '7010',
-                             "EXTENDED": '1',
-                             "UPDATED": '',
-                             "MANUAL": 0
-                             })
+        prov_name = 'Newznab%i' % count
+        empty = {"NAME": prov_name,
+                 "DISPNAME": prov_name,
+                 "ENABLED": 0,
+                 "HOST": '',
+                 "API": '',
+                 "GENERALSEARCH": 'search',
+                 "BOOKSEARCH": 'book',
+                 "MAGSEARCH": '',
+                 "AUDIOSEARCH": '',
+                 "BOOKCAT": '7000,7020',
+                 "MAGCAT": '7010',
+                 "AUDIOCAT": '3030',
+                 "EXTENDED": '1',
+                 "UPDATED": '',
+                 "MANUAL": 0,
+                 "APILIMIT": 0,
+                 "APICOUNT": 0,
+                 "DLPRIORITY": 0,
+                 "DLTYPES": 'A,E,M'
+                 }
+        NEWZNAB_PROV.append(empty)
 
+        check_section(prov_name)
+        for item in empty:
+            if item != 'NAME':
+                CFG.set(prov_name, item, empty[item])
+
+
+# noinspection PyUnresolvedReferences
 def add_torz_slot():
     count = len(TORZNAB_PROV)
     if count == 0 or len(CFG.get('Torznab%i' % int(count - 1), 'HOST')):
-        torz_name = 'Torznab%i' % count
-        check_section(torz_name)
-        CFG.set(torz_name, 'ENABLED', False)
-        CFG.set(torz_name, 'HOST', '')
-        CFG.set(torz_name, 'API', '')
-        CFG.set(torz_name, 'GENERALSEARCH', 'search')
-        CFG.set(torz_name, 'BOOKSEARCH', 'book')
-        CFG.set(torz_name, 'MAGSEARCH', '')
-        CFG.set(torz_name, 'BOOKCAT', '7000,7020')
-        CFG.set(torz_name, 'MAGCAT', '7010')
-        CFG.set(torz_name, 'EXTENDED', '1')
-        CFG.set(torz_name, 'UPDATED', '')
-        CFG.set(torz_name, 'MANUAL', False)
-        TORZNAB_PROV.append({"NAME": torz_name,
-                             "ENABLED": 0,
-                             "HOST": '',
-                             "API": '',
-                             "GENERALSEARCH": 'search',
-                             "BOOKSEARCH": 'book',
-                             "MAGSEARCH": '',
-                             "BOOKCAT": '8000,8010',
-                             "MAGCAT": '8030',
-                             "EXTENDED": '1',
-                             "UPDATED": '',
-                             "MANUAL": 0
-                             })
+        prov_name = 'Torznab%i' % count
+        empty = {"NAME": prov_name,
+                 "DISPNAME": prov_name,
+                 "ENABLED": 0,
+                 "HOST": '',
+                 "API": '',
+                 "GENERALSEARCH": 'search',
+                 "BOOKSEARCH": 'book',
+                 "MAGSEARCH": '',
+                 "AUDIOSEARCH": '',
+                 "BOOKCAT": '8000,8010',
+                 "MAGCAT": '8030',
+                 "AUDIOCAT": '8030',
+                 "EXTENDED": '1',
+                 "UPDATED": '',
+                 "MANUAL": 0,
+                 "APILIMIT": 0,
+                 "APICOUNT": 0,
+                 "DLPRIORITY": 0,
+                 "DLTYPES": 'A,E,M'
+                 }
+        TORZNAB_PROV.append(empty)
 
-def USE_NZB():
-    for provider in NEWZNAB_PROV:
-        if bool(provider['ENABLED']):
-            return True
-    for provider in TORZNAB_PROV:
-        if bool(provider['ENABLED']):
-            return True
-    return False
+        check_section(prov_name)
+        for item in empty:
+            if item != 'NAME':
+                CFG.set(prov_name, item, empty[item])
 
 
+def DIRECTORY(dirname):
+    usedir = ''
+    if dirname == "eBook":
+        usedir = CONFIG['EBOOK_DIR']
+    elif dirname == "AudioBook" or dirname == "Audio":
+        usedir = CONFIG['AUDIO_DIR']
+    elif dirname == "Download":
+        try:
+            usedir = getList(CONFIG['DOWNLOAD_DIR'], ',')[0]
+        except IndexError:
+            usedir = ''
+    elif dirname == "Alternate":
+        usedir = CONFIG['ALTERNATE_DIR']
+    else:
+        return usedir
+
+    if usedir and os.path.isdir(usedir):
+        try:
+            with open(os.path.join(usedir, 'll_temp'), 'w') as f:
+                f.write('test')
+            os.remove(os.path.join(usedir, 'll_temp'))
+        except Exception as why:
+            logger.warn("%s dir [%s] not writeable, using %s: %s" % (dirname, usedir, DATADIR, str(why)))
+            logger.debug("Folder: %s Mode: %s UID: %s GID: %s W_OK: %s X_OK: %s" % (usedir,
+                         oct(os.stat(usedir).st_mode), os.stat(usedir).st_uid, os.stat(usedir).st_gid,
+                         os.access(usedir, os.W_OK), os.access(usedir, os.X_OK)))
+            usedir = DATADIR
+    else:
+        logger.warn("%s dir [%s] not found, using %s" % (dirname, usedir, DATADIR))
+        usedir = DATADIR
+
+    # return directory as unicode so we get unicode results from listdir
+    return makeUnicode(usedir)
+
+
+# noinspection PyUnresolvedReferences
 def add_rss_slot():
     count = len(RSS_PROV)
     if count == 0 or len(CFG.get('RSS_%i' % int(count - 1), 'HOST')):
@@ -1103,107 +1290,183 @@ def add_rss_slot():
         check_section(rss_name)
         CFG.set(rss_name, 'ENABLED', False)
         CFG.set(rss_name, 'HOST', '')
-        CFG.set(rss_name, 'USER', '')
-        CFG.set(rss_name, 'PASS', '')
+        # CFG.set(rss_name, 'USER', '')
+        # CFG.set(rss_name, 'PASS', '')
         RSS_PROV.append({"NAME": rss_name,
+                         "DISPNAME": rss_name,
                          "ENABLED": 0,
                          "HOST": '',
-                         "USER": '',
-                         "PASS": ''
+                         "DLPRIORITY": 0,
+                         "DLTYPES": 'E'
                          })
 
 
+def WishListType(host):
+    """ Return type of wishlist or empty string if not a wishlist """
+    # GoodReads rss feeds
+    if 'goodreads' in host and 'list_rss' in host:
+        return 'GOODREADS'
+    # GoodReads Listopia html pages
+    if 'goodreads' in host and '/list/show/' in host:
+        return 'LISTOPIA'
+    # NYTimes best-sellers html pages
+    if 'nytimes' in host and 'best-sellers' in host:
+        return 'NYTIMES'
+    return ''
+
+
 def USE_RSS():
+    count = 0
     for provider in RSS_PROV:
+        if bool(provider['ENABLED']) and not WishListType(provider['HOST']):
+            count += 1
+    return count
+
+
+def USE_WISHLIST():
+    count = 0
+    for provider in RSS_PROV:
+        if bool(provider['ENABLED']) and WishListType(provider['HOST']):
+            count += 1
+    return count
+
+
+def USE_NZB():
+    # Count how many nzb providers are active
+    count = 0
+    for provider in NEWZNAB_PROV:
         if bool(provider['ENABLED']):
-            return True
-    return False
+            count += 1
+    for provider in TORZNAB_PROV:
+        if bool(provider['ENABLED']):
+            count += 1
+    return count
 
 
 def USE_TOR():
-    if bool(KAT):
-        return True
-    return False
+    count = 0
+    for provider in [CONFIG['KAT'], CONFIG['WWT'], CONFIG['TPB'], CONFIG['ZOO'], CONFIG['LIME'], CONFIG['TDL']]:
+        if bool(provider):
+            count += 1
+    return count
 
 
-def build_bookstrap_themes():
+def USE_DIRECT():
+    count = 0
+    for provider in [CONFIG['GEN'], CONFIG['GEN2']]:
+        if bool(provider):
+            count += 1
+    return count
+
+
+def build_bookstrap_themes(prog_dir):
     themelist = []
-    if not os.path.isdir(os.path.join(PROG_DIR, 'data/interfaces/bookstrap/')):
+    if not os.path.isdir(os.path.join(prog_dir, 'data', 'interfaces', 'bookstrap')):
         return themelist  # return empty if bookstrap interface not installed
 
     URL = 'http://bootswatch.com/api/3.json'
-    request = urllib2.Request(URL)
-
-    if PROXY_HOST:
-        request.set_proxy(PROXY_HOST, PROXY_TYPE)
-
-    # bootswatch insists on having a user-agent
-    request.add_header('User-Agent', common.USER_AGENT)
-
-    try:
-        resp = urllib2.urlopen(request, timeout=30)
-    except (urllib2.HTTPError, urllib2.URLError, socket.timeout) as e:
-        logger.debug("Error getting bookstrap themes : %s" % e)
+    result, success = fetchURL(URL, headers=None, retry=False)
+    if not success:
+        logger.debug("Error getting bookstrap themes : %s" % result)
         return themelist
 
-    if str(resp.getcode()).startswith("2"):
-        # (200 OK etc)
-        try:
-            results = json.JSONDecoder().decode(resp.read())
-            for theme in results['themes']:
-                themelist.append(theme['name'].lower())
-        except:
-            # error reading results
-            logger.debug('JSON Error reading bookstrap themes')
+    try:
+        results = json.loads(result)
+        for theme in results['themes']:
+            themelist.append(theme['name'].lower())
+    except Exception as e:
+        # error reading results
+        logger.warn('JSON Error reading bookstrap themes, %s %s' % (type(e).__name__, str(e)))
 
-    logger.debug("Bookstrap found %i themes" % len(themelist))
+    logger.info("Bookstrap found %i themes" % len(themelist))
     return themelist
 
 
 def build_monthtable():
-    if len(formatter.getList(IMP_MONTHLANG)) == 0:  # any extra languages wanted?
-        return
+    table = []
+    json_file = os.path.join(DATADIR, 'monthnames.json')
+    if os.path.isfile(json_file):
+        try:
+            with open(json_file) as json_data:
+                table = json.load(json_data)
+            mlist = ''
+            # list alternate entries as each language is in twice (long and short month names)
+            for item in table[0][::2]:
+                mlist += item + ' '
+            logger.debug('Loaded monthnames.json : %s' % mlist)
+        except Exception as e:
+            logger.error('Failed to load monthnames.json, %s %s' % (type(e).__name__, str(e)))
+
+    if not table:
+        # Default Month names table to hold long/short month names for multiple languages
+        # which we can match against magazine issues
+        table = [
+            ['en_GB.UTF-8', 'en_GB.UTF-8'],
+            ['january', 'jan'],
+            ['february', 'feb'],
+            ['march', 'mar'],
+            ['april', 'apr'],
+            ['may', 'may'],
+            ['june', 'jun'],
+            ['july', 'jul'],
+            ['august', 'aug'],
+            ['september', 'sep'],
+            ['october', 'oct'],
+            ['november', 'nov'],
+            ['december', 'dec']
+        ]
+
+    if len(getList(CONFIG['IMP_MONTHLANG'])) == 0:  # any extra languages wanted?
+        return table
     try:
         current_locale = locale.setlocale(locale.LC_ALL, '')  # read current state.
+        if 'LC_CTYPE' in current_locale:
+            current_locale = locale.setlocale(locale.LC_CTYPE, '')
         # getdefaultlocale() doesnt seem to work as expected on windows, returns 'None'
+        logger.debug('Current locale is %s' % current_locale)
     except locale.Error as e:
         logger.debug("Error getting current locale : %s" % str(e))
-        return
+        return table
 
     lang = str(current_locale)
-    if not lang.startswith('en_'):  # en_ is preloaded
-        MONTHNAMES[0].append(lang)
+    # check not already loaded, also all english variants and 'C' use the same month names
+    if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
+        logger.debug('Month names for %s already loaded' % lang)
+    else:
+        logger.debug('Loading month names for %s' % lang)
+        table[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
-        MONTHNAMES[0].append(lang)
+            table[f].append(unaccented(calendar.month_name[f]).lower())
+        table[0].append(lang)
         for f in range(1, 13):
-            MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
-            logger.info("Added month names for locale [%s], %s, %s ..." % (
-                        lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
+            table[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
+        logger.info("Added month names for locale [%s], %s, %s ..." % (
+            lang, table[1][len(table[1]) - 2], table[1][len(table[1]) - 1]))
 
-    for lang in formatter.getList(IMP_MONTHLANG):
+    for lang in getList(CONFIG['IMP_MONTHLANG']):
         try:
-            if len(lang) > 1:
+            if lang in table[0] or ((lang.startswith('en_') or lang == 'C') and 'en_' in str(table[0])):
+                logger.debug('Month names for %s already loaded' % lang)
+            else:
                 locale.setlocale(locale.LC_ALL, lang)
-                MONTHNAMES[0].append(lang)
+                logger.debug('Loading month names for %s' % lang)
+                table[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_name[f]).lower())
-                MONTHNAMES[0].append(lang)
+                    table[f].append(unaccented(calendar.month_name[f]).lower())
+                table[0].append(lang)
                 for f in range(1, 13):
-                    MONTHNAMES[f].append(common.remove_accents(calendar.month_abbr[f]).lower().strip('.'))
+                    table[f].append(unaccented(calendar.month_abbr[f]).lower().strip('.'))
                 locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
                 logger.info("Added month names for locale [%s], %s, %s ..." % (
-                    lang, MONTHNAMES[1][len(MONTHNAMES[1]) - 2], MONTHNAMES[1][len(MONTHNAMES[1]) - 1]))
-        except:
+                    lang, table[1][len(table[1]) - 2], table[1][len(table[1]) - 1]))
+        except Exception as e:
             locale.setlocale(locale.LC_ALL, current_locale)  # restore entry state
-            logger.warn("Unable to load requested locale [%s]" % lang)
+            logger.warn("Unable to load requested locale [%s] %s %s" % (lang, type(e).__name__, str(e)))
             try:
-                if '_' in lang:
-                    wanted_lang = lang.split('_')[0]
-                else:
-                    wanted_lang = lang
+                wanted_lang = lang.split('_')[0]
                 params = ['locale', '-a']
-                all_locales = subprocess.check_output(params).split()
+                res = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                all_locales = makeUnicode(res).split()
                 locale_list = []
                 for a_locale in all_locales:
                     if a_locale.startswith(wanted_lang):
@@ -1212,15 +1475,25 @@ def build_monthtable():
                     logger.warn("Found these alternatives: " + str(locale_list))
                 else:
                     logger.warn("Unable to find an alternative")
-            except:
-                logger.warn("Unable to get a list of alternatives")
-            logger.info("Set locale back to entry state %s" % current_locale)
+            except Exception as e:
+                logger.warn("Unable to get a list of alternatives, %s %s" % (type(e).__name__, str(e)))
+            logger.debug("Set locale back to entry state %s" % current_locale)
+
+    # with open(json_file, 'w') as f:
+    #    json.dump(table, f)
+    return table
 
 
 def daemonize():
     """
     Fork off as a daemon
     """
+    threadcount = threading.activeCount()
+    if threadcount != 1:
+        logger.warn('There are %d active threads. Daemonizing may cause strange behavior.' % threadcount)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
 
     # Make a non-session-leader child process
     try:
@@ -1228,8 +1501,7 @@ def daemonize():
         if pid != 0:
             sys.exit(0)
     except OSError as e:
-        raise RuntimeError("1st fork failed: %s [%d]" %
-                           (e.strerror, e.errno))
+        raise RuntimeError("1st fork failed: %s [%d]" % (e.strerror, e.errno))
 
     os.setsid()  # @UndefinedVariable - only available in UNIX
 
@@ -1243,235 +1515,150 @@ def daemonize():
         if pid != 0:
             sys.exit(0)
     except OSError as e:
-        raise RuntimeError("2st fork failed: %s [%d]" %
-                           (e.strerror, e.errno))
+        raise RuntimeError("2nd fork failed: %s [%d]" % (e.strerror, e.errno))
 
-    dev_null = file('/dev/null', 'r')
+    dev_null = open('/dev/null', 'r')
     os.dup2(dev_null.fileno(), sys.stdin.fileno())
 
+    si = open('/dev/null', "r")
+    so = open('/dev/null', "a+")
+    se = open('/dev/null', "a+")
+
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
+    pid = os.getpid()
+    logger.debug("Daemonized to PID %d" % pid)
+
     if PIDFILE:
-        pid = str(os.getpid())
-        logger.debug(u"Writing PID " + pid + " to " + str(PIDFILE))
-        file(PIDFILE, 'w').write("%s\n" % pid)
+        logger.debug("Writing PID %d to %s" % (pid, PIDFILE))
+        with open(PIDFILE, 'w') as pidfile:
+            pidfile.write("%s\n" % pid)
 
 
 def launch_browser(host, port, root):
     if host == '0.0.0.0':
         host = 'localhost'
 
+    if CONFIG['HTTPS_ENABLED']:
+        protocol = 'https'
+    else:
+        protocol = 'http'
+
     try:
-        webbrowser.open('http://%s:%i%s' % (host, port, root))
+        webbrowser.open('%s://%s:%i%s' % (protocol, host, port, root))
     except Exception as e:
-        logger.error('Could not launch browser: %s' % e)
-
-
-def dbcheck():
-
-    conn = sqlite3.connect(DBFILE)
-    c = conn.cursor()
-    c.execute('CREATE TABLE IF NOT EXISTS authors (AuthorID TEXT, AuthorName TEXT UNIQUE, AuthorImg TEXT, \
-         AuthorLink TEXT, DateAdded TEXT, Status TEXT, LastBook TEXT, LastLink Text, LastDate TEXT, \
-         HaveBooks INTEGER, TotalBooks INTEGER, AuthorBorn TEXT, AuthorDeath TEXT, UnignoredBooks INTEGER)')
-    c.execute('CREATE TABLE IF NOT EXISTS books (AuthorID TEXT, AuthorName TEXT, AuthorLink TEXT, \
-        BookName TEXT, BookSub TEXT, BookDesc TEXT, BookGenre TEXT, BookIsbn TEXT, BookPub TEXT, \
-        BookRate INTEGER, BookImg TEXT, BookPages INTEGER, BookLink TEXT, BookID TEXT UNIQUE, BookFile TEXT, \
-        BookDate TEXT, BookLang TEXT, BookAdded TEXT, Status TEXT, Series TEXT, SeriesNum TEXT, SeriesOrder INTEGER, \
-        WorkPage TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS wanted (BookID TEXT, NZBurl TEXT, NZBtitle TEXT, NZBdate TEXT, \
-        NZBprov TEXT, Status TEXT, NZBsize TEXT, AuxInfo TEXT, NZBmode TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS magazines (Title TEXT, Frequency TEXT, Regex TEXT, Status TEXT, \
-        MagazineAdded TEXT, LastAcquired TEXT, IssueDate TEXT, IssueStatus TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS languages ( isbn TEXT, lang TEXT )')
-    c.execute('CREATE TABLE IF NOT EXISTS issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, \
-        IssueFile TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS stats ( authorname text, GR_book_hits int, GR_lang_hits int, \
-        LT_lang_hits int, GB_lang_change, cache_hits int, bad_lang int, bad_char int, uncached int )')
-
-    try:
-        logger.info('Checking database')
-        c.execute('SELECT BookSub from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold book subtitles.')
-        c.execute('ALTER TABLE books ADD COLUMN BookSub TEXT')
-
-    try:
-        c.execute('SELECT BookPub from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold book publisher')
-        c.execute('ALTER TABLE books ADD COLUMN BookPub TEXT')
-
-    try:
-        c.execute('SELECT BookGenre from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold bookgenre')
-        c.execute('ALTER TABLE books ADD COLUMN BookGenre TEXT')
-
-    try:
-        c.execute('SELECT BookFile from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold book filename')
-        c.execute('ALTER TABLE books ADD COLUMN BookFile TEXT')
-
-    try:
-        c.execute('SELECT AuxInfo from wanted')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold AuxInfo')
-        c.execute('ALTER TABLE wanted ADD COLUMN AuxInfo TEXT')
-
-    try:
-        c.execute('SELECT NZBsize from wanted')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold NZBside')
-        c.execute('ALTER TABLE wanted ADD COLUMN NZBsize TEXT')
-
-    try:
-        c.execute('SELECT NZBmode from wanted')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold NZBmode')
-        c.execute('ALTER TABLE wanted ADD COLUMN NZBmode TEXT')
-
-    try:
-        c.execute('SELECT UnignoredBooks from authors')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold UnignoredBooks')
-        c.execute('ALTER TABLE authors ADD COLUMN UnignoredBooks INTEGER')
-
-    try:
-        c.execute('SELECT IssueStatus from magazines')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold IssueStatus')
-        c.execute('ALTER TABLE magazines ADD COLUMN IssueStatus TEXT')
-
-    addedWorkPage = False
-    try:
-        c.execute('SELECT WorkPage from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold WorkPage')
-        c.execute('ALTER TABLE books ADD COLUMN WorkPage TEXT')
-        addedWorkPage = True
-        
-    addedSeries = False
-    try:
-        c.execute('SELECT Series from books')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold Series')
-        c.execute('ALTER TABLE books ADD COLUMN Series TEXT')
-        addedSeries = True
-        
-    # SeriesOrder shouldn't be an integer, some later written books
-    # and novellas logically go inbetween books of the main series,
-    # and their SeriesOrder is not an integer, eg 1.5
-    # so we need to update SeriesOrder to store as text. 
-    # Because sqlite can't drop columns we create a new column SeriesNum,
-    # inherit the old column values, and use SeriesNum instead
-    try:
-        c.execute('SELECT SeriesNum from books')
-    except sqlite3.OperationalError:
-        # no SeriesNum column, so create one
-        logger.info('Updating books to hold SeriesNum')
-        c.execute('ALTER TABLE books ADD COLUMN SeriesNum TEXT')
-        c.execute('UPDATE books SET SeriesNum = SeriesOrder')
-        c.execute('UPDATE books SET SeriesOrder = Null')
-
-    addedIssues = False
-    try:
-        c.execute('SELECT Title from issues')
-    except sqlite3.OperationalError:
-        logger.info('Updating database to hold Issues')
-        c.execute('CREATE TABLE issues (Title TEXT, IssueID TEXT, IssueAcquired TEXT, IssueDate TEXT, IssueFile TEXT)')
-        addedIssues = True
-    try:
-        c.execute('SELECT IssueID from issues')
-    except sqlite3.OperationalError:
-        logger.info('Updating Issues table to hold IssueID')
-        c.execute('ALTER TABLE issues ADD COLUMN IssueID TEXT')
-        addedIssues = True
-
-    c.execute('DROP TABLE if exists capabilities')
-
-    conn.commit()
-    c.close()
-
-    if addedIssues:
-        try:
-            magazinescan.magazineScan(thread='MAIN')
-        except:
-            logger.debug("Failed to scan magazines")
-
-    if addedWorkPage:
-        try:
-            logger.info('Adding WorkPage to existing books')
-            threading.Thread(target=bookwork.setWorkPages, args=[]).start()
-        except:
-            logger.debug("Failed to update WorkPages")
-
-    if addedSeries:
-        try:
-            myDB = database.DBConnection()
-            books = myDB.select('SELECT BookID, BookName FROM books')
-            if books:
-                logger.info('Adding series to existing books')
-                for book in books:
-                    series,seriesNum = formatter.bookSeries(book["BookName"])  
-                    if series:
-                        controlValueDict = {"BookID": book["BookID"]}
-                        newValueDict = {
-                            "series": series,
-                            "seriesNum": seriesNum
-                        }
-                        myDB.upsert("books", newValueDict, controlValueDict)
-        except Exception as z:
-            logger.info('Error: ' + str(z))
-
-    try:
-        myDB = database.DBConnection()
-        author = myDB.select('SELECT AuthorID FROM authors WHERE AuthorName IS NULL')
-        if author:
-            logger.info('Removing un-named author from database')
-            authorid = author[0]["AuthorID"]
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % authorid)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % authorid)
-    except Exception as z:
-        logger.info('Error: ' + str(z))
+        logger.error('Could not launch browser:%s  %s' % (type(e).__name__, str(e)))
 
 
 def start():
-    global __INITIALIZED__, started
+    global __INITIALIZED__, started, SHOW_SERIES, SHOW_MAGS, SHOW_AUDIO
 
     if __INITIALIZED__:
-
         # Crons and scheduled jobs started here
         SCHED.start()
-        common.restartJobs(start='Start')
         started = True
+        if not UPDATE_MSG:
+            myDB = database.DBConnection()
+            restartJobs(start='Start')
+            series_list = myDB.select('SELECT SeriesID from series')
+            SHOW_SERIES = len(series_list)
+            if CONFIG['ADD_SERIES']:
+                SHOW_SERIES = 1
+            SHOW_MAGS = len(CONFIG['MAG_DEST_FOLDER'])
+
+            if CONFIG['HTTP_LOOK'] == 'legacy':
+                SHOW_AUDIO = 0
+            elif CONFIG['AUDIO_TAB']:
+                SHOW_AUDIO = 1
+            else:
+                SHOW_AUDIO = 0
+
+
+def logmsg(level, msg):
+    # log messages to logger if initialised, or print if not.
+    if __INITIALIZED__:
+        if level == 'error':
+            logger.error(msg)
+        elif level == 'debug':
+            logger.debug(msg)
+        elif level == 'warn':
+            logger.warn(msg)
+        else:
+            logger.info(msg)
+    else:
+        print(level.upper(), msg)
 
 
 def shutdown(restart=False, update=False):
-
     cherrypy.engine.exit()
-    SCHED.shutdown(wait=False)
-    config_write()
+    if SCHED:
+        SCHED.shutdown(wait=False)
+    # config_write() don't automatically rewrite config on exit
 
     if not restart and not update:
-        logger.info('LazyLibrarian is shutting down...')
+        logmsg('info', 'LazyLibrarian is shutting down...')
+
     if update:
-        logger.info('LazyLibrarian is updating...')
+        logmsg('info', 'LazyLibrarian is updating...')
         try:
-            versioncheck.update()
+            if versioncheck.update():
+                logmsg('info', 'Lazylibrarian version updated')
+                CONFIG['GIT_UPDATED'] = str(int(time.time()))
+                config_write('Git')
         except Exception as e:
-            logger.warn('LazyLibrarian failed to update: %s. Restarting.' % e)
+            logmsg('warn', 'LazyLibrarian failed to update: %s %s. Restarting.' % (type(e).__name__, str(e)))
 
     if PIDFILE:
-        logger.info('Removing pidfile %s' % PIDFILE)
+        logmsg('info', 'Removing pidfile %s' % PIDFILE)
         os.remove(PIDFILE)
 
     if restart:
-        logger.info('LazyLibrarian is restarting ...')
-        popen_list = [sys.executable, FULL_PATH]
+        logmsg('info', 'LazyLibrarian is restarting ...')
+
+        # Try to use the currently running python executable, as it is known to work
+        # if not able to determine, sys.executable returns empty string or None
+        # and we have to go looking for it...
+        executable = sys.executable
+
+        if not executable:
+            if PY2:
+                prg = "python2"
+            else:
+                prg = "python3"
+            if platform.system() == "Windows":
+                params = ["where", prg]
+                try:
+                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    executable = makeUnicode(executable).strip()
+                except Exception as e:
+                    logger.debug("where %s failed: %s %s" % (prg, type(e).__name__, str(e)))
+            else:
+                params = ["which", prg]
+                try:
+                    executable = subprocess.check_output(params, stderr=subprocess.STDOUT)
+                    executable = makeUnicode(executable).strip()
+                except Exception as e:
+                    logger.debug("which %s failed: %s %s" % (prg, type(e).__name__, str(e)))
+
+        if not executable:
+            executable = 'python'  # default if not found
+
+        popen_list = [executable, FULL_PATH]
         popen_list += ARGS
+        if '--update' in popen_list:
+            popen_list.remove('--update')
+        if LOGLEVEL:
+            if '--quiet' in popen_list:
+                popen_list.remove('--quiet')
+            if '-q' in popen_list:
+                popen_list.remove('-q')
         if '--nolaunch' not in popen_list:
             popen_list += ['--nolaunch']
-            logger.info('Restarting LazyLibrarian with ' + str(popen_list))
+
+        logmsg('debug', 'Restarting LazyLibrarian with ' + str(popen_list))
         subprocess.Popen(popen_list, cwd=os.getcwd())
 
-    os._exit(0)
+    logmsg('info', 'LazyLibrarian is exiting')
+    sys.exit(0)

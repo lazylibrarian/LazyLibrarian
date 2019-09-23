@@ -1,0 +1,58 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<div>
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+    $(document).ready(function()
+    {
+        var title = '${title}';
+        var prefix = '${prefix}';
+        var pop_message = '${pop_message}';
+        var bookid = '${bookid}';
+        var pop_types = '${pop_types}';
+        var buttons = {
+                    bt0: {
+                        label: "Close",
+                        className: 'btn-primary',
+                        callback: function(result){ window.history.back() }
+                    },
+                }
+
+        var array = pop_types.split(' ');
+        var item;
+        if ( prefix.indexOf('AudioBook') >= 0 ) {
+            var loc = 'openBook?bookid=' + bookid + '&library=AudioBook&booktype='}
+        else {
+            var loc = 'openBook?bookid=' + bookid + '&library=eBook&booktype='}
+
+        for (item of array) {
+            % for extn in valid:
+                if (item === "${extn}") {
+                  buttons[item] = {
+                    label: item,
+                    className: 'btn-info',
+                    callback: function(result){ window.location = loc + "${extn}"; }
+                    };
+                }
+            %endfor
+        };
+
+        bootbox.dialog({
+            title: title,
+            message: '<pre>'+pop_message+'</pre>',
+            buttons: buttons
+        });
+    });
+
+    </script>
+</%def>

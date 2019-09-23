@@ -1,0 +1,74 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+  <div id="subhead_container">
+    <div id="subhead_menu">
+    </div>
+  </div>
+</%def>
+<%def name="body()">
+  <h2>${title}</h2>
+  <div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="book_table">
+      <thead>
+        <tr>
+          <th class="bookid">Match</th>
+          <th class="filename">Title</th>
+          <th class="provider">Provider</th>
+          <th class="size text-right">Size</th>
+          <th class="dateadded">Date</th>
+          <th class="status">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        %for item in results:
+        <tr>
+          <td class="bookid">${item['score']} %</td>
+          <td class="filename">${item['title']}</td>
+          <td class="provider"><a data-toggle="tooltip" title="${item['mode']}">${item['provider']}</a></td>
+          <td class="size text-right">${item['size']}</td>
+          <td class="dateadded">${item['date']}</td>
+          <td class="status text-center"> <a class="btn btn-xs btn-info button"
+                    href="snatchBook?bookid=${bookid}&mode=${item['mode']}&provider=${item['provider']}&size=${item['size']}&library=${library}&url=${item['url']}" title="Snatch">Snatch</a></td>
+        </tr>
+        %endfor
+      </tbody>
+    </table>
+  </div>
+</%def>
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+  <script>
+    function formatBytes(a,b){if(0==a)return"0 Bytes";
+      var c=1024,d=b||2,e=["Bytes","KB","MB","GB","TB","PB","EB","ZB","YB"],f=Math.floor(Math.log(a)/Math.log(c));
+      return parseFloat((a/Math.pow(c,f)).toFixed(d))+" "+e[f]}
+
+  $(document).ready(function()
+    {
+        $('#book_table').dataTable(
+            {
+                "responsive": true,
+                "order": [[ 0, 'desc' ]],
+                "columnDefs":[{ type: 'natural', targets: 3 },
+                    { targets: [3], 'render': function(data, type, row) {
+                        return '<span style="display:none;">' + row[3] + '</span>' + formatBytes(row[3])
+                         ;} },
+                ],
+                "oLanguage": {
+                    "sSearch": "Filter: ",
+                    "sLengthMenu":"Show _MENU_ rows per page",
+                    "sEmptyTable": "No results found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+            });
+            $('.dataTables_filter input').attr("placeholder", "Results filter");
+    });
+  </script>
+</%def>

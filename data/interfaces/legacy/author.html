@@ -1,0 +1,273 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+    <div id="subhead_container">
+        <ul id="subhead_menu">
+
+            <li><a href="refreshAuthor?AuthorID=${author['AuthorID']}" id="button"> Refresh Author </a></li>
+            <li><a href="libraryScanAuthor?AuthorID=${author['AuthorID']}" id="button"> Library Scan </a></li>
+            <li><a href="removeAuthor?AuthorID=${author['AuthorID']}" id="button"> Remove Author </a></li>
+            %if author['Status'] == 'Paused':
+                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}" id="button"> Resume Author</a></li>
+            %else:
+                <li><a href="pauseAuthor?AuthorID=${author['AuthorID']}" id="button"> Pause Author</a></li>
+            %endif
+            %if author['Status'] != 'Ignored':
+                <li><a href="ignoreAuthor?AuthorID=${author['AuthorID']}" id="button"> Ignore Author</a></li>
+            %else:
+                <li><a href="resumeAuthor?AuthorID=${author['AuthorID']}" id="button"> Unignore Author</a></li>
+            %endif
+            <li><a href="authorPage?AuthorID=${author['AuthorID']}&Ignored=True" id="button"> Ignored Books </a></li>
+            %if showseries >= 1:
+            <li><a name="seriesbutton" href="series?AuthorID=${author['AuthorID']}" id="button"> Series </a></li>
+            %endif
+            %if len(languages) >= 1:
+                <li>Language:&nbsp;</li>
+
+                <li><select onchange="window.location = 'authorPage?AuthorID=${author['AuthorID']}&BookLang=' + this.options[this.selectedIndex].value">
+                    <option>Select</option>
+                %for language in languages:
+                    <option value="${language['BookLang']}">${language['BookLang']}</option>
+                %endfor
+                </select></li>
+            %endif
+        </ul>
+    </div>
+</%def>
+
+<%def name="body()">
+    <br>
+    <div id="authorart_container">
+        <ul id="authorart_menu">
+            <li><img src="${author['AuthorImg']}" height="100"></li>
+        </ul>
+    </div>
+
+    <div id="authorhead_container">
+        <ul id="authorhead_menu">
+            <li><a href="${author['AuthorLink']}" target="_new">${author['AuthorName']}</a></li>
+            <li><p align="right"><a href="editAuthor?authorid=${author['AuthorID']}"&amp;target="_new">
+                <i class="smalltext">Edit</i></a></li></br>
+            %if author['AuthorDeath']:
+                <li><b>Born:</b> ${author['AuthorBorn']}, <b>Died:</b>  ${author['AuthorDeath']}</li><br>
+            %else:
+                %if author['AuthorBorn']:
+                    <li><b>Born:</b> ${author['AuthorBorn']}</li><br>
+                %endif
+            %endif
+            %if author['Status'] == 'Loading':
+                <li>(Fetching information for this author ...)</li><br>
+            %endif
+            <li>Totalbooks: ${author['TotalBooks']}</li><br><br>
+
+            <%
+                totalbooks = author['UnignoredBooks']
+                havebooks = author['HaveBooks']
+                if not havebooks:
+                    havebooks = 0
+                try:
+                    percent = (havebooks*100.0)/totalbooks
+                    if percent > 100:
+                        percent = 100
+                    if percent <= 100:
+                        css = "<div class=\"progress-container success\" style=\"width:150px;\">"
+                    if percent <= 75:
+                        css = "<div class=\"progress-container info\" style=\"width:150px;\">"
+                    if percent <= 50:
+                        css = "<div class=\"progress-container warning\" style=\"width:150px;\">"
+                    if percent <= 25:
+                        css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
+                except (ZeroDivisionError, TypeError):
+                    percent = 0
+                    totalbooks = '0'
+                    css = "<div class=\"progress-container danger\" style=\"width:150px;\">"
+            %>
+<span title="${percent}">${css}</span>
+<div style="width:${percent}%"><span class="progressbar-front-text">${havebooks}/${totalbooks}</span></div>
+</ul>
+</div>
+<p class="indented">
+  <form action="markBooks" method="get"><input type="hidden" name="AuthorID" value="${author['AuthorID']}">
+    <input type="hidden" name="redirect" value="author">
+    <input type="hidden" name="booklang" value="booklang">
+    <input type="hidden" name="ignored" value="ignored">
+    <label>&nbsp;&nbsp;Mark selected books as: </label>
+    <select class="markBooks" name="action" style="margin-top:15px;margin-bottom:15px;">
+      <option value="Wanted">Wanted</option>
+      <option value="Have">Have</option>
+      <option value="Ignored">Ignored</option>
+      <option value="Skipped">Skipped</option>
+      <option value="Remove">Remove</option>
+      <option value="Delete">Delete</option>
+      <option value="Leave" class="hidden">Leave</option>
+    </select>
+    <input type="submit" class="markBooks" value="Go">
+  </p>
+  <table class="display" id="book_table">
+    <thead>
+      <tr>
+        <th id="select"><input type="checkbox" onClick="toggleAll(this)" /></th>
+        <th id="bookart">Cover</th>
+        <th id="authorname" class="hidden">Title</th>
+        <th id="bookname">Title</th>
+        <th id="series">Series</th>
+        <th id="stars">Rating</th>
+        <th id="date">Released</th>
+        <th id="date">Added</th>
+        <th id="select">Status</th>
+      </tr>
+    </thead>
+  </table>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+</form>
+</%def>
+<%def name="headIncludes()">
+  <link rel="stylesheet" href="css/data_table.css">
+  %if author['Status'] == 'Loading':
+  <meta http-equiv="refresh" content="12">
+  <script>
+    $(document).ready(function () {
+        showMsg("Getting Author's Books", true);
+    });
+  </script>
+  %endif
+</%def>
+<%def name="javascriptIncludes()">
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
+    $(document).ready(function()
+    {
+        var show = ""+${lazylibrarian.CONFIG['BOOK_IMG']};
+            if ( show != '1' ) { showimg = false }
+            else { showimg = true }
+
+        var oTable = $('#book_table').dataTable(
+            {
+                "bAutoWidth": false,
+                "aoColumns": [
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    {"bSortable": false,
+                     "bVisible": showimg,
+                      "fnRender": function ( oObj ) {
+                        return '<a href="' + oObj.aData[1] + '" target="_new"><img src="' + oObj.aData[1] + '" height="75" width="50"></a>'
+                      }
+                    },
+                    {"fnRender": function ( oObj ) {
+                        var col = 2
+                        if ( showimg === false ) { col = 3 }
+                        return  oObj.aData[col]
+                      }
+                    },
+                    null,
+                    { "sType": "natural" },
+                    { "fnRender": function ( oObj ) {
+                        return '<img src="images/' + oObj.aData[5] + '-stars.png" alt="Rating">'
+                      }
+                    },
+                    null,
+                    { "fnRender": function ( oObj ) {
+                        var dtime = oObj.aData[10]
+                        var str = String(dtime).substr(0, 10)
+                        if (str === "null"){ str = ""}
+                        return str
+                      }
+                    },
+                    { "fnRender": function ( oObj ) {
+                        var btn = oObj.aData[11]
+                        if ( btn.indexOf('Open') >= 0 ) {
+                            btn = '<a class="button green" href="openBook?bookid=' + oObj.aData[9] + '&library=eBook" target="_self">' + btn + '</a>'}
+                        else if ( btn.indexOf('Wanted') >= 0 ) {
+                            btn = '<a class="button red" href="searchForBook?bookid=' + oObj.aData[9] +
+                                    '&library=eBook" target="_self"><span class="a">' + btn + '</span><span class="b">Search</span></a>'}
+                        else if ( btn.indexOf('Snatched') >= 0 ) {
+                            btn = '<a class="button">' + btn + '</a>'}
+                        else if ( btn.indexOf('Have') >= 0 ) {
+                            btn = '<a class="button">' + btn + '</a>'}
+                        else {
+                            btn = '<a class="button grey">' + btn + '</a>'}
+                        return btn
+                      }
+                    }
+                    ],
+                "order": [[ 6, 'desc']],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ books per page",
+                    "sEmptyTable": "No books found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ results",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 books",
+                    "sInfoFiltered":"(filtered from _MAX_ total books)"},
+                "sPaginationType": "full_numbers",
+                "aaSorting": [[6, 'desc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getBooks?source=Author&AuthorID=${author['AuthorID']}&booklang=${booklang}&ignored=${ignored}',
+                "bFilter": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass('center');
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('center');
+                            $('td', nRow).eq(6).addClass('center');
+                            $('td', nRow).eq(7).addClass('center');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(2).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('center');
+                            $('td', nRow).eq(7).addClass('center');
+                            $('td', nRow).eq(8).addClass('center');
+                        }
+
+                    var w = window.innerWidth;
+                    if ( w < 1024 )
+                    {   // hide stars,released,added on medium devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(5).addClass('hidden');
+                            $('td', nRow).eq(6).addClass('hidden');
+                            $('td', nRow).eq(7).addClass('hidden');
+                        }
+
+                    }
+                    if ( w < 768 )
+                    {   // hide cover on small devices
+                        if ( show == '1' )
+                        {
+                            $('td', nRow).eq(1).addClass('hidden');
+                        }
+                    }
+                    if ( w < 640 )
+                    {   // hide series on smaller devices
+                        if ( show != '1' )
+                        {
+                            $('td', nRow).eq(3).addClass('hidden');
+                        }
+                        else
+                        {
+                            $('td', nRow).eq(4).addClass('hidden');
+                        }
+                    }
+                    return nRow;
+                },
+            });
+        $('.dataTables_filter input').attr("placeholder", "Search table here");
+        //$(window).resize(function() {oTable.fnDraw(false)});
+    });
+  </script>
+</%def>

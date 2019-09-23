@@ -1,0 +1,84 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<h1>LazyLibrarian User Profile</h1>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6 col-sm-offset-3 ptop21">
+      <div class="login-container">
+        <div class="row">
+          <div class="col-xs-12">
+              <div class="form-group">
+                <label for="fullname">Full Name</label>
+                <input id="fullname" name="fullname" class="form-control" value="${user['Name']}">
+              </div>
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input id="email" name="email" class="form-control" value="${user['Email']}">
+              </div>
+              <div class="form-group">
+                <label for="sendto">Send To (eg kindle)</label>
+                <input id="sendto" name="sendto" class="form-control" value="${user['SendTo']}">
+              </div>
+              <div class="form-group">
+                <label for="username">Username (UserID=${user['UserID']})</label>
+                <input id="username" type="username" class="form-control" name="username" value="${user['UserName']}">
+              </div>
+              <div class="form-group">
+                <label class="ptop15" for="password">Password</label>
+                <div class="">
+                  <input id="password" type="password" class="form-control" name="password" placeholder="Leave empty to keep existing password">
+                </div>
+              <div class="form-group">
+                <label class="ptop15" for="password">Confirm Password</label>
+                <div class="">
+                  <input id="password2" type="password" class="form-control" name="password2" placeholder="If changing password, enter new password  again here">
+                </div>
+              </div>
+              <div class="ptop21">
+                <button value="update" name="update" id="update" class="btn btn-primary btn-block btn-lg btn-inverse">Update</button>
+              </div>
+            <div class="col-sm-6 col-sm-offset-3">
+              <h4 id="message">${lazylibrarian.LOGIN_MSG}</h4>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+  <script type="text/javascript">
+    $(document).ready(function()
+    {
+      $('#update').click(function() {
+          var username = $.trim($("#username").val());
+          var password = $.trim($("#password").val());
+          var password2 = $.trim($("#password2").val());
+          var email = $.trim($("#email").val());
+          var fullname = $.trim($("#fullname").val());
+          $.get("user_update", {'username': username, 'fullname': fullname, 'password': password, 'password2': password2, 'email': email, 'sendto': sendto},
+                function (data) {
+                bootbox.dialog({
+                    title: 'User Registration',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+          });
+      });
+    });
+  </script>
+</%def>

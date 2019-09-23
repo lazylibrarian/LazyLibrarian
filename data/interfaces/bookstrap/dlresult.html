@@ -1,0 +1,49 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<div>
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+    <script type="text/javascript">
+    $(document).ready(function()
+    {
+        var title = '${title}';
+        var prefix = '<strong>${prefix}</strong>';
+        var message = '${message}';
+        var rowid = '${rowid}';
+        bootbox.dialog({
+            title: title,
+            message: '<pre>'+prefix+' '+message+'</pre>',
+            buttons: {
+                bt1: {
+                    label: "Mark Failed",
+                    className: 'btn-warning',
+                    callback: function(result){ $.get("markhistory", { 'rowid': rowid }, function (data) {});
+                                                window.history.back(); }
+                },
+                bt2: {
+                    label: "Delete",
+                    className: 'btn-danger',
+                    callback: function(result){ $.get("deletehistory", { 'rowid': rowid }, function (data) {});
+                                                window.history.back(); }
+                },
+                primary: {
+                    label: "Close",
+                    className: 'btn-primary',
+                    callback: function(result){ window.history.back(); }
+                }
+            }
+        });
+    });
+
+
+    </script>
+</%def>

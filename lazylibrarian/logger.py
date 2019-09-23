@@ -1,8 +1,22 @@
-import os
-import threading
-import logging
+#  This file is part of Lazylibrarian.
+#  Lazylibrarian is free software':'you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#  Lazylibrarian is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import os
+import platform
+import threading
+import inspect
 from logging import handlers
+from lib.six import PY2
 
 import lazylibrarian
 from lazylibrarian import formatter
@@ -17,77 +31,95 @@ class RotatingLogger(object):
         self.filehandler = None
         self.consolehandler = None
 
-    def stopLogger(self): 
-        l = logging.getLogger('lazylibrarian')
-        l.removeHandler(self.filehandler)
-        l.removeHandler(self.consolehandler) 
-    
+    def stopLogger(self):
+        lg = logging.getLogger('lazylibrarian')
+        lg.removeHandler(self.filehandler)
+        lg.removeHandler(self.consolehandler)
+
     def initLogger(self, loglevel=1):
 
-        l = logging.getLogger('lazylibrarian')
-        l.setLevel(logging.DEBUG)
+        lg = logging.getLogger('lazylibrarian')
+        lg.setLevel(logging.DEBUG)
 
-        self.filename = os.path.join(lazylibrarian.LOGDIR, self.filename)
+        self.filename = os.path.join(lazylibrarian.CONFIG['LOGDIR'], self.filename)
 
         filehandler = handlers.RotatingFileHandler(
             self.filename,
-            maxBytes=lazylibrarian.LOGSIZE,
-            backupCount=lazylibrarian.LOGFILES)
+            maxBytes=lazylibrarian.CONFIG['LOGSIZE'],
+            backupCount=lazylibrarian.CONFIG['LOGFILES'])
 
         filehandler.setLevel(logging.DEBUG)
 
         fileformatter = logging.Formatter('%(asctime)s - %(levelname)-7s :: %(message)s', '%d-%b-%Y %H:%M:%S')
 
         filehandler.setFormatter(fileformatter)
-        l.addHandler(filehandler)
+        lg.addHandler(filehandler)
         self.filehandler = filehandler
-        
+
         if loglevel:
             consolehandler = logging.StreamHandler()
             if loglevel == 1:
                 consolehandler.setLevel(logging.INFO)
-            if loglevel == 2:
+            if loglevel >= 2:
                 consolehandler.setLevel(logging.DEBUG)
             consoleformatter = logging.Formatter('%(asctime)s - %(levelname)s :: %(message)s', '%d-%b-%Y %H:%M:%S')
             consolehandler.setFormatter(consoleformatter)
-            l.addHandler(consolehandler)
+            lg.addHandler(consolehandler)
             self.consolehandler = consolehandler
 
-    def log(self, message, level):
+    @staticmethod
+    def log(message, level):
 
         logger = logging.getLogger('lazylibrarian')
 
         threadname = threading.currentThread().getName()
 
-        # Ensure messages are utf-8 as some author names contain accents and the web page doesnt like them
-        message = formatter.safe_unicode(message).encode('utf-8')
+        # Get the frame data of the method that made the original logger call
+        if len(inspect.stack()) > 2:
+            frame = inspect.getframeinfo(inspect.stack()[2][0])
+            program = os.path.basename(frame.filename)
+            method = frame.function
+            lineno = frame.lineno
+        else:
+            program = ""
+            method = ""
+            lineno = ""
 
-        if level != 'DEBUG' or lazylibrarian.LOGFULL is True:
+        if 'windows' in platform.system().lower():  # windows cp1252 can't handle some accents
+            message = formatter.unaccented(message)
+        elif PY2:
+            message = formatter.safe_unicode(message)
+            message = message.encode(lazylibrarian.SYS_ENCODING)
+
+        if level != 'DEBUG' or lazylibrarian.LOGLEVEL >= 2:
             # Limit the size of the "in-memory" log, as gets slow if too long
-            lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, message))
-            if len(lazylibrarian.LOGLIST) > lazylibrarian.LOGLIMIT:
+            lazylibrarian.LOGLIST.insert(0, (formatter.now(), level, threadname, program, method, lineno, message))
+            if len(lazylibrarian.LOGLIST) > formatter.check_int(lazylibrarian.CONFIG['LOGLIMIT'], 500):
                 del lazylibrarian.LOGLIST[-1]
 
-        message = threadname + ' : ' + message
+        message = "%s : %s:%s:%s : %s" % (threadname, program, method, lineno, message)
 
         if level == 'DEBUG':
             logger.debug(message)
         elif level == 'INFO':
             logger.info(message)
         elif level == 'WARNING':
-            logger.warn(message)
+            logger.warning(message)
         else:
             logger.error(message)
+
 
 lazylibrarian_log = RotatingLogger('lazylibrarian.log')
 
 
 def debug(message):
-    lazylibrarian_log.log(message, level='DEBUG')
+    if lazylibrarian.LOGLEVEL > 1:
+        lazylibrarian_log.log(message, level='DEBUG')
 
 
 def info(message):
-    lazylibrarian_log.log(message, level='INFO')
+    if lazylibrarian.LOGLEVEL > 0:
+        lazylibrarian_log.log(message, level='INFO')
 
 
 def warn(message):

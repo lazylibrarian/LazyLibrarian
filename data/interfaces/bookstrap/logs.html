@@ -4,72 +4,90 @@
     from lazylibrarian import formatter
 %>
 <%def name="headerIncludes()">
-	<div id="subhead_container">
-		<div id="subhead_menu">
-		  <a href="clearLog" class="button btn btn-sm btn-primary">Clear Log </a>
-		  %if lazylibrarian.LOGFULL == True:
-		    <a href="toggleLog" class="button btn btn-sm btn-primary">Stop Debug Log</a>
-		  %else:
-		    <a href="toggleLog" class="button btn btn-sm btn-primary">Start Debug Log</a>
-		  %endif
-		</div>
-	</div>	
+  <div id="subhead_container">
+    <div id="subhead_menu">
+      <a href="clearLog" class="button btn btn-sm btn-primary"><i class="far fa-square"></i> Clear Log </a>
+      %if lazylibrarian.LOGLEVEL >= 2:
+      <a href="toggleLog" class="button btn btn-sm btn-primary"><i class="fa fa-stop"></i> Stop Debug Log</a>
+      <a href="saveLog" class="button btn btn-sm btn-primary"><i class="fa fa-save"></i> Save Debug Log</a>
+      %else:
+      <a href="toggleLog" class="button btn btn-sm btn-primary"><i class="fa fa-play"></i> Start Debug Log</a>
+      %endif
+    </div>
+  </div>
 </%def>
 <%def name="body()">
-    <h1>Logs</h1>
-    <div class="table-responsive">
-        <table class="display table table-striped table-hover table-bordered" id="log_table">
-            <thead>
-                <tr>
-                    <th class="timestamp hidden-xs">Timestamp</th>
-                    <th class="level">Level</th>
-                    <th class="message">Message</th>
-                </tr>
-            </thead>
-<!--
-            <tbody>
-            %for line in lineList:
-                <%
-                    timestamp, message, level, threadname = line
+  <h1>${title}</h1>
+  <style>
+    DIV#main.main.container { width: 90%; }
+  </style>
+  %if lazylibrarian.CONFIG['TOGGLES'] == True:
+  Toggle: <a class="toggle-vis" data-column="0">Timestamp - </a>
+        <a class="toggle-vis" data-column="1">Level</a>
+        %if lazylibrarian.LOGLEVEL >= 2:
+          <a class="toggle-vis" data-column="2"> - Thread - </a>
+          <a class="toggle-vis" data-column="3">File - </a>
+          <a class="toggle-vis" data-column="4">Method - </a>
+          <a class="toggle-vis" data-column="5">Line No</a>
+        %endif:
 
-                    if level == 'WARNING' or level == 'ERROR':
-                        grade = 'bg-danger'
-                    else:
-                        grade = 'bg-info'
-                %>
-                    <tr>
-                        <td class="timestamp">${timestamp}</td>
-                        <td class="level">${level}</td>
-                        <td class="message">${message}</td>
-                    </tr>
-            %endfor
-            </tbody>
--->
-        </table>
-    </div>
+  %endif
+  <div align="center">Refresh rate:
+    <select id="refreshrate" class="button btn btn-sm btn-primary" onchange="setRefresh()">
+      <option value="0" selected="selected">No Refresh</option>
+      <option value="5">5 Seconds</option>
+      <option value="15">15 Seconds</option>
+      <option value="30">30 Seconds</option>
+      <option value="60">60 Seconds</option>
+      <option value="300">5 Minutes</option>
+      <option value="600">10 Minutes</option>
+    </select></div>
+  <div class="table-responsive">
+    <table class="display table table-striped table-hover table-bordered" id="log_table">
+      <thead>
+        <tr>
+          <th class="timestamp">Timestamp</th>
+          <th class="level">Level</th>
+          %if lazylibrarian.LOGLEVEL >= 2:
+            <th class="thead">Thread</th>
+            <th class="file">File</th>
+            <th class="method">Method</th>
+            <th class="lineno">Line No</th>
+          %endif
+          <th class="message">Message</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
 </%def>
-
 <%def name="headIncludes()">
-    
 </%def>
-
 <%def name="javascriptIncludes()">
-    <script>
+  <script>
     $(document).ready(function() {
-        var oTable = $('#log_table').dataTable({
+        var oTable = $('#log_table').DataTable({
                 "bAutoWidth": false,
+                "aoColumnDefs": [
+                    %if lazylibrarian.LOGLEVEL >= 2:
+                    { "sWidth": "3%", "aTargets": [ 0,1,2,3,4,5 ] },
+                    { "sWidth": "60%", "aTargets": [ 6 ] }
+                    %else:
+                    { "sWidth": "3%", "aTargets": [ 0,1 ] },
+                    { "sWidth": "60%", "aTargets": [ 6 ] }
+                    %endif
+                ],
+                 "stateSave": true,
                 "order": [[ 0, 'desc' ]],
                 "oLanguage": {
-                    "sSearch":"",
-                    "sLengthMenu":"Show _MENU_ rows per page",
+                    "sSearch":"Filter: ",
+                    "sLengthMenu":"_MENU_ rows per page",
                     "sEmptyTable": "No log information available",
                     "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
                     "sInfoEmpty":"Showing 0 to 0 of 0 rows",
                     "sInfoFiltered":"(filtered from _MAX_ total rows)"
                 },
-                "bStateSave": true,
                 "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
-                "iDisplayLength": 10,
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
                 "sPaginationType": "full_numbers",
                 "aaSorting": [],
                 "bServerSide": true,
@@ -80,26 +98,48 @@
                         $('td', nRow).closest('tr').addClass("text-danger");
                     } else {
                         $('td', nRow).closest('tr').addClass("text-info");
-                    }                                                        
-                    var w = window.innerWidth;
-                    if ( w < 640 ) // hide timestamp on smallest devices
-                    {
-                        $('td', nRow).eq(0).addClass('hidden');
-                    }                                    
+                    }
+                    %if lazylibrarian.LOGLEVEL < 2:
+                        $('td', nRow).eq(2).addClass("hidden");
+                        $('td', nRow).eq(3).addClass("hidden");
+                        $('td', nRow).eq(4).addClass("hidden");
+                        $('td', nRow).eq(5).addClass("hidden");
+                    %endif
+                    // hide timestamp on smallest devices
+                    //$('td', nRow).eq(0).addClass('hidden-xs');
                     return nRow;
                 },
                 "fnServerData": function (sSource, aoData, fnCallback) {
-//                     Add some extra data to the sender 
+                    // Add some extra data to the sender
                     $.getJSON(sSource, aoData, function (json) {
                         fnCallback(json)
                     });
                 }
             });
-            $('.dataTables_filter input').attr("placeholder", "Search filter");
-            $(window).resize(function() {oTable.fnDraw(false)});
+            $('.dataTables_filter input').attr("placeholder", "Results filter");
+            //$(window).resize(function() {oTable.draw(false)});
+            $('a.toggle-vis').click(function (e) {
+                e.preventDefault();
+                var column = oTable.column( $(this).attr('data-column') );
+                column.visible( ! column.visible() );
+            } );
         });
-        
-        
 
-    </script>
+    var timer;
+    function setRefresh()
+    {
+        refreshrate = document.getElementById('refreshrate');
+        if(refreshrate != null)
+        {
+            if(timer)
+            {
+                clearInterval(timer);
+            }
+            if(refreshrate.value != 0)
+            {
+                timer = setInterval("$('#log_table').dataTable().fnDraw()",1000*refreshrate.value);
+            }
+        }
+    }
+  </script>
 </%def>

@@ -1,30 +1,32 @@
 import lazylibrarian
-
-from lazylibrarian import logger, common
-from lib.pynma import pynma
+from lazylibrarian import logger
 from lazylibrarian.common import notifyStrings, NOTIFY_SNATCH, NOTIFY_DOWNLOAD
-
+from lib.pynma import pynma
 
 
 class NMA_Notifier:
 
-    def _sendNMA(self, nma_api=None, nma_priority=None, event=None, message=None, force=False):
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def _sendNMA(nma_api=None, nma_priority=None, event=None, message=None, force=False):
 
         title = "LazyLibrarian"
 
         # suppress notifications if the notifier is disabled but the notify options are checked
-        if not lazylibrarian.USE_NMA and not force:
+        if not lazylibrarian.CONFIG['USE_NMA'] and not force:
             return False
 
-        if nma_api == None:
-            nma_api = lazylibrarian.NMA_APIKEY
+        if nma_api is None:
+            nma_api = lazylibrarian.CONFIG['NMA_APIKEY']
 
-        if nma_priority == None:
-            nma_priority = lazylibrarian.NMA_PRIORITY
+        if nma_priority is None:
+            nma_priority = lazylibrarian.CONFIG['NMA_PRIORITY']
 
-        logger.debug(u"NMA: title: " + title)
-        logger.debug(u"NMA: event: " + event)
-        logger.debug(u"NMA: message: " + message)
+        logger.debug("NMA: title: " + title)
+        logger.debug("NMA: event: " + event)
+        logger.debug("NMA: message: " + message)
 
         batch = False
 
@@ -49,17 +51,20 @@ class NMA_Notifier:
 #
 
     def notify_snatch(self, title):
-        if lazylibrarian.NMA_ONSNATCH:
-            self._sendNMA(nma_api=None, nma_priority=None, event=notifyStrings[NOTIFY_SNATCH], message=title)
+        if lazylibrarian.CONFIG['NMA_ONSNATCH']:
+            self._sendNMA(nma_priority=None, event=notifyStrings[NOTIFY_SNATCH], message=title)
 
     def notify_download(self, title):
-        if lazylibrarian.NMA_ONDOWNLOAD:
-            self._sendNMA(nma_api=None, nma_priority=None, event=notifyStrings[NOTIFY_DOWNLOAD], message=title)
+        if lazylibrarian.CONFIG['NMA_ONDOWNLOAD']:
+            self._sendNMA(nma_priority=None, event=notifyStrings[NOTIFY_DOWNLOAD], message=title)
 
+    # noinspection PyUnusedLocal
     def test_notify(self, title="Test"):
-        return self._sendNMA(nma_api=None, nma_priority=None, event="Test", message="Testing NMA settings from LazyLibrarian", force=True)
+        return self._sendNMA(nma_priority=None, event="Test",
+                             message="Testing NMA settings from LazyLibrarian", force=True)
 
     def update_library(self, showName=None):
         pass
+
 
 notifier = NMA_Notifier

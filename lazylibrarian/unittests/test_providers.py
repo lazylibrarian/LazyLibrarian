@@ -1,26 +1,30 @@
 import unittest
+from xml.etree import ElementTree
 
 from lazylibrarian import providers
-
-from xml.etree import ElementTree
 
 
 class ProvidersTest(unittest.TestCase):
 
     def test_ReturnSearchTypeStructureForBook(self):
-        result = providers.ReturnSearchTypeStructure('api_key', {"bookid": 'bookid', "bookName": 'bookname', "authorName": 'author', "searchterm": 'term'}, 'book')
-        self.assertEquals({'author': 'author', 'apikey': 'api_key', 't': 'book', 'cat': 7020, 'title': 'bookname'}, result)
+        result = providers.ReturnSearchTypeStructure(
+            'api_key', {"bookid": 'bookid', "bookName": 'bookname', "authorName": 'author', "searchterm": 'term'}, 'book')
+        self.assertEquals(
+            {'author': 'author', 'apikey': 'api_key', 't': 'book', 'cat': 7020, 'title': 'bookname'}, result)
 
     def test_ReturnSearchTypeStructureForMag(self):
-        result = providers.ReturnSearchTypeStructure('api_key', {"bookid": 'bookid', "bookName": 'bookname', "authorName": 'author', "searchterm": 'term'}, 'mag')
+        result = providers.ReturnSearchTypeStructure(
+            'api_key', {"bookid": 'bookid', "bookName": 'bookname', "authorName": 'author', "searchterm": 'term'}, 'mag')
         self.assertEquals({'q': 'term', 'apikey': 'api_key', 't': 'search', 'extended': 1, 'cat': 7020}, result)
 
     def test_ReturnSearchTypeStructureForGeneral(self):
-        result = providers.ReturnSearchTypeStructure('api_key', {"bookid": 'bookid', "bookName": 'bookname', "authorName": 'author', "searchterm": 'term'}, None)
+        result = providers.ReturnSearchTypeStructure(
+            'api_key', {"bookid": 'bookid', "bookName": 'bookname', "authorName": 'author', "searchterm": 'term'}, None)
         self.assertEquals({'q': 'term', 'apikey': 'api_key', 't': 'search', 'extended': 1, 'cat': 7020}, result)
 
     def test_ReturnResultsFieldsBySearchTypeForBook(self):
-        book = {"bookid": 'input_bookid', "bookName": 'input_bookname', "authorName": 'input_authorname', "searchterm": 'safe_searchterm'}
+        book = {"bookid": 'input_bookid', "bookName": 'input_bookname',
+                "authorName": 'input_authorname', "searchterm": 'safe_searchterm'}
 
         newsnabplus_resp = '''<?xml version="1.0" encoding="utf-8"?>
                 <rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/" version="2.0">
@@ -59,10 +63,12 @@ class ProvidersTest(unittest.TestCase):
         nzb = iter(resultxml).next()
         result = providers.ReturnResultsFieldsBySearchType(book, nzb, 'mag', 'hostname')
         # self.maxDiff = None
-        self.assertEquals({'bookid': 'input_bookid', 'nzbdate': 'Sat, 02 Mar 2013 06:51:28 +0100', 'nzbtitle': 'Debbie Macomber - When First They Met (html)', 'nzbsize': '192447', 'nzburl': 'http', 'nzbprov': 'hostname'}, result)
+        self.assertEquals({'bookid': 'input_bookid', 'nzbdate': 'Sat, 02 Mar 2013 06:51:28 +0100', 'nzbtitle':
+                          'Debbie Macomber - When First They Met (html)', 'nzbsize': '192447', 'nzburl': 'http', 'nzbprov': 'hostname'}, result)
 
     def test_ReturnResultsFieldsBySearchTypeForMag(self):
-        book = {"bookid": 'input_bookid', "bookName": 'input_bookname', "authorName": 'input_authorname', "searchterm": 'safe_searchterm'}
+        book = {"bookid": 'input_bookid', "bookName": 'input_bookname',
+                "authorName": 'input_authorname', "searchterm": 'safe_searchterm'}
 
         newsnabplus_resp = '''<?xml version="1.0" encoding="utf-8" ?>
             <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
@@ -112,10 +118,13 @@ class ProvidersTest(unittest.TestCase):
         resultxml = ElementTree.fromstring(newsnabplus_resp).getiterator('item')
         nzb = iter(resultxml).next()
         result = providers.ReturnResultsFieldsBySearchType(book, nzb, 'mag', 'hostname')
-        self.assertEquals({'bookid': 'input_bookid', 'nzbdate': 'Thu, 21 Nov 2013 16:13:52 +0100', 'nzbtitle': 'Scientific.American.SCIAM.November.20.3', 'nzbsize': '20811405', 'nzburl': 'https://www.usenet-crawler.com/getnzb/6814309804e3648c58a9f23345c2a28a.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4', 'nzbprov': 'hostname'}, result)
+        self.assertEquals(
+            {'bookid': 'input_bookid', 'nzbdate': 'Thu, 21 Nov 2013 16:13:52 +0100', 'nzbtitle': 'Scientific.American.SCIAM.November.20.3', 'nzbsize': '20811405',
+             'nzburl': 'https://www.usenet-crawler.com/getnzb/6814309804e3648c58a9f23345c2a28a.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4', 'nzbprov': 'hostname'}, result)
 
     def test_ReturnResultsFieldsBySearchTypeForGeneral(self):
-        book = {"bookid": 'input_bookid', "bookName": 'input_bookname', "authorName": 'input_authorname', "searchterm": 'safe_searchterm'}
+        book = {"bookid": 'input_bookid', "bookName": 'input_bookname',
+                "authorName": 'input_authorname', "searchterm": 'safe_searchterm'}
 
         newsnabplus_resp = '''<?xml version="1.0" encoding="utf-8" ?>
             <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:newznab="http://www.newznab.com/DTD/2010/feeds/attributes/">
@@ -165,7 +174,9 @@ class ProvidersTest(unittest.TestCase):
         resultxml = ElementTree.fromstring(newsnabplus_resp).getiterator('item')
         nzb = iter(resultxml).next()
         result = providers.ReturnResultsFieldsBySearchType(book, nzb, None, 'hostname')
-        self.assertEquals({'bookid': 'input_bookid', 'nzbdate': 'Thu, 21 Nov 2013 16:13:52 +0100', 'nzbtitle': 'Scientific.American.SCIAM.November.20.3', 'nzbsize': '20811405', 'nzburl': 'https://www.usenet-crawler.com/getnzb/6814309804e3648c58a9f23345c2a28a.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4', 'nzbprov': 'hostname'}, result)
+        self.assertEquals(
+            {'bookid': 'input_bookid', 'nzbdate': 'Thu, 21 Nov 2013 16:13:52 +0100', 'nzbtitle': 'Scientific.American.SCIAM.November.20.3', 'nzbsize': '20811405',
+             'nzburl': 'https://www.usenet-crawler.com/getnzb/6814309804e3648c58a9f23345c2a28a.nzb&i=155518&r=78c0509bc6bb91742ae0a0b6231e75e4', 'nzbprov': 'hostname'}, result)
 
 
 if __name__ == '__main__':

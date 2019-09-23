@@ -1,0 +1,109 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headerIncludes()">
+  <div id="subhead_container">
+    <ul id="subhead_menu">
+      <li><a href="authorPage?AuthorID=${authorid}" id="button"> Return to Author</a></li>
+      <li><a href="refreshAuthor?AuthorID=${authorid}" id="button"> Refresh Author</a></li>
+    </ul>
+  </div>
+</%def>
+<%def name="body()">
+  <BR><BR>
+  <h1>&nbsp;&nbsp;${title}</h1>
+  <p class="indented">
+    <form action="series" method="get">
+      <label>&nbsp;&nbsp;Series with status: </label>
+      <select name="whichStatus">
+        %for item in ['All', 'Skipped', 'Wanted', 'Active', 'Ignored']:
+        <option value="${item}"
+                %if item == whichStatus:
+                    selected = "selected"
+                %endif
+            >${item}</option>
+        %endfor
+      </select>
+      <input  class="btn" type="submit" value="Manage" />
+    </form>
+    <br>
+    <br>
+  </p>
+  <form action="markSeries" method="get">
+    <table class="display" id="book_table" style="width:100%;">
+      <thead>
+        <tr>
+          <th id="select" class="center"><input type="checkbox" onClick="toggleAll(this)" /></th>
+          <th id="authorname">Author</th>
+          <th id="bookname">Series Name</th>
+          <th id="status" class="center">Status</th>
+          <th id="select" class="center">Show</th>
+        </tr>
+      </thead>
+    </table>
+    <p>
+      &nbsp;&nbsp;Change selected series to:
+      <select class="markSeries" name="action" style="margin-left:30px;margin-top:15px;margin-bottom:15px;">
+        %for item in ['Skipped', 'Wanted', 'Active', 'Ignored']:
+        <option value="${item}">${item}</option>
+        %endfor
+      </select>
+      <input type="submit" class="markSeries" value="Go">
+    </p>
+  </form>
+  <p>&nbsp;</p>
+</%def>
+<%def name="headIncludes()">
+  <link rel="stylesheet" href="css/data_table.css">
+</%def>
+<%def name="javascriptIncludes()">
+  <script src="js/libs/jquery.dataTables.min.js"></script>
+  <script>
+    $(document).ready(function()
+    {
+        var oTable = $('#book_table').dataTable(
+            {
+                "bAutoWidth": false,
+                "order": [[ 1, 'asc' ]],
+                "aoColumns": [
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<input type="checkbox" name="' + oObj.aData[0] + '" class="checkbox" />'
+                      }
+                    },
+                    null,
+                    null,
+                    null,
+                    {"bSortable": false,
+                      "fnRender": function ( oObj ) {
+                        return '<a class="button orange" href="seriesMembers?seriesid=' + oObj.aData[5] + '" title="Select">Show</a>'
+                      }
+                    }
+                    ],
+                "oLanguage": {
+                    "sLengthMenu":"Show _MENU_ rows per page",
+                    "sEmptyTable": "No series found",
+                    "sInfo":"Showing _START_ to _END_ of _TOTAL_ rows",
+                    "sInfoEmpty":"Showing 0 to 0 of 0 rows",
+                    "sInfoFiltered":"(filtered from _MAX_ total rows)"},
+                "sPaginationType": "full_numbers",
+                "aaSorting": [[1, 'asc']],
+                "bServerSide": true,
+                "sAjaxSource": 'getSeries?whichStatus=${whichStatus}&AuthorID=${authorid}',
+                "bFilter": true,
+                "aLengthMenu": [[5, 10, 15, 25, 50, 100, -1], [5, 10, 15, 25, 50, 100, "All"]],
+                "iDisplayLength": ${lazylibrarian.CONFIG['DISPLAYLENGTH']},
+                "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+                    $(nRow).addClass("gradeZ");
+                    $('td', nRow).eq(0).addClass("center");
+                    $('td', nRow).eq(3).addClass("center");
+                    $('td', nRow).eq(4).addClass("center");
+                    return nRow;
+                },
+            });
+            $('.dataTables_filter input').attr("placeholder", "Results filter");
+            //$(window).resize(function() {oTable.fnDraw(false)});
+    });
+  </script>
+</%def>

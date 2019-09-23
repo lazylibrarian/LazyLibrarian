@@ -1,84 +1,174 @@
 #  This file is part of Lazylibrarian.
-#
 #  Lazylibrarian is free software':'you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
-#
 #  Lazylibrarian is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#
 #  You should have received a copy of the GNU General Public License
 #  along with Lazylibrarian.  If not, see <http://www.gnu.org/licenses/>.
 
-from lazylibrarian import importer, postprocess, versioncheck, logger, database, \
-    updater, librarysync, magazinescan, formatter, common, bookwork
-from lazylibrarian.searchnzb import search_nzb_book
-from lazylibrarian.searchtorrents import search_tor_book
-from lazylibrarian.searchmag import search_magazines
-from lazylibrarian.searchrss import search_rss_book
-from lazylibrarian.gr import GoodReads
-from lazylibrarian.gb import GoogleBooks
 
-import lazylibrarian
 import json
+import os
+import shutil
+import sys
 import threading
-import Queue
 
-cmd_dict = {'help':'list available commands. ' + \
-            'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' + \
-            'otherwise they return OK straight away and run in the background',
-            'getIndex':'list all authors',
-            'getAuthor':'&id= get author and list their books from AuthorID',
-            'getWanted':'list wanted books',
-            'getSnatched':'list snatched books',
-            'getHistory':'list history',
-            'getLogs':'show current log',
-            'clearLogs':'clear current log',
-            'getMagazines':'list magazines',
-            'getIssues':'&name= list issues for named magazine',
-            'forceMagSearch':'[&wait] search for all wanted magazines',
-            'forceBookSearch':'[&wait] search for all wanted books',
-            'forceProcess':'process books/mags in download dir',
-            'pauseAuthor':'&id= pause author by AuthorID',
-            'resumeAuthor':'&id= resume author by AuthorID',
-            'refreshAuthor':'&name= refresh author by name',
-            'forceActiveAuthorsUpdate':'[&wait] refresh all active authors and reload their books',
-            'forceLibraryScan':'[&wait] refresh whole book library',
-            'forceMagazineScan':'[&wait] refresh whole magazine library',
-            'getVersion':'show git version',
-            'shutdown':'stop lazylibrarian',
-            'restart':'restart lazylibrarian',
-            'update':'update lazylibrarian',
-            'findAuthor':'&name= search goodreads/googlebooks for named author',
-            'findBook':'&name= search goodreads/googlebooks for named book',
-            'addAuthor':'&name= add author to database by name',
-            'delAuthor':'&id= delete author from database by AuthorID',
-            'addMagazine':'&name= add magazine to database by name',
-            'delMagazine':'&name= delete magazine and issues from database by name',
-            'queueBook':'&id= mark book as Wanted',
-            'unqueueBook':'&id= mark book as Skipped',
-            'readCFG':'&name=&group= read value of config variable "name" in section "group"',
-            'writeCFG':'&name=&group=&value= set config variable "name" in section "group" to value',
-            'loadCFG':'reload config from file',
-            'getBookCover':'&id= fetch a link to a cover from cache/librarything/goodreads/google for a BookID',
-            'getAllBooks':'list all books in the database',
-            'searchBook':'&id= [&wait] search for one book by BookID',
-            'showJobs':'show status of running jobs',
-            'restartJobs':'reschedule/restart background jobs',
-            'getWorkSeries':'&id= Get series & seriesNum from Librarything BookWork using BookID',
-            'getWorkPage':'&id= Get url of Librarything BookWork using BookID',
-            'cleanCache':'[&wait] Clean unused/old files from the LazyLibrarian caches',
-            'setWorkPages':'[&wait] Set the WorkPages links in the database',
-            'importAlternate':'[&wait] Import books from alternate folder and any subfolders',
-            'importCSVwishlist':'[&wait] Import a CSV wishlist',
-            'exportCSVwishlist':'[&wait] Export a CSV wishlist'
+# noinspection PyUnresolvedReferences
+from lib.six.moves import configparser, queue
+# noinspection PyUnresolvedReferences
+from lib.six.moves.urllib_parse import urlsplit, urlunsplit
+
+import cherrypy
+import lazylibrarian
+from lazylibrarian import logger, database
+from lazylibrarian.bookrename import audioProcess, nameVars
+from lazylibrarian.bookwork import setWorkPages, getWorkSeries, getWorkPage, setAllBookSeries, \
+    getSeriesMembers, getSeriesAuthors, deleteEmptySeries, getBookAuthors, setAllBookAuthors, \
+    setWorkID, get_book_desc
+from lazylibrarian.cache import cache_img
+from lazylibrarian.calibre import syncCalibreList, calibreList
+from lazylibrarian.common import clearLog, cleanCache, restartJobs, showJobs, checkRunningJobs, aaUpdate, setperm, \
+    logHeader, authorUpdate, showStats
+from lazylibrarian.csvfile import import_CSV, export_CSV, dump_table
+from lazylibrarian.formatter import today, formatAuthorName, check_int, plural, makeUnicode, makeBytestr, replace_all
+from lazylibrarian.gb import GoogleBooks
+from lazylibrarian.gr import GoodReads
+from lazylibrarian.grsync import grfollow, grsync
+from lazylibrarian.images import getAuthorImage, getAuthorImages, getBookCover, getBookCovers, createMagCovers, \
+    createMagCover
+from lazylibrarian.importer import addAuthorToDB, addAuthorNameToDB, update_totals
+from lazylibrarian.librarysync import LibraryScan
+from lazylibrarian.magazinescan import magazineScan
+from lazylibrarian.manualbook import searchItem
+from lazylibrarian.postprocess import processDir, processAlternate, processOPF, processIMG
+from lazylibrarian.providers import get_capabilities
+from lazylibrarian.rssfeed import genFeed
+from lazylibrarian.searchbook import search_book
+from lazylibrarian.searchmag import search_magazines, get_issue_date
+from lazylibrarian.searchrss import search_rss_book, search_wishlist
+from lib.six import PY2, string_types
+
+cmd_dict = {'help': 'list available commands. ' +
+                    'Time consuming commands take an optional &wait parameter if you want to wait for completion, ' +
+                    'otherwise they return OK straight away and run in the background',
+            'showMonths': 'List installed monthnames',
+            'dumpMonths': 'Save installed monthnames to file',
+            'saveTable': '&table= Save a database table to a file',
+            'getIndex': 'list all authors',
+            'getAuthor': '&id= get author by AuthorID and list their books',
+            'getAuthorImage': '&id= get an image for this author',
+            'setAuthorImage': '&id= &img= set a new image for this author',
+            'setAuthorLock': '&id= lock author name/image/dates',
+            'setAuthorUnlock': '&id= unlock author name/image/dates',
+            'setBookLock': '&id= lock book details',
+            'setBookUnlock': '&id= unlock book details',
+            'setBookImage': '&id= &img= set a new image for this book',
+            'getAuthorImages': '[&wait] get images for all authors without one',
+            'getWanted': 'list wanted books',
+            'getRead': 'list read books for current user',
+            'getToRead': 'list to-read books for current user',
+            'getSnatched': 'list snatched books',
+            'getHistory': 'list history',
+            'getLogs': 'show current log',
+            'getDebug': 'show debug log header',
+            'getModules': 'show installed modules',
+            'checkModules': 'Check using lazylibrarian library modules',
+            'clearLogs': 'clear current log',
+            'getMagazines': 'list magazines',
+            'getIssues': '&name= list issues of named magazine',
+            'getIssueName': '&name= get name of issue from path/filename',
+            'createMagCovers': '[&wait] [&refresh] create covers for magazines, optionally refresh existing ones',
+            'createMagCover': '&file= [&refresh] [&page=] create cover for magazine issue, optional page number',
+            'forceMagSearch': '[&wait] search for all wanted magazines',
+            'forceBookSearch': '[&wait] [&type=eBook/AudioBook] search for all wanted books',
+            'forceRSSSearch': '[&wait] search all entries in rss feeds',
+            'getRSSFeed': '&feed= [&limit=] show rss feed entries',
+            'forceWishlistSearch': '[&wait] search all entries in wishlists',
+            'forceProcess': '[&dir] [ignorekeepseeding] process books/mags in download or named dir',
+            'pauseAuthor': '&id= pause author by AuthorID',
+            'resumeAuthor': '&id= resume author by AuthorID',
+            'ignoreAuthor': '&id= ignore author by AuthorID',
+            'refreshAuthor': '&name= [&refresh] reload author (and their books) by name, optionally refresh cache',
+            'authorUpdate': 'update the oldest author, if any are overdue',
+            'forceActiveAuthorsUpdate': '[&wait] [&refresh] reload all active authors and book data, refresh cache',
+            'forceLibraryScan': '[&wait] [&remove] [&dir=] [&id=] rescan whole or part book library',
+            'forceAudioBookScan': '[&wait] [&remove] [&dir=] [&id=] rescan whole or part audiobook library',
+            'forceMagazineScan': '[&wait] rescan whole magazine library',
+            'getVersion': 'show lazylibrarian current/git version',
+            'shutdown': 'stop lazylibrarian',
+            'restart': 'restart lazylibrarian',
+            'update': 'update lazylibrarian',
+            'findAuthor': '&name= search goodreads/googlebooks for named author',
+            'findBook': '&name= search goodreads/googlebooks for named book',
+            'addBook': '&id= add book details to the database',
+            'moveBooks': '&fromname= &toname= move all books from one author to another by AuthorName',
+            'moveBook': '&id= &toid= move one book to new author by BookID and AuthorID',
+            'addAuthor': '&name= add author to database by name',
+            'addAuthorID': '&id= add author to database by AuthorID',
+            'removeAuthor': '&id= remove author from database by AuthorID',
+            'addMagazine': '&name= add magazine to database by name',
+            'removeMagazine': '&name= remove magazine and all of its issues from database by name',
+            'queueBook': '&id= [&type=eBook/AudioBook] mark book as Wanted, default eBook',
+            'unqueueBook': '&id= [&type=eBook/AudioBook] mark book as Skipped, default eBook',
+            'readCFG': '&name=&group= read value of config variable "name" in section "group"',
+            'writeCFG': '&name=&group=&value= set config variable "name" in section "group" to value',
+            'loadCFG': 'reload config from file',
+            'getBookCover': '&id= [&src=] fetch cover link from cache/cover/librarything/goodreads/google for BookID',
+            'getAllBooks': 'list all books in the database',
+            'listNoLang': 'list all books in the database with unknown language',
+            'listNoDesc': 'list all books in the database with no description',
+            'listNoISBN': 'list all books in the database with no isbn',
+            'listNoBooks': 'list all authors in the database with no books',
+            'listIgnoredAuthors': 'list all authors in the database marked ignored',
+            'listIgnoredBooks': 'list all books in the database marked ignored',
+            'listIgnoredSeries': 'list all series in the database marked ignored',
+            'listMissingWorkpages': 'list all books with errorpage or no workpage',
+            'searchBook': '&id= [&wait] [&type=eBook/AudioBook] search for one book by BookID',
+            'searchItem': '&item= get search results for an item (author, title, isbn)',
+            'showStats': 'show database statistics',
+            'showJobs': 'show status of running jobs',
+            'restartJobs': 'restart background jobs',
+            'showThreads': 'show threaded processes',
+            'checkRunningJobs': 'ensure all needed jobs are running',
+            'vacuum': 'vacuum the database',
+            'getWorkSeries': '&id= Get series from Librarything BookWork using BookID or GoodReads using WorkID',
+            'getSeriesMembers': '&id= Get list of series members using SeriesID',
+            'getSeriesAuthors': '&id= Get all authors for a series and import them',
+            'getWorkPage': '&id= Get url of Librarything BookWork using BookID',
+            'getBookCovers': '[&wait] Check all books for cached cover and download one if missing',
+            'getBookAuthors': '&id= Get list of authors associated with this book',
+            'cleanCache': '[&wait] Clean unused and expired files from the LazyLibrarian caches',
+            'deleteEmptySeries': 'Delete any book series that have no members',
+            'setNoDesc': 'Set book descriptions for all books without one',
+            'setWorkPages': '[&wait] Set the WorkPages links in the database',
+            'setAllBookSeries': '[&wait] Set the series details from goodreads or librarything workpages',
+            'setAllBookAuthors': '[&wait] Set all authors for all books from book workpages',
+            'setWorkID': '[&wait] [&bookids] Set WorkID for all books that dont have one, or bookids',
+            'importAlternate': '[&wait] [&dir=] Import books from named or alternate folder and any subfolders',
+            'includeAlternate': '[&wait] [&dir=] Include books from named or alternate folder and any subfolders',
+            'importCSVwishlist': '[&wait] [&dir=] Import a CSV wishlist from named or alternate directory',
+            'exportCSVwishlist': '[&wait] [&dir=] Export a CSV wishlist to named or alternate directory',
+            'grSync': '&status= &shelf= [&library=] Sync books with given status to a goodreads shelf',
+            'grFollow': '&id= Follow an author on goodreads',
+            'grFollowAll': 'Follow all lazylibrarian authors on goodreads',
+            'grUnfollow': '&id= Unfollow an author on goodreads',
+            'writeOPF': '&id= [&refresh] write out an opf file for a bookid, optionally overwrite existing opf',
+            'writeAllOPF': '[&refresh] write out opf files for all books, optionally overwrite existing opf',
+            'renameAudio': '&id Rename an audiobook using configured pattern',
+            'createPlaylist': '&id Create playlist for an audiobook',
+            'nameVars': '&id Show the name variables that would be used for a bookid',
+            'showCaps': '&provider= get a list of capabilities from a provider',
+            'calibreList': '[&toread=] [&read=] get a list of books in calibre library',
+            'syncCalibreList': '[&toread=] [&read=] sync list of read/toread books with calibre',
+            'logMessage': '&level= &text=  send a message to lazylibrarian logger',
             }
 
-class Api(object):
 
+class Api(object):
     def __init__(self):
 
         self.apikey = None
@@ -91,23 +181,23 @@ class Api(object):
 
         self.callback = None
 
-    def checkParams(self, *args, **kwargs):
+    def checkParams(self, **kwargs):
 
-        if not lazylibrarian.API_ENABLED:
+        if not lazylibrarian.CONFIG['API_ENABLED']:
             self.data = 'API not enabled'
             return
-        if not lazylibrarian.API_KEY:
+        if not lazylibrarian.CONFIG['API_KEY']:
             self.data = 'API key not generated'
             return
-        if len(lazylibrarian.API_KEY) != 32:
-            self.data = 'API key not generated correctly'
+        if len(lazylibrarian.CONFIG['API_KEY']) != 32:
+            self.data = 'API key is invalid'
             return
 
         if 'apikey' not in kwargs:
             self.data = 'Missing api key'
             return
 
-        if kwargs['apikey'] != lazylibrarian.API_KEY:
+        if kwargs['apikey'] != lazylibrarian.CONFIG['API_KEY']:
             self.data = 'Incorrect API key'
             return
         else:
@@ -126,27 +216,25 @@ class Api(object):
         self.kwargs = kwargs
         self.data = 'OK'
 
+    @property
     def fetchData(self):
 
+        threading.currentThread().name = "API"
+
         if self.data == 'OK':
-            args = []
-            if 'name' in self.kwargs:
-               args.append({"name": self.kwargs['name']}) 
-            if 'id' in self.kwargs:
-               args.append({"id": self.kwargs['id']}) 
-            if 'group' in self.kwargs:
-               args.append({"group": self.kwargs['group']}) 
-            if 'value' in self.kwargs:
-               args.append({"value": self.kwargs['value']}) 
-            if 'wait' in self.kwargs:
-               args.append({"wait": "True"}) 
-            if args == []:
-                args = ''
-            logger.info('Received API command: %s %s' % (self.cmd, args))
+            remote_ip = cherrypy.request.headers.get('X-Forwarded-For')  # apache2
+            if not remote_ip:
+                remote_ip = cherrypy.request.headers.get('X-Host')  # lighthttpd
+            if not remote_ip:
+                remote_ip = cherrypy.request.headers.get('Remote-Addr')
+            else:
+                remote_ip = cherrypy.request.remote.ip
+            logger.debug('Received API command from %s: %s %s' % (remote_ip, self.cmd, self.kwargs))
             methodToCall = getattr(self, "_" + self.cmd)
             methodToCall(**self.kwargs)
+
             if 'callback' not in self.kwargs:
-                if isinstance(self.data, basestring):
+                if isinstance(self.data, string_types):
                     return self.data
                 else:
                     return json.dumps(self.data)
@@ -158,7 +246,8 @@ class Api(object):
         else:
             return self.data
 
-    def _dic_from_query(self, query):
+    @staticmethod
+    def _dic_from_query(query):
 
         myDB = database.DBConnection()
         rows = myDB.select(query)
@@ -166,35 +255,324 @@ class Api(object):
         rows_as_dic = []
 
         for row in rows:
-            row_as_dic = dict(zip(row.keys(), row))
+            row_as_dic = dict(list(zip(list(row.keys()), row)))
             rows_as_dic.append(row_as_dic)
 
         return rows_as_dic
 
-    def _help(self, **kwargs):
+    def _getRSSFeed(self, **kwargs):
+        if 'feed' in kwargs:
+            ftype = kwargs['feed']
+        else:
+            ftype = 'eBook'
+
+        if 'limit' in kwargs:
+            limit = kwargs['limit']
+        else:
+            limit = 10
+
+        # url might end in .xml
+        if not limit.isdigit():
+            try:
+                limit = int(limit.split('.')[0])
+            except (IndexError, ValueError):
+                limit = 10
+
+        userid = 0
+        scheme, netloc, path, qs, anchor = urlsplit(cherrypy.url())
+        netloc = cherrypy.request.headers.get('X-Forwarded-Host')
+        if not netloc:
+            netloc = cherrypy.request.headers.get('Host')
+        path = path.replace('rssFeed', '').rstrip('/')
+        baseurl = urlunsplit((scheme, netloc, path, qs, anchor))
+        self.data = genFeed(ftype, limit=limit, user=userid, baseurl=baseurl)
+
+    def _syncCalibreList(self, **kwargs):
+        col1 = None
+        col2 = None
+        if 'toread' in kwargs:
+            col2 = kwargs['toread']
+        if 'read' in kwargs:
+            col1 = kwargs['read']
+        self.data = syncCalibreList(col1, col2)
+
+    def _calibreList(self, **kwargs):
+        col1 = None
+        col2 = None
+        if 'toread' in kwargs:
+            col2 = kwargs['toread']
+        if 'read' in kwargs:
+            col1 = kwargs['read']
+        self.data = calibreList(col1, col2)
+
+    def _showCaps(self, **kwargs):
+        if 'provider' not in kwargs:
+            self.data = 'Missing parameter: provider'
+            return
+
+        prov = kwargs['provider']
+        match = False
+        for provider in lazylibrarian.NEWZNAB_PROV:
+            if prov == provider['HOST']:
+                prov = provider
+                match = True
+                break
+        if not match:
+            for provider in lazylibrarian.TORZNAB_PROV:
+                if prov == provider['HOST']:
+                    prov = provider
+                    match = True
+                    break
+        if not match:
+            self.data = 'Invalid parameter: provider'
+            return
+        self.data = get_capabilities(prov, True)
+
+    def _help(self):
         self.data = dict(cmd_dict)
 
-    def _getHistory(self, **kwargs):
+    def _getHistory(self):
         self.data = self._dic_from_query(
             "SELECT * from wanted WHERE Status != 'Skipped' and Status != 'Ignored'")
- 
-    def _getWanted(self, **kwargs):
+
+    def _showThreads(self):
+        self.data = [n.name for n in [t for t in threading.enumerate()]]
+
+    def _showMonths(self):
+        self.data = lazylibrarian.MONTHNAMES
+
+    def _renameAudio(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        self.data = audioProcess(kwargs['id'], rename=True)
+
+    def _createPlaylist(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        self.data = audioProcess(kwargs['id'], playlist=True)
+
+    def _nameVars(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        self.data = nameVars(kwargs['id'])
+
+    def _saveTable(self, **kwargs):
+        if 'table' not in kwargs:
+            self.data = 'Missing parameter: table'
+            return
+        valid = ['users', 'magazines']
+        if kwargs['table'] not in valid:
+            self.data = 'Invalid table. Only %s' % str(valid)
+            return
+        self.data = "Saved %s" % dump_table(kwargs['table'], lazylibrarian.DATADIR)
+
+    def _writeAllOPF(self, **kwargs):
+        myDB = database.DBConnection()
+        books = myDB.select('select BookID from books where BookFile is not null')
+        counter = 0
+        if books:
+            for book in books:
+                bookid = book['BookID']
+                if 'refresh' in kwargs:
+                    self._writeOPF(id=bookid, refresh=True)
+                else:
+                    self._writeOPF(id=bookid)
+                try:
+                    if self.data[1] is True:
+                        counter += 1
+                except IndexError:
+                    counter = counter
+        self.data = 'Updated opf for %s book%s' % (counter, plural(counter))
+
+    def _writeOPF(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+            myDB = database.DBConnection()
+            cmd = 'SELECT AuthorName,BookID,BookName,BookDesc,BookIsbn,BookImg,BookDate,BookLang,BookPub,'
+            cmd += 'BookFile,BookRate from books,authors WHERE BookID=? and books.AuthorID = authors.AuthorID'
+            res = myDB.match(cmd, (kwargs['id'],))
+            if not res:
+                self.data = 'No data found for bookid %s' % kwargs['id']
+                return
+            if not res['BookFile']:
+                self.data = 'No bookfile found for bookid %s' % kwargs['id']
+                return
+            dest_path = os.path.dirname(res['BookFile'])
+            global_name = os.path.splitext(os.path.basename(res['BookFile']))[0]
+            refresh = False
+            if 'refresh' in kwargs:
+                refresh = True
+            processIMG(dest_path, kwargs['id'], res['BookImg'], global_name, refresh)
+            self.data = processOPF(dest_path, res, global_name, refresh)
+
+    @staticmethod
+    def _dumpMonths():
+        json_file = os.path.join(lazylibrarian.DATADIR, 'monthnames.json')
+        with open(json_file, 'w') as f:
+            json.dump(lazylibrarian.MONTHNAMES, f)
+
+    def _getWanted(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Wanted'")
 
-    def _getSnatched(self, **kwargs):
+    def _getRead(self):
+        userid = None
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in list(cookie.keys()):
+            userid = cookie['ll_uid'].value
+        if not userid:
+            self.data = 'No userid'
+        else:
+            self.data = self._dic_from_query(
+                "SELECT haveread from users WHERE userid='%s'" % userid)
+
+    def _getToRead(self):
+        userid = None
+        cookie = cherrypy.request.cookie
+        if cookie and 'll_uid' in list(cookie.keys()):
+            userid = cookie['ll_uid'].value
+        if not userid:
+            self.data = 'No userid'
+        else:
+            self.data = self._dic_from_query(
+                "SELECT toread from users WHERE userid='%s'" % userid)
+
+    def _vacuum(self):
+        msg1 = self._dic_from_query("vacuum")
+        msg2 = self._dic_from_query("pragma integrity_check")
+        self.data = str(msg1) + str(msg2)
+
+    def _getSnatched(self):
         self.data = self._dic_from_query(
             "SELECT * from books WHERE Status='Snatched'")
-        
-    def _getLogs(self, **kwargs):
+
+    def _getLogs(self):
         self.data = lazylibrarian.LOGLIST
 
-    def _clearLogs(self, **kwargs):
-        self.data = common.clearLog()
+    def _logMessage(self, **kwargs):
+        if 'level' not in kwargs:
+            self.data = 'Missing parameter: level'
+            return
+        if 'text' not in kwargs:
+            self.data = 'Missing parameter: text'
+            return
+        self.data = kwargs['text']
+        if kwargs['level'].upper() == 'INFO':
+            logger.info(self.data)
+            return
+        if kwargs['level'].upper() == 'WARN':
+            logger.warn(self.data)
+            return
+        if kwargs['level'].upper() == 'ERROR':
+            logger.error(self.data)
+            return
+        if kwargs['level'].upper() == 'DEBUG':
+            logger.debug(self.data)
+            return
+        self.data = 'Invalid level: %s' % kwargs['level']
+        return
 
-    def _getIndex(self, **kwargs):
+    def _getDebug(self):
+        self.data = logHeader().replace('\n', '<br>')
+
+    def _getModules(self):
+        lst = ''
+        for item in sys.modules:
+            lst = lst + "%s: %s<br>" % (item, str(sys.modules[item]).replace('<', '').replace('>', ''))
+        self.data = lst
+
+    def _checkModules(self):
+        lst = []
+        for item in sys.modules:
+            data = str(sys.modules[item]).replace('<', '').replace('>', '')
+            for libname in ['apscheduler', 'bs4', 'deluge_client', 'feedparser', 'fuzzywuzzy', 'html5lib',
+                            'httplib2', 'mobi', 'oauth2', 'pynma', 'pythontwitter', 'requests', 'simplejson',
+                            'unrar', 'six', 'webencodings']:
+                if libname in data and 'dist-packages' in data:
+                    lst.append("%s: %s" % (item, data))
+        self.data = lst
+
+    def _clearLogs(self):
+        self.data = clearLog()
+
+    def _getIndex(self):
         self.data = self._dic_from_query(
             'SELECT * from authors order by AuthorName COLLATE NOCASE')
+
+    def _listNoLang(self):
+        q = 'SELECT BookID,BookISBN,BookName,AuthorName from books,authors where '
+        q += '(BookLang="Unknown" or BookLang="" or BookLang is NULL) and books.AuthorID = authors.AuthorID'
+        self.data = self._dic_from_query(q)
+
+    def _listNoDesc(self):
+        q = 'SELECT BookID,BookName,AuthorName from books,authors where '
+        q += '(BookDesc="" or BookDesc is NULL) and books.AuthorID = authors.AuthorID'
+        self.data = self._dic_from_query(q)
+
+    def _setNoDesc(self):
+        q = 'SELECT BookID,BookName,AuthorName,BookISBN from books,authors where '
+        q += '(BookDesc="" or BookDesc="No Description" or BookDesc is NULL) and books.AuthorID = authors.AuthorID'
+        myDB = database.DBConnection()
+        res = myDB.select(q)
+        descs = 0
+        logger.debug("Checking description for %s book%s" % (len(res), plural(len(res))))
+        for item in res:
+            isbn = item['BookISBN']
+            auth = item['AuthorName']
+            book = item['BookName']
+            data = get_book_desc(isbn, auth, book)
+            if data:
+                descs += 1
+                logger.debug("Updated description for %s:%s" % (auth, book))
+                myDB.action('UPDATE books SET bookdesc=? WHERE bookid=?', (data, item['BookID']))
+            elif data is None:
+                self.data = "Error reading description, see debug log"
+                break
+        self.data = "Scanned %s book%s, found %s new description%s" % (len(res), plural(len(res)), descs, plural(descs))
+        logger.info(self.data)
+
+    def _listNoISBN(self):
+        q = 'SELECT BookID,BookName,AuthorName from books,authors where books.AuthorID = authors.AuthorID'
+        q += ' and (BookISBN="" or BookISBN is NULL)'
+        self.data = self._dic_from_query(q)
+
+    def _listNoBooks(self):
+        q = 'SELECT AuthorName from authors where TotalBooks=0'
+        self.data = self._dic_from_query(q)
+
+    def _listIgnoredSeries(self):
+        q = 'SELECT SeriesID,SeriesName from series where Status="Ignored"'
+        self.data = self._dic_from_query(q)
+
+    def _listIgnoredBooks(self):
+        q = 'SELECT BookID,BookName from books where Status="Ignored"'
+        self.data = self._dic_from_query(q)
+
+    def _listIgnoredAuthors(self):
+        q = 'SELECT AuthorID,AuthorName from authors where Status="Ignored"'
+        self.data = self._dic_from_query(q)
+
+    def _listMissingWorkpages(self):
+        # first the ones with no workpage
+        q = 'SELECT BookID from books where length(WorkPage) < 4'
+        res = self._dic_from_query(q)
+        # now the ones with an error page
+        cache = os.path.join(lazylibrarian.CACHEDIR, "WorkCache")
+        if os.path.isdir(cache):
+            for cached_file in os.listdir(makeBytestr(cache)):
+                cached_file = makeUnicode(cached_file)
+                target = os.path.join(cache, cached_file)
+                if os.path.isfile(target):
+                    if os.path.getsize(target) < 500 and '.' in cached_file:
+                        bookid = cached_file.split('.')[0]
+                        res.append({"BookID": bookid})
+        self.data = res
 
     def _getAuthor(self, **kwargs):
         if 'id' not in kwargs:
@@ -207,34 +585,82 @@ class Api(object):
             'SELECT * from authors WHERE AuthorID="' + self.id + '"')
         books = self._dic_from_query(
             'SELECT * from books WHERE AuthorID="' + self.id + '"')
-        
+
         self.data = {'author': author, 'books': books}
 
-
-    def _getMagazines(self, **kwargs):
+    def _getMagazines(self):
         self.data = self._dic_from_query('SELECT * from magazines order by Title COLLATE NOCASE')
 
-    def _getAllBooks(self, **kwargs):
-        self.data = self._dic_from_query(
-            'SELECT AuthorID,AuthorName,AuthorLink, BookName,BookSub,BookGenre,BookIsbn,BookPub, \
-            BookRate,BookImg,BookPages,BookLink,BookID,BookDate, BookLang,BookAdded,Status,Series,SeriesNum \
-            from books')
+    def _getAllBooks(self):
+        q = 'SELECT authors.AuthorID,AuthorName,AuthorLink,BookName,BookSub,BookGenre,BookIsbn,BookPub,'
+        q += 'BookRate,BookImg,BookPages,BookLink,BookID,BookDate,BookLang,BookAdded,books.Status '
+        q += 'from books,authors where books.AuthorID = authors.AuthorID'
+        self.data = self._dic_from_query(q)
 
     def _getIssues(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
-        else:
-            self.id = kwargs['name']
-
+        self.id = kwargs['name']
         magazine = self._dic_from_query(
             'SELECT * from magazines WHERE Title="' + self.id + '"')
         issues = self._dic_from_query(
             'SELECT * from issues WHERE Title="' + self.id + '" order by IssueDate DESC')
-        
-        self.data = {
-            'magazine': magazine, 'issues': issues}
 
+        self.data = {'magazine': magazine, 'issues': issues}
+
+    def _getIssueName(self, **kwargs):
+        if 'name' not in kwargs:
+            self.data = 'Missing parameter: name'
+            return
+        self.data = ''
+
+        dirname = os.path.dirname(kwargs['name'])
+
+        dic = {'.': ' ', '-': ' ', '/': ' ', '+': ' ', '_': ' ', '(': '', ')': '', '[': ' ', ']': ' ', '#': '# '}
+        name_exploded = replace_all(kwargs['name'], dic).split()
+
+        regex_pass, issuedate, year = get_issue_date(name_exploded)
+
+        if regex_pass:
+            if int(regex_pass) > 9:  # we think it's an issue number
+                if issuedate.isdigit():
+                    issuedate = issuedate.zfill(4)  # pad with leading zeros
+            if dirname:
+                title = os.path.basename(dirname)
+                if '$Title' in lazylibrarian.CONFIG['MAG_DEST_FILE']:
+                    fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate).replace(
+                        '$Title', title)
+                else:
+                    fname = lazylibrarian.CONFIG['MAG_DEST_FILE'].replace('$IssueDate', issuedate)
+                self.data = os.path.join(dirname, fname + '.' + name_exploded[-1])
+            else:
+                self.data = "Regex %s [%s] %s" % (regex_pass, issuedate, year)
+        else:
+            self.data = {regex_pass, issuedate, year}
+
+    def _createMagCovers(self, **kwargs):
+        if 'refresh' in kwargs:
+            refresh = True
+        else:
+            refresh = False
+        if 'wait' in kwargs:
+            self.data = createMagCovers(refresh=refresh)
+        else:
+            threading.Thread(target=createMagCovers, name='API-MAGCOVERS', args=[refresh]).start()
+
+    def _createMagCover(self, **kwargs):
+        if 'file' not in kwargs:
+            self.data = 'Missing parameter: file'
+            return
+        if 'refresh' in kwargs:
+            refresh = True
+        else:
+            refresh = False
+        if 'page' in kwargs:
+            self.data = createMagCover(issuefile=kwargs['file'], refresh=refresh, pagenum=kwargs['page'])
+        else:
+            self.data = createMagCover(issuefile=kwargs['file'], refresh=refresh)
 
     def _getBook(self, **kwargs):
         if 'id' not in kwargs:
@@ -243,34 +669,38 @@ class Api(object):
         else:
             self.id = kwargs['id']
 
-        book = self._dic_from_query(
-            'SELECT * from books WHERE BookID="' + self.id + '"')
+        book = self._dic_from_query('SELECT * from books WHERE BookID="' + self.id + '"')
         self.data = {'book': book}
-
 
     def _queueBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'BookID': self.id}
-        newValueDict = {'Status': 'Wanted'}
-        myDB.upsert("books", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT Status,AudioStatus from books WHERE BookID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                if 'type' in kwargs and kwargs['type'] == 'AudioBook':
+                    myDB.action('UPDATE books SET AudioStatus="Wanted" WHERE BookID=?', (kwargs['id'],))
+                else:
+                    myDB.action('UPDATE books SET Status="Wanted" WHERE BookID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _unqueueBook(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
-
-        myDB = database.DBConnection()
-        controlValueDict = {'BookID': self.id}
-        newValueDict = {'Status': 'Skipped'}
-        myDB.upsert("books", newValueDict, controlValueDict)
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT Status,AudioStatus from books WHERE BookID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                if 'type' in kwargs and kwargs['type'] == 'AudioBook':
+                    myDB.action('UPDATE books SET AudioStatus="Skipped" WHERE BookID=?', (kwargs['id'],))
+                else:
+                    myDB.action('UPDATE books SET Status="Skipped" WHERE BookID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _addMagazine(self, **kwargs):
         if 'name' not in kwargs:
@@ -278,18 +708,19 @@ class Api(object):
             return
         else:
             self.id = kwargs['name']
-        
+
+        myDB = database.DBConnection()
         controlValueDict = {"Title": self.id}
         newValueDict = {
-            "Frequency": None,
             "Regex": None,
             "Status": "Active",
-            "MagazineAdded": formatter.today(),
-            "IssueStatus": "Wanted"
+            "MagazineAdded": today(),
+            "IssueStatus": "Wanted",
+            "Reject": None
         }
         myDB.upsert("magazines", newValueDict, controlValueDict)
 
-    def _delMagazine(self, **kwargs):
+    def _removeMagazine(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
@@ -297,35 +728,55 @@ class Api(object):
             self.id = kwargs['name']
 
         myDB = database.DBConnection()
-        myDB.action('DELETE from magazines WHERE Title="%s"' % self.id)
-        myDB.action('DELETE from wanted WHERE BookID="%s"' % self.id)
-        myDB.action('DELETE from issues WHERE Title="%s"' % self.id)
+        myDB.action('DELETE from magazines WHERE Title=?', (self.id,))
+        myDB.action('DELETE from wanted WHERE BookID=?', (self.id,))
 
     def _pauseAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                myDB.action('UPDATE authors SET Status="Paused" WHERE AuthorID=?', (kwargs['id'],))
+                self.data = 'OK'
 
-        myDB = database.DBConnection()
-        controlValueDict = {'AuthorID': self.id}
-        newValueDict = {'Status': 'Paused'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+    def _ignoreAuthor(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+        else:
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                myDB.action('UPDATE authors SET Status="Ignored" WHERE AuthorID=?', (kwargs['id'],))
+                self.data = 'OK'
 
     def _resumeAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
-            return
         else:
-            self.id = kwargs['id']
+            myDB = database.DBConnection()
+            res = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+            if not res:
+                self.data = "Invalid id: %s" % kwargs['id']
+            else:
+                myDB.action('UPDATE authors SET Status="Active" WHERE AuthorID=?', (kwargs['id'],))
+                self.data = 'OK'
 
-        myDB = database.DBConnection()
-        controlValueDict = {'AuthorID': self.id}
-        newValueDict = {'Status': 'Active'}
-        myDB.upsert("authors", newValueDict, controlValueDict)
+    def _authorUpdate(self):
+        try:
+            self.data = authorUpdate(restart=False)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _refreshAuthor(self, **kwargs):
+        refresh = False
+        if 'refresh' in kwargs:
+            refresh = True
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
@@ -333,86 +784,176 @@ class Api(object):
             self.id = kwargs['name']
 
         try:
-            importer.addAuthorToDB(self.id, refresh=True)
+            addAuthorToDB(self.id, refresh=refresh)
         except Exception as e:
-            self.data = e
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
     def _forceActiveAuthorsUpdate(self, **kwargs):
+        refresh = False
+        if 'refresh' in kwargs:
+            refresh = True
         if 'wait' in kwargs:
-            updater.dbUpdate(False)
+            self.data = aaUpdate(refresh=refresh)
         else:
-            threading.Thread(target=updater.dbUpdate, args=[False]).start()
+            threading.Thread(target=aaUpdate, name='API-AAUPDATE', args=[refresh]).start()
 
     def _forceMagSearch(self, **kwargs):
-        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR():
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
                 search_magazines(None, True)
             else:
-                threading.Thread(target=search_magazines, args=[None, True]).start()
+                threading.Thread(target=search_magazines, name='API-SEARCHMAGS', args=[None, True]).start()
         else:
             self.data = 'No search methods set, check config'
 
-    def _forceBookSearch(self, **kwargs):
-        if lazylibrarian.USE_NZB():
-            if 'wait' in kwargs:
-                search_nzb_book()
-            else:
-                threading.Thread(target=search_nzb_book, args=[]).start()
-        if lazylibrarian.USE_TOR():
-            if 'wait' in kwargs:
-                search_tor_book()
-            else:
-                threading.Thread(target=search_tor_book, args=[]).start()
+    def _forceRSSSearch(self, **kwargs):
         if lazylibrarian.USE_RSS():
             if 'wait' in kwargs:
                 search_rss_book()
             else:
-                threading.Thread(target=search_rss_book, args=[]).start()
-        if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
+                threading.Thread(target=search_rss_book, name='API-SEARCHRSS', args=[]).start()
+        else:
+            self.data = 'No rss feeds set, check config'
+
+    def _forceWishlistSearch(self, **kwargs):
+        if lazylibrarian.USE_WISHLIST():
+            if 'wait' in kwargs:
+                search_wishlist()
+            else:
+                threading.Thread(target=search_wishlist, name='API-SEARCHWISHLIST', args=[]).start()
+        else:
+            self.data = 'No wishlists set, check config'
+
+    def _forceBookSearch(self, **kwargs):
+        if 'type' in kwargs:
+            library = kwargs['type']
+        else:
+            library = None
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
+            if 'wait' in kwargs:
+                search_book(library=library)
+            else:
+                threading.Thread(target=search_book, name='API-SEARCHALLBOOK', args=[None, library]).start()
+        else:
             self.data = "No search methods set, check config"
 
-    def _forceProcess(self, **kwargs):
-        postprocess.processDir()
+    @staticmethod
+    def _forceProcess(**kwargs):
+        startdir = None
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        ignore = False
+        if 'ignoreclient' in kwargs:
+            ignore = True
+        processDir(startdir=startdir, ignoreclient=ignore)
 
-    def _forceLibraryScan(self, **kwargs):
+    @staticmethod
+    def _forceLibraryScan(**kwargs):
+        startdir = None
+        authid = None
+        remove = False
+        if 'remove' in kwargs:
+            remove = True
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        if 'id' in kwargs:
+            authid = kwargs['id']
         if 'wait' in kwargs:
-            librarysync.LibraryScan(lazylibrarian.DESTINATION_DIR)
+            LibraryScan(startdir=startdir, library='eBook', authid=authid, remove=remove)
         else:
-            threading.Thread(target=librarysync.LibraryScan, args=[lazylibrarian.DESTINATION_DIR]).start()
-    
-    def _forceMagazineScan(self, **kwargs):
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN',
+                             args=[startdir, 'eBook', authid, remove]).start()
+
+    @staticmethod
+    def _forceAudioBookScan(**kwargs):
+        startdir = None
+        authid = None
+        remove = False
+        if 'remove' in kwargs:
+            remove = True
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        if 'id' in kwargs:
+            authid = kwargs['id']
         if 'wait' in kwargs:
-            magazinescan.magazineScan()
+            LibraryScan(startdir=startdir, library='AudioBook', authid=authid, remove=remove)
         else:
-            threading.Thread(target=magazinescan.magazineScan, args=[]).start()
-    
+            threading.Thread(target=LibraryScan, name='API-LIBRARYSCAN',
+                             args=[startdir, 'AudioBook', authid, remove]).start()
+
+    @staticmethod
+    def _forceMagazineScan(**kwargs):
+        if 'wait' in kwargs:
+            magazineScan()
+        else:
+            threading.Thread(target=magazineScan, name='API-MAGSCAN', args=[]).start()
+
+    def _deleteEmptySeries(self):
+        self.data = deleteEmptySeries()
+
     def _cleanCache(self, **kwargs):
         if 'wait' in kwargs:
-            common.cleanCache()
+            self.data = cleanCache()
         else:
-            threading.Thread(target=common.cleanCache, args=[]).start()
-            
+            threading.Thread(target=cleanCache, name='API-CLEANCACHE', args=[]).start()
+
     def _setWorkPages(self, **kwargs):
         if 'wait' in kwargs:
-            bookwork.setWorkPages()
+            self.data = setWorkPages()
         else:
-            threading.Thread(target=bookwork.setWorkPages, args=[]).start()
-            
-    def _getVersion(self, **kwargs):
+            threading.Thread(target=setWorkPages, name='API-SETWORKPAGES', args=[]).start()
+
+    def _setWorkID(self, **kwargs):
+        ids = None
+        if 'bookids' in kwargs:
+            ids = kwargs['bookids']
+        if 'wait' in kwargs:
+            self.data = setWorkID(ids)
+        else:
+            threading.Thread(target=setWorkID, name='API-SETWORKID', args=[ids]).start()
+
+    def _setAllBookSeries(self, **kwargs):
+        if 'wait' in kwargs:
+            self.data = setAllBookSeries()
+        else:
+            threading.Thread(target=setAllBookSeries, name='API-SETALLBOOKSERIES', args=[]).start()
+
+    def _setAllBookAuthors(self, **kwargs):
+        if 'wait' in kwargs:
+            self.data = setAllBookAuthors()
+        else:
+            threading.Thread(target=setAllBookAuthors, name='API-SETALLBOOKAUTHORS', args=[]).start()
+
+    def _getBookCovers(self, **kwargs):
+        if 'wait' in kwargs:
+            self.data = getBookCovers()
+        else:
+            threading.Thread(target=getBookCovers, name='API-GETBOOKCOVERS', args=[]).start()
+
+    def _getAuthorImages(self, **kwargs):
+        if 'wait' in kwargs:
+            self.data = getAuthorImages()
+        else:
+            threading.Thread(target=getAuthorImages, name='API-GETAUTHORIMAGES', args=[]).start()
+
+    def _getVersion(self):
         self.data = {
-            'install_type': lazylibrarian.INSTALL_TYPE,
-            'current_version': lazylibrarian.CURRENT_VERSION,
-            'latest_version': lazylibrarian.LATEST_VERSION,
-            'commits_behind': lazylibrarian.COMMITS_BEHIND,
+            'install_type': lazylibrarian.CONFIG['INSTALL_TYPE'],
+            'current_version': lazylibrarian.CONFIG['CURRENT_VERSION'],
+            'latest_version': lazylibrarian.CONFIG['LATEST_VERSION'],
+            'commits_behind': lazylibrarian.CONFIG['COMMITS_BEHIND'],
         }
 
-    def _shutdown(self, **kwargs):
+    @staticmethod
+    def _shutdown():
         lazylibrarian.SIGNAL = 'shutdown'
 
-    def _restart(self, **kwargs):
+    @staticmethod
+    def _restart():
         lazylibrarian.SIGNAL = 'restart'
 
-    def _update(self, **kwargs):
+    @staticmethod
+    def _update():
         lazylibrarian.SIGNAL = 'update'
 
     def _findAuthor(self, **kwargs):
@@ -420,40 +961,108 @@ class Api(object):
             self.data = 'Missing parameter: name'
             return
 
-        myDB = database.DBConnection()
-        if lazylibrarian.BOOK_API == "GoogleBooks":
-            GB = GoogleBooks(kwargs['name'])
-            queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, args=[kwargs['name'], queue])
+        authorname = formatAuthorName(kwargs['name'])
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+            GB = GoogleBooks(authorname)
+            myqueue = queue.Queue()
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[authorname, myqueue])
             search_api.start()
-        elif lazylibrarian.BOOK_API == "GoodReads":
-            queue = Queue.Queue()
-            GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(target=GR.find_results, args=[kwargs['name'], queue])
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+            GR = GoodReads(authorname)
+            myqueue = queue.Queue()
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[authorname, myqueue])
             search_api.start()
 
         search_api.join()
-        self.data = queue.get()
+        self.data = myqueue.get()
 
     def _findBook(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
             return
-        myDB = database.DBConnection()
-        if lazylibrarian.BOOK_API == "GoogleBooks":
+
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
             GB = GoogleBooks(kwargs['name'])
-            queue = Queue.Queue()
-            search_api = threading.Thread(target=GB.find_results, args=[kwargs['name'], queue])
+            myqueue = queue.Queue()
+            search_api = threading.Thread(target=GB.find_results, name='API-GBRESULTS', args=[kwargs['name'], myqueue])
             search_api.start()
-        elif lazylibrarian.BOOK_API == "GoodReads":
-            queue = Queue.Queue()
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
             GR = GoodReads(kwargs['name'])
-            search_api = threading.Thread(target=GR.find_results, args=[kwargs['name'], queue])
+            myqueue = queue.Queue()
+            search_api = threading.Thread(target=GR.find_results, name='API-GRRESULTS', args=[kwargs['name'], myqueue])
             search_api.start()
 
         search_api.join()
-        self.data = queue.get()
-        
+        self.data = myqueue.get()
+
+    def _addBook(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+
+        if lazylibrarian.CONFIG['BOOK_API'] == "GoogleBooks":
+            GB = GoogleBooks(kwargs['id'])
+            threading.Thread(target=GB.find_book, name='API-GBRESULTS', args=[kwargs['id']]).start()
+        else:  # lazylibrarian.CONFIG['BOOK_API'] == "GoodReads":
+            GR = GoodReads(kwargs['id'])
+            threading.Thread(target=GR.find_book, name='API-GRRESULTS', args=[kwargs['id']]).start()
+
+    def _moveBook(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        if 'toid' not in kwargs:
+            self.data = 'Missing parameter: toid'
+            return
+        try:
+            myDB = database.DBConnection()
+            authordata = myDB.match('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['toid'],))
+            if not authordata:
+                self.data = "No destination author [%s] in the database" % kwargs['toid']
+            else:
+                bookdata = myDB.match('SELECT AuthorID, BookName from books where BookID=?', (kwargs['id'],))
+                if not bookdata:
+                    self.data = "No bookid [%s] in the database" % kwargs['id']
+                else:
+                    controlValueDict = {'BookID': kwargs['id']}
+                    newValueDict = {'AuthorID': kwargs['toid']}
+                    myDB.upsert("books", newValueDict, controlValueDict)
+                    update_totals(bookdata[0])  # we moved from here
+                    update_totals(kwargs['toid'])  # to here
+                    self.data = "Moved book [%s] to [%s]" % (bookdata[1], authordata[0])
+            logger.debug(self.data)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
+    def _moveBooks(self, **kwargs):
+        if 'fromname' not in kwargs:
+            self.data = 'Missing parameter: fromname'
+            return
+        if 'toname' not in kwargs:
+            self.data = 'Missing parameter: toname'
+            return
+        try:
+            myDB = database.DBConnection()
+            q = 'SELECT bookid,books.authorid from books,authors where books.AuthorID = authors.AuthorID'
+            q += ' and authorname=?'
+            fromhere = myDB.select(q, (kwargs['fromname'],))
+
+            tohere = myDB.match('SELECT authorid from authors where authorname=?', (kwargs['toname'],))
+            if not len(fromhere):
+                self.data = "No books by [%s] in the database" % kwargs['fromname']
+            else:
+                if not tohere:
+                    self.data = "No destination author [%s] in the database" % kwargs['toname']
+                else:
+                    myDB.action('UPDATE books SET authorid=?, where authorname=?', (tohere[0], kwargs['fromname']))
+                    self.data = "Moved %s books from %s to %s" % (len(fromhere), kwargs['fromname'], kwargs['toname'])
+                    update_totals(fromhere[0][1])  # we moved from here
+                    update_totals(tohere[0])  # to here
+
+            logger.debug(self.data)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
     def _addAuthor(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
@@ -461,37 +1070,106 @@ class Api(object):
         else:
             self.id = kwargs['name']
         try:
-            importer.addAuthorToDB(self.id, refresh=False)
+            self.data = addAuthorNameToDB(author=self.id, refresh=False)
         except Exception as e:
-            self.data = e
+            self.data = "%s %s" % (type(e).__name__, str(e))
 
-    def _searchBook(self, **kwargs):
+    def _addAuthorID(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
         else:
             self.id = kwargs['id']
-        
-        books = [{"bookid": id}]
-        if lazylibrarian.USE_RSS():
-            if 'wait' in kwargs:
-                search_rss_book(books)
+        try:
+            self.data = addAuthorToDB(refresh=False, authorid=self.id)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
+    def _grFollowAll(self):
+        myDB = database.DBConnection()
+        cmd = 'SELECT AuthorName,AuthorID,GRfollow FROM authors where '
+        cmd += 'Status="Active" or Status="Wanted" or Status="Loading"'
+        authors = myDB.select(cmd)
+        count = 0
+        for author in authors:
+            followid = check_int(author['GRfollow'], 0)
+            if followid > 0:
+                logger.debug('%s is already followed' % author['AuthorName'])
+            elif author['GRfollow'] == "0":
+                logger.debug('%s is manually unfollowed' % author['AuthorName'])
             else:
-                threading.Thread(target=search_rss_book, args=[books]).start()
-        if lazylibrarian.USE_NZB():
+                res = grfollow(author['AuthorID'], True)
+                if res.startswith('Unable'):
+                    logger.warn(res)
+                try:
+                    followid = res.split("followid=")[1]
+                    logger.debug('%s marked followed' % author['AuthorName'])
+                    count += 1
+                except IndexError:
+                    followid = ''
+                myDB.action('UPDATE authors SET GRfollow=? WHERE AuthorID=?', (followid, author['AuthorID']))
+        self.data = "Added follow to %s author%s" % (count, plural(count))
+
+    def _grSync(self, **kwargs):
+        if 'shelf' not in kwargs:
+            self.data = 'Missing parameter: shelf'
+            return
+        if 'status' not in kwargs:
+            self.data = 'Missing parameter: status'
+            return
+        library = 'eBook'
+        if 'library' in kwargs:
+            library = kwargs['library']
+        try:
+            self.data = grsync(kwargs['status'], kwargs['shelf'], library)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
+    def _grFollow(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        try:
+            self.data = grfollow(authorid=kwargs['id'], follow=True)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
+    def _grUnfollow(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        try:
+            self.data = grfollow(authorid=kwargs['id'], follow=False)
+        except Exception as e:
+            self.data = "%s %s" % (type(e).__name__, str(e))
+
+    def _searchItem(self, **kwargs):
+        if 'item' not in kwargs:
+            self.data = 'Missing parameter: item'
+            return
+        else:
+            self.data = searchItem(kwargs['item'])
+
+    def _searchBook(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+
+        books = [{"bookid": kwargs['id']}]
+        if 'type' in kwargs:
+            library = kwargs['type']
+        else:
+            library = None
+
+        if lazylibrarian.USE_NZB() or lazylibrarian.USE_TOR() or lazylibrarian.USE_RSS() or lazylibrarian.USE_DIRECT():
             if 'wait' in kwargs:
-                search_nzb_book(books)
+                search_book(books=books, library=library)
             else:
-                threading.Thread(target=search_nzb_book, args=[books]).start()
-        if lazylibrarian.USE_TOR():
-            if 'wait' in kwargs:
-                search_tor_book(books)
-            else:
-                threading.Thread(target=search_tor_book, args=[books]).start()
-        if not lazylibrarian.USE_RSS() and not lazylibrarian.USE_NZB() and not lazylibrarian.USE_TOR():
+                threading.Thread(target=search_book, name='API-SEARCHBOOK', args=[books, library]).start()
+        else:
             self.data = "No search methods set, check config"
 
-    def _delAuthor(self, **kwargs):
+    def _removeAuthor(self, **kwargs):
         if 'id' not in kwargs:
             self.data = 'Missing parameter: id'
             return
@@ -499,13 +1177,11 @@ class Api(object):
             self.id = kwargs['id']
 
         myDB = database.DBConnection()
-        authorsearch = myDB.select(
-            'SELECT AuthorName from authors WHERE AuthorID="%s"' % AuthorID)
-        if len(authorsearch):  # to stop error if try to delete an author while they are still loading
+        authorsearch = myDB.select('SELECT AuthorName from authors WHERE AuthorID=?', (kwargs['id'],))
+        if len(authorsearch):  # to stop error if try to remove an author while they are still loading
             AuthorName = authorsearch[0]['AuthorName']
-            logger.info(u"Removing all references to author: %s" % AuthorName)
-            myDB.action('DELETE from authors WHERE AuthorID="%s"' % AuthorID)
-            myDB.action('DELETE from books WHERE AuthorID="%s"' % AuthorID)
+            logger.debug("Removing all references to author: %s" % AuthorName)
+            myDB.action('DELETE from authors WHERE AuthorID=?', (kwargs['id'],))
 
     def _writeCFG(self, **kwargs):
         if 'name' not in kwargs:
@@ -517,16 +1193,19 @@ class Api(object):
         if 'group' not in kwargs:
             self.data = 'Missing parameter: group'
             return
-        
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
             lazylibrarian.CFG.set(kwargs['group'], kwargs['name'], kwargs['value'])
-            with open(lazylibrarian.CONFIGFILE, 'wb') as configfile:
+            if PY2:
+                fmode = 'wb'
+            else:
+                fmode = 'w'
+            with open(lazylibrarian.CONFIGFILE, fmode) as configfile:
                 lazylibrarian.CFG.write(configfile)
             lazylibrarian.config_read(reloaded=True)
-        except:
-            self.data = 'Unable to update CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
-            
+        except Exception as e:
+            self.data = 'Unable to update CFG entry for %s: %s, %s' % (kwargs['group'], kwargs['name'], str(e))
+
     def _readCFG(self, **kwargs):
         if 'name' not in kwargs:
             self.data = 'Missing parameter: name'
@@ -536,11 +1215,36 @@ class Api(object):
             return
         try:
             self.data = '["%s"]' % lazylibrarian.CFG.get(kwargs['group'], kwargs['name'])
-        except:
+        except configparser.Error:
             self.data = 'No CFG entry for %s: %s' % (kwargs['group'], kwargs['name'])
-            
-    def _loadCFG(self, **kwargs):
+
+    @staticmethod
+    def _loadCFG():
         lazylibrarian.config_read(reloaded=True)
+
+    def _getSeriesAuthors(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+        else:
+            self.id = kwargs['id']
+            count = getSeriesAuthors(self.id)
+            self.data = "Added %s" % count
+
+    def _getSeriesMembers(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = getSeriesMembers(self.id)
+
+    def _getBookAuthors(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = getBookAuthors(self.id)
 
     def _getWorkSeries(self, **kwargs):
         if 'id' not in kwargs:
@@ -548,7 +1252,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getWorkSeries(self.id)
+        self.data = getWorkSeries(self.id)
 
     def _getWorkPage(self, **kwargs):
         if 'id' not in kwargs:
@@ -556,7 +1260,7 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getWorkPage(self.id)
+        self.data = getWorkPage(self.id)
 
     def _getBookCover(self, **kwargs):
         if 'id' not in kwargs:
@@ -564,31 +1268,172 @@ class Api(object):
             return
         else:
             self.id = kwargs['id']
-        self.data = bookwork.getBookCover(self.id)
-        
-    def _restartJobs(self, **kwargs):
-        common.restartJobs(start='Restart')
-        
-    def _showJobs(self, **kwargs):
-        self.data = common.showJobs()
-    
+        if 'src' in kwargs:
+            self.data = getBookCover(self.id, kwargs['src'])
+        else:
+            self.data = getBookCover(self.id)
+
+    def _getAuthorImage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        self.data = getAuthorImage(self.id)
+
+    def _lock(self, table, itemid, state):
+        myDB = database.DBConnection()
+        dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
+        if dbentry:
+            myDB.action('UPDATE %ss SET Manual="%s" WHERE %sID=%s' % (table, state, table, itemid))
+        else:
+            self.data = "%sID %s not found" % (table, itemid)
+
+    def _setAuthorLock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("author", kwargs['id'], "1")
+
+    def _setAuthorUnlock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("author", kwargs['id'], "0")
+
+    def _setAuthorImage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        if 'img' not in kwargs:
+            self.data = 'Missing parameter: img'
+            return
+        else:
+            self._setimage("author", kwargs['id'], kwargs['img'])
+
+    def _setBookImage(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self.id = kwargs['id']
+        if 'img' not in kwargs:
+            self.data = 'Missing parameter: img'
+            return
+        else:
+            self._setimage("book", kwargs['id'], kwargs['img'])
+
+    def _setimage(self, table, itemid, img):
+        msg = "%s Image [%s] rejected" % (table, img)
+        # Cache file image
+        if os.path.isfile(img):
+            extn = os.path.splitext(img)[1].lower()
+            if extn and extn in ['.jpg', '.jpeg', '.png']:
+                destfile = os.path.join(lazylibrarian.CACHEDIR, table, itemid + '.jpg')
+                try:
+                    shutil.copy(img, destfile)
+                    setperm(destfile)
+                    msg = ''
+                except Exception as why:
+                    msg += " Failed to copy file: %s %s" % (type(why).__name__, str(why))
+            else:
+                msg += " invalid extension"
+
+        if img.startswith('http'):
+            # cache image from url
+            extn = os.path.splitext(img)[1].lower()
+            if extn and extn in ['.jpg', '.jpeg', '.png']:
+                cachedimg, success, _ = cache_img(table, itemid, img)
+                if success:
+                    msg = ''
+                else:
+                    msg += " Failed to cache file"
+            else:
+                msg += " invalid extension"
+        elif msg:
+            msg += " Not found"
+
+        if msg:
+            self.data = msg
+            return
+
+        myDB = database.DBConnection()
+        dbentry = myDB.match('SELECT %sID from %ss WHERE %sID=%s' % (table, table, table, itemid))
+        if dbentry:
+            myDB.action('UPDATE %ss SET %sImg="%s" WHERE %sID=%s' %
+                        (table, table, 'cache' + os.path.sep + itemid + '.jpg', table, itemid))
+        else:
+            self.data = "%sID %s not found" % (table, itemid)
+
+    def _setBookLock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("book", kwargs['id'], "1")
+
+    def _setBookUnlock(self, **kwargs):
+        if 'id' not in kwargs:
+            self.data = 'Missing parameter: id'
+            return
+        else:
+            self._lock("book", kwargs['id'], "0")
+
+    @staticmethod
+    def _restartJobs():
+        restartJobs(start='Restart')
+
+    @staticmethod
+    def _checkRunningJobs():
+        checkRunningJobs()
+
+    def _showJobs(self):
+        self.data = showJobs()
+
+    def _showStats(self):
+        self.data = showStats()
+
     def _importAlternate(self, **kwargs):
-        if 'wait' in kwargs:
-            postprocess.processAlternate(lazylibrarian.ALTERNATE_DIR)
+        if 'dir' in kwargs:
+            usedir = kwargs['dir']
         else:
-            threading.Thread(target=postprocess.processAlternate, args=[lazylibrarian.ALTERNATE_DIR]).start()
-            
+            usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
+        if 'wait' in kwargs:
+            self.data = processAlternate(usedir)
+        else:
+            threading.Thread(target=processAlternate, name='API-IMPORTALT', args=[usedir]).start()
+
+    def _includeAlternate(self, **kwargs):
+        if 'dir' in kwargs:
+            startdir = kwargs['dir']
+        else:
+            startdir = lazylibrarian.CONFIG['ALTERNATE_DIR']
+        if 'wait' in kwargs:
+            self.data = LibraryScan(startdir, 'eBook', None, False)
+        else:
+            threading.Thread(target=LibraryScan, name='API-INCLUDEALT',
+                             args=[startdir, 'eBook', None, False]).start()
+
     def _importCSVwishlist(self, **kwargs):
-        if 'wait' in kwargs:
-            postprocess.processCSV(lazylibrarian.ALTERNATE_DIR)
+        if 'dir' in kwargs:
+            usedir = kwargs['dir']
         else:
-            threading.Thread(target=postprocess.processCSV, args=[lazylibrarian.ALTERNATE_DIR]).start()
-            
+            usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
+        if 'wait' in kwargs:
+            self.data = import_CSV(usedir)
+        else:
+            threading.Thread(target=import_CSV, name='API-IMPORTCSV', args=[usedir]).start()
+
     def _exportCSVwishlist(self, **kwargs):
-        if 'wait' in kwargs:
-            postprocess.exportCSV(lazylibrarian.ALTERNATE_DIR)
+        if 'dir' in kwargs:
+            usedir = kwargs['dir']
         else:
-            threading.Thread(target=postprocess.exportCSV, args=[lazylibrarian.ALTERNATE_DIR]).start()
-            
-
-
+            usedir = lazylibrarian.CONFIG['ALTERNATE_DIR']
+        if 'wait' in kwargs:
+            self.data = export_CSV(usedir)
+        else:
+            threading.Thread(target=export_CSV, name='API-EXPORTCSV', args=[usedir]).start()

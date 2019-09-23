@@ -1,0 +1,226 @@
+<%inherit file="base.html"/>
+<%!
+    import lazylibrarian
+%>
+<%def name="headIncludes()">
+</%def>
+<%def name="body()">
+<h1>${title}</h1>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6 col-sm-offset-3">
+      <div class="login-container">
+            <div class="form-group col-md-6">
+                <label for="user" class="control-label">Select user</label>
+                <select id="user" class="form-control input" name="user">
+                <option value=""> -- add a new user -- </option>
+                %for item in users:
+                    <option value="${item['UserName']}">${item['UserName']}</option>
+                %endfor
+                </select>
+            </div>
+            <div>
+                <label for="saveusers" class="control-label">Import/Export Users</label>
+                <div>
+                  <input type="button" value="Import" id="loadusers" class="btn btn-default" />
+                  <input type="button" value="Export" id="saveusers" class="btn btn-default" />
+                </div>
+            </div>
+        <div class="row">
+          <div class="col-md-12">
+              <div class="form-group col-md-12">
+                <label for="username">Username</label>
+                <input id="username" class="form-control" name="username" value="">
+              </div>
+              <div class="form-group col-md-12">
+                <label for="fullname">Full Name</label>
+                <input id="fullname" name="fullname" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-12">
+                <label for="email">Email (for messages)</label>
+                <input id="email" name="email" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-12">
+                <label for="sendto">Send To (eg kindle email)</label>
+                <input id="sendto" name="sendto" class="form-control" value="">
+              </div>
+              <fieldset  class="form-group col-md-6">
+              <div>
+                <label for="perms">Permissions</label>
+                <input id="perms" class="form-control" name="perms" value="">
+                <input type="button" value="Admin" name="admin" id="admin" class="button btn btn-primary btn-sm col-md-4">
+                <input type="button" value="Friend" name="friend" id="friend" class="button btn btn-primary btn-sm col-md-4">
+                <input type="button" value="Guest" name="guest" id="guest" class="button btn btn-primary btn-sm col-md-4">
+              </div>
+              </fieldset>
+              <div class="form-group col-md-6">
+                <label for="password">Password</label>
+                <input id="password" class="form-control" name="password" placeholder="keep existing password">
+                <input type="button" value="Generate Password" name="generatepwd" id="generatepwd" class="button btn btn-primary btn-sm">
+                <!-- input type="button" value="Email details to user" name="emailpwd" id="emailpwd" class="pull-right button btn btn-primary btn-sm" -->
+              </div>
+              <div class="form-group col-md-6">
+                <label for="calread">Calibre Read Column</label>
+                <input id="calread" name="calread" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="caltoread">Calibre ToRead Column</label>
+                <input id="caltoread" name="caltoread" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="booktype">Preferred BookType to open/email</label>
+                <input id="booktype" name="booktype" class="form-control" value="">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="userid">UserID (for information only)</label>
+                <input id="userid" name="userid" class="form-control" value="" readonly>
+              </div>
+              <fieldset class="form-group col-md-12">
+              <div>
+                <input type="button" value="Save" name="save" id="save" class="btn btn-primary btn-lg btn-inverse col-md-6">
+                <input type="button" value="Delete" name="delete" id="delete" class="btn btn-primary btn-lg btn-danger col-md-6">
+              </div>
+              </fieldset>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</%def>
+
+<%def name="headIncludes()">
+</%def>
+<%def name="javascriptIncludes()">
+  <script type="text/javascript">
+    $(document).ready(function()
+    {
+      $('#admin').click(function() {
+        $("#perms").val(${lazylibrarian.perm_admin});
+      });
+      $('#friend').click(function() {
+        $("#perms").val(${lazylibrarian.perm_friend});
+      });
+      $('#guest').click(function() {
+        $("#perms").val(${lazylibrarian.perm_guest});
+      });
+
+      $('#generatepwd').click(function () {
+        $.get("generatepwd", function (data) {
+                $("#password").val(data);
+            });
+        });
+
+      $('#user').change(function(){
+          var user = $.trim($("#user").val());
+          $.get("admin_userdata", {'user': user}, function (data) {
+            var obj = JSON.parse(data);
+            $("#username").val(user);
+            $("#email").val(obj['email']);
+            $("#sendto").val(obj['sendto']);
+            $("#fullname").val(obj['name']);
+            $("#perms").val(obj['perms']);
+            $("#calread").val(obj['calread']);
+            $("#caltoread").val(obj['caltoread']);
+            $("#booktype").val(obj['booktype']);
+            $("#userid").val(obj['userid']);
+            $("#password").val("");
+            });
+        });
+
+        $('#saveusers').on('click', function(e) {
+            $.get('saveUsers', function(data) {
+                bootbox.dialog({
+                    title: 'Export Users',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
+        $('#loadusers').on('click', function(e) {
+            $.get('loadUsers', function(data) {
+                bootbox.dialog({
+                    title: 'Import Users',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary'
+                        }
+                    }
+                });
+            });
+        });
+
+      $('#delete').click(function() {
+          var user = $.trim($("#user").val());
+            bootbox.confirm({
+                message: "Are you sure you want to permanently delete " + user + " ?",
+                buttons: {
+                    confirm: {
+                        label: 'Yes',
+                        className: 'btn-success'
+                    },
+                    cancel: {
+                        label: 'No',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function (result) {
+                    if (result) {
+                      $.get("admin_delete", {'user': user},
+                            function (data) {
+                            bootbox.dialog({
+                                title: 'Delete User',
+                                message: '<pre>'+data+'</pre>',
+                                buttons: {
+                                    primary: {
+                                        label: "Close",
+                                        className: 'btn-primary',
+                                        callback: function(result){ window.location.reload(true) }
+                                    }
+                                }
+                            });
+                      });
+                   }
+                }
+            });
+      });
+
+      $('#save').click(function() {
+          var user = $.trim($("#user").val());
+          var username = $.trim($("#username").val());
+          var fullname = $.trim($("#fullname").val());
+          var email = $.trim($("#email").val());
+          var sendto = $.trim($("#sendto").val());
+          var perms = $.trim($("#perms").val());
+          var calread = $.trim($("#calread").val());
+          var caltoread = $.trim($("#caltoread").val());
+          var booktype = $.trim($("#booktype").val());
+          var password = $.trim($("#password").val());
+          $.get("admin_users", {'user': user, 'username': username, 'fullname': fullname, 'email': email,
+                'sendto': sendto, 'perms': perms, 'password': password, 'calread': calread, 'caltoread': caltoread,
+                'booktype': booktype},
+                function (data) {
+                bootbox.dialog({
+                    title: 'Update User',
+                    message: '<pre>'+data+'</pre>',
+                    buttons: {
+                        primary: {
+                            label: "Close",
+                            className: 'btn-primary',
+                            callback: function(result){ window.location.reload(true) }
+                        }
+                    }
+                });
+          });
+      });
+    });
+  </script>
+</%def>
