@@ -842,7 +842,7 @@ def reverse_readline(filename, buf_size=8192):
                 # if the previous chunk starts right from the beginning of line
                 # do not concact the segment to the last line of new chunk
                 # instead, yield the segment first
-                if buf[-1] is not '\n':
+                if buf[-1] != '\n':
                     lines[-1] += segment
                 else:
                     yield segment
@@ -871,7 +871,8 @@ def logHeader():
             header += '%s: %s\n' % (item.lower(), lazylibrarian.CONFIG[item])
     header += "Python version: %s\n" % sys.version.split('\n')
     # noinspection PyDeprecation
-    header += "Distribution: %s\n" % str(platform.dist())
+    if sys.version_info<=(3,7):
+        header += "Distribution: %s\n" % str(platform.dist())
     header += "System: %s\n" % str(platform.system())
     header += "Machine: %s\n" % str(platform.machine())
     header += "Platform: %s\n" % str(platform.platform())
