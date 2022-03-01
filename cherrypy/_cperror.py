@@ -115,8 +115,14 @@ Note that you have to explicitly set
 and not simply return an error message as a result.
 """
 
-from cgi import escape as _escape
 from sys import exc_info as _exc_info
+from sys import version_info as _version_info
+if _version_info <=(3,7):
+    from cgi import escape as _escape
+else:
+    from html import escape as _escape
+
+
 from traceback import format_exception as _format_exception
 from cherrypy._cpcompat import basestring, bytestr, iteritems, ntob
 from cherrypy._cpcompat import tonative, urljoin as _urljoin
