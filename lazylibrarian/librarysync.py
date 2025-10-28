@@ -33,6 +33,7 @@ from lazylibrarian.filesystem import (DIRS, path_exists, path_isdir, path_isfile
                                       opf_file, get_directory, book_file)
 from lazylibrarian.formatter import (plural, is_valid_isbn, get_list, unaccented, replace_all, strip_quotes,
                                      split_title, now, make_unicode, split_author_names)
+from lazylibrarian.common import extract_series_number, validate_series_match
 from lazylibrarian.images import img_id
 from lazylibrarian.importer import (update_totals, add_author_name_to_db, search_for, collate_nopunctuation,
                                     title_translates)
@@ -391,14 +392,25 @@ def find_book_in_db(author, book, ignored=None, library='eBook', reason='find_bo
                     a_book_lower = a_book_lower.replace(entry[0], entry[1])
                 if entry[1] in a_book_lower and entry[1] not in book_lower and entry[0] in book_lower:
                     a_book_lower = a_book_lower.replace(entry[1], entry[0])
+            
+            # SERIES VALIDATION: Check series numbers match before fuzzy matching
+            try:
+                should_match, confidence = validate_series_match(book, a_bookname, a_book.get('BookID'))
+                if not should_match:
+                    fuzzlogger.debug(f"Skipping [{a_bookname}] - series number mismatch")
+                    continue
+            except Exception as e:
+                fuzzlogger.error(f"Series validation error: {str(e)}")
+                confidence = 1.0
+            
             #
             # token sort ratio allows "Lord Of The Rings, The"   to match  "The Lord Of The Rings"
-            ratio = fuzz.token_sort_ratio(book_lower, a_book_lower)
+            ratio = fuzz.token_sort_ratio(book_lower, a_book_lower) * confidence
             # partial ratio allows "Lord Of The Rings"   to match  "The Lord Of The Rings"
-            partial = fuzz.partial_ratio(book_lower, a_book_lower)
+            partial = fuzz.partial_ratio(book_lower, a_book_lower) * confidence
             if book_partname:
                 # partname allows "Lord Of The Rings (illustrated edition)"   to match  "The Lord Of The Rings"
-                partname = fuzz.partial_ratio(book_partname, a_book_lower)
+                partname = fuzz.partial_ratio(book_partname, a_book_lower) * confidence
 
             # lose points if the difference is just numbers so we don't match "book 2" and "book 3"
             # eg "He Who Fights With Monsters #7" is not the same as "He Who Fights With Monsters 05"

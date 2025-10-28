@@ -29,6 +29,7 @@ from lazylibrarian.formatter import plural, today, replace_all, book_series, una
     clean_name, is_valid_isbn, format_author_name, check_int, make_unicode, check_year, check_float, \
     make_utf8bytes, thread_name, date_format
 from lazylibrarian.images import cache_bookimg, get_book_cover
+from lazylibrarian.common import extract_series_number, validate_series_match
 
 
 class GoodReads:
@@ -771,7 +772,11 @@ class GoodReads:
                             if match:
                                 if match['BookID'] != bookid:
                                     # we have a different bookid for this author/title already
-                                    if not_rejectable:
+                                    # Check series numbers before rejecting as duplicate
+                                    should_match, confidence = validate_series_match(bookname, match['BookName'], None)
+                                    if not should_match:
+                                        self.logger.debug(f"Different series numbers - allowing both {bookname} and {match['BookName']}")
+                                    elif not_rejectable:
                                         self.logger.debug(
                                             f"Not rejecting duplicate title {bookname} ({bookid}/{match['BookID']}) "
                                             f"as {not_rejectable}")

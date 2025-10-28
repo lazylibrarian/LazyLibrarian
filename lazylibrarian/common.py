@@ -580,3 +580,102 @@ def dbbackup(source='lazylibrarian'):
             if path_isfile(target):
                 zf.add(target, arcname=f)
     return backup_file, err
+
+
+def extract_series_number(text):
+    """Extract series number - supports normal, Roman, spelled (1-9999, I-C, one-hundred)"""
+    import re
+    if not text:
+        return None
+    
+    def word_to_number(word_text):
+        ones = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18, 'nineteen': 19}
+        tens = {'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90}
+        word_lower = word_text.lower().replace('-', ' ').strip()
+        if 'hundred' in word_lower:
+            parts = word_lower.split()
+            if len(parts) == 1 or (len(parts) == 2 and parts[0] == 'one'):
+                return 100
+            return None
+        parts = word_lower.split()
+        if len(parts) == 2 and parts[0] in tens and parts[1] in ones:
+            return tens[parts[0]] + ones[parts[1]]
+        if len(parts) == 1 and parts[0] in tens:
+            return tens[parts[0]]
+        if len(parts) == 1 and parts[0] in ones:
+            return ones[parts[0]]
+        return None
+    
+    def roman_to_number(roman):
+        values = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100}
+        total = 0
+        prev = 0
+        for char in reversed(roman.upper()):
+            val = values.get(char, 0)
+            if val == 0:
+                return None
+            if val < prev:
+                total -= val
+            else:
+                total += val
+            prev = val
+        return total
+    
+    match = re.search(r'^(\d{4})\b', text)
+    if match:
+        return match.group(1)
+    match = re.search(r'\b(?:book|vol|volume|part|chapter|series|number|no|#)\s+(\d{1,4})\b', text, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    match = re.search(r'\b(?:book|vol|volume|part|chapter|series|number|no)\s+([a-z]+(?:[\s-][a-z]+)?)\b', text, re.IGNORECASE)
+    if match:
+        num = word_to_number(match.group(1))
+        if num:
+            return str(num)
+    match = re.search(r'\b([IVXLC]{1,10})\b', text.upper())
+    if match:
+        roman = match.group(1)
+        if all(c in 'IVXLC' for c in roman):
+            num = roman_to_number(roman)
+            if num and 1 <= num <= 100:
+                return str(num)
+    match = re.search(r'^(\d{1,3})\b', text)
+    if match:
+        num = int(match.group(1))
+        if not (1900 <= num <= 2099) and num > 0:
+            return match.group(1)
+    match = re.search(r'^([a-z]+(?:[\s-][a-z]+)?)\b', text, re.IGNORECASE)
+    if match:
+        num = word_to_number(match.group(1))
+        if num:
+            return str(num)
+    match = re.search(r'\b(\d{1,4})\b', text)
+    if match:
+        num = int(match.group(1))
+        if not (1900 <= num <= 2099) and 1 <= num <= 9999:
+            return match.group(1)
+    return None
+
+
+def validate_series_match(search_query, result_title, bookid=None):
+    """Validate series numbers match - returns (should_match, confidence)"""
+    import logging
+    logger = logging.getLogger('lazylibrarian')
+    search_num = extract_series_number(search_query)
+    result_num = extract_series_number(result_title)
+    logger.debug("Series validation - Search: '{}' (num: {}), Result: '{}' (num: {})".format(search_query, search_num, result_title, result_num))
+    if search_num and result_num:
+        if search_num == result_num:
+            logger.debug("Series numbers match ({}) - boosting".format(search_num))
+            return (True, 1.2)
+        else:
+            logger.debug("Series mismatch ({} vs {}) - rejecting".format(search_num, result_num))
+            return (False, 0.0)
+    if search_num and not result_num:
+        logger.debug("Search has number ({}) but result doesn't - rejecting".format(search_num))
+        return (False, 0.0)
+    if result_num and not search_num:
+        logger.debug("Result has number ({}) but search doesn't - penalty".format(result_num))
+        return (True, 0.9)
+    logger.debug("No series numbers - standard matching")
+    return (True, 1.0)
